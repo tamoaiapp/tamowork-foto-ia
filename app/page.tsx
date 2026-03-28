@@ -515,7 +515,7 @@ export default function HomePage() {
                 <div style={styles.blurOverlay} />
                 <div style={styles.blurBadge}>
                   <span style={styles.blurDot} />
-                  {submitting ? "Enviando..." : statusLabel(job?.status ?? null)}
+                  {submitting ? "Enviando..." : statusLabel(job?.status ?? null, elapsedSec)}
                 </div>
               </div>
             )}
@@ -606,7 +606,7 @@ export default function HomePage() {
               <div style={styles.blurWrapper}>
                 <img src={job.output_image_url} alt="base" style={{ ...styles.blurImg, filter: "blur(20px) brightness(0.6)" }} />
                 <div style={styles.blurOverlay} />
-                <div style={styles.blurBadge}><span style={styles.blurDot} />{statusLabel(videoJob.status)}</div>
+                <div style={styles.blurBadge}><span style={styles.blurDot} />{statusLabel(videoJob.status, elapsedSec)}</div>
               </div>
             )}
           </div>
@@ -646,7 +646,7 @@ export default function HomePage() {
           <div style={styles.card}>
             <div style={styles.bigIcon}>❌</div>
             <h2 style={styles.centerTitle}>Algo deu errado</h2>
-            <p style={styles.centerDesc}>{job.error_message ?? "Não foi possível gerar a foto. Tente novamente."}</p>
+            <p style={styles.centerDesc}>Ocorreu um erro inesperado ao gerar sua foto. Tente novamente.</p>
             <button onClick={resetJob} style={styles.submitBtn}>Tentar novamente</button>
           </div>
         )}
@@ -711,13 +711,15 @@ const notifyStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-function statusLabel(status: JobStatus): string {
-  const labels: Record<string, string> = {
-    queued: "Na fila...",
-    submitted: "Preparando...",
-    processing: "Gerando imagem...",
-  };
-  return labels[status ?? ""] ?? "Processando...";
+function statusLabel(status: JobStatus, elapsedSec: number): string {
+  if (status === "processing") return "Gerando sua foto...";
+  if (status === "submitted") return elapsedSec < 20 ? "Vou fazer sua foto agora..." : "Pode fechar o app — te aviso quando ficar pronta 👍";
+  if (status === "queued") {
+    if (elapsedSec < 5) return "Vou fazer sua foto agora...";
+    if (elapsedSec < 20) return "Preparando tudo para você...";
+    return "Pode fechar o app — te aviso quando ficar pronta 👍";
+  }
+  return "Processando...";
 }
 
 const styles: Record<string, React.CSSProperties> = {
