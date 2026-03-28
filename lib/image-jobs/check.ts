@@ -1,7 +1,8 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { qstash } from "@/lib/qstash/client";
 import { tickWorker, getJobResult } from "@/lib/comfyui/client";
 import { finalizeImageJob } from "@/lib/image-jobs/finalize";
+
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
 
 const MAX_ATTEMPTS = 40; // 40 × 45s ≈ 30 minutos
 
@@ -75,9 +76,11 @@ export async function checkImageJob(jobId: string) {
 }
 
 async function scheduleNextCheck(jobId: string) {
+  const { qstash } = await import("@/lib/qstash/client");
   await qstash.publishJSON({
     url: `${process.env.APP_URL}/api/internal/image-jobs/check`,
     delay: 45,
     body: { jobId },
+    headers: { "x-internal-secret": INTERNAL_SECRET },
   });
 }

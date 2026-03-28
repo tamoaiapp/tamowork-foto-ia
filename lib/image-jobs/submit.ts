@@ -41,15 +41,18 @@ export async function submitImageJob(jobId: string) {
     })
     .eq("id", jobId);
 
+  const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
+
   if (isLocalhost) {
     // Em localhost: QStash não alcança localhost, chama check diretamente após 45s
     setTimeout(() => checkImageJob(jobId).catch(console.error), 45_000);
   } else {
-    // Em produção: QStash agenda o check com delay
+    // Em produção: QStash agenda o check com delay e header secreto
     await qstash.publishJSON({
       url: `${process.env.APP_URL}/api/internal/image-jobs/check`,
       delay: 45,
       body: { jobId },
+      headers: { "x-internal-secret": INTERNAL_SECRET },
     });
   }
 }

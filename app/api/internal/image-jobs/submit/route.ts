@@ -1,22 +1,16 @@
-import { Receiver } from "@upstash/qstash";
 import { NextRequest, NextResponse } from "next/server";
 import { submitImageJob } from "@/lib/image-jobs/submit";
 
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
+
 export async function POST(req: NextRequest) {
-  const receiver = new Receiver({
-    currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
-    nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
-  });
-
-  const body = await req.text();
-  const signature = req.headers.get("upstash-signature") ?? "";
-
-  const isValid = await receiver.verify({ signature, body }).catch(() => false);
-  if (!isValid) {
-    return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
+  const secret = req.headers.get("x-internal-secret");
+  if (secret !== INTERNAL_SECRET) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const { jobId } = JSON.parse(body);
+  const body = await req.json();
+  const { jobId } = body;
   if (!jobId) {
     return NextResponse.json({ error: "jobId obrigatório" }, { status: 400 });
   }
