@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { createImageJob } from "@/lib/image-jobs/create";
+import { createImageJob, RateLimitError } from "@/lib/image-jobs/create";
+import { getUserPlan } from "@/lib/plans";
 
-// GET /api/image-jobs — lista jobs do usuário autenticado
+// GET /api/image-jobs — lista jobs + plano do usuário autenticado
 export async function GET(req: NextRequest) {
   const supabase = createServerClient();
   const authHeader = req.headers.get("authorization") ?? "";
@@ -13,14 +14,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("image_jobs")
-    .select()
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const [jobsResult, plan] = await Promise.all([
+    supabase
+      .from("image_jobs")
+      .select()
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    getUserPlan(user.id),
+  ]);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (jobsResult.error) return NextResponse.json({ error: jobsResult.error.message }, { status: 500 });
+  return NextResponse.json({ jobs: jobsResult.data, plan });
 }
 
 // POST /api/image-jobs — cria novo job
@@ -45,6 +49,12 @@ export async function POST(req: NextRequest) {
     const job = await createImageJob(user.id, prompt, input_image_url);
     return NextResponse.json({ jobId: job.id, status: job.status }, { status: 201 });
   } catch (err: unknown) {
+    if (err instanceof RateLimitError) {
+      return NextResponse.json(
+        { error: "rate_limited", nextAvailableAt: err.nextAvailableAt.toISOString() },
+        { status: 429 }
+      );
+    }
     const message = err instanceof Error ? err.message : "Erro ao criar job";
     return NextResponse.json({ error: message }, { status: 500 });
   }
