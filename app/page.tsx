@@ -11,6 +11,7 @@ interface Job {
   id: string;
   status: JobStatus;
   output_image_url?: string;
+  input_image_url?: string;
   error_message?: string;
 }
 
@@ -33,9 +34,31 @@ export default function HomePage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) router.push("/login");
-      else { setUser(user); setLoading(false); }
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { router.push("/login"); return; }
+      setUser(user);
+
+      // Restaurar job ativo ao carregar a página
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token ?? "";
+      const res = await fetch("/api/image-jobs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const jobs: Job[] = await res.json();
+        const active = jobs.find(
+          (j) => j.status !== "done" && j.status !== "failed" && j.status !== "canceled"
+        );
+        if (active) {
+          setJob(active);
+          if (active.input_image_url) setPreview(active.input_image_url);
+        } else {
+          const done = jobs.find((j) => j.status === "done");
+          if (done) setJob(done);
+        }
+      }
+
+      setLoading(false);
     });
   }, [router]);
 
