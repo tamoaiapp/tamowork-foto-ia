@@ -6,11 +6,11 @@
     },
     {
       "path": "/api/internal/pods/stop",
-      "schedule": "0 23 * * *"
+      "schedule": "0 23 * * 1-5"
     },
     {
       "path": "/api/internal/pods/start",
-      "schedule": "0 11 * * *"
+      "schedule": "0 11 * * 1-5"
     }
   ]
 }
