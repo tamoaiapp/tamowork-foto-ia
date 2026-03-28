@@ -30,6 +30,7 @@ export default function HomePage() {
   // Job state
   const [job, setJob] = useState<Job | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [canceling, setCanceling] = useState(false);
   const [formError, setFormError] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -62,7 +63,7 @@ export default function HomePage() {
     });
   }, [router]);
 
-  // Polling a cada 45s enquanto job estiver ativo
+  // Polling a cada 10s enquanto job estiver ativo
   useEffect(() => {
     if (!job || !user) return;
     if (job.status === "done" || job.status === "failed" || job.status === "canceled") {
@@ -70,7 +71,7 @@ export default function HomePage() {
       return;
     }
 
-    pollRef.current = setInterval(() => fetchJobStatus(job.id), 45_000);
+    pollRef.current = setInterval(() => fetchJobStatus(job.id), 10_000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job?.id, job?.status, user]);
@@ -150,8 +151,8 @@ export default function HomePage() {
 
       setJob({ id: jobId, status: "queued" });
 
-      // Primeiro check em 45s
-      setTimeout(() => fetchJobStatus(jobId), 45_000);
+      // Primeiro check em 10s
+      setTimeout(() => fetchJobStatus(jobId), 10_000);
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Erro ao processar");
     } finally {
@@ -160,11 +161,29 @@ export default function HomePage() {
   }
 
   function resetJob() {
+    if (pollRef.current) clearInterval(pollRef.current);
     setJob(null);
     setProduto("");
     setCenario("");
     setImageFile(null);
     setPreview(null);
+  }
+
+  async function handleCancel() {
+    if (!job?.id || canceling) return;
+    setCanceling(true);
+    try {
+      const token = await getToken();
+      await fetch(`/api/image-jobs/${job.id}/cancel`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      // ignora erro — reseta de qualquer forma
+    } finally {
+      setCanceling(false);
+      resetJob();
+    }
   }
 
   async function handleLogout() {
@@ -276,6 +295,15 @@ export default function HomePage() {
                   <span style={styles.scanDot} />
                   {submitting ? "Enviando..." : statusLabel(job?.status ?? null)}
                 </div>
+              </div>
+            )}
+
+            {/* Botão cancelar */}
+            {job?.id && (
+              <div style={{ textAlign: "center", marginBottom: 16 }}>
+                <button onClick={handleCancel} disabled={canceling} style={styles.cancelBtn}>
+                  {canceling ? "Cancelando..." : "✕ Cancelar e recomeçar"}
+                </button>
               </div>
             )}
 
@@ -460,5 +488,10 @@ const styles: Record<string, React.CSSProperties> = {
   newBtn: {
     flex: 1, background: "#1a2535", border: "none", borderRadius: 14,
     padding: "13px 0", color: "#eef2f9", fontSize: 15, fontWeight: 500,
+  },
+  cancelBtn: {
+    background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10, padding: "8px 20px",
+    color: "#8394b0", fontSize: 13, cursor: "pointer",
   },
 };
