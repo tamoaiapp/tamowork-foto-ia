@@ -105,13 +105,39 @@ export default function HomePage() {
     return data.session?.access_token ?? "";
   }
 
+  async function requestNotificationPermission() {
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+  }
+
+  function sendNotification(title: string, body: string) {
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "granted") return;
+    const n = new Notification(title, {
+      body,
+      icon: "/favicon.ico",
+      badge: "/favicon.ico",
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  }
+
   async function fetchJobStatus(jobId: string) {
     const token = await getToken();
     const res = await fetch(`/api/image-jobs/${jobId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
-    const data = await res.json();
+    const data: Job = await res.json();
+
+    // Notificar quando ficar pronto ou falhar
+    if (data.status === "done") {
+      sendNotification("Sua foto está pronta! 🎉", "Clique para ver a imagem gerada pela IA.");
+    } else if (data.status === "failed") {
+      sendNotification("Erro na geração", "Não foi possível gerar a foto. Tente novamente.");
+    }
+
     setJob(data);
   }
 
@@ -130,6 +156,9 @@ export default function HomePage() {
     setFormError("");
     setSubmitting(true);
     setJob(null);
+
+    // Pedir permissão para notificação antes de começar
+    await requestNotificationPermission();
 
     try {
       const token = await getToken();
@@ -286,9 +315,9 @@ export default function HomePage() {
         {/* Processando */}
         {(submitting || (job && job.status !== "done" && job.status !== "failed")) && (
           <div style={styles.card}>
-            <h2 style={styles.centerTitle}>Gerando sua foto...</h2>
+            <h2 style={styles.centerTitle}>Estamos criando sua foto...</h2>
             <p style={{ ...styles.centerDesc, marginBottom: 20 }}>
-              Isso leva em média 1–2 minutos. Pode deixar esta tela aberta.
+              Pode fechar o aplicativo — te avisamos aqui quando a foto ficar pronta. 🔔
             </p>
 
             {/* Foto com animação de scan */}
