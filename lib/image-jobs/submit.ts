@@ -1,12 +1,9 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { qstash } from "@/lib/qstash/client";
-import { criarPrompt, buildFotoWorkflow, pickComfyBase, uploadImageToComfy, submitWorkflow } from "@/lib/comfyui/client";
-import { submitRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
-import { ensureFotoPodRunning } from "@/lib/runpod/pods";
+import { criarPrompt, pickComfyBase, uploadImageToComfy, submitWorkflow } from "@/lib/comfyui/client";
 import { checkImageJob } from "@/lib/image-jobs/check";
 
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
-const USE_SERVERLESS = process.env.RUNPOD_SERVERLESS_ENABLED === "true";
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
 
 export async function submitImageJob(jobId: string) {
@@ -26,34 +23,11 @@ export async function submitImageJob(jobId: string) {
 
   const promptResult = await criarPrompt(produto_frase.trim(), cenario.trim());
 
-  let externalJobId: string;
-  let provider: string;
-
-  if (USE_SERVERLESS) {
-    const workflow = buildFotoWorkflow(jobId, "product.jpg", promptResult.positive, promptResult.negative);
-    const runpodJobId = await submitRunpodJob(RUNPOD_FOTO_ENDPOINT, workflow, job.input_image_url);
-    externalJobId = `runpod:${runpodJobId}`;
-    provider = "runpod-serverless";
-  } else {
-    const { base: comfyBase, index: comfyIndex } = pickComfyBase();
-    const podReady = await ensureFotoPodRunning(comfyBase);
-
-    if (!podReady) {
-      // Pod iniciando — reagendar submit em 3 minutos
-      await qstash.publishJSON({
-        url: `${process.env.APP_URL}/api/internal/image-jobs/submit`,
-        delay: 180,
-        body: { jobId },
-        headers: { "x-internal-secret": INTERNAL_SECRET },
-      });
-      return; // job permanece em status "queued", será retentado
-    }
-
-    const imageName = await uploadImageToComfy(job.input_image_url, comfyBase, jobId);
-    const promptId = await submitWorkflow(jobId, imageName, promptResult.positive, promptResult.negative, comfyBase);
-    externalJobId = `${comfyIndex}:${promptId}`;
-    provider = "comfyui-direct";
-  }
+  const { base: comfyBase, index: comfyIndex } = pickComfyBase();
+  const imageName = await uploadImageToComfy(job.input_image_url, comfyBase, jobId);
+  const promptId = await submitWorkflow(jobId, imageName, promptResult.positive, promptResult.negative, comfyBase);
+  const externalJobId = `${comfyIndex}:${promptId}`;
+  const provider = "comfyui-direct";
 
   await supabase
     .from("image_jobs")
