@@ -31,8 +31,10 @@ export default function HomePage() {
   const [job, setJob] = useState<Job | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
   const [formError, setFormError] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -68,11 +70,21 @@ export default function HomePage() {
     if (!job || !user) return;
     if (job.status === "done" || job.status === "failed" || job.status === "canceled") {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
+      setShowCancel(false);
       return;
     }
 
     pollRef.current = setInterval(() => fetchJobStatus(job.id), 10_000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+
+    // Mostrar botão de cancelar após 30s
+    setShowCancel(false);
+    cancelTimerRef.current = setTimeout(() => setShowCancel(true), 30_000);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job?.id, job?.status, user]);
 
@@ -162,6 +174,8 @@ export default function HomePage() {
 
   function resetJob() {
     if (pollRef.current) clearInterval(pollRef.current);
+    if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
+    setShowCancel(false);
     setJob(null);
     setProduto("");
     setCenario("");
@@ -298,8 +312,8 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Botão cancelar */}
-            {job?.id && (
+            {/* Botão cancelar — aparece após 30s */}
+            {showCancel && job?.id && (
               <div style={{ textAlign: "center", marginBottom: 16 }}>
                 <button onClick={handleCancel} disabled={canceling} style={styles.cancelBtn}>
                   {canceling ? "Cancelando..." : "✕ Cancelar e recomeçar"}
