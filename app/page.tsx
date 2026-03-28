@@ -16,6 +16,14 @@ interface Job {
   error_message?: string;
 }
 
+interface VideoJob {
+  id: string;
+  status: JobStatus;
+  output_video_url?: string;
+  input_image_url?: string;
+  error_message?: string;
+}
+
 function useCountdown(target: Date | null) {
   const [remaining, setRemaining] = useState<number>(0);
   useEffect(() => {
@@ -64,6 +72,18 @@ export default function HomePage() {
   const [blurPx, setBlurPx] = useState(40);
   const blurRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Tempo decorrido desde início da geração
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Video state
+  const [videoMode, setVideoMode] = useState(false);
+  const [videoJob, setVideoJob] = useState<VideoJob | null>(null);
+  const [videoPrompt, setVideoPrompt] = useState("");
+  const [videoSubmitting, setVideoSubmitting] = useState(false);
+  const [videoError, setVideoError] = useState("");
+  const videoPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const countdown = useCountdown(rateLimitedUntil);
 
   useEffect(() => {
@@ -106,6 +126,7 @@ export default function HomePage() {
       if (pollRef.current) clearInterval(pollRef.current);
       if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
       if (blurRef.current) clearInterval(blurRef.current);
+      if (elapsedRef.current) clearInterval(elapsedRef.current);
       setShowCancel(false);
       return;
     }
@@ -113,6 +134,10 @@ export default function HomePage() {
     pollRef.current = setInterval(() => fetchJobStatus(job.id), 10_000);
     setShowCancel(false);
     cancelTimerRef.current = setTimeout(() => setShowCancel(true), 30_000);
+
+    // Tempo decorrido
+    setElapsedSec(0);
+    elapsedRef.current = setInterval(() => setElapsedSec((s) => s + 1), 1000);
 
     // Animação de blur: começa em 40px, reduz ~0.35px/s → chega ~8px em ~90s
     setBlurPx(40);
@@ -124,6 +149,7 @@ export default function HomePage() {
       if (pollRef.current) clearInterval(pollRef.current);
       if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
       if (blurRef.current) clearInterval(blurRef.current);
+      if (elapsedRef.current) clearInterval(elapsedRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job?.id, job?.status, user]);
@@ -262,6 +288,56 @@ export default function HomePage() {
     }
   }
 
+  // Polling de vídeo a cada 15s
+  useEffect(() => {
+    if (!videoJob || !user) return;
+    if (["done", "failed", "canceled"].includes(videoJob.status ?? "")) {
+      if (videoPollRef.current) clearInterval(videoPollRef.current);
+      if (videoJob.status === "done") sendNotification("Seu vídeo está pronto! 🎬", "Clique para ver o vídeo gerado.");
+      return;
+    }
+    videoPollRef.current = setInterval(() => fetchVideoStatus(videoJob.id), 15_000);
+    return () => { if (videoPollRef.current) clearInterval(videoPollRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoJob?.id, videoJob?.status, user]);
+
+  async function fetchVideoStatus(jobId: string) {
+    const token = await getToken();
+    const res = await fetch(`/api/video-jobs/${jobId}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    setVideoJob(await res.json());
+  }
+
+  async function handleVideoSubmit(imageUrl: string) {
+    setVideoError("");
+    setVideoSubmitting(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/video-jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ prompt: videoPrompt, input_image_url: imageUrl }),
+      });
+      if (res.status === 403) { setVideoError("Disponível apenas no plano Pro."); return; }
+      if (!res.ok) throw new Error("Erro ao criar job de vídeo");
+      const { jobId } = await res.json();
+      setVideoJob({ id: jobId, status: "queued" });
+      setTimeout(() => fetchVideoStatus(jobId), 15_000);
+    } catch (err) {
+      setVideoError(err instanceof Error ? err.message : "Erro");
+    } finally {
+      setVideoSubmitting(false);
+    }
+  }
+
+  function resetVideo() {
+    if (videoPollRef.current) clearInterval(videoPollRef.current);
+    setVideoMode(false);
+    setVideoJob(null);
+    setVideoPrompt("");
+    setVideoError("");
+  }
+
   async function handleDownload(url: string) {
     try {
       const res = await fetch(url);
@@ -307,8 +383,12 @@ export default function HomePage() {
         <div style={styles.logo}>TamoWork <span style={styles.logoTag}>Foto IA</span></div>
         <div style={styles.headerRight}>
           {plan === "pro" && <span style={styles.proBadge}>✦ Pro</span>}
-          <span style={styles.email}>{user?.email}</span>
-          <button onClick={handleLogout} style={styles.logoutBtn}>Sair</button>
+          <button onClick={() => router.push("/conta")} style={styles.accountBtn} title={user?.email}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -325,12 +405,22 @@ export default function HomePage() {
             {rateLimitedUntil && countdown > 0 && (
               <div style={styles.rateLimitBox}>
                 <div style={styles.rateLimitIcon}>⏳</div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={styles.rateLimitTitle}>Próxima foto disponível em</div>
                   <div style={styles.rateLimitTimer}>{formatMs(countdown)}</div>
                   <div style={styles.rateLimitSub}>
-                    Usuários gratuitos podem gerar 1 foto a cada 3 horas.{" "}
-                    <span style={{ color: "#8b5cf6", cursor: "pointer" }}>Assine o Pro</span> para gerar sem limites.
+                    Plano gratuito: 1 foto a cada 3 horas.
+                  </div>
+                  <div style={{ marginTop: 14, background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 14, padding: "14px 16px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#c4b5fd", marginBottom: 4 }}>
+                      Por menos de R$0,61/dia você gera sem limites
+                    </div>
+                    <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 12, lineHeight: 1.5 }}>
+                      Fotos ilimitadas + vídeos com IA. Sem fila, sem espera.
+                    </div>
+                    <button onClick={() => router.push("/planos")} style={styles.unlockBtn}>
+                      🔓 Destravar agora
+                    </button>
                   </div>
                 </div>
               </div>
@@ -382,6 +472,13 @@ export default function HomePage() {
         {/* Gerando — blur animation estilo GPT */}
         {isGenerating && (
           <div style={styles.card}>
+            {/* Banner de fechar app — aparece após 60s no topo */}
+            {elapsedSec >= 60 && (
+              <div style={styles.closeBanner}>
+                📱 Pode fechar o app — te avisamos quando ficar pronta
+              </div>
+            )}
+
             {/* Título animado */}
             <div style={styles.generatingTitle}>
               <span style={styles.shimmerText}>Transformando sua foto</span>
@@ -391,13 +488,21 @@ export default function HomePage() {
                 <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
               </span>
             </div>
-            <p style={{ ...styles.centerDesc, marginBottom: 20 }}>
-              Pode fechar o aplicativo — te avisamos quando a foto ficar pronta. 🔔
-            </p>
+
+            {/* Tempo estimado */}
+            {!submitting && (
+              <div style={styles.timeEstimate}>
+                {elapsedSec < 45
+                  ? `⏱ Tempo estimado: ~${Math.max(1, 45 - elapsedSec)}s`
+                  : elapsedSec < 60
+                  ? "⏳ Vai demorar mais alguns segundos..."
+                  : null}
+              </div>
+            )}
 
             {/* Imagem com blur progressivo */}
             {preview && (
-              <div style={styles.blurWrapper}>
+              <div style={{ ...styles.blurWrapper, marginBottom: 20 }}>
                 <img
                   src={preview}
                   alt="produto"
@@ -407,9 +512,7 @@ export default function HomePage() {
                     transform: `scale(${1 + blurPx * 0.002})`,
                   }}
                 />
-                {/* overlay gradiente roxo */}
                 <div style={styles.blurOverlay} />
-                {/* badge central */}
                 <div style={styles.blurBadge}>
                   <span style={styles.blurDot} />
                   {submitting ? "Enviando..." : statusLabel(job?.status ?? null)}
@@ -417,28 +520,22 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Botão cancelar — aparece após 30s */}
+            {/* Botão de notificação */}
+            <NotifyButton onRequest={requestNotificationPermission} />
+
+            {/* Cancelar — aparece após 30s */}
             {showCancel && job?.id && (
-              <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <div style={{ textAlign: "center" }}>
                 <button onClick={handleCancel} disabled={canceling} style={styles.cancelBtn}>
                   {canceling ? "Cancelando..." : "✕ Cancelar e recomeçar"}
                 </button>
-              </div>
-            )}
-
-            {/* Oferta Pro */}
-            {plan === "free" && (
-              <div style={styles.offerBox}>
-                <div style={styles.offerTitle}>⚡ Quer gerar sem esperar?</div>
-                <div style={styles.offerDesc}>No plano Pro você gera sem limite de tempo e tem acesso a geração de vídeos.</div>
-                <div style={styles.offerBadge}>Em breve</div>
               </div>
             )}
           </div>
         )}
 
         {/* Resultado */}
-        {job?.status === "done" && job.output_image_url && (
+        {job?.status === "done" && job.output_image_url && !videoMode && (
           <div style={{ ...styles.card, animation: "fadeIn 0.5s ease" }}>
             <h2 style={styles.centerTitle}>Sua foto está pronta! ✨</h2>
             <img src={job.output_image_url} alt="Foto gerada" style={styles.resultImg} />
@@ -447,10 +544,100 @@ export default function HomePage() {
             </button>
             <div style={styles.resultActions}>
               <button onClick={resetJob} style={styles.newBtn}>🔄 Gerar outra foto</button>
-              <button onClick={() => alert("Em breve!")} style={styles.videoBtn}>
-                🎬 Criar vídeo
-              </button>
+              {plan === "pro" ? (
+                <button onClick={() => setVideoMode(true)} style={styles.videoBtn}>
+                  🎬 Criar vídeo
+                </button>
+              ) : (
+                <button onClick={() => router.push("/planos")} style={styles.videoBtnLocked}>
+                  <div>🎬 Criar vídeo 🔒</div>
+                  <div style={{ fontSize: 11, opacity: 0.7, marginTop: 3 }}>Disponível para assinantes</div>
+                </button>
+              )}
             </div>
+          </div>
+        )}
+
+        {/* Vídeo — form */}
+        {videoMode && !videoJob && job?.status === "done" && job.output_image_url && (
+          <div style={styles.card}>
+            <button onClick={resetVideo} style={styles.backBtn}>← Voltar</button>
+            <h2 style={styles.centerTitle}>🎬 Criar vídeo da foto</h2>
+            <p style={{ ...styles.centerDesc, marginBottom: 16 }}>
+              Descreva como a câmera vai se mover ou o que vai acontecer na cena.
+            </p>
+            <img src={job.output_image_url} alt="base" style={{ ...styles.resultImg, marginBottom: 16 }} />
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>Movimento <span style={{ color: "#4e5c72" }}>(opcional)</span></label>
+              <input
+                type="text"
+                placeholder="Ex: câmera girando suavemente para a esquerda"
+                value={videoPrompt}
+                onChange={(e) => setVideoPrompt(e.target.value)}
+                style={styles.input}
+              />
+            </div>
+            {videoError && <div style={{ ...styles.error, marginTop: 12 }}>{videoError}</div>}
+            <button
+              onClick={() => handleVideoSubmit(job.output_image_url!)}
+              disabled={videoSubmitting}
+              style={{ ...styles.submitBtn, marginTop: 16, opacity: videoSubmitting ? 0.6 : 1 }}
+            >
+              {videoSubmitting ? "Enviando..." : "🎬 Gerar vídeo"}
+            </button>
+          </div>
+        )}
+
+        {/* Vídeo — gerando */}
+        {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && (
+          <div style={styles.card}>
+            <div style={styles.generatingTitle}>
+              <span style={styles.shimmerText}>Criando seu vídeo</span>
+              <span style={styles.dots}>
+                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
+                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+              </span>
+            </div>
+            <p style={{ ...styles.centerDesc, marginBottom: 20 }}>
+              Vídeos levam 3–5 minutos. Pode fechar — te avisamos quando ficar pronto. 🔔
+            </p>
+            {job?.output_image_url && (
+              <div style={styles.blurWrapper}>
+                <img src={job.output_image_url} alt="base" style={{ ...styles.blurImg, filter: "blur(20px) brightness(0.6)" }} />
+                <div style={styles.blurOverlay} />
+                <div style={styles.blurBadge}><span style={styles.blurDot} />{statusLabel(videoJob.status)}</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Vídeo — pronto */}
+        {videoJob?.status === "done" && videoJob.output_video_url && (
+          <div style={{ ...styles.card, animation: "fadeIn 0.5s ease" }}>
+            <h2 style={styles.centerTitle}>Seu vídeo está pronto! 🎬</h2>
+            <video
+              src={videoJob.output_video_url}
+              controls
+              autoPlay
+              loop
+              playsInline
+              style={{ width: "100%", borderRadius: 16, display: "block", marginBottom: 16 }}
+            />
+            <div style={styles.resultActions}>
+              <a href={videoJob.output_video_url} download="video-ia.mp4" style={styles.downloadBtn}>⬇ Baixar vídeo</a>
+              <button onClick={resetVideo} style={styles.newBtn}>🔄 Novo vídeo</button>
+            </div>
+          </div>
+        )}
+
+        {/* Vídeo — erro */}
+        {videoJob?.status === "failed" && (
+          <div style={styles.card}>
+            <div style={styles.bigIcon}>❌</div>
+            <h2 style={styles.centerTitle}>Erro ao gerar vídeo</h2>
+            <p style={styles.centerDesc}>{videoJob.error_message ?? "Não foi possível gerar o vídeo."}</p>
+            <button onClick={resetVideo} style={styles.submitBtn}>Tentar novamente</button>
           </div>
         )}
 
@@ -467,6 +654,62 @@ export default function HomePage() {
     </div>
   );
 }
+
+function NotifyButton({ onRequest }: { onRequest: () => Promise<void> }) {
+  const [state, setState] = useState<"idle" | "granted" | "denied">(() => {
+    if (typeof Notification === "undefined") return "idle";
+    if (Notification.permission === "granted") return "granted";
+    if (Notification.permission === "denied") return "denied";
+    return "idle";
+  });
+
+  async function handle() {
+    await onRequest();
+    if (typeof Notification !== "undefined") {
+      setState(Notification.permission === "granted" ? "granted" : "denied");
+    }
+  }
+
+  return (
+    <div style={notifyStyles.box}>
+      <div style={notifyStyles.closeText}>
+        Pode fechar o app — continuamos trabalhando e te avisamos quando ficar pronta.
+      </div>
+      {state === "idle" && (
+        <button onClick={handle} style={notifyStyles.btn}>
+          🔔 Ativar notificação
+        </button>
+      )}
+      {state === "granted" && (
+        <div style={notifyStyles.granted}>✓ Notificação ativada</div>
+      )}
+      {state === "denied" && (
+        <div style={notifyStyles.denied}>Ative nas configurações do navegador para receber aviso.</div>
+      )}
+    </div>
+  );
+}
+
+const notifyStyles: Record<string, React.CSSProperties> = {
+  box: {
+    background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.2)",
+    borderRadius: 16, padding: "18px 20px", marginBottom: 16, textAlign: "center",
+  },
+  closeText: {
+    fontSize: 14, color: "#c4b5fd", lineHeight: 1.6, marginBottom: 14,
+  },
+  btn: {
+    background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none",
+    borderRadius: 12, padding: "11px 24px", color: "#fff",
+    fontSize: 14, fontWeight: 600, cursor: "pointer",
+  },
+  granted: {
+    fontSize: 13, color: "#34d399", fontWeight: 500,
+  },
+  denied: {
+    fontSize: 12, color: "#f87171", lineHeight: 1.5,
+  },
+};
 
 function statusLabel(status: JobStatus): string {
   const labels: Record<string, string> = {
@@ -592,6 +835,15 @@ const styles: Record<string, React.CSSProperties> = {
     background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: 10, padding: "8px 20px", color: "#8394b0", fontSize: 13, cursor: "pointer",
   },
+  closeBanner: {
+    background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)",
+    borderRadius: 12, padding: "12px 16px", marginBottom: 16,
+    fontSize: 13, fontWeight: 600, color: "#c4b5fd", textAlign: "center",
+    animation: "fadeIn 0.4s ease",
+  },
+  timeEstimate: {
+    fontSize: 13, color: "#8394b0", textAlign: "center", marginBottom: 16, minHeight: 20,
+  },
   centerTitle: { fontSize: 20, fontWeight: 700, textAlign: "center", margin: "0 0 8px" },
   centerDesc: { color: "#8394b0", fontSize: 14, textAlign: "center", margin: "0 0 24px", lineHeight: 1.6 },
   offerBox: {
@@ -620,5 +872,24 @@ const styles: Record<string, React.CSSProperties> = {
   videoBtn: {
     flex: 1, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)",
     borderRadius: 14, padding: "13px 0", color: "#34d399", fontSize: 15, fontWeight: 600, cursor: "pointer",
+  },
+  videoBtnLocked: {
+    flex: 1, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)",
+    borderRadius: 14, padding: "11px 8px", color: "#8b5cf6", fontSize: 14, fontWeight: 600, cursor: "pointer",
+    lineHeight: 1.2,
+  },
+  accountBtn: {
+    background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10, padding: "6px 10px", color: "#8394b0", cursor: "pointer",
+    display: "flex", alignItems: "center",
+  },
+  backBtn: {
+    background: "transparent", border: "none", color: "#8394b0",
+    fontSize: 14, cursor: "pointer", padding: "0 0 16px", display: "block",
+  },
+  unlockBtn: {
+    background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
+    border: "none", borderRadius: 10, padding: "10px 18px",
+    color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", width: "100%",
   },
 };

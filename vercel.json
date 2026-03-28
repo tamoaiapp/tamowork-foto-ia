@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/jobs/recover",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/internal/pods",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}

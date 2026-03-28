@@ -65,11 +65,21 @@ export async function createImageJob(
       console.error("[submit-local] erro:", err)
     );
   } else {
-    qstash.publishJSON({
-      url: `${process.env.APP_URL}/api/internal/image-jobs/submit`,
-      body: { jobId: job.id },
-      headers: { "x-internal-secret": INTERNAL_SECRET },
-    }).catch((err) => console.error("[qstash] falha ao publicar job:", err));
+    try {
+      await qstash.publishJSON({
+        url: `${process.env.APP_URL}/api/internal/image-jobs/submit`,
+        body: { jobId: job.id },
+        headers: { "x-internal-secret": INTERNAL_SECRET },
+      });
+    } catch (err) {
+      console.error("[qstash] falha ao publicar job:", err);
+      // Marca como failed imediatamente se QStash falhar
+      await supabase.from("image_jobs").update({
+        status: "failed",
+        error_message: "Falha ao enfileirar job (QStash error)",
+      }).eq("id", job.id);
+      throw new Error("Falha ao enfileirar geração. Tente novamente.");
+    }
   }
 
   return job;

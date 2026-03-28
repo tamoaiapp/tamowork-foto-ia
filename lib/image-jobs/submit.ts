@@ -1,9 +1,13 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { qstash } from "@/lib/qstash/client";
-import { criarPrompt, pickComfyBase, uploadImageToComfy, submitWorkflow } from "@/lib/comfyui/client";
+import { criarPrompt, buildFotoWorkflow, pickComfyBase, uploadImageToComfy, submitWorkflow } from "@/lib/comfyui/client";
+import { submitRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
+import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { checkImageJob } from "@/lib/image-jobs/check";
 
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
+const USE_SERVERLESS = process.env.RUNPOD_SERVERLESS_ENABLED === "true";
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
 
 export async function submitImageJob(jobId: string) {
   const supabase = createServerClient();
@@ -17,39 +21,44 @@ export async function submitImageJob(jobId: string) {
 
   if (error || !job) throw new Error("Job não encontrado ou não está na fila");
 
-  // Extrair produto e cenario do campo prompt
   const [produto_frase, cenarioPart] = (job.prompt ?? "").split(" | cenário: ");
   const cenario = cenarioPart ?? "";
 
-  // 1. Criar prompt via promptuso (mantido no GCP)
   const promptResult = await criarPrompt(produto_frase.trim(), cenario.trim());
 
-  // 2. Escolher instância do ComfyUI
-  const { base: comfyBase, index: comfyIndex } = pickComfyBase();
+  let externalJobId: string;
+  let provider: string;
 
-  // 3. Upload da imagem para o ComfyUI
-  const imageName = await uploadImageToComfy(job.input_image_url, comfyBase);
+  if (USE_SERVERLESS) {
+    const workflow = buildFotoWorkflow(jobId, "product.jpg", promptResult.positive, promptResult.negative);
+    const runpodJobId = await submitRunpodJob(RUNPOD_FOTO_ENDPOINT, workflow, job.input_image_url);
+    externalJobId = `runpod:${runpodJobId}`;
+    provider = "runpod-serverless";
+  } else {
+    const { base: comfyBase, index: comfyIndex } = pickComfyBase();
+    const podReady = await ensureFotoPodRunning(comfyBase);
 
-  // 4. Submeter o workflow — recebe o prompt_id do ComfyUI
-  const promptId = await submitWorkflow(
-    jobId,
-    imageName,
-    promptResult.positive,
-    promptResult.negative,
-    comfyBase
-  );
+    if (!podReady) {
+      // Pod iniciando — reagendar submit em 3 minutos
+      await qstash.publishJSON({
+        url: `${process.env.APP_URL}/api/internal/image-jobs/submit`,
+        delay: 180,
+        body: { jobId },
+        headers: { "x-internal-secret": INTERNAL_SECRET },
+      });
+      return; // job permanece em status "queued", será retentado
+    }
 
-  // Salvar external_job_id como "{comfyIndex}:{promptId}" para saber qual instância usar no check
+    const imageName = await uploadImageToComfy(job.input_image_url, comfyBase, jobId);
+    const promptId = await submitWorkflow(jobId, imageName, promptResult.positive, promptResult.negative, comfyBase);
+    externalJobId = `${comfyIndex}:${promptId}`;
+    provider = "comfyui-direct";
+  }
+
   await supabase
     .from("image_jobs")
-    .update({
-      status: "submitted",
-      external_job_id: `${comfyIndex}:${promptId}`,
-      provider: "comfyui-direct",
-    })
+    .update({ status: "submitted", external_job_id: externalJobId, provider })
     .eq("id", jobId);
-
-  const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
 
   if (isLocalhost) {
     setTimeout(() => checkImageJob(jobId).catch(console.error), 45_000);

@@ -38,14 +38,17 @@ export function pickComfyBase(): { base: string; index: number } {
 }
 
 // Faz download da imagem e envia para o ComfyUI
-export async function uploadImageToComfy(imageUrl: string, comfyBase: string): Promise<string> {
+export async function uploadImageToComfy(imageUrl: string, comfyBase: string, jobId?: string): Promise<string> {
   const imgRes = await fetch(imageUrl);
   if (!imgRes.ok) throw new Error(`Falha ao baixar imagem: ${imgRes.status}`);
   const buffer = await imgRes.arrayBuffer();
 
+  // Nome único por job para evitar cache do ComfyUI entre jobs diferentes
+  const filename = jobId ? `product_${jobId.replace(/-/g, "").slice(0, 12)}.jpg` : `product_${Date.now()}.jpg`;
+
   const form = new FormData();
   const blob = new Blob([buffer], { type: "image/jpeg" });
-  form.append("image", blob, "product.jpg");
+  form.append("image", blob, filename);
   form.append("overwrite", "true");
 
   const res = await fetch(`${comfyBase}/upload/image`, {
@@ -56,6 +59,22 @@ export async function uploadImageToComfy(imageUrl: string, comfyBase: string): P
 
   const data = await res.json();
   return data.name as string;
+}
+
+// Monta o workflow preenchido (sem submeter) — usado pelo RunPod Serverless
+export function buildFotoWorkflow(
+  jobId: string,
+  imageName: string,
+  promptPos: string,
+  promptNeg: string
+): Record<string, unknown> {
+  const workflow = JSON.parse(JSON.stringify(templateJson)) as Record<string, unknown>;
+  (workflow["11"] as { inputs: { image: string } }).inputs.image = imageName;
+  (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt = `${promptPos}\n#job:${jobId}\n`;
+  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = promptNeg;
+  (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
+  (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
+  return workflow;
 }
 
 // Preenche o template e submete o workflow ao ComfyUI
