@@ -31,9 +31,16 @@ export async function criarPrompt(
   return res.json();
 }
 
-// Escolhe uma instância aleatória do ComfyUI
+// Escolhe instância do ComfyUI — prioriza pod 2 no horário comercial (8h-20h BRT)
 export function pickComfyBase(): { base: string; index: number } {
-  const index = Math.floor(Math.random() * COMFY_BASES.length);
+  if (COMFY_BASES.length <= 1) return { base: COMFY_BASES[0], index: 0 };
+
+  const hourBRT = (new Date().getUTCHours() - 3 + 24) % 24;
+  const isBusinessHours = hourBRT >= 8 && hourBRT < 20;
+
+  // Durante horário comercial: pod 2 (index 1) tem prioridade
+  // Fora do horário: apenas pod 1 (index 0)
+  const index = isBusinessHours ? 1 : 0;
   return { base: COMFY_BASES[index], index };
 }
 
