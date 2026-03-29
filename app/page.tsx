@@ -681,9 +681,7 @@ function NotifyButton({ onRequest }: { onRequest: () => Promise<void> }) {
           🔔 Ativar notificação
         </button>
       )}
-      {state === "granted" && (
-        <div style={notifyStyles.granted}>✓ Notificação ativada</div>
-      )}
+      {state === "granted" && null}
       {state === "denied" && (
         <div style={notifyStyles.denied}>Ative nas configurações do navegador para receber aviso.</div>
       )}
