@@ -6,7 +6,9 @@
 
 import templateJson from "./prompt_template.json";
 
-const PROMPTUSO_URL = process.env.COMFYUI_RUN_URL!;
+const PROMPTUSO_URL =
+  process.env.COMFYUI_RUN_URL ||
+  `${process.env.APP_URL ?? "http://localhost:3003"}/api/prompt`;
 export const COMFY_BASES = (process.env.COMFY_BASES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 
 export interface PromptResult {
