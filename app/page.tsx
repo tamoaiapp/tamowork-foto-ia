@@ -694,19 +694,17 @@ function NotifyButton({ onRequest }: { onRequest: () => Promise<void> }) {
     }
   }
 
+  if (state === "granted") return null;
+
   return (
     <div style={notifyStyles.box}>
-      <div style={notifyStyles.closeText}>
-        Pode fechar o app — continuamos trabalhando e te avisamos quando ficar pronta.
-      </div>
       {state === "idle" && (
         <button onClick={handle} style={notifyStyles.btn}>
-          🔔 Ativar notificação
+          🔔 Ativar notificação para avisar quando ficar pronta
         </button>
       )}
-      {state === "granted" && null}
       {state === "denied" && (
-        <div style={notifyStyles.denied}>Ative nas configurações do navegador para receber aviso.</div>
+        <div style={notifyStyles.denied}>Ative nas configurações do navegador para receber aviso quando ficar pronta.</div>
       )}
     </div>
   );
@@ -773,7 +771,7 @@ const styles: Record<string, React.CSSProperties> = {
   main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "40px 24px" },
   card: {
     background: "#111820", border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: 22, padding: "36px 32px", width: "100%", maxWidth: 520,
+    borderRadius: 22, padding: "36px 32px", width: "100%", maxWidth: 520, margin: "0 auto",
   },
   title: { fontSize: 22, fontWeight: 700, margin: "0 0 8px" },
   desc: { color: "#8394b0", fontSize: 15, margin: "0 0 28px", lineHeight: 1.5 },
