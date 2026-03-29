@@ -14,6 +14,7 @@ interface Job {
   output_image_url?: string;
   input_image_url?: string;
   error_message?: string;
+  created_at?: string;
 }
 
 interface VideoJob {
@@ -162,18 +163,20 @@ export default function HomePage() {
     }
   }, [countdown, rateLimitedUntil]);
 
-  // Timeout automático: cancela job travado e mostra erro
+  // Timeout automático: usa created_at do job para não resetar ao reabrir o app
   useEffect(() => {
     if (!job || !isGenerating) return;
     const status = job.status;
-    // Fila/enviado sem entrar no RunPod: 3 minutos
     const limitSec = (status === "queued" || status === "submitted") ? 180 : 360;
-    if (elapsedSec >= limitSec) {
+    // Se temos created_at, calcula elapsed real; senão usa o contador local
+    const realElapsed = job.created_at
+      ? Math.floor((Date.now() - new Date(job.created_at).getTime()) / 1000)
+      : elapsedSec;
+    if (realElapsed >= limitSec) {
       const msg = (status === "queued" || status === "submitted")
         ? "Algo deu errado — o servidor não conseguiu processar. Tenta novamente."
         : "Algo deu errado — a geração demorou demais. Tenta novamente.";
       setTimeoutError(msg);
-      // Cancela na API sem bloquear a UI
       getToken().then(token => {
         if (job.id) fetch(`/api/image-jobs/${job.id}/cancel`, {
           method: "POST", headers: { Authorization: `Bearer ${token}` },
@@ -182,7 +185,7 @@ export default function HomePage() {
       resetJob();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elapsedSec]);
+  }, [elapsedSec, job?.id]);
 
   // Fallback: refresh ao voltar do background
   useEffect(() => {
