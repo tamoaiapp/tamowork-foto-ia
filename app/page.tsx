@@ -524,14 +524,12 @@ export default function HomePage() {
             {/* Botão de notificação */}
             <NotifyButton onRequest={requestNotificationPermission} />
 
-            {/* Cancelar — aparece após 30s */}
-            {showCancel && job?.id && (
-              <div style={{ textAlign: "center" }}>
-                <button onClick={handleCancel} disabled={canceling} style={styles.cancelBtn}>
-                  {canceling ? "Cancelando..." : "✕ Cancelar e recomeçar"}
-                </button>
-              </div>
-            )}
+            {/* Resetar — sempre visível */}
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              <button onClick={resetJob} style={styles.resetBtn}>
+                ↺ Recomeçar do zero
+              </button>
+            </div>
           </div>
         )}
 
@@ -835,6 +833,11 @@ const styles: Record<string, React.CSSProperties> = {
   cancelBtn: {
     background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: 10, padding: "8px 20px", color: "#8394b0", fontSize: 13, cursor: "pointer",
+  },
+  resetBtn: {
+    background: "transparent", border: "none",
+    color: "#4e5c72", fontSize: 13, cursor: "pointer", padding: "4px 8px",
+    textDecoration: "underline", textDecorationStyle: "dotted" as const,
   },
   closeBanner: {
     background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)",
