@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c1018"/>
+      <stop offset="100%" stop-color="#111820"/>
+    </linearGradient>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Camera icon outline -->
+  <rect x="96" y="176" width="320" height="224" rx="28" fill="none" stroke="url(#grad)" stroke-width="20"/>
+  <!-- Camera lens circle -->
+  <circle cx="256" cy="292" r="72" fill="none" stroke="url(#grad)" stroke-width="20"/>
+  <circle cx="256" cy="292" r="36" fill="url(#grad)" opacity="0.7"/>
+  <!-- Camera top bump -->
+  <path d="M200 176 L220 136 L292 136 L312 176" fill="none" stroke="url(#grad)" stroke-width="20" stroke-linejoin="round"/>
+  <!-- AI spark -->
+  <circle cx="380" cy="220" r="14" fill="#a855f7" opacity="0.9"/>
+  <path d="M380 200 L384 214 L398 218 L384 222 L380 236 L376 222 L362 218 L376 214 Z" fill="#fff" opacity="0.95"/>
+</svg>
