@@ -64,6 +64,7 @@ export default function HomePage() {
   const [canceling, setCanceling] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
   const [formError, setFormError] = useState("");
+  const [timeoutError, setTimeoutError] = useState("");
   const [rateLimitedUntil, setRateLimitedUntil] = useState<Date | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,6 +162,28 @@ export default function HomePage() {
     }
   }, [countdown, rateLimitedUntil]);
 
+  // Timeout automático: cancela job travado e mostra erro
+  useEffect(() => {
+    if (!job || !isGenerating) return;
+    const status = job.status;
+    // Fila/enviado sem entrar no RunPod: 3 minutos
+    const limitSec = (status === "queued" || status === "submitted") ? 180 : 360;
+    if (elapsedSec >= limitSec) {
+      const msg = (status === "queued" || status === "submitted")
+        ? "Algo deu errado — o servidor não conseguiu processar. Tenta novamente."
+        : "Algo deu errado — a geração demorou demais. Tenta novamente.";
+      setTimeoutError(msg);
+      // Cancela na API sem bloquear a UI
+      getToken().then(token => {
+        if (job.id) fetch(`/api/image-jobs/${job.id}/cancel`, {
+          method: "POST", headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      });
+      resetJob();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elapsedSec]);
+
   // Fallback: refresh ao voltar do background
   useEffect(() => {
     const onVisible = () => {
@@ -216,6 +239,7 @@ export default function HomePage() {
     if (!cenario.trim()) { setFormError("Descreva o cenário da foto"); return; }
 
     setFormError("");
+    setTimeoutError("");
     setSubmitting(true);
     setJob(null);
     await requestNotificationPermission();
@@ -454,6 +478,7 @@ export default function HomePage() {
                 <input type="text" placeholder="Ex: mesa rústica, fundo branco, estúdio com luz suave" value={cenario} onChange={(e) => setCenario(e.target.value)} required style={styles.input} />
               </div>
 
+              {timeoutError && <div style={{ ...styles.error, borderColor: "rgba(251,191,36,0.4)", background: "rgba(251,191,36,0.08)", color: "#fbbf24" }}>{timeoutError}</div>}
               {formError && <div style={styles.error}>{formError}</div>}
 
               <button
