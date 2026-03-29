@@ -607,7 +607,7 @@ export default function HomePage() {
               <div style={styles.blurWrapper}>
                 <img src={job.output_image_url} alt="base" style={{ ...styles.blurImg, filter: "blur(20px) brightness(0.6)" }} />
                 <div style={styles.blurOverlay} />
-                <div style={styles.blurBadge}><span style={styles.blurDot} />{statusLabel(videoJob.status, elapsedSec)}</div>
+                <div style={styles.blurBadge}><span style={styles.blurDot} />Vou fazer seu vídeo agora...</div>
               </div>
             )}
           </div>
