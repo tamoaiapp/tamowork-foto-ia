@@ -381,7 +381,7 @@ export default function HomePage() {
 
       {/* Header */}
       <header style={styles.header}>
-        <div style={styles.logo}>TamoWork <span style={styles.logoTag}>Foto IA</span></div>
+        <div style={styles.logo}>TamoWork</div>
         <div style={styles.headerRight}>
           {plan === "pro" && <span style={styles.proBadge}>✦ Pro</span>}
           <button onClick={() => router.push("/conta")} style={styles.accountBtn} title={user?.email}>
