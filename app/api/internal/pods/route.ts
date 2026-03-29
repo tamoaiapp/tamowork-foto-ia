@@ -52,18 +52,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Parar pod de vídeo se ocioso
-  if (!videoCount) {
-    try {
-      const status = await getPodStatus(VIDEO_POD_ID);
-      if (status === "RUNNING") {
-        await stopPod(VIDEO_POD_ID);
-        stopped.push(`video:${VIDEO_POD_ID}`);
-      }
-    } catch (e) {
-      errors.push(`video:${VIDEO_POD_ID}: ${e}`);
-    }
-  }
+  // Pod de vídeo nunca é desligado automaticamente
 
   return NextResponse.json({
     ok: true,
