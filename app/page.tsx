@@ -213,6 +213,7 @@ export default function HomePage() {
     e.preventDefault();
     if (!imageFile) { setFormError("Envie uma foto do produto"); return; }
     if (!produto.trim()) { setFormError("Descreva o produto"); return; }
+    if (!cenario.trim()) { setFormError("Descreva o cenário da foto"); return; }
 
     setFormError("");
     setSubmitting(true);
@@ -449,18 +450,18 @@ export default function HomePage() {
               </div>
 
               <div style={styles.fieldGroup}>
-                <label style={styles.label}>Cenário <span style={{ color: "#4e5c72" }}>(opcional)</span></label>
-                <input type="text" placeholder="Ex: mesa rústica, fundo branco, estúdio com luz suave" value={cenario} onChange={(e) => setCenario(e.target.value)} style={styles.input} />
+                <label style={styles.label}>Cenário</label>
+                <input type="text" placeholder="Ex: mesa rústica, fundo branco, estúdio com luz suave" value={cenario} onChange={(e) => setCenario(e.target.value)} required style={styles.input} />
               </div>
 
               {formError && <div style={styles.error}>{formError}</div>}
 
               <button
                 type="submit"
-                disabled={submitting || (!!rateLimitedUntil && countdown > 0)}
+                disabled={submitting || (!!rateLimitedUntil && countdown > 0) || !cenario.trim()}
                 style={{
                   ...styles.submitBtn,
-                  opacity: (submitting || (!!rateLimitedUntil && countdown > 0)) ? 0.5 : 1,
+                  opacity: (submitting || (!!rateLimitedUntil && countdown > 0) || !cenario.trim()) ? 0.5 : 1,
                 }}
               >
                 {submitting ? "Enviando..." : "✨ Gerar foto com IA"}
