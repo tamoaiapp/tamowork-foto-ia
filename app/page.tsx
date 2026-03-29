@@ -358,7 +358,7 @@ export default function HomePage() {
     router.push("/login");
   }
 
-  const isGenerating = submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled");
+  const isGenerating = (submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled")) && job?.status !== "done";
 
   if (loading) return <div style={styles.centered}>Carregando...</div>;
 
@@ -749,7 +749,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: 10, padding: "6px 14px", color: "#8394b0", fontSize: 13, cursor: "pointer",
   },
-  main: { flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 24px" },
+  main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "40px 24px" },
   card: {
     background: "#111820", border: "1px solid rgba(255,255,255,0.07)",
     borderRadius: 22, padding: "36px 32px", width: "100%", maxWidth: 520,
