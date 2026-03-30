@@ -48,14 +48,14 @@ export const RULES: Record<string, Rule> = {
   },
   wear_waist_legs: {
     pos_add: [
-      "Product is worn on the lower body (waist, hips, or legs), realistic fit.",
-      "Show the product in correct placement on the lower half of a real person.",
+      "The clothing is actively worn on the lower body of a real person.",
+      "Show the garment on a person — not on a hanger, not on a table, not floating.",
       "The product must be clearly visible from waist to knee or ankle as appropriate.",
     ],
     neg_add: [
-      "No hand holding the product.",
-      "No packaging.",
-      "No floating product.",
+      "No product on table.", "No product on surface.", "No product on hanger.",
+      "No floating garment.", "No packaging.", "No disembodied clothing.",
+      "Do not show the product alone without a person wearing it.",
       "Do not place the product on the upper body.",
     ],
   },
@@ -72,8 +72,8 @@ export const RULES: Record<string, Rule> = {
     neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
   },
   wear_back: {
-    pos_add: ["Product is worn on the back, person facing away from camera."],
-    neg_add: ["No hand holding.", "No packaging."],
+    pos_add: ["Product is worn on the back of a real person, person facing away from camera."],
+    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
   },
   wear_crossbody: {
     pos_add: [
