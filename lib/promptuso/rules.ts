@@ -90,41 +90,64 @@ export const RULES: Record<string, Rule> = {
     ],
   },
   hold_device: {
-    pos_add: ["Device is held naturally for use."],
-    neg_add: ["No packaging."],
+    pos_add: [
+      "A real person holds the device naturally in hand, in correct usage position.",
+      "The device screen or front face must be clearly visible.",
+      "Natural relaxed pose, realistic grip.",
+    ],
+    neg_add: [
+      "No product on table.", "No product alone.", "No floating device.",
+      "No packaging.", "Do not show device without a person holding it.",
+    ],
   },
   hold_bag_hand: {
     pos_add: [
-      "HUMAN USE REQUIRED.",
-      "Create a real person holding the bag naturally in one hand.",
+      "A real person holds the bag naturally in one hand.",
       "The bag must be clearly visible and unobstructed.",
       "Natural relaxed standing pose.",
       "Realistic product size relative to the hand and body.",
-      "Use a simple realistic environment.",
     ],
     neg_add: [
-      "No mannequin.",
-      "No dummy.",
-      "No packaging.",
-      "No product alone.",
-      "No floating bag.",
+      "No mannequin.", "No dummy.", "No packaging.",
+      "No product on table.", "No product alone.", "No floating bag.",
+      "Do not show bag without a person holding it.",
     ],
   },
   hold_tool_safe: {
-    pos_add: ["Tool is held safely in hand, no action."],
-    neg_add: ["No cutting.", "No aggressive action."],
+    pos_add: [
+      "A real person holds the tool safely in hand, neutral non-threatening pose.",
+      "Tool is clearly visible and correctly oriented for its intended use.",
+    ],
+    neg_add: [
+      "No cutting action.", "No aggressive action.", "No product on table.",
+      "No product alone.", "No packaging.", "Do not show tool without a person holding it.",
+    ],
   },
   hold_food_display: {
-    pos_add: ["Food product displayed ready to consume, held naturally."],
-    neg_add: ["No packaging.", "No hand."],
+    pos_add: [
+      "Food product presented on a clean surface or wooden board, styled for photography.",
+      "Professional food photography lighting, appetizing presentation.",
+      "No person needed — focus entirely on the food product.",
+    ],
+    neg_add: ["No packaging.", "No floating.", "No hand in frame.", "No cluttered background."],
   },
   hold_sport_object: {
-    pos_add: ["Sport object held naturally in correct sport context."],
-    neg_add: ["No packaging."],
+    pos_add: [
+      "A real person holds or uses the sport object naturally in correct sport context.",
+      "Active or ready pose appropriate to the sport.",
+      "Realistic environment matching the sport.",
+    ],
+    neg_add: [
+      "No product on table.", "No product alone.", "No floating.",
+      "No packaging.", "Do not show sport object without a person using it.",
+    ],
   },
   hold_display: {
-    pos_add: ["Product displayed cleanly, centered."],
-    neg_add: ["No hand.", "No packaging."],
+    pos_add: [
+      "Product displayed cleanly on a neutral surface, centered, professional product photography.",
+      "Soft even lighting, minimal background.",
+    ],
+    neg_add: ["No hand visible.", "No packaging.", "No cluttered background.", "No floating."],
   },
   scene_tabletop: {
     pos_add: ["Product placed on a clean indoor table surface."],
