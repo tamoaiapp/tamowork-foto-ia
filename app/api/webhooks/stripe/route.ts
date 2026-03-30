@@ -3,10 +3,12 @@ import Stripe from "stripe";
 import { setUserPro } from "@/lib/plans";
 import { createServerClient } from "@/lib/supabase/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
-
 export async function POST(req: NextRequest) {
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+    return NextResponse.json({ error: "Stripe não configurado" }, { status: 503 });
+  }
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
   const rawBody = await req.text();
   const sig = req.headers.get("stripe-signature") ?? "";
 
@@ -29,8 +31,9 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ ok: true });
 
     const sub = await stripe.subscriptions.retrieve(session.subscription as string);
-    const periodEnd = new Date(sub.current_period_end * 1000);
-    periodEnd.setMonth(periodEnd.getMonth() + 1); // adiciona 1 mês de margem
+    const subData = sub as unknown as { current_period_end: number; customer: string; id: string; metadata: Record<string, string> };
+    const periodEnd = new Date(subData.current_period_end * 1000);
+    periodEnd.setMonth(periodEnd.getMonth() + 1);
 
     await setUserPro(userId, {
       periodEnd,
@@ -43,19 +46,20 @@ export async function POST(req: NextRequest) {
 
   // Renovação da assinatura
   if (event.type === "invoice.paid") {
-    const invoice = event.data.object as Stripe.Invoice;
+    const invoice = event.data.object as Stripe.Invoice & { subscription?: string };
     const subId = invoice.subscription as string;
     if (!subId) return NextResponse.json({ ok: true });
 
     const sub = await stripe.subscriptions.retrieve(subId);
-    const userId = sub.metadata?.userId;
+    const subData2 = sub as unknown as { current_period_end: number; customer: string; id: string; metadata: Record<string, string> };
+    const userId = subData2.metadata?.userId;
     if (!userId) return NextResponse.json({ ok: true });
 
-    const periodEnd = new Date(sub.current_period_end * 1000);
+    const periodEnd = new Date(subData2.current_period_end * 1000);
     await setUserPro(userId, {
       periodEnd,
-      stripeCustomerId: sub.customer as string,
-      stripeSubscriptionId: sub.id,
+      stripeCustomerId: subData2.customer as string,
+      stripeSubscriptionId: subData2.id,
     });
 
     console.log(`[Stripe] Renovado user ${userId} até ${periodEnd.toISOString()}`);

@@ -17,9 +17,10 @@ export default function LoginPage() {
   async function handleGoogle() {
     setGoogleLoading(true);
     setError("");
+    const done = typeof window !== "undefined" && localStorage.getItem("tw_onboarding_done");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/` },
+      options: { redirectTo: `${window.location.origin}${done ? "/" : "/onboarding"}` },
     });
     if (error) {
       setError(error.message);
@@ -33,14 +34,15 @@ export default function LoginPage() {
     setError("");
     setMsg("");
 
+    const done = typeof window !== "undefined" && localStorage.getItem("tw_onboarding_done");
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
-      else router.push("/");
+      else router.push(done ? "/" : "/onboarding");
     } else {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) setError(error.message);
-      else if (data.session) router.push("/");
+      else if (data.session) router.push("/onboarding");
       else setMsg("Verifique seu e-mail para confirmar o cadastro.");
     }
 
