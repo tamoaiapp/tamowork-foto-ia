@@ -256,7 +256,14 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
   }
 
   if (forceHum) {
-    pos.push(`Subject: ${persona.subject}.`, "HUMAN REFERENCE REQUIRED.", "The human reference must show realistic scale and size.", "Use a real human. Replace any mannequin, bust, head form, dummy, or display stand with a real human.");
+    pos.push(
+      `Subject: ${persona.subject}.`,
+      "HUMAN REFERENCE REQUIRED.",
+      "The human reference must show realistic scale and size.",
+      "Use a real human. Replace any mannequin, bust, head form, dummy, display stand, or clothing hanger with a real human wearing the product.",
+      "If the input image shows the product on a hanger, remove the hanger completely and show a real person wearing the product instead.",
+      "If the input image shows the product on a mannequin or display, remove it and replace with a real person wearing the product.",
+    );
   }
 
   const rule = loadRule(slot);
@@ -285,7 +292,7 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
   neg.push("Do not change, redesign, stylize, resize, warp, or distort the product.", "Do not move the product to the wrong body location or wrong usage position.", "No text, logos, watermarks.", "No duplicate product.", "No extra objects distracting from the product.");
 
   if (forceHum) {
-    neg.push("No mannequin. No bust. No head form. No dummy. No display stand. No product on mannequin.");
+    neg.push("No mannequin. No bust. No head form. No dummy. No display stand. No product on mannequin. No hanger. No clothing rail. No product hanging. No product alone without person.");
   }
 
   neg.push("Do not invent decorations, fantasy elements, costumes, props, or themed add-ons.", "Do not reinterpret the product as a costume or novelty item.", "No floating product.", "No unrealistic glamour effects.");
