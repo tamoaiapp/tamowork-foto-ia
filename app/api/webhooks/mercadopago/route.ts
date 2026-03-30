@@ -5,6 +5,7 @@ import { createServerClient } from "@/lib/supabase/server";
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!;
 const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET!;
+const MP_MONTHLY_PLAN_ID = process.env.MP_MONTHLY_PLAN_ID ?? "";
 
 function validateSignature(req: NextRequest, rawBody: string, dataId: string): boolean {
   if (!MP_WEBHOOK_SECRET) return true; // skip in dev if not set
@@ -58,9 +59,9 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ ok: true });
 
     if (sub.status === "authorized") {
-      // Calculate period end: 12 months from now
+      const isMonthly = sub.preapproval_plan_id === MP_MONTHLY_PLAN_ID;
       const periodEnd = new Date();
-      periodEnd.setMonth(periodEnd.getMonth() + 12);
+      periodEnd.setMonth(periodEnd.getMonth() + (isMonthly ? 1 : 12));
 
       await setUserPro(userId, {
         periodEnd,

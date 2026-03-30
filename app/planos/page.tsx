@@ -243,6 +243,7 @@ export default function PlanosPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMP, setLoadingMP] = useState(false);
+  const [loadingMPMonthly, setLoadingMPMonthly] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -254,6 +255,32 @@ export default function PlanosPage() {
       }
     });
   }, [router]);
+
+  async function handleMPMonthly() {
+    if (!user) return;
+    setLoadingMPMonthly(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/checkout/mercadopago", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan: "monthly" }),
+      });
+      const json = await res.json();
+      if (json.init_point) {
+        window.location.href = json.init_point;
+      } else {
+        alert("Erro ao iniciar pagamento. Tente novamente.");
+      }
+    } catch {
+      alert("Erro ao iniciar pagamento. Tente novamente.");
+    } finally {
+      setLoadingMPMonthly(false);
+    }
+  }
 
   async function handleMercadoPago() {
     if (!user) return;
@@ -361,18 +388,23 @@ export default function PlanosPage() {
               ))}
             </ul>
             <button
-              style={styles.btnSecondary}
-              onClick={() => alert("Em breve! Stripe chegando em breve.")}
+              style={{ ...styles.btnSecondary, opacity: loadingMPMonthly ? 0.7 : 1 }}
+              onClick={handleMPMonthly}
+              disabled={loadingMPMonthly}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "rgba(139,92,246,0.08)";
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#8b5cf6";
+                if (!loadingMPMonthly) {
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(139,92,246,0.08)";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "#8b5cf6";
+                }
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(139,92,246,0.4)";
+                if (!loadingMPMonthly) {
+                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(139,92,246,0.4)";
+                }
               }}
             >
-              Assinar por R$49/mês
+              {loadingMPMonthly ? "Aguarde..." : "Assinar por R$49/mês"}
             </button>
             <div style={styles.btnNote}>&nbsp;</div>
           </div>
