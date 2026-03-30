@@ -3,9 +3,7 @@ import { COMFY_BASES, getComfyHistory } from "@/lib/comfyui/client";
 import { checkRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { finalizeImageJob } from "@/lib/image-jobs/finalize";
 
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
-
-const MAX_ATTEMPTS = 40; // 40 × 45s ≈ 30 minutos
+const MAX_ATTEMPTS = 40; // 40 × ~60s ≈ 40 minutos (cron a cada 1 min)
 
 export async function checkImageJob(jobId: string) {
   const supabase = createServerClient();
@@ -66,20 +64,19 @@ export async function checkImageJob(jobId: string) {
           .from("image_jobs")
           .update({ status: "queued", external_job_id: null })
           .eq("id", jobId);
-        await scheduleRetrySubmit(jobId);
+        // cron vai resubmeter automaticamente no próximo ciclo
       } else {
         await supabase
           .from("image_jobs")
           .update({ status: "failed", error_message: "Falha no RunPod Serverless" })
           .eq("id", jobId);
       }
-    } else {
-      await scheduleNextCheck(jobId);
     }
+    // se pending: cron verifica novamente no próximo minuto
     return;
   }
 
-  // Legado: ComfyUI direto (formato "{comfyIndex}:{promptId}")
+  // ComfyUI direto (formato "{comfyIndex}:{promptId}")
   const colonIdx = external_job_id.indexOf(":");
   let comfyIndex = 0;
   let promptId = external_job_id;
@@ -105,34 +102,13 @@ export async function checkImageJob(jobId: string) {
         .from("image_jobs")
         .update({ status: "queued", external_job_id: null })
         .eq("id", jobId);
-      await scheduleRetrySubmit(jobId);
+      // cron vai resubmeter automaticamente no próximo ciclo
     } else {
       await supabase
         .from("image_jobs")
         .update({ status: "failed", error_message: "Falha após tentativas no ComfyUI" })
         .eq("id", jobId);
     }
-  } else {
-    await scheduleNextCheck(jobId);
   }
-}
-
-async function scheduleNextCheck(jobId: string) {
-  const { qstash } = await import("@/lib/qstash/client");
-  await qstash.publishJSON({
-    url: `${process.env.APP_URL}/api/internal/image-jobs/check`,
-    delay: 45,
-    body: { jobId },
-    headers: { "x-internal-secret": INTERNAL_SECRET },
-  });
-}
-
-async function scheduleRetrySubmit(jobId: string) {
-  const { qstash } = await import("@/lib/qstash/client");
-  await qstash.publishJSON({
-    url: `${process.env.APP_URL}/api/internal/image-jobs/submit`,
-    delay: 5,
-    body: { jobId },
-    headers: { "x-internal-secret": INTERNAL_SECRET },
-  });
+  // se pending: cron verifica novamente no próximo minuto
 }

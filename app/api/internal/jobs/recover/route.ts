@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { qstash } from "@/lib/qstash/client";
+import { submitImageJob } from "@/lib/image-jobs/submit";
+import { checkImageJob } from "@/lib/image-jobs/check";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
-const APP_URL = process.env.APP_URL ?? "";
 
-// Chamado pelo Vercel Cron a cada 10 minutos
-// Recupera jobs presos em queued/submitted por mais de 8 minutos
+// Vercel Cron: roda a cada 1 minuto
+// Processa jobs queued (submete) e submitted/processing (verifica resultado)
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization") ?? "";
   const internalHeader = req.headers.get("x-internal-secret") ?? "";
@@ -18,46 +18,37 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = createServerClient();
-  const cutoff = new Date(Date.now() - 8 * 60 * 1000).toISOString();
+  const cutoff = new Date(Date.now() - 60 * 1000).toISOString(); // jobs com >1 min sem atualização
 
-  const [{ data: stuckQueued }, { data: stuckProcessing }] = await Promise.all([
-    supabase.from("image_jobs").select("id").eq("status", "queued").lt("updated_at", cutoff).limit(10),
+  const [{ data: queuedJobs }, { data: processingJobs }] = await Promise.all([
+    supabase.from("image_jobs").select("id").eq("status", "queued").lt("updated_at", cutoff).limit(5),
     supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", cutoff).limit(10),
   ]);
 
-  const results: { id: string; action: string; ok: boolean }[] = [];
+  const results: { id: string; action: string; ok: boolean; error?: string }[] = [];
 
-  // Enfileira via QStash (não faz fetch direto — evita timeout)
-  for (const job of stuckQueued ?? []) {
+  // Submete jobs queued
+  for (const job of queuedJobs ?? []) {
     try {
-      await qstash.publishJSON({
-        url: `${APP_URL}/api/internal/image-jobs/submit`,
-        body: { jobId: job.id },
-        headers: { "x-internal-secret": INTERNAL_SECRET },
-        delay: 2,
-      });
-      results.push({ id: job.id, action: "resubmit", ok: true });
-    } catch {
-      results.push({ id: job.id, action: "resubmit", ok: false });
+      await submitImageJob(job.id);
+      results.push({ id: job.id, action: "submit", ok: true });
+    } catch (e) {
+      results.push({ id: job.id, action: "submit", ok: false, error: String((e as Error)?.message ?? e) });
     }
   }
 
-  for (const job of stuckProcessing ?? []) {
+  // Verifica jobs em andamento
+  for (const job of processingJobs ?? []) {
     try {
-      await qstash.publishJSON({
-        url: `${APP_URL}/api/internal/image-jobs/check`,
-        body: { jobId: job.id },
-        headers: { "x-internal-secret": INTERNAL_SECRET },
-        delay: 2,
-      });
-      results.push({ id: job.id, action: "recheck", ok: true });
-    } catch {
-      results.push({ id: job.id, action: "recheck", ok: false });
+      await checkImageJob(job.id);
+      results.push({ id: job.id, action: "check", ok: true });
+    } catch (e) {
+      results.push({ id: job.id, action: "check", ok: false, error: String((e as Error)?.message ?? e) });
     }
   }
 
   return NextResponse.json({
-    recovered: results.length,
+    processed: results.length,
     results,
     timestamp: new Date().toISOString(),
   });
