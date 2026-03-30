@@ -263,6 +263,7 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
       "Use a real human. Replace any mannequin, bust, head form, dummy, display stand, or clothing hanger with a real human wearing the product.",
       "If the input image shows the product on a hanger, remove the hanger completely and show a real person wearing the product instead.",
       "If the input image shows the product on a mannequin or display, remove it and replace with a real person wearing the product.",
+      "If the input image shows the product inside packaging, a box, a card, or a blister pack — remove the packaging completely and show only the product being worn or used by a real person.",
     );
   }
 
