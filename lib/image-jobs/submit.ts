@@ -39,11 +39,15 @@ export async function submitImageJob(jobId: string) {
   if (isLocalhost) {
     setTimeout(() => checkImageJob(jobId).catch(console.error), 45_000);
   } else {
-    await qstash.publishJSON({
+    // Tenta QStash; se falhar (ex: limite diário), usa setTimeout como fallback
+    qstash.publishJSON({
       url: `${process.env.APP_URL}/api/internal/image-jobs/check`,
       delay: 45,
       body: { jobId },
       headers: { "x-internal-secret": INTERNAL_SECRET },
+    }).catch((err) => {
+      console.error("[submit] QStash falhou, usando setTimeout:", err?.message ?? err);
+      setTimeout(() => checkImageJob(jobId).catch(console.error), 45_000);
     });
   }
 }
