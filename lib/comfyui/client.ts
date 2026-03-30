@@ -56,8 +56,10 @@ export async function uploadImageToComfy(imageUrl: string, comfyBase: string, jo
   const filename = jobId ? `product_${jobId.replace(/-/g, "").slice(0, 12)}.jpg` : `product_${Date.now()}.jpg`;
 
   const form = new FormData();
-  const blob = new Blob([buffer], { type: "image/jpeg" });
-  form.append("image", blob, filename);
+  // Usar File (não Blob) para garantir que o filename seja incluído corretamente
+  // no multipart pelo fetch nativo do Node.js 18
+  const file = new File([buffer], filename, { type: "image/jpeg" });
+  form.append("image", file);
   form.append("overwrite", "true");
 
   const res = await fetch(`${comfyBase}/upload/image`, {
