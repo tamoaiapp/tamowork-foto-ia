@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { pickComfyBase, uploadImageToComfy, submitWorkflow } from "@/lib/comfyui/client";
+import { COMFY_BASES, uploadImageToComfy, submitWorkflow } from "@/lib/comfyui/client";
 import { qstash } from "@/lib/qstash/client";
 
 const BUBBLE_API_KEY = process.env.BUBBLE_API_KEY ?? "";
@@ -55,8 +55,10 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Upload + submit direto no ComfyUI usando o UUID real (~2s)
+  // Sempre usa o pod3 (index 0) — sempre ligado
   try {
-    const { base: comfyBase, index: comfyIndex } = pickComfyBase();
+    const comfyIndex = 0;
+    const comfyBase = COMFY_BASES[0];
     const imageName = await uploadImageToComfy(image_url, comfyBase, job.id);
     const promptId = await submitWorkflow(job.id, imageName, prompt_pos, prompt_neg ?? "nao mexa no produto", comfyBase);
 
