@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-type Screen = 0 | 1 | 2 | 3 | 4 | 5 | 6 | "paywall";
+type Screen = 0 | 1 | 2 | 3 | 4 | 5 | 6 | "register" | "paywall";
 type Plan = "weekly" | "annual";
 
 const YELLOW = "#F5C518";
-const TOTAL_STEPS = 7; // telas 1-6 + paywall
+const TOTAL_STEPS = 8; // telas 1-6 + registro + paywall
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -17,6 +17,14 @@ export default function OnboardingPage() {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [notifState, setNotifState] = useState<"pending" | "done">("pending");
   const [animating, setAnimating] = useState(false);
+
+  // Register state
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
+  const [regError, setRegError] = useState("");
+  const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
     // Se já fez onboarding, vai pro app
@@ -36,7 +44,7 @@ export default function OnboardingPage() {
         if (s === 3) return 4;
         if (s === 4) return 5;
         if (s === 5) return 6;
-        if (s === 6) return "paywall";
+        if (s === 6) return "register";
         return "paywall";
       });
       setAnimating(false);
@@ -49,6 +57,54 @@ export default function OnboardingPage() {
     }
     setNotifState("done");
     goNext();
+  }
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault();
+    setRegLoading(true);
+    setRegError("");
+
+    // Verifica se já está logado
+    const { data: { user: existing } } = await supabase.auth.getUser();
+    if (existing) {
+      setScreen("paywall");
+      setRegLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: regEmail,
+      password: regPassword,
+      options: { data: { full_name: regName } },
+    });
+
+    if (error) {
+      const m = error.message.toLowerCase();
+      if (m.includes("already registered") || m.includes("already exists")) {
+        // Tenta logar
+        const { error: loginErr } = await supabase.auth.signInWithPassword({ email: regEmail, password: regPassword });
+        if (loginErr) {
+          setRegError("E-mail já cadastrado. Verifique sua senha.");
+        } else {
+          setScreen("paywall");
+        }
+      } else if (m.includes("password")) {
+        setRegError("Senha deve ter pelo menos 6 caracteres.");
+      } else if (m.includes("email")) {
+        setRegError("E-mail inválido.");
+      } else {
+        setRegError("Erro ao criar conta. Tente novamente.");
+      }
+      setRegLoading(false);
+      return;
+    }
+
+    if (data.session || data.user) {
+      setScreen("paywall");
+    } else {
+      setRegError("Verifique seu e-mail para confirmar o cadastro.");
+    }
+    setRegLoading(false);
   }
 
   async function handleCheckout() {
@@ -84,7 +140,7 @@ export default function OnboardingPage() {
     router.replace("/");
   }
 
-  const step = screen === "paywall" ? TOTAL_STEPS : typeof screen === "number" ? screen : 0;
+  const step = screen === "paywall" ? TOTAL_STEPS : screen === "register" ? TOTAL_STEPS - 1 : typeof screen === "number" ? screen : 0;
   const progress = screen === 0 ? 0 : (step / TOTAL_STEPS);
 
   return (
@@ -349,6 +405,80 @@ export default function OnboardingPage() {
             <div style={s.bottomArea}>
               <button style={s.btnYellow} onClick={goNext}>Continuar</button>
             </div>
+          </div>
+        )}
+
+        {/* TELA REGISTRO */}
+        {screen === "register" && (
+          <div style={s.contentScreen}>
+            <h1 style={{ ...s.screenTitle, color: "#fff" }}>
+              Crie sua conta{"\n"}
+              <span style={{ color: YELLOW }}>gratuita</span>
+            </h1>
+            <p style={{ ...s.screenSub, marginBottom: 28 }}>
+              Acesse suas fotos e vídeos de qualquer lugar.
+            </p>
+
+            <form onSubmit={handleRegister} style={s.regForm}>
+              <div style={s.regField}>
+                <label style={s.regLabel}>Nome</label>
+                <input
+                  type="text"
+                  placeholder="Seu nome"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  required
+                  style={s.regInput}
+                />
+              </div>
+              <div style={s.regField}>
+                <label style={s.regLabel}>E-mail</label>
+                <input
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  required
+                  style={s.regInput}
+                />
+              </div>
+              <div style={s.regField}>
+                <label style={s.regLabel}>Senha</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPass ? "text" : "password"}
+                    placeholder="Mínimo 6 caracteres"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    style={{ ...s.regInput, paddingRight: 44 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    style={s.eyeBtn}
+                  >
+                    {showPass ? "🙈" : "👁️"}
+                  </button>
+                </div>
+              </div>
+
+              {regError && <div style={s.regError}>{regError}</div>}
+
+              <div style={{ ...s.bottomArea, paddingTop: 8 }}>
+                <button
+                  type="submit"
+                  disabled={regLoading}
+                  style={{ ...s.btnYellow, opacity: regLoading ? 0.7 : 1 }}
+                >
+                  {regLoading ? "Criando conta..." : "Criar conta grátis"}
+                </button>
+                <button type="button" style={s.btnGhost} onClick={() => setScreen("paywall")}>
+                  Já tenho conta
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
@@ -930,6 +1060,57 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 11,
     color: "rgba(255,255,255,0.3)",
     cursor: "pointer",
+  },
+
+  // Register form
+  regForm: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    flex: 1,
+  },
+  regField: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+  regLabel: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "rgba(255,255,255,0.7)",
+    letterSpacing: "0.03em",
+  },
+  regInput: {
+    background: "#111",
+    border: "1.5px solid #222",
+    borderRadius: 14,
+    padding: "14px 16px",
+    color: "#fff",
+    fontSize: 16,
+    outline: "none",
+    width: "100%",
+    boxSizing: "border-box" as const,
+    fontFamily: "'Outfit', sans-serif",
+  },
+  eyeBtn: {
+    position: "absolute" as const,
+    right: 14,
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: 18,
+    lineHeight: 1,
+    padding: 0,
+  },
+  regError: {
+    background: "rgba(239,68,68,0.1)",
+    border: "1px solid rgba(239,68,68,0.3)",
+    borderRadius: 12,
+    padding: "12px 16px",
+    color: "#f87171",
+    fontSize: 14,
   },
 
   // Buttons
