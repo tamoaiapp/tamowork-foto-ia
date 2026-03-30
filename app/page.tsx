@@ -130,6 +130,11 @@ export default function HomePage() {
       if (blurRef.current) clearInterval(blurRef.current);
       if (elapsedRef.current) clearInterval(elapsedRef.current);
       setShowCancel(false);
+      // Se falhou, reseta automaticamente para o formulário com mensagem de erro
+      if (job.status === "failed") {
+        setTimeoutError("Algo deu errado na geração. Tenta novamente.");
+        resetJob();
+      }
       return;
     }
 
@@ -551,13 +556,6 @@ export default function HomePage() {
 
             {/* Botão de notificação */}
             <NotifyButton onRequest={requestNotificationPermission} />
-
-            {/* Resetar — sempre visível */}
-            <div style={{ textAlign: "center", marginTop: 8 }}>
-              <button onClick={resetJob} style={styles.resetBtn}>
-                ↺ Recomeçar do zero
-              </button>
-            </div>
           </div>
         )}
 
