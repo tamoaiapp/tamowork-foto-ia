@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+
+const BA_PAIRS = [
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774905957814x838805777189324400/image-5225659771593071006.jpg", after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/53cd979b-6ae5-4083-a1de-b83fd73bc435.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzUzY2Q5NzliLTZhZTUtNDA4My1hMWRlLWI4M2ZkNzNiYzQzNS5qcGciLCJpYXQiOjE3NzQ5MDYxNDgsImV4cCI6MTc3NTUxMDk0OH0.HdV7qQ3LZWHZT3S6d-YsFR-ITXN6sxPxTWDdOhxSF_k" },
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774905180114x626211159699717100/1000733252.png",            after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/f32b4d0c-f5a8-4786-a1dc-bdfc2e6c53d4.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2YzMmI0ZDBjLWY1YTgtNDc4Ni1hMWRjLWJkZmMyZTZjNTNkNC5qcGciLCJpYXQiOjE3NzQ5MDU3MjgsImV4cCI6MTc3NTUxMDUyOH0.W_v2tcmb0gQ3MEwoTsQ-ONp72OojZ00Jkx9PBhQaY8c" },
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774904960502x809015720306143000/635767.jpg",               after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/2d800520-ce15-4c2e-87a7-a47118241323.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzJkODAwNTIwLWNlMTUtNGMyZS04N2E3LWE0NzExODI0MTMyMy5qcGciLCJpYXQiOjE3NzQ5MDU0MDMsImV4cCI6MTc3NTUxMDIwM30.in0OxDtu1Ua5eGIBpCecCukWU_lSv05r7xEY2EXYmJc" },
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774904554729x366067643732088000/1000678841.jpg",           after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/d04dcd95-5e69-4598-bdc9-6902346ca943.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2QwNGRjZDk1LTVlNjktNDU5OC1iZGM5LTY5MDIzNDZjYTk0My5qcGciLCJpYXQiOjE3NzQ5MDQ4MjgsImV4cCI6MTc3NTUwOTYyOH0.HFoUVI-96vCNY9hYKAg3aUiKHyvsuOFQk_u7dxvwtHE" },
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774904228434x480807660070337040/A02F864D-0FF1-47B3-BE1B-C4E5E4956F40.jpeg", after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/6688e0f3-92c2-4259-bf52-83b70d2a89e8.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzY2ODhlMGYzLTkyYzItNDI1OS1iZjUyLTgzYjcwZDJhODllOC5qcGciLCJpYXQiOjE3NzQ5MDQ0MjksImV4cCI6MTc3NTUwOTIyOX0.a8NisW-0zxdGXp81ZBqlXoI7Fk6ibtwq-pDCiMkZxe0" },
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774903642221x476199199153923800/IMG_1277.jpeg",            after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/44f1bc7c-ac3a-4f9c-b11f-b55e9bcc4fc3.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzQ0ZjFiYzdjLWFjM2EtNGY5Yy1iMTFmLWI1NWU5YmNjNGZjMy5qcGciLCJpYXQiOjE3NzQ5MDM4MzIsImV4cCI6MTc3NTUwODYzMn0.XtaUpC8xu77dzp_mGx8_sCAixmGVG4lJ36te50WaKoQ" },
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774903376030x609205702973705500/635662.jpg",               after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/6061dcb7-774c-443b-b8f3-c2c52964933f.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzYwNjFkY2I3LTc3NGMtNDQzYi1iOGYzLWMyYzUyOTY0OTMzZi5qcGciLCJpYXQiOjE3NzQ5MDM3MTAsImV4cCI6MTc3NTUwODUxMH0.dBpySRlPjl_pjIe3j0K3aj018uVkvamhiEqSzOa280E" },
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774902267384x443968846076211650/635654.jpg",               after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/b31173e3-22bb-4b37-a6a8-cb5335ef845f.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2IzMTE3M2UzLTIyYmItNGIzNy1hNmE4LWNiNTMzNWVmODQ1Zi5qcGciLCJpYXQiOjE3NzQ5MDI1NDgsImV4cCI6MTc3NTUwNzM0OH0.xREBBTI03Rco1tzjLLALLC9xSp7_zWY0hrsfBWl6GRE" },
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774901936285x517994942192998600/1003052097.jpg",           after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/44250a44-2eae-4069-aafe-9e0456570dfd.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzQ0MjUwYTQ0LTJlYWUtNDA2OS1hYWZlLTllMDQ1NjU3MGRmZC5qcGciLCJpYXQiOjE3NzQ5MDIxMjksImV4cCI6MTc3NTUwNjkyOX0.I70h3kWeEw1Emismbbd-ypcYN8ERoEypj6KVmrJ6qf4" },
+  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774901746173x960644641282296700/634901.jpg",               after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/27e549d1-8cf3-408d-8ca6-b6ebd3a4f12a.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzI3ZTU0OWQxLThjZjMtNDA4ZC04Y2E2LWI2ZWJkM2E0ZjEyYS5qcGciLCJpYXQiOjE3NzQ5MDIwNDcsImV4cCI6MTc3NTUwNjg0N30.PtCzKjw16ubKpl0gLkUxoTpQwvWjVM7x3blP3Zgiu34" },
+];
 
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | "register" | "paywall";
 type Plan = "weekly" | "annual";
@@ -13,6 +26,87 @@ const BG = "#07080b";
 const CARD = "#111820";
 const LINE = "rgba(255,255,255,0.07)";
 const TOTAL_STEPS = 7; // telas 1-6 + registro + paywall
+
+function BaCarousel() {
+  const [idx, setIdx] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    timerRef.current = setTimeout(() => setIdx(i => (i + 1) % BA_PAIRS.length), 2800);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [idx]);
+
+  const pair = BA_PAIRS[idx];
+
+  return (
+    <div style={{ width: "100%", position: "relative", marginBottom: 4 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+        {/* Antes */}
+        <div style={{ flex: 1, position: "relative" }}>
+          <img
+            key={`b-${idx}`}
+            src={pair.before}
+            alt="antes"
+            style={{
+              width: "100%", aspectRatio: "0.85", objectFit: "cover",
+              borderRadius: 16, border: "1px solid #1e2230",
+              animation: "baFadeIn 0.4s ease",
+            }}
+          />
+          <span style={{
+            position: "absolute", bottom: 8, left: 8,
+            background: "rgba(0,0,0,0.72)", color: "#888",
+            fontSize: 11, fontWeight: 700, padding: "3px 8px",
+            borderRadius: 6, letterSpacing: 1,
+          }}>ANTES</span>
+        </div>
+
+        {/* Seta */}
+        <div style={{ display: "flex", alignItems: "center", flexShrink: 0, fontSize: 20, color: ACCENT }}>→</div>
+
+        {/* Depois */}
+        <div style={{ flex: 1, position: "relative" }}>
+          <img
+            key={`a-${idx}`}
+            src={pair.after}
+            alt="depois"
+            style={{
+              width: "100%", aspectRatio: "0.85", objectFit: "cover",
+              borderRadius: 16, border: `2px solid ${ACCENT}60`,
+              boxShadow: `0 0 20px ${ACCENT}30`,
+              animation: "baFadeIn 0.4s ease",
+            }}
+          />
+          <span style={{
+            position: "absolute", bottom: 8, left: 8,
+            background: ACCENT, color: "#fff",
+            fontSize: 11, fontWeight: 700, padding: "3px 8px",
+            borderRadius: 6, letterSpacing: 1,
+          }}>DEPOIS</span>
+        </div>
+      </div>
+
+      {/* Dots */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 10 }}>
+        {BA_PAIRS.map((_, i) => (
+          <div
+            key={i}
+            onClick={() => setIdx(i)}
+            style={{
+              width: i === idx ? 16 : 6, height: 6,
+              borderRadius: 99,
+              background: i === idx ? ACCENT : "#2a3050",
+              transition: "all 0.3s",
+              cursor: "pointer",
+            }}
+          />
+        ))}
+      </div>
+
+      <style>{`@keyframes baFadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }`}</style>
+    </div>
+  );
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -191,24 +285,7 @@ export default function OnboardingPage() {
             <h1 style={{ ...s.screenTitle, color: ACCENT }}>
               Transforme qualquer produto em imagem profissional
             </h1>
-            <div style={s.imageArea}>
-              <div style={s.beforeAfterRow}>
-                <div style={s.beforeCard}>
-                  <div style={s.beforeImg}>
-                    <span style={s.productEmoji}>📦</span>
-                    <div style={s.beforeLabel}>Antes</div>
-                  </div>
-                </div>
-                <div style={s.arrowBetween}>→</div>
-                <div style={s.afterCard}>
-                  <div style={s.afterImg}>
-                    <span style={s.productEmoji}>✨</span>
-                    <div style={s.afterLabel}>Depois</div>
-                    <div style={s.afterSub}>Foto profissional com IA</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <BaCarousel />
             <p style={s.screenSub}>Sem estúdio. Sem fotógrafo. Sem complicação.</p>
             <div style={s.bottomArea}>
               <button style={s.btnYellow} onClick={goNext}>Próximo</button>
