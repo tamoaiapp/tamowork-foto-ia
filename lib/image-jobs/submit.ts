@@ -1,6 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { qstash } from "@/lib/qstash/client";
-import { criarPrompt, pickComfyBase, uploadImageToComfy, submitWorkflow } from "@/lib/comfyui/client";
+import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow } from "@/lib/comfyui/client";
 import { checkImageJob } from "@/lib/image-jobs/check";
 
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
@@ -23,7 +23,9 @@ export async function submitImageJob(jobId: string) {
 
   const promptResult = await criarPrompt(produto_frase.trim(), cenario.trim());
 
-  const { base: comfyBase, index: comfyIndex } = pickComfyBase();
+  // Sempre usa pod3 (index 0) — sempre ligado
+  const comfyIndex = 0;
+  const comfyBase = COMFY_BASES[0];
   const imageName = await uploadImageToComfy(job.input_image_url, comfyBase, jobId);
   const promptId = await submitWorkflow(jobId, imageName, promptResult.positive, promptResult.negative, comfyBase);
   const externalJobId = `${comfyIndex}:${promptId}`;
