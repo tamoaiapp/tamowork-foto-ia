@@ -18,11 +18,13 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = createServerClient();
-  const cutoff = new Date(Date.now() - 60 * 1000).toISOString(); // jobs com >1 min sem atualização
+  // queued: pega qualquer job (sem cutoff) — processa imediatamente
+  // submitted/processing: só verifica após 45s para dar tempo ao ComfyUI
+  const checkCutoff = new Date(Date.now() - 45 * 1000).toISOString();
 
   const [{ data: queuedJobs }, { data: processingJobs }] = await Promise.all([
-    supabase.from("image_jobs").select("id").eq("status", "queued").lt("updated_at", cutoff).limit(5),
-    supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", cutoff).limit(10),
+    supabase.from("image_jobs").select("id").eq("status", "queued").limit(5),
+    supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", checkCutoff).limit(10),
   ]);
 
   const results: { id: string; action: string; ok: boolean; error?: string }[] = [];
