@@ -55,16 +55,19 @@ export async function uploadImageToComfy(imageUrl: string, comfyBase: string, jo
   // Nome único por job para evitar cache do ComfyUI entre jobs diferentes
   const filename = jobId ? `product_${jobId.replace(/-/g, "").slice(0, 12)}.jpg` : `product_${Date.now()}.jpg`;
 
-  const form = new FormData();
-  // Usar File (não Blob) para garantir que o filename seja incluído corretamente
-  // no multipart pelo fetch nativo do Node.js 18
-  const file = new File([buffer], filename, { type: "image/jpeg" });
-  form.append("image", file);
-  form.append("overwrite", "true");
+  // Construir multipart manualmente para garantir compatibilidade com Node.js 18
+  const boundary = `----FormBoundary${Date.now()}`;
+  const imageBuffer = Buffer.from(buffer);
+  const multipart = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="${filename}"\r\nContent-Type: image/jpeg\r\n\r\n`),
+    imageBuffer,
+    Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="overwrite"\r\n\r\ntrue\r\n--${boundary}--\r\n`),
+  ]);
 
   const res = await fetch(`${comfyBase}/upload/image`, {
     method: "POST",
-    body: form,
+    headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
+    body: multipart,
   });
   if (!res.ok) throw new Error(`Upload ComfyUI error: ${res.status}`);
 
