@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
 
   image_url = image_url.trim();
   if (image_url.startsWith("//")) image_url = "https:" + image_url;
+  else if (!image_url.startsWith("http://") && !image_url.startsWith("https://")) image_url = "https://" + image_url;
 
   const supabase = createServerClient();
 
