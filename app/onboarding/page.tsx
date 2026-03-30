@@ -7,7 +7,11 @@ import { supabase } from "@/lib/supabase/client";
 type Screen = 1 | 2 | 3 | 4 | 5 | 6 | "register" | "paywall";
 type Plan = "weekly" | "annual";
 
-const YELLOW = "#F5C518";
+const BRAND = "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)";
+const ACCENT = "#a855f7"; // roxo para textos coloridos
+const BG = "#07080b";
+const CARD = "#111820";
+const LINE = "rgba(255,255,255,0.07)";
 const TOTAL_STEPS = 7; // telas 1-6 + registro + paywall
 
 export default function OnboardingPage() {
@@ -184,7 +188,7 @@ export default function OnboardingPage() {
         {/* TELA 1 — Gancho */}
         {screen === 1 && (
           <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: YELLOW }}>
+            <h1 style={{ ...s.screenTitle, color: ACCENT }}>
               Transforme qualquer produto em imagem profissional
             </h1>
             <div style={s.imageArea}>
@@ -230,7 +234,7 @@ export default function OnboardingPage() {
                 <div style={s.painRight}>
                   <div style={s.painProductGood}>
                     <span style={{ fontSize: 48 }}>🌟</span>
-                    <div style={{ color: YELLOW, fontSize: 13, fontWeight: 700, marginTop: 8 }}>Foto profissional</div>
+                    <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, marginTop: 8 }}>Foto profissional</div>
                     <div style={{ color: "#22c55e", fontSize: 12, marginTop: 4 }}>+47 vendas hoje</div>
                   </div>
                 </div>
@@ -248,7 +252,7 @@ export default function OnboardingPage() {
         {/* TELA 3 — Solução */}
         {screen === 3 && (
           <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: YELLOW }}>
+            <h1 style={{ ...s.screenTitle, color: ACCENT }}>
               Crie fotos e vídeos que vendem
             </h1>
             <div style={s.imageArea}>
@@ -280,7 +284,7 @@ export default function OnboardingPage() {
           <div style={s.contentScreen}>
             <h1 style={{ ...s.screenTitle, color: "#fff" }}>
               Fotos e vídeos{" "}
-              <span style={{ color: YELLOW }}>ilimitados</span>{" "}
+              <span style={{ color: ACCENT }}>ilimitados</span>{" "}
               com IA
             </h1>
             <div style={s.imageArea}>
@@ -316,7 +320,7 @@ export default function OnboardingPage() {
         {/* TELA 5 — Velocidade */}
         {screen === 5 && (
           <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: YELLOW }}>
+            <h1 style={{ ...s.screenTitle, color: ACCENT }}>
               Pronto em segundos
             </h1>
             <div style={s.imageArea}>
@@ -331,7 +335,7 @@ export default function OnboardingPage() {
                   <div style={s.speedItem}>
                     <div style={s.speedIcon}>⚡</div>
                     <div style={s.speedLabel}>TamoWork IA</div>
-                    <div style={{ ...s.speedTime, color: YELLOW }}>~30 segundos</div>
+                    <div style={{ ...s.speedTime, color: ACCENT }}>~30 segundos</div>
                   </div>
                 </div>
                 <div style={s.speedBar}>
@@ -354,7 +358,7 @@ export default function OnboardingPage() {
           <div style={s.contentScreen}>
             <h1 style={{ ...s.screenTitle, color: "#fff" }}>
               Seu{" "}
-              <span style={{ color: YELLOW }}>funcionário de conteúdo</span>{" "}
+              <span style={{ color: ACCENT }}>funcionário de conteúdo</span>{" "}
               com IA
             </h1>
             <div style={s.imageArea}>
@@ -365,7 +369,7 @@ export default function OnboardingPage() {
                 <div style={s.employeeTasks}>
                   {["Cria fotos profissionais", "Gera vídeos para vender", "Trabalha 24h por dia", "Nunca falta nem atrasa"].map((t) => (
                     <div key={t} style={s.employeeTask}>
-                      <span style={{ color: YELLOW, marginRight: 8 }}>✓</span>
+                      <span style={{ color: ACCENT, marginRight: 8 }}>✓</span>
                       {t}
                     </div>
                   ))}
@@ -386,7 +390,7 @@ export default function OnboardingPage() {
           <div style={s.contentScreen}>
             <h1 style={{ ...s.screenTitle, color: "#fff" }}>
               Crie sua conta{"\n"}
-              <span style={{ color: YELLOW }}>gratuita</span>
+              <span style={{ color: ACCENT }}>gratuita</span>
             </h1>
             <p style={{ ...s.screenSub, marginBottom: 28 }}>
               Acesse suas fotos e vídeos de qualquer lugar.
@@ -461,7 +465,7 @@ export default function OnboardingPage() {
             <div style={s.paywallScroll}>
               <h1 style={s.paywallTitle}>
                 Desbloqueie sua{"\n"}
-                <span style={{ color: YELLOW }}>máquina de vendas</span>{"\n"}
+                <span style={{ color: ACCENT }}>máquina de vendas</span>{"\n"}
                 com IA
               </h1>
               <p style={s.paywallSub}>
@@ -557,8 +561,8 @@ export default function OnboardingPage() {
 const s: Record<string, React.CSSProperties> = {
   root: {
     minHeight: "100vh",
-    background: "#000",
-    color: "#fff",
+    background: BG,
+    color: "#eef2f9",
     display: "flex",
     flexDirection: "column",
     fontFamily: "'Outfit', sans-serif",
@@ -580,7 +584,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   progressFill: {
     height: "100%",
-    background: YELLOW,
+    background: BRAND,
     transition: "width 0.4s ease",
     borderRadius: 2,
   },
@@ -629,7 +633,7 @@ const s: Record<string, React.CSSProperties> = {
   phoneMock: {
     width: 220,
     height: 380,
-    background: "#111",
+    background: CARD,
     borderRadius: 32,
     border: "2px solid #222",
     overflow: "hidden",
@@ -716,7 +720,7 @@ const s: Record<string, React.CSSProperties> = {
   beforeCard: { flex: 1 },
   afterCard: { flex: 1 },
   beforeImg: {
-    background: "#1a1a1a",
+    background: "#0c1018",
     borderRadius: 20,
     padding: 24,
     display: "flex",
@@ -737,14 +741,14 @@ const s: Record<string, React.CSSProperties> = {
     gap: 8,
     aspectRatio: "0.85",
     justifyContent: "center",
-    boxShadow: `0 0 30px rgba(245,197,24,0.3)`,
-    border: `2px solid ${YELLOW}40`,
+    boxShadow: `0 0 30px rgba(168,85,247,0.3)`,
+    border: `2px solid ${ACCENT}40`,
   },
   productEmoji: { fontSize: 56 },
   beforeLabel: { fontSize: 13, color: "#666", fontWeight: 600 },
-  afterLabel: { fontSize: 13, color: YELLOW, fontWeight: 700 },
+  afterLabel: { fontSize: 13, color: ACCENT, fontWeight: 700 },
   afterSub: { fontSize: 11, color: "rgba(255,255,255,0.6)", textAlign: "center" },
-  arrowBetween: { fontSize: 24, color: YELLOW, fontWeight: 700, flexShrink: 0 },
+  arrowBetween: { fontSize: 24, color: ACCENT, fontWeight: 700, flexShrink: 0 },
 
   // Pain
   painCard: {
@@ -754,7 +758,7 @@ const s: Record<string, React.CSSProperties> = {
   painLeft: { flex: 1 },
   painRight: { flex: 1 },
   painProductBad: {
-    background: "#1a1a1a",
+    background: "#0c1018",
     borderRadius: 20,
     padding: 24,
     display: "flex",
@@ -775,8 +779,8 @@ const s: Record<string, React.CSSProperties> = {
     gap: 6,
     aspectRatio: "0.85",
     justifyContent: "center",
-    border: `2px solid ${YELLOW}`,
-    boxShadow: `0 0 30px rgba(245,197,24,0.2)`,
+    border: `2px solid ${ACCENT}`,
+    boxShadow: `0 0 30px rgba(168,85,247,0.2)`,
   },
 
   // Solution grid
@@ -813,8 +817,8 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 36,
   },
   unlimitedBadge: {
-    background: YELLOW,
-    color: "#000",
+    background: BRAND,
+    color: "#fff",
     fontWeight: 900,
     fontSize: 20,
     borderRadius: 50,
@@ -825,7 +829,7 @@ const s: Record<string, React.CSSProperties> = {
 
   // Speed
   speedCard: {
-    background: "#111",
+    background: CARD,
     borderRadius: 24,
     padding: 24,
     border: "1px solid #222",
@@ -843,7 +847,7 @@ const s: Record<string, React.CSSProperties> = {
   speedVs: { fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.3)" },
   speedBar: {
     height: 6,
-    background: "#222",
+    background: "rgba(255,255,255,0.07)",
     borderRadius: 3,
     overflow: "hidden",
     marginBottom: 14,
@@ -851,7 +855,7 @@ const s: Record<string, React.CSSProperties> = {
   speedBarFill: {
     height: "100%",
     width: "92%",
-    background: `linear-gradient(90deg, #ef4444 0%, ${YELLOW} 100%)`,
+    background: `linear-gradient(90deg, #ef4444 0%, ${ACCENT} 100%)`,
     borderRadius: 3,
   },
   speedNote: {
@@ -863,28 +867,28 @@ const s: Record<string, React.CSSProperties> = {
 
   // Employee
   employeeCard: {
-    background: "#111",
+    background: CARD,
     borderRadius: 24,
     padding: 28,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: 8,
-    border: `1px solid ${YELLOW}30`,
+    border: `1px solid ${ACCENT}30`,
   },
   employeeAvatar: {
     fontSize: 56,
-    background: "#1a1a1a",
+    background: "#0c1018",
     borderRadius: 50,
     width: 80,
     height: 80,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    border: `2px solid ${YELLOW}`,
+    border: `2px solid ${ACCENT}`,
   },
   employeeName: { fontSize: 18, fontWeight: 800, color: "#fff", marginTop: 4 },
-  employeeRole: { fontSize: 13, color: YELLOW, fontWeight: 600, marginBottom: 12 },
+  employeeRole: { fontSize: 13, color: ACCENT, fontWeight: 600, marginBottom: 12 },
   employeeTasks: { width: "100%", display: "flex", flexDirection: "column", gap: 10 },
   employeeTask: { fontSize: 15, color: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center" },
 
@@ -938,7 +942,7 @@ const s: Record<string, React.CSSProperties> = {
     fontWeight: 500,
   },
   benefitCheck: {
-    color: YELLOW,
+    color: ACCENT,
     fontWeight: 800,
     fontSize: 16,
     flexShrink: 0,
@@ -950,9 +954,9 @@ const s: Record<string, React.CSSProperties> = {
     fontStyle: "italic",
     margin: "4px 0 20px",
     padding: "12px 16px",
-    background: "rgba(245,197,24,0.05)",
+    background: "rgba(168,85,247,0.05)",
     borderRadius: 12,
-    border: `1px solid ${YELLOW}20`,
+    border: `1px solid ${ACCENT}20`,
   },
   plansArea: {
     display: "flex",
@@ -961,8 +965,8 @@ const s: Record<string, React.CSSProperties> = {
     marginBottom: 12,
   },
   planCard: {
-    background: "#111",
-    border: "1.5px solid #222",
+    background: CARD,
+    border: `1.5px solid ${LINE}`,
     borderRadius: 16,
     padding: "16px 18px",
     display: "flex",
@@ -974,8 +978,8 @@ const s: Record<string, React.CSSProperties> = {
     width: "100%",
   },
   planCardSelected: {
-    borderColor: YELLOW,
-    background: `rgba(245,197,24,0.05)`,
+    borderColor: ACCENT,
+    background: "rgba(168,85,247,0.08)",
   },
   planRadio: {
     width: 22,
@@ -994,7 +998,7 @@ const s: Record<string, React.CSSProperties> = {
     background: "transparent",
   },
   planRadioActive: {
-    background: YELLOW,
+    background: BRAND,
   },
   planInfo: { flex: 1 },
   planName: { fontSize: 16, fontWeight: 700, color: "#fff" },
@@ -1002,8 +1006,8 @@ const s: Record<string, React.CSSProperties> = {
   planBadge: {
     fontSize: 10,
     fontWeight: 800,
-    background: YELLOW,
-    color: "#000",
+    background: BRAND,
+    color: "#fff",
     padding: "2px 8px",
     borderRadius: 20,
     letterSpacing: "0.05em",
@@ -1018,7 +1022,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   paywallBottom: {
     padding: "12px 24px 32px",
-    background: "#000",
+    background: BG,
     borderTop: "1px solid #111",
     display: "flex",
     flexDirection: "column",
@@ -1048,7 +1052,7 @@ const s: Record<string, React.CSSProperties> = {
     padding: "0 16px 32px",
   },
   popupBox: {
-    background: "#111",
+    background: CARD,
     border: "1px solid #222",
     borderRadius: 24,
     padding: "28px 24px 20px",
@@ -1066,10 +1070,10 @@ const s: Record<string, React.CSSProperties> = {
   popupBtnYellow: {
     width: "100%",
     padding: "14px 0",
-    background: YELLOW,
+    background: BRAND,
     border: "none",
     borderRadius: 50,
-    color: "#000",
+    color: "#eef2f9",
     fontSize: 16,
     fontWeight: 800,
     cursor: "pointer",
@@ -1105,8 +1109,8 @@ const s: Record<string, React.CSSProperties> = {
     letterSpacing: "0.03em",
   },
   regInput: {
-    background: "#111",
-    border: "1.5px solid #222",
+    background: CARD,
+    border: `1.5px solid ${LINE}`,
     borderRadius: 14,
     padding: "14px 16px",
     color: "#fff",
@@ -1141,10 +1145,10 @@ const s: Record<string, React.CSSProperties> = {
   btnYellow: {
     width: "100%",
     padding: "17px 0",
-    background: YELLOW,
+    background: BRAND,
     border: "none",
     borderRadius: 50,
-    color: "#000",
+    color: "#eef2f9",
     fontSize: 17,
     fontWeight: 800,
     cursor: "pointer",
