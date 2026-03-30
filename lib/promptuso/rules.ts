@@ -5,28 +5,46 @@ export interface Rule {
 
 export const RULES: Record<string, Rule> = {
   wear_head_top: {
-    pos_add: ["Product is worn on the head by a person, correct orientation, realistic scale."],
-    neg_add: ["No hand holding.", "No packaging.", "No floating."],
+    pos_add: ["Product is worn on the head of a real person, correct orientation, realistic scale."],
+    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
   },
   wear_head_face: {
-    pos_add: ["Product is worn on the face in correct human usage position."],
-    neg_add: ["No hand holding.", "No packaging."],
+    pos_add: ["Product is worn on the face of a real person in correct usage position."],
+    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
   },
   wear_head_ear: {
-    pos_add: ["Product is worn on the ear, correctly positioned."],
-    neg_add: ["No hand holding.", "No packaging."],
+    pos_add: ["Product is worn on the ear of a real person, correctly positioned."],
+    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
   },
   wear_neck: {
-    pos_add: ["Product is worn around the neck, centered, realistic size."],
-    neg_add: ["No hand holding.", "No packaging."],
+    pos_add: ["Product is worn around the neck of a real person, centered, realistic size."],
+    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
   },
   wear_torso_upper: {
-    pos_add: ["Product is worn on the upper body, realistic fit."],
-    neg_add: ["No hand holding.", "No packaging."],
+    pos_add: [
+      "The clothing is actively worn on the upper body of a real person.",
+      "Show the garment on a person — not on a hanger, not on a table, not floating.",
+      "The person must be visible from at least waist up, wearing the product naturally.",
+      "Realistic fit, natural pose, correct fabric drape.",
+    ],
+    neg_add: [
+      "No product on table.", "No product on surface.", "No product on hanger.",
+      "No floating garment.", "No packaging.", "No disembodied clothing.",
+      "Do not show the product alone without a person wearing it.",
+    ],
   },
   wear_torso_full: {
-    pos_add: ["Product is worn on the full body, realistic fit and correct sizing."],
-    neg_add: ["No hand holding.", "No packaging."],
+    pos_add: [
+      "The clothing is actively worn on the full body of a real person.",
+      "Show the complete outfit on a person — not on a hanger, not on a table, not floating.",
+      "Full body shot preferred — show the garment from shoulders to hem.",
+      "Realistic fit, natural pose, correct fabric drape.",
+    ],
+    neg_add: [
+      "No product on table.", "No product on surface.", "No product on hanger.",
+      "No floating garment.", "No packaging.", "No disembodied clothing.",
+      "Do not show the product alone without a person wearing it.",
+    ],
   },
   wear_waist_legs: {
     pos_add: [
@@ -42,16 +60,16 @@ export const RULES: Record<string, Rule> = {
     ],
   },
   wear_feet: {
-    pos_add: ["Product is worn on feet, correct orientation."],
-    neg_add: ["No hand holding.", "No packaging."],
+    pos_add: ["Product is worn on the feet of a real person, correct orientation and realistic scale."],
+    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
   },
   wear_wrist: {
-    pos_add: ["Product is worn on the wrist, correctly positioned and sized."],
-    neg_add: ["No hand holding.", "No packaging."],
+    pos_add: ["Product is worn on the wrist of a real person, correctly positioned and sized."],
+    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
   },
   wear_finger: {
-    pos_add: ["Product is worn on a finger, correct orientation and realistic scale."],
-    neg_add: ["No packaging.", "No floating."],
+    pos_add: ["Product is worn on a finger of a real person, correct orientation and realistic scale."],
+    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
   },
   wear_back: {
     pos_add: ["Product is worn on the back, person facing away from camera."],
