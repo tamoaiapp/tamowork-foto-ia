@@ -4,19 +4,19 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-type Screen = 0 | 1 | 2 | 3 | 4 | 5 | 6 | "register" | "paywall";
+type Screen = 1 | 2 | 3 | 4 | 5 | 6 | "register" | "paywall";
 type Plan = "weekly" | "annual";
 
 const YELLOW = "#F5C518";
-const TOTAL_STEPS = 8; // telas 1-6 + registro + paywall
+const TOTAL_STEPS = 7; // telas 1-6 + registro + paywall
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [screen, setScreen] = useState<Screen>(0);
+  const [screen, setScreen] = useState<Screen>(1);
   const [selectedPlan, setSelectedPlan] = useState<Plan>("annual");
   const [loadingCheckout, setLoadingCheckout] = useState(false);
-  const [notifState, setNotifState] = useState<"pending" | "done">("pending");
   const [animating, setAnimating] = useState(false);
+  const [showNotifPopup, setShowNotifPopup] = useState(false);
 
   // Register state
   const [regName, setRegName] = useState("");
@@ -35,10 +35,20 @@ export default function OnboardingPage() {
 
   function goNext() {
     if (animating) return;
+    // Na tela 1, mostra popup de notificação antes de avançar
+    if (screen === 1) {
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        setShowNotifPopup(true);
+        return;
+      }
+    }
+    advanceScreen();
+  }
+
+  function advanceScreen() {
     setAnimating(true);
     setTimeout(() => {
       setScreen((s) => {
-        if (s === 0) return 1;
         if (s === 1) return 2;
         if (s === 2) return 3;
         if (s === 3) return 4;
@@ -51,12 +61,12 @@ export default function OnboardingPage() {
     }, 200);
   }
 
-  async function handleNotif(accept: boolean) {
-    if (accept && typeof Notification !== "undefined" && Notification.permission === "default") {
+  async function handleNotifPopup(accept: boolean) {
+    setShowNotifPopup(false);
+    if (accept && typeof Notification !== "undefined") {
       await Notification.requestPermission();
     }
-    setNotifState("done");
-    goNext();
+    advanceScreen();
   }
 
   async function handleRegister(e: React.FormEvent) {
@@ -140,73 +150,36 @@ export default function OnboardingPage() {
     router.replace("/");
   }
 
-  const step = screen === "paywall" ? TOTAL_STEPS : screen === "register" ? TOTAL_STEPS - 1 : typeof screen === "number" ? screen : 0;
-  const progress = screen === 0 ? 0 : (step / TOTAL_STEPS);
+  const step = screen === "paywall" ? TOTAL_STEPS : screen === "register" ? TOTAL_STEPS - 1 : typeof screen === "number" ? screen : 1;
+  const progress = step / TOTAL_STEPS;
 
   return (
     <div style={s.root}>
-      {/* Progress bar — só aparece nas telas 1-6 e paywall */}
-      {screen !== 0 && (
+      {/* Progress bar */}
+      {(
         <div style={s.progressBar}>
           <div style={{ ...s.progressFill, width: `${progress * 100}%` }} />
         </div>
       )}
 
-      <div style={{ ...s.screen, opacity: animating ? 0 : 1, transition: "opacity 0.2s" }}>
-
-        {/* TELA 0 — Notificações */}
-        {screen === 0 && (
-          <div style={s.notifScreen}>
-            <div style={s.notifContent}>
-              <h1 style={s.notifTitle}>Nunca perca uma atualização</h1>
-              <p style={s.notifSub}>Receba um aviso quando suas fotos e vídeos estiverem prontos para usar.</p>
-
-              {/* Mockup notificação */}
-              <div style={s.notifMockup}>
-                <div style={s.phoneMock}>
-                  <div style={s.phoneScreen}>
-                    {/* App preview grid */}
-                    <div style={s.appGrid}>
-                      <div style={{ ...s.appCard, background: "linear-gradient(135deg, #1a1a2e, #16213e)" }}>
-                        <span style={s.appCardIcon}>📦</span>
-                        <span style={s.appCardLabel}>Produto</span>
-                      </div>
-                      <div style={{ ...s.appCard, background: "linear-gradient(135deg, #0f3460, #533483)" }}>
-                        <span style={s.appCardIcon}>🛍️</span>
-                        <span style={s.appCardLabel}>Shopee</span>
-                      </div>
-                      <div style={{ ...s.appCard, background: "linear-gradient(135deg, #e94560, #0f3460)" }}>
-                        <span style={s.appCardIcon}>📸</span>
-                        <span style={s.appCardLabel}>Instagram</span>
-                      </div>
-                      <div style={{ ...s.appCard, background: "linear-gradient(135deg, #533483, #1a1a2e)" }}>
-                        <span style={s.appCardIcon}>🎬</span>
-                        <span style={s.appCardLabel}>Vídeo</span>
-                      </div>
-                    </div>
-                    {/* Notificação flutuante */}
-                    <div style={s.notifBubble}>
-                      <div style={s.notifBubbleIcon}>⚡</div>
-                      <div>
-                        <div style={s.notifBubbleTitle}>Sua foto está pronta!</div>
-                        <div style={s.notifBubbleSub}>Toque para ver o resultado</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={() => handleNotif(true)}>
-                Ativar Notificações
-              </button>
-              <button style={s.btnGhost} onClick={() => handleNotif(false)}>
-                Talvez mais tarde
-              </button>
-            </div>
+      {/* Popup notificação */}
+      {showNotifPopup && (
+        <div style={s.popupOverlay}>
+          <div style={s.popupBox}>
+            <div style={s.popupIcon}>🔔</div>
+            <div style={s.popupTitle}>Ativar notificações?</div>
+            <div style={s.popupSub}>Saiba quando sua foto estiver pronta.</div>
+            <button style={s.popupBtnYellow} onClick={() => handleNotifPopup(true)}>
+              Ativar
+            </button>
+            <button style={s.popupBtnGhost} onClick={() => handleNotifPopup(false)}>
+              Agora não
+            </button>
           </div>
-        )}
+        </div>
+      )}
+
+      <div style={{ ...s.screen, opacity: animating ? 0 : 1, transition: "opacity 0.2s" }}>
 
         {/* TELA 1 — Gancho */}
         {screen === 1 && (
@@ -1060,6 +1033,57 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 11,
     color: "rgba(255,255,255,0.3)",
     cursor: "pointer",
+  },
+
+  // Notif popup
+  popupOverlay: {
+    position: "fixed" as const,
+    inset: 0,
+    background: "rgba(0,0,0,0.7)",
+    backdropFilter: "blur(4px)",
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    zIndex: 999,
+    padding: "0 16px 32px",
+  },
+  popupBox: {
+    background: "#111",
+    border: "1px solid #222",
+    borderRadius: 24,
+    padding: "28px 24px 20px",
+    width: "100%",
+    maxWidth: 400,
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    gap: 8,
+    animation: "slideUp 0.3s ease",
+  },
+  popupIcon: { fontSize: 36, marginBottom: 4 },
+  popupTitle: { fontSize: 18, fontWeight: 800, color: "#fff", textAlign: "center" as const },
+  popupSub: { fontSize: 14, color: "rgba(255,255,255,0.5)", textAlign: "center" as const, marginBottom: 8 },
+  popupBtnYellow: {
+    width: "100%",
+    padding: "14px 0",
+    background: YELLOW,
+    border: "none",
+    borderRadius: 50,
+    color: "#000",
+    fontSize: 16,
+    fontWeight: 800,
+    cursor: "pointer",
+    fontFamily: "'Outfit', sans-serif",
+  },
+  popupBtnGhost: {
+    width: "100%",
+    padding: "10px 0",
+    background: "transparent",
+    border: "none",
+    color: "rgba(255,255,255,0.35)",
+    fontSize: 14,
+    cursor: "pointer",
+    fontFamily: "'Outfit', sans-serif",
   },
 
   // Register form
