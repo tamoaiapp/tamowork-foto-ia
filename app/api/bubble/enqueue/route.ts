@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { COMFY_BASES, uploadImageToComfy, submitWorkflow, criarPrompt } from "@/lib/comfyui/client";
 import { qstash } from "@/lib/qstash/client";
 
 const BUBBLE_API_KEY = process.env.BUBBLE_API_KEY ?? "";
@@ -36,66 +35,33 @@ export async function POST(req: NextRequest) {
   image_url = image_url.trim();
   if (image_url.startsWith("//")) image_url = "https:" + image_url;
 
-  // 1. Gerar prompt via promptuso
-  let promptPos: string;
-  let promptNeg: string;
-  try {
-    const result = await criarPrompt(produto.trim(), (uso ?? "").trim());
-    promptPos = result.positive;
-    promptNeg = result.negative ?? "nao mexa no produto";
-  } catch (err) {
-    return NextResponse.json({ ok: false, error: `Erro no promptuso: ${(err as Error).message}` }, { status: 500 });
-  }
-
   const supabase = createServerClient();
 
-  // 2. Criar job no Supabase para obter o UUID real
+  // 1. Criar job — formato "produto | cenário: uso" que o submitImageJob já sabe parsear
+  const prompt = uso ? `${produto.trim()} | cenário: ${uso.trim()}` : produto.trim();
+
   const { data: job, error: insertError } = await supabase
     .from("image_jobs")
     .insert({
       user_id: BUBBLE_SERVICE_USER_ID,
-      prompt: produto,
+      prompt,
       input_image_url: image_url,
       status: "queued",
     })
-    .select()
+    .select("id")
     .single();
 
   if (insertError || !job) {
     return NextResponse.json({ ok: false, error: insertError?.message ?? "Erro ao criar job" }, { status: 500 });
   }
 
-  // 3. Upload + submit no ComfyUI usando o UUID real (~2s)
-  try {
-    const comfyIndex = 0;
-    const comfyBase = COMFY_BASES[0];
-    const imageName = await uploadImageToComfy(image_url, comfyBase, job.id);
-    const promptId = await submitWorkflow(job.id, imageName, promptPos, promptNeg, comfyBase);
+  // 2. Disparar processamento via QStash (async — não bloqueia a resposta)
+  qstash.publishJSON({
+    url: `${process.env.APP_URL}/api/internal/image-jobs/submit`,
+    body: { jobId: job.id },
+    headers: { "x-internal-secret": INTERNAL_SECRET },
+  }).catch(() => console.error("[bubble/enqueue] QStash falhou"));
 
-    await supabase.from("image_jobs").update({
-      status: "submitted",
-      external_job_id: `${comfyIndex}:${promptId}`,
-      provider: "comfyui-direct",
-    }).eq("id", job.id);
-
-    // 4. QStash agenda o check em 45s
-    await qstash.publishJSON({
-      url: `${process.env.APP_URL}/api/internal/image-jobs/check`,
-      delay: 45,
-      body: { jobId: job.id },
-      headers: { "x-internal-secret": INTERNAL_SECRET },
-    }).catch(() => {
-      console.error("[bubble/enqueue] QStash falhou");
-    });
-
-    return NextResponse.json({ ok: true, job_id: job.id, status: "submitted" }, { status: 201 });
-
-  } catch (err) {
-    await supabase.from("image_jobs").update({
-      status: "failed",
-      error_message: (err as Error).message,
-    }).eq("id", job.id);
-
-    return NextResponse.json({ ok: false, error: `Erro no ComfyUI: ${(err as Error).message}` }, { status: 500 });
-  }
+  // 3. Retorna job_id imediatamente
+  return NextResponse.json({ ok: true, job_id: job.id, status: "queued" }, { status: 201 });
 }
