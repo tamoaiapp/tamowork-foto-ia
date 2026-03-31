@@ -40,7 +40,7 @@ const DEMO_CARDS = [
   },
 ];
 
-type Screen = 1 | 2 | 3 | "register" | "paywall";
+type Screen = 1 | 2 | 3;
 type Plan = "weekly" | "annual";
 
 const BRAND = "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)";
@@ -48,7 +48,7 @@ const ACCENT = "#a855f7";
 const BG = "#07080b";
 const CARD = "#111820";
 const LINE = "rgba(255,255,255,0.07)";
-const TOTAL_STEPS = 5; // telas 1-3 + registro + paywall
+const TOTAL_STEPS = 3;
 
 // vídeos serão preenchidos quando os jobs ficarem prontos
 const DEMO_VIDEOS: string[] = [];
@@ -203,25 +203,13 @@ export default function OnboardingPage() {
 
   function goNext() {
     if (animating) return;
-    // Na tela 1, mostra popup de notificação antes de avançar
-    if (screen === 1) {
-      if (typeof Notification !== "undefined" && Notification.permission === "default") {
-        setShowNotifPopup(true);
-        return;
-      }
-    }
     advanceScreen();
   }
 
   function advanceScreen() {
     setAnimating(true);
     setTimeout(() => {
-      setScreen((s) => {
-        if (s === 1) return 2;
-        if (s === 2) return 3;
-        if (s === 3) return "register";
-        return "paywall";
-      });
+      setScreen((s) => (s < 3 ? (s + 1) as Screen : 3));
       setAnimating(false);
     }, 200);
   }
@@ -231,7 +219,6 @@ export default function OnboardingPage() {
     if (accept && typeof Notification !== "undefined") {
       await Notification.requestPermission();
     }
-    advanceScreen();
   }
 
   async function handleRegister(e: React.FormEvent) {
@@ -242,7 +229,7 @@ export default function OnboardingPage() {
     // Verifica se já está logado
     const { data: { user: existing } } = await supabase.auth.getUser();
     if (existing) {
-      setScreen("paywall");
+      setScreen(3);
       setRegLoading(false);
       return;
     }
@@ -261,7 +248,7 @@ export default function OnboardingPage() {
         if (loginErr) {
           setRegError("E-mail já cadastrado. Verifique sua senha.");
         } else {
-          setScreen("paywall");
+          setScreen(3);
         }
       } else if (m.includes("password")) {
         setRegError("Senha deve ter pelo menos 6 caracteres.");
@@ -275,7 +262,7 @@ export default function OnboardingPage() {
     }
 
     if (data.session || data.user) {
-      setScreen("paywall");
+      setScreen(3);
     } else {
       setRegError("Verifique seu e-mail para confirmar o cadastro.");
     }
@@ -320,7 +307,7 @@ export default function OnboardingPage() {
     router.replace("/");
   }
 
-  const step = screen === "paywall" ? TOTAL_STEPS : screen === "register" ? TOTAL_STEPS - 1 : typeof screen === "number" ? screen : 1;
+  const step = screen;
 
   const progress = step / TOTAL_STEPS;
 
@@ -419,161 +406,65 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* TELA 2 — Vídeo */}
+        {/* TELA 2 — Ilimitado + 26k usuários */}
         {screen === 2 && (
           <div style={s.contentScreen}>
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "inline-block", background: "#16c78422", border: "1px solid #16c78444", borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, color: "#16c784", letterSpacing: "0.04em", marginBottom: 14 }}>
-                FOTO + VÍDEO COM IA
+                ILIMITADO
               </div>
-              <h1 style={{ ...s.screenTitle, margin: 0 }}>
-                Gera fotos{" "}
-                <span style={{ color: ACCENT }}>e vídeos</span>{" "}
-                do seu produto
-              </h1>
-            </div>
-            <div style={s.imageArea}>
-              <VideoCarousel />
-            </div>
-            <p style={{ ...s.screenSub, marginTop: 12, fontSize: 14 }}>
-              Pronto para Reels, TikTok e Stories.{"\n"}Gerado automaticamente em segundos.
-            </p>
-            <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={goNext}>Próximo</button>
-            </div>
-          </div>
-        )}
-
-        {/* TELA 3 — Social proof + ilimitado */}
-        {screen === 3 && (
-          <div style={s.contentScreen}>
-            <div style={{ marginBottom: 20 }}>
               <h1 style={{ ...s.screenTitle, margin: 0 }}>
                 Mais de{" "}
                 <span style={{ color: ACCENT }}>26.000</span>{" "}
                 empreendedores já usam
               </h1>
             </div>
-            <div style={s.imageArea}>
-              {/* Avatares simulados */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                <div style={{ display: "flex" }}>
-                  {["#f58529","#dd2a7b","#8134af","#6366f1","#16c784"].map((c, i) => (
-                    <div key={i} style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}99)`, border: "2px solid #07080b", marginLeft: i === 0 ? 0 : -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
-                      {["👩","👨","👩","👨","👩"][i]}
-                    </div>
-                  ))}
-                </div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.3 }}>
-                  <span style={{ color: "#fff", fontWeight: 700 }}>+26.000</span> empreendedores{"\n"}usando todo dia
-                </div>
-              </div>
 
-              {/* Card ilimitado */}
-              <div style={{ background: `linear-gradient(135deg, ${ACCENT}18, ${ACCENT}08)`, border: `1px solid ${ACCENT}30`, borderRadius: 20, padding: 20, marginBottom: 14 }}>
-                <div style={{ fontSize: 36, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 4 }}>∞ Ilimitado</div>
-                <div style={{ fontSize: 15, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>
-                  Crie quantas fotos e vídeos quiser.{"\n"}Sem limite. Sem fila. Sem custo extra.
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[
-                  { num: "+26k", label: "usuários ativos" },
-                  { num: "∞", label: "fotos e vídeos" },
-                  { num: "~30s", label: "por imagem" },
-                  { num: "4.9★", label: "avaliação" },
-                ].map((stat) => (
-                  <div key={stat.label} style={{ background: CARD, borderRadius: 14, padding: "14px 16px", border: `1px solid ${LINE}` }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: ACCENT }}>{stat.num}</div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{stat.label}</div>
+            {/* Avatares */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <div style={{ display: "flex" }}>
+                {["#f58529","#dd2a7b","#8134af","#6366f1","#16c784"].map((c, i) => (
+                  <div key={i} style={{ width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}99)`, border: "2px solid #07080b", marginLeft: i === 0 ? 0 : -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                    {["👩","👨","👩","👨","👩"][i]}
                   </div>
                 ))}
               </div>
-            </div>
-            <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={goNext}>Quero começar</button>
-            </div>
-          </div>
-        )}
-
-        {/* TELA REGISTRO */}
-        {screen === "register" && (
-          <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: "#fff" }}>
-              Crie sua conta{"\n"}
-              <span style={{ color: ACCENT }}>gratuita</span>
-            </h1>
-            <p style={{ ...s.screenSub, marginBottom: 28 }}>
-              Acesse suas fotos e vídeos de qualquer lugar.
-            </p>
-
-            <form onSubmit={handleRegister} style={s.regForm}>
-              <div style={s.regField}>
-                <label style={s.regLabel}>Nome</label>
-                <input
-                  type="text"
-                  placeholder="Seu nome"
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  required
-                  style={s.regInput}
-                />
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.4 }}>
+                <span style={{ color: "#fff", fontWeight: 700 }}>+26.000</span> empreendedores{"\n"}usando todo dia
               </div>
-              <div style={s.regField}>
-                <label style={s.regLabel}>E-mail</label>
-                <input
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  required
-                  style={s.regInput}
-                />
+            </div>
+
+            {/* Card ilimitado */}
+            <div style={{ background: `linear-gradient(135deg, ${ACCENT}18, ${ACCENT}08)`, border: `1px solid ${ACCENT}30`, borderRadius: 22, padding: "22px 20px", marginBottom: 14 }}>
+              <div style={{ fontSize: 40, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 6 }}>∞ Ilimitado</div>
+              <div style={{ fontSize: 15, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>
+                Crie quantas fotos e vídeos quiser.{"\n"}Sem limite. Sem fila. Sem custo extra.
               </div>
-              <div style={s.regField}>
-                <label style={s.regLabel}>Senha</label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showPass ? "text" : "password"}
-                    placeholder="Mínimo 6 caracteres"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    style={{ ...s.regInput, paddingRight: 44 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(!showPass)}
-                    style={s.eyeBtn}
-                  >
-                    {showPass ? "🙈" : "👁️"}
-                  </button>
+            </div>
+
+            {/* Stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
+              {[
+                { num: "+26k", label: "usuários ativos" },
+                { num: "∞", label: "fotos e vídeos" },
+                { num: "~30s", label: "por imagem" },
+                { num: "4.9★", label: "avaliação" },
+              ].map((stat) => (
+                <div key={stat.label} style={{ background: CARD, borderRadius: 14, padding: "14px 16px", border: `1px solid ${LINE}` }}>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: ACCENT }}>{stat.num}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{stat.label}</div>
                 </div>
-              </div>
+              ))}
+            </div>
 
-              {regError && <div style={s.regError}>{regError}</div>}
-
-              <div style={{ ...s.bottomArea, paddingTop: 8 }}>
-                <button
-                  type="submit"
-                  disabled={regLoading}
-                  style={{ ...s.btnYellow, opacity: regLoading ? 0.7 : 1 }}
-                >
-                  {regLoading ? "Criando conta..." : "Criar conta grátis"}
-                </button>
-                <button type="button" style={s.btnGhost} onClick={() => setScreen("paywall")}>
-                  Já tenho conta
-                </button>
-              </div>
-            </form>
+            <div style={s.bottomArea}>
+              <button style={s.btnYellow} onClick={goNext}>Quero começar →</button>
+            </div>
           </div>
         )}
 
-        {/* PAYWALL */}
-        {screen === "paywall" && (
+        {/* TELA 3 — PAGAMENTO */}
+        {screen === 3 && (
           <div style={s.paywallScreen}>
             <div style={s.paywallScroll}>
               <h1 style={s.paywallTitle}>
@@ -581,9 +472,7 @@ export default function OnboardingPage() {
                 <span style={{ color: ACCENT }}>ilimitados</span>{" "}
                 para vender mais
               </h1>
-              <p style={s.paywallSub}>
-                Acesso completo. Sem limite de uso.
-              </p>
+              <p style={s.paywallSub}>Acesso completo. Sem limite de uso.</p>
 
               {/* Benefícios */}
               <div style={s.benefitsList}>
@@ -603,7 +492,7 @@ export default function OnboardingPage() {
 
               {/* Planos */}
               <div style={s.plansArea}>
-                {/* Anual — destaque */}
+                {/* Anual */}
                 <button
                   style={{ ...s.planCard, ...(selectedPlan === "annual" ? s.planCardSelected : {}), position: "relative", overflow: "visible" }}
                   onClick={() => setSelectedPlan("annual")}
@@ -645,9 +534,7 @@ export default function OnboardingPage() {
               </div>
 
               <div style={s.cancelNote}>↺ Cancele quando quiser</div>
-              <div style={{ ...s.conversionLine, marginTop: 8 }}>
-                Uma foto que vende já paga o mês inteiro.
-              </div>
+              <div style={{ ...s.conversionLine, marginTop: 8 }}>Uma foto que vende já paga o mês inteiro.</div>
             </div>
 
             <div style={s.paywallBottom}>
@@ -658,9 +545,7 @@ export default function OnboardingPage() {
               >
                 {loadingCheckout ? "Aguarde..." : "Começar agora"}
               </button>
-              <button style={s.btnGhost} onClick={skip}>
-                Talvez mais tarde
-              </button>
+              <button style={s.btnGhost} onClick={skip}>Talvez mais tarde</button>
               <div style={s.legalRow}>
                 <span style={s.legalLink}>Política de Privacidade</span>
                 <span style={s.legalLink}>Restaurar Compras</span>
