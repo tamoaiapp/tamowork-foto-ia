@@ -202,13 +202,13 @@ const ROWS: { store: string; city: string; quote: string; ab: string; g: [string
 ];
 
 const PEOPLE = [
-  { name:"Ana C.",    city:"SP", skin:"#c68642", hair:"#1a0a00" },
-  { name:"Pedro M.",  city:"RJ", skin:"#8d5524", hair:"#0d0d0d" },
-  { name:"Juliana R.",city:"MG", skin:"#e8b89a", hair:"#2d1b00" },
-  { name:"Carlos S.", city:"CE", skin:"#c68642", hair:"#0d0d0d" },
-  { name:"Mariana F.",city:"PE", skin:"#f1c27d", hair:"#3b1f00" },
-  { name:"Lucas T.",  city:"PR", skin:"#e8b89a", hair:"#0d0d0d" },
-  { name:"Fernanda L.",city:"BA",skin:"#8d5524", hair:"#1a0a00" },
+  { name:"Ana C.",     bg:"#f43f5e" },
+  { name:"Pedro M.",   bg:"#3b82f6" },
+  { name:"Juliana R.", bg:"#8b5cf6" },
+  { name:"Carlos S.",  bg:"#f97316" },
+  { name:"Mariana F.", bg:"#10b981" },
+  { name:"Lucas T.",   bg:"#6366f1" },
+  { name:"Camila B.",  bg:"#ec4899" },
 ];
 
 const CARD_W = 190;
@@ -258,21 +258,9 @@ function Screen2({ onNext }: { onNext: () => void }) {
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ display:"flex" }}>
             {PEOPLE.map((p, i) => (
-              <svg key={i} width="30" height="30" viewBox="0 0 30 30" style={{ marginLeft: i===0?0:-8, borderRadius:"50%", border:"2px solid #07080b", flexShrink:0 }}>
-                <circle cx="15" cy="15" r="15" fill={p.skin}/>
-                {/* cabelo */}
-                <ellipse cx="15" cy="9" rx="8" ry="6" fill={p.hair}/>
-                <rect x="7" y="9" width="16" height="5" fill={p.hair}/>
-                {/* olhos */}
-                <circle cx="11.5" cy="14" r="1.3" fill="#fff"/><circle cx="11.5" cy="14" r="0.7" fill="#333"/>
-                <circle cx="18.5" cy="14" r="1.3" fill="#fff"/><circle cx="18.5" cy="14" r="0.7" fill="#333"/>
-                {/* nariz */}
-                <ellipse cx="15" cy="17" rx="1" ry="0.7" fill={p.skin} style={{filter:"brightness(0.85)"}}/>
-                {/* boca */}
-                <path d="M12 19.5 Q15 21.5 18 19.5" stroke="#9b6060" strokeWidth="1" fill="none" strokeLinecap="round"/>
-                {/* ombros */}
-                <ellipse cx="15" cy="29" rx="10" ry="6" fill={p.skin} style={{filter:"brightness(0.9)"}}/>
-              </svg>
+              <div key={i} style={{ width:30, height:30, borderRadius:"50%", background:p.bg, border:"2px solid #07080b", marginLeft:i===0?0:-8, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <span style={{ fontSize:11, fontWeight:800, color:"#fff" }}>{p.name.split(" ").map(w=>w[0]).join("").slice(0,2)}</span>
+              </div>
             ))}
           </div>
           <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)" }}>
