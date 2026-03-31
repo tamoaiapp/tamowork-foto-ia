@@ -1120,10 +1120,10 @@ const s: Record<string, React.CSSProperties> = {
     background: "rgba(0,0,0,0.7)",
     backdropFilter: "blur(4px)",
     display: "flex",
-    alignItems: "flex-end",
+    alignItems: "flex-start",
     justifyContent: "center",
     zIndex: 999,
-    padding: "0 16px 32px",
+    padding: "60px 16px 0",
   },
   popupBox: {
     background: CARD,

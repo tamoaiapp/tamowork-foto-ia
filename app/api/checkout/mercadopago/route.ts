@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!;
 const MP_PLAN_ID = process.env.MP_PLAN_ID!;         // anual
 const MP_MONTHLY_PLAN_ID = process.env.MP_MONTHLY_PLAN_ID!; // mensal
+const MP_TEST_PLAN_ID = process.env.MP_TEST_PLAN_ID ?? ""; // R$1 teste
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient();
@@ -15,8 +16,11 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const isMonthly = body.plan === "monthly";
-  const planId = isMonthly ? MP_MONTHLY_PLAN_ID : MP_PLAN_ID;
-  const reason = isMonthly ? "TamoWork Pro Mensal" : "TamoWork Anual";
+
+  // Modo teste: usa plano de R$1 quando MP_TEST_PLAN_ID estiver definido
+  const isTest = !!MP_TEST_PLAN_ID;
+  const planId = isTest ? MP_TEST_PLAN_ID : isMonthly ? MP_MONTHLY_PLAN_ID : MP_PLAN_ID;
+  const reason = isTest ? "TamoWork Teste R$1" : isMonthly ? "TamoWork Pro Mensal" : "TamoWork Anual";
 
   const res = await fetch("https://api.mercadopago.com/preapproval", {
     method: "POST",
