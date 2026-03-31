@@ -4,17 +4,40 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-const BA_PAIRS = [
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774905957814x838805777189324400/image-5225659771593071006.jpg", after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/53cd979b-6ae5-4083-a1de-b83fd73bc435.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzUzY2Q5NzliLTZhZTUtNDA4My1hMWRlLWI4M2ZkNzNiYzQzNS5qcGciLCJpYXQiOjE3NzQ5MDYxNDgsImV4cCI6MTc3NTUxMDk0OH0.HdV7qQ3LZWHZT3S6d-YsFR-ITXN6sxPxTWDdOhxSF_k" },
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774905180114x626211159699717100/1000733252.png",            after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/f32b4d0c-f5a8-4786-a1dc-bdfc2e6c53d4.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2YzMmI0ZDBjLWY1YTgtNDc4Ni1hMWRjLWJkZmMyZTZjNTNkNC5qcGciLCJpYXQiOjE3NzQ5MDU3MjgsImV4cCI6MTc3NTUxMDUyOH0.W_v2tcmb0gQ3MEwoTsQ-ONp72OojZ00Jkx9PBhQaY8c" },
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774904960502x809015720306143000/635767.jpg",               after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/2d800520-ce15-4c2e-87a7-a47118241323.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzJkODAwNTIwLWNlMTUtNGMyZS04N2E3LWE0NzExODI0MTMyMy5qcGciLCJpYXQiOjE3NzQ5MDU0MDMsImV4cCI6MTc3NTUxMDIwM30.in0OxDtu1Ua5eGIBpCecCukWU_lSv05r7xEY2EXYmJc" },
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774904554729x366067643732088000/1000678841.jpg",           after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/d04dcd95-5e69-4598-bdc9-6902346ca943.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2QwNGRjZDk1LTVlNjktNDU5OC1iZGM5LTY5MDIzNDZjYTk0My5qcGciLCJpYXQiOjE3NzQ5MDQ4MjgsImV4cCI6MTc3NTUwOTYyOH0.HFoUVI-96vCNY9hYKAg3aUiKHyvsuOFQk_u7dxvwtHE" },
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774904228434x480807660070337040/A02F864D-0FF1-47B3-BE1B-C4E5E4956F40.jpeg", after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/6688e0f3-92c2-4259-bf52-83b70d2a89e8.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzY2ODhlMGYzLTkyYzItNDI1OS1iZjUyLTgzYjcwZDJhODllOC5qcGciLCJpYXQiOjE3NzQ5MDQ0MjksImV4cCI6MTc3NTUwOTIyOX0.a8NisW-0zxdGXp81ZBqlXoI7Fk6ibtwq-pDCiMkZxe0" },
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774903642221x476199199153923800/IMG_1277.jpeg",            after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/44f1bc7c-ac3a-4f9c-b11f-b55e9bcc4fc3.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzQ0ZjFiYzdjLWFjM2EtNGY5Yy1iMTFmLWI1NWU5YmNjNGZjMy5qcGciLCJpYXQiOjE3NzQ5MDM4MzIsImV4cCI6MTc3NTUwODYzMn0.XtaUpC8xu77dzp_mGx8_sCAixmGVG4lJ36te50WaKoQ" },
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774903376030x609205702973705500/635662.jpg",               after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/6061dcb7-774c-443b-b8f3-c2c52964933f.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzYwNjFkY2I3LTc3NGMtNDQzYi1iOGYzLWMyYzUyOTY0OTMzZi5qcGciLCJpYXQiOjE3NzQ5MDM3MTAsImV4cCI6MTc3NTUwODUxMH0.dBpySRlPjl_pjIe3j0K3aj018uVkvamhiEqSzOa280E" },
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774902267384x443968846076211650/635654.jpg",               after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/b31173e3-22bb-4b37-a6a8-cb5335ef845f.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2IzMTE3M2UzLTIyYmItNGIzNy1hNmE4LWNiNTMzNWVmODQ1Zi5qcGciLCJpYXQiOjE3NzQ5MDI1NDgsImV4cCI6MTc3NTUwNzM0OH0.xREBBTI03Rco1tzjLLALLC9xSp7_zWY0hrsfBWl6GRE" },
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774901936285x517994942192998600/1003052097.jpg",           after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/44250a44-2eae-4069-aafe-9e0456570dfd.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzQ0MjUwYTQ0LTJlYWUtNDA2OS1hYWZlLTllMDQ1NjU3MGRmZC5qcGciLCJpYXQiOjE3NzQ5MDIxMjksImV4cCI6MTc3NTUwNjkyOX0.I70h3kWeEw1Emismbbd-ypcYN8ERoEypj6KVmrJ6qf4" },
-  { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774901746173x960644641282296700/634901.jpg",               after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/27e549d1-8cf3-408d-8ca6-b6ebd3a4f12a.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzI3ZTU0OWQxLThjZjMtNDA4ZC04Y2E2LWI2ZWJkM2E0ZjEyYS5qcGciLCJpYXQiOjE3NzQ5MDIwNDcsImV4cCI6MTc3NTUwNjg0N30.PtCzKjw16ubKpl0gLkUxoTpQwvWjVM7x3blP3Zgiu34" },
+const S3 = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object";
+
+// 5 produtos reais: foto original → foto IA → vídeo IA
+const DEMO_CARDS = [
+  {
+    label: "Tênis bordado",
+    before: `${S3}/public/input-images/onboard/tenis.jpg`,
+    after:  `${S3}/sign/image-jobs/800f27c5-7d73-4603-b252-d2e9853563b8.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzgwMGYyN2M1LTdkNzMtNDYwMy1iMjUyLWQyZTk4NTM1NjNiOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.WnYrCu2rEopYvByQKFu8L5Hm-3jzA9IXUqgjuFI2unQ`,
+    video:  null as string | null, // será preenchido quando o vídeo ficar pronto
+  },
+  {
+    label: "Óculos retrô",
+    before: `${S3}/public/input-images/onboard/oculos.jpeg`,
+    after:  `${S3}/sign/image-jobs/d7b2fe90-4383-4f6d-92bb-672b210de218.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2Q3YjJmZTkwLTQzODMtNGY2ZC05MmJiLTY3MmIyMTBkZTIxOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDUsImV4cCI6MjA5MDMxODAwNX0.4DG7PNfy--I0dO76hrsxIQvYnKgZ9YkaYicebKzR98w`,
+    video:  null as string | null,
+  },
+  {
+    label: "Fantasia infantil",
+    before: `${S3}/public/input-images/onboard/fantasia.webp`,
+    after:  `${S3}/sign/image-jobs/4bfe5d4a-7d6a-41e9-8c15-15ecbc4e1571.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzRiZmU1ZDRhLTdkNmEtNDFlOS04YzE1LTE1ZWNiYzRlMTU3MS5qcGciLCJpYXQiOjE3NzQ5NTgwMDUsImV4cCI6MjA5MDMxODAwNX0.mItnYXMEOLDmMn8ViKTZz219qSx9dNOKoGoEWyYCbno`,
+    video:  null as string | null,
+  },
+  {
+    label: "Colar de praia",
+    before: `${S3}/public/input-images/onboard/colar.webp`,
+    after:  `${S3}/sign/image-jobs/e307caef-e00b-4e45-b27e-311090bbe285.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2UzMDdjYWVmLWUwMGItNGU0NS1iMjdlLTMxMTA5MGJiZTI4NS5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.8y-i7FEDxSDPJxHkwKwZ4LkctT1a04eTOw46Tek0UXE`,
+    video:  null as string | null,
+  },
+  {
+    label: "Vestido estampado",
+    before: `${S3}/public/input-images/onboard/vestido.jpg`,
+    after:  `${S3}/sign/image-jobs/be971c3f-bd0a-4aaa-afcc-a6ddef73949b.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2JlOTcxYzNmLWJkMGEtNGFhYS1hZmNjLWE2ZGRlZjczOTQ5Yi5qcGciLCJpYXQiOjE3NzQ5NTgwMDMsImV4cCI6MjA5MDMxODAwM30.9u6Jm4fbeuHD2JMAt5aJcYnRyS_N-Vmjj7_JzzWqSC8`,
+    video:  null as string | null,
+  },
 ];
 
 type Screen = 1 | 2 | 3 | "register" | "paywall";
@@ -27,94 +50,41 @@ const CARD = "#111820";
 const LINE = "rgba(255,255,255,0.07)";
 const TOTAL_STEPS = 5; // telas 1-3 + registro + paywall
 
-const DEMO_VIDEOS = [
-  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb18xLm1wNCIsImlhdCI6MTc3NDkyNjM4OSwiZXhwIjoyMDkwMjg2Mzg5fQ.zSQNlXJw1bTyvIu17SAyk9VAdHOo94qH_x8zEw-hu9E",
-  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_2.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb18yLm1wNCIsImlhdCI6MTc3NDkyNjM5MSwiZXhwIjoyMDkwMjg2MzkxfQ.X1tycsSjEfSCrYZcf3KNG3qfi6FM5ojI9L2qoKXcM0Y",
-  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_3.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb18zLm1wNCIsImlhdCI6MTc3NDkyNjM5NCwiZXhwIjoyMDkwMjg2Mzk0fQ.RWnU_BV2t5WK7XYxw-5fJe6x-qoRlwt13W3Bv6wHgOg",
-  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_4.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb180Lm1wNCIsImlhdCI6MTc3NDkyNjM5NiwiZXhwIjoyMDkwMjg2Mzk2fQ.0OmJfHKPRnirq3lEXsHpNmyKfFypPRwY8qzPE0CgZ2I",
-  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_5.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb181Lm1wNCIsImlhdCI6MTc3NDkyNjM5OCwiZXhwIjoyMDkwMjg2Mzk4fQ.fWQhXjmRcemC2qStT_iAcSJa9ChtKRIM3xb-dFiYcnE",
-];
+// vídeos serão preenchidos quando os jobs ficarem prontos
+const DEMO_VIDEOS: string[] = [];
 
-function BaCarousel() {
-  const [idx, setIdx] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    timerRef.current = setTimeout(() => setIdx(i => (i + 1) % BA_PAIRS.length), 2800);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [idx]);
-
-  const pair = BA_PAIRS[idx];
-
+function DemoCards() {
   return (
-    <div style={{ width: "100%", position: "relative", marginBottom: 4 }}>
-      <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
-        {/* Antes */}
-        <div style={{ flex: 1, position: "relative" }}>
-          <img
-            key={`b-${idx}`}
-            src={pair.before}
-            alt="antes"
-            style={{
-              width: "100%", aspectRatio: "0.85", objectFit: "cover",
-              borderRadius: 16, border: "1px solid #1e2230",
-              animation: "baFadeIn 0.4s ease",
-            }}
-          />
-          <span style={{
-            position: "absolute", bottom: 8, left: 8,
-            background: "rgba(0,0,0,0.72)", color: "#888",
-            fontSize: 11, fontWeight: 700, padding: "3px 8px",
-            borderRadius: 6, letterSpacing: 1,
-          }}>ANTES</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
+      {DEMO_CARDS.map((card) => (
+        <div key={card.label} style={{
+          background: CARD, borderRadius: 18, overflow: "hidden",
+          border: `1px solid rgba(255,255,255,0.07)`,
+        }}>
+          {/* Label */}
+          <div style={{ padding: "10px 14px 6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{card.label}</span>
+            {card.video
+              ? <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT, background: `${ACCENT}22`, padding: "2px 8px", borderRadius: 20 }}>▶ VÍDEO IA</span>
+              : <span style={{ fontSize: 10, color: "#4e5c72", background: "#1a2030", padding: "2px 8px", borderRadius: 20 }}>📸 FOTO IA</span>
+            }
+          </div>
+
+          {/* Before → After */}
+          <div style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
+            <div style={{ flex: 1, position: "relative" }}>
+              <img src={card.before} alt="antes" style={{ width: "100%", aspectRatio: "1", objectFit: "cover" }} />
+              <span style={{ position: "absolute", bottom: 6, left: 6, background: "rgba(0,0,0,0.7)", color: "#888", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, letterSpacing: 1 }}>ANTES</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", padding: "0 6px", flexShrink: 0, fontSize: 16, color: ACCENT }}>→</div>
+            <div style={{ flex: 1.4, position: "relative" }}>
+              <img src={card.after} alt="depois" style={{ width: "100%", aspectRatio: "1", objectFit: "cover" }} />
+              <span style={{ position: "absolute", bottom: 6, left: 6, background: ACCENT, color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, letterSpacing: 1 }}>DEPOIS</span>
+            </div>
+          </div>
         </div>
-
-        {/* Seta */}
-        <div style={{ display: "flex", alignItems: "center", flexShrink: 0, fontSize: 20, color: ACCENT }}>→</div>
-
-        {/* Depois */}
-        <div style={{ flex: 1, position: "relative" }}>
-          <img
-            key={`a-${idx}`}
-            src={pair.after}
-            alt="depois"
-            style={{
-              width: "100%", aspectRatio: "0.85", objectFit: "cover",
-              borderRadius: 16, border: `2px solid ${ACCENT}60`,
-              boxShadow: `0 0 20px ${ACCENT}30`,
-              animation: "baFadeIn 0.4s ease",
-            }}
-          />
-          <span style={{
-            position: "absolute", bottom: 8, left: 8,
-            background: ACCENT, color: "#fff",
-            fontSize: 11, fontWeight: 700, padding: "3px 8px",
-            borderRadius: 6, letterSpacing: 1,
-          }}>DEPOIS</span>
-        </div>
-      </div>
-
-      {/* Dots */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 10 }}>
-        {BA_PAIRS.map((_, i) => (
-          <div
-            key={i}
-            onClick={() => setIdx(i)}
-            style={{
-              width: i === idx ? 16 : 6, height: 6,
-              borderRadius: 99,
-              background: i === idx ? ACCENT : "#2a3050",
-              transition: "all 0.3s",
-              cursor: "pointer",
-            }}
-          />
-        ))}
-      </div>
-
-      <style>{`
-        @keyframes baFadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-      `}</style>
+      ))}
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
     </div>
   );
 }
@@ -214,6 +184,7 @@ export default function OnboardingPage() {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [showNotifPopup, setShowNotifPopup] = useState(false);
+  const [showRegPopup, setShowRegPopup] = useState(false);
 
   // Register state
   const [regName, setRegName] = useState("");
@@ -311,18 +282,23 @@ export default function OnboardingPage() {
     setRegLoading(false);
   }
 
-  async function handleCheckout() {
+  async function handleCheckoutClick() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setShowRegPopup(true);
+      return;
+    }
+    await goToCheckout(session.access_token);
+  }
+
+  async function goToCheckout(token: string) {
     setLoadingCheckout(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.push("/login"); return; }
-
-      // Semanal vai pro plano mensal MP, Anual vai pro plano anual MP
       const body = selectedPlan === "weekly" ? { plan: "monthly" } : {};
       const res = await fetch("/api/checkout/mercadopago", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
@@ -357,6 +333,54 @@ export default function OnboardingPage() {
         </div>
       )}
 
+      {/* Popup cadastro rápido antes do checkout */}
+      {showRegPopup && (
+        <div style={s.popupOverlay}>
+          <div style={{ ...s.popupBox, padding: "28px 24px" }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>👤</div>
+            <div style={s.popupTitle}>Crie sua conta</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 20, textAlign: "center" }}>
+              É rápido. Depois vamos ao pagamento.
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setRegLoading(true);
+              setRegError("");
+              const { data, error } = await supabase.auth.signUp({ email: regEmail, password: regPassword, options: { data: { full_name: regName } } });
+              if (error) {
+                const m = error.message.toLowerCase();
+                if (m.includes("already registered") || m.includes("already exists")) {
+                  const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({ email: regEmail, password: regPassword });
+                  if (loginErr) { setRegError("Senha incorreta."); setRegLoading(false); return; }
+                  setShowRegPopup(false);
+                  await goToCheckout(loginData.session!.access_token);
+                } else {
+                  setRegError("Erro ao criar conta. Tente novamente.");
+                }
+                setRegLoading(false);
+                return;
+              }
+              if (data.session) {
+                setShowRegPopup(false);
+                await goToCheckout(data.session.access_token);
+              } else {
+                setRegError("Confirme seu e-mail para continuar.");
+              }
+              setRegLoading(false);
+            }} style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
+              <input type="text" placeholder="Seu nome" value={regName} onChange={e => setRegName(e.target.value)} required style={s.regInput} />
+              <input type="email" placeholder="seu@email.com" value={regEmail} onChange={e => setRegEmail(e.target.value)} required style={s.regInput} />
+              <input type="password" placeholder="Senha (mín. 6 caracteres)" value={regPassword} onChange={e => setRegPassword(e.target.value)} required minLength={6} style={s.regInput} />
+              {regError && <div style={{ fontSize: 12, color: "#f87171", textAlign: "center" }}>{regError}</div>}
+              <button type="submit" disabled={regLoading} style={{ ...s.btnYellow, opacity: regLoading ? 0.7 : 1, marginTop: 4 }}>
+                {regLoading ? "Aguarde..." : "Continuar para pagamento →"}
+              </button>
+              <button type="button" style={s.popupBtnGhost} onClick={() => setShowRegPopup(false)}>Cancelar</button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Popup notificação */}
       {showNotifPopup && (
         <div style={s.popupOverlay}>
@@ -376,24 +400,21 @@ export default function OnboardingPage() {
 
       <div style={{ ...s.screen, opacity: animating ? 0 : 1, transition: "opacity 0.2s" }}>
 
-        {/* TELA 1 — Antes/Depois */}
+        {/* TELA 1 — 5 cards Antes/Depois */}
         {screen === 1 && (
-          <div style={s.contentScreen}>
+          <div style={{ ...s.contentScreen, overflowY: "auto", paddingBottom: 100 }}>
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: "inline-block", background: `${ACCENT}22`, border: `1px solid ${ACCENT}44`, borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, color: ACCENT, letterSpacing: "0.04em", marginBottom: 14 }}>
                 IA PARA PRODUTOS
               </div>
               <h1 style={{ ...s.screenTitle, margin: 0 }}>
-                Transforme a foto do seu produto em{" "}
+                Transforme qualquer foto em{" "}
                 <span style={{ color: ACCENT }}>imagem profissional</span>
               </h1>
             </div>
-            <BaCarousel />
-            <p style={{ ...s.screenSub, marginTop: 12, fontSize: 14 }}>
-              Qualquer foto vira conteúdo pronto para vender.{"\n"}Sem estúdio. Sem fotógrafo.
-            </p>
-            <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={goNext}>Ver como funciona</button>
+            <DemoCards />
+            <div style={{ ...s.bottomArea, position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: `linear-gradient(transparent, ${BG} 40%)`, paddingTop: 40, paddingBottom: 20 }}>
+              <button style={s.btnYellow} onClick={goNext}>Ver como funciona →</button>
             </div>
           </div>
         )}
@@ -561,7 +582,7 @@ export default function OnboardingPage() {
                 para vender mais
               </h1>
               <p style={s.paywallSub}>
-                Acesso completo. Cancele quando quiser.
+                Acesso completo. Sem limite de uso.
               </p>
 
               {/* Benefícios */}
@@ -595,12 +616,12 @@ export default function OnboardingPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={s.planName}>Plano Anual</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>R$228 cobrado uma vez por ano</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>R$348 cobrado uma vez por ano</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textDecoration: "line-through" }}>R$39/sem</div>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$19<span style={{ fontSize: 12, fontWeight: 500 }}>/mês</span></div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: ACCENT, lineHeight: 1 }}>R$0,63<span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.5)" }}>/dia</span></div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textDecoration: "line-through" }}>R$47/sem</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$29<span style={{ fontSize: 12, fontWeight: 500 }}>/mês</span></div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: ACCENT, lineHeight: 1 }}>R$0,95<span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.5)" }}>/dia</span></div>
                   </div>
                 </button>
 
@@ -617,8 +638,8 @@ export default function OnboardingPage() {
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Acesso completo por 7 dias</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$39<span style={{ fontSize: 12, fontWeight: 500 }}>/sem</span></div>
-                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>R$5,57/dia</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$47<span style={{ fontSize: 12, fontWeight: 500 }}>/sem</span></div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>R$6,71/dia</div>
                   </div>
                 </button>
               </div>
@@ -632,7 +653,7 @@ export default function OnboardingPage() {
             <div style={s.paywallBottom}>
               <button
                 style={{ ...s.btnYellow, opacity: loadingCheckout ? 0.7 : 1 }}
-                onClick={handleCheckout}
+                onClick={handleCheckoutClick}
                 disabled={loadingCheckout}
               >
                 {loadingCheckout ? "Aguarde..." : "Começar agora"}
