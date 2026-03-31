@@ -27,7 +27,7 @@ const CARD = "#111820";
 const LINE = "rgba(255,255,255,0.07)";
 const TOTAL_STEPS = 5; // telas 1-3 + registro + paywall
 
-const DEMO_VIDEO_URL = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/demo-video.mp4";
+const DEMO_VIDEO_URL = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/demo-onboard.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2RlbW8tb25ib2FyZC5tcDQiLCJpYXQiOjE3NzQ5MjM0OTUsImV4cCI6MjA5MDI4MzQ5NX0.fNUSpGNbECK7EMUZZGJxxf5T87SBuZt7fYav-rppssA";
 
 function BaCarousel() {
   const [idx, setIdx] = useState(0);
