@@ -33,12 +33,6 @@ const DEMO_CARDS = [
     after:  `${S3}/sign/image-jobs/e307caef-e00b-4e45-b27e-311090bbe285.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2UzMDdjYWVmLWUwMGItNGU0NS1iMjdlLTMxMTA5MGJiZTI4NS5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.8y-i7FEDxSDPJxHkwKwZ4LkctT1a04eTOw46Tek0UXE`,
     video:  `${VID}/aa76a131-3cde-4c1d-bbfa-af6686fcc1be.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzL2FhNzZhMTMxLTNjZGUtNGMxZC1iYmZhLWFmNjY4NmZjYzFiZS5tcDQiLCJpYXQiOjE3NzQ5NTg2NTQsImV4cCI6MjA5MDMxODY1NH0.FgXQHovRxQK3TEwLOWY2weOCbPPdvlsrIZVS1B4Nyfc`,
   },
-  {
-    label: "Vestido estampado",
-    before: `${S3}/public/input-images/onboard/vestido.jpg`,
-    after:  `${S3}/sign/image-jobs/be971c3f-bd0a-4aaa-afcc-a6ddef73949b.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2JlOTcxYzNmLWJkMGEtNGFhYS1hZmNjLWE2ZGRlZjczOTQ5Yi5qcGciLCJpYXQiOjE3NzQ5NTgwMDMsImV4cCI6MjA5MDMxODAwM30.9u6Jm4fbeuHD2JMAt5aJcYnRyS_N-Vmjj7_JzzWqSC8`,
-    video:  `${VID}/457fe425-76b3-4c1d-b937-f34bddcade55.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzQ1N2ZlNDI1LTc2YjMtNGMxZC1iOTM3LWYzNGJkZGNhZGU1NS5tcDQiLCJpYXQiOjE3NzQ5NTg2NTMsImV4cCI6MjA5MDMxODY1M30.skCUaShLsrOh_kLGDTjFhXmt68tANbrNApqaoT9O80I`,
-  },
 ];
 
 type Screen = 1 | 2 | 3;
@@ -365,9 +359,6 @@ export default function OnboardingPage() {
         {screen === 1 && (
           <div style={{ ...s.contentScreen, overflowY: "auto", paddingBottom: 100 }}>
             <div style={{ marginBottom: 16 }}>
-              <div style={{ display: "inline-block", background: `${ACCENT}22`, border: `1px solid ${ACCENT}44`, borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, color: ACCENT, letterSpacing: "0.04em", marginBottom: 14 }}>
-                IA PARA PRODUTOS
-              </div>
               <h1 style={{ ...s.screenTitle, margin: 0 }}>
                 Tire foto de qualquer jeito,{" "}
                 <span style={{ color: ACCENT }}>transforma em foto que vende</span>{" "}
