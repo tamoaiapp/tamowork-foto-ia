@@ -19,13 +19,13 @@ const DEMO_CARDS = [
     label: "Tênis bordado",
     before: `${S3}/public/input-images/onboard/tenis.jpg`,
     after:  `${S3}/sign/image-jobs/800f27c5-7d73-4603-b252-d2e9853563b8.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzgwMGYyN2M1LTdkNzMtNDYwMy1iMjUyLWQyZTk4NTM1NjNiOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.WnYrCu2rEopYvByQKFu8L5Hm-3jzA9IXUqgjuFI2unQ`,
-    video:  null as string | null, // job 6ce857bd — aguardando
+    video:  `${VID}/6ce857bd-9f7f-43db-a624-08da9a9050bd.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzZjZTg1N2JkLTlmN2YtNDNkYi1hNjI0LTA4ZGE5YTkwNTBiZC5tcDQiLCJpYXQiOjE3NzQ5NjE1NTksImV4cCI6MjA5MDMyMTU1OX0.q_JFA0rsLIL73L560WcYZAQI_iSW7m4sMdqxFfAA6OQ`,
   },
   {
     label: "Fantasia infantil",
     before: `${S3}/public/input-images/onboard/fantasia.webp`,
     after:  `${S3}/sign/image-jobs/4bfe5d4a-7d6a-41e9-8c15-15ecbc4e1571.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzRiZmU1ZDRhLTdkNmEtNDFlOS04YzE1LTE1ZWNiYzRlMTU3MS5qcGciLCJpYXQiOjE3NzQ5NTgwMDUsImV4cCI6MjA5MDMxODAwNX0.mItnYXMEOLDmMn8ViKTZz219qSx9dNOKoGoEWyYCbno`,
-    video:  null as string | null, // job 11af3ceb — aguardando
+    video:  `${VID}/11af3ceb-12fa-4c05-bb66-5f4ad981bc1c.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzExYWYzY2ViLTEyZmEtNGMwNS1iYjY2LTVmNGFkOTgxYmMxYy5tcDQiLCJpYXQiOjE3NzQ5NjE1NjAsImV4cCI6MjA5MDMyMTU2MH0.UEaFTP_FxncuvR_FYvzqFgC4e-TwdDXUdmw2v6xTj1g`,
   },
   {
     label: "Colar de praia",
