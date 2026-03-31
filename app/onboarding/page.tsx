@@ -162,129 +162,109 @@ function DemoCarousel() {
 }
 
 const REFS = [
-  { logo: "👟", store: "Kick Store SP", city: "São Paulo, SP", quote: "Vendia tênis em brechó online mas ninguém valorizava. Depois das fotos com IA, o pessoal parou de questionar o preço e comecei a vender pelo valor cheio." },
-  { logo: "💍", store: "Ateliê da Cami", city: "Recife, PE", quote: "Vendia meu colar artesanal há 2 anos. Sempre achei que era o preço o problema. Quando troquei as fotos com a IA, as pessoas pararam de pechinchar." },
-  { logo: "👗", store: "Modinha Kids", city: "Belo Horizonte, MG", quote: "Minha loja de roupas infantis tava parada. Postei o vídeo da fantasia gerado pela IA num domingo à noite. Na segunda tinha 40 mensagens no direct." },
-  { logo: "🕶️", store: "Óticas Bem Ver", city: "Fortaleza, CE", quote: "Tirava foto dos óculos em cima de uma mesa qualquer. Com a IA ficou tão profissional que minha cliente perguntou se eu tinha contratado fotógrafo." },
-  { logo: "👜", store: "Bolsas da Rê", city: "Rio de Janeiro, RJ", quote: "Meu Instagram tava sem engajamento. Postei uma foto gerada pela IA e o Reels que fiz com ela chegou a 80 mil visualizações em 3 dias." },
-  { logo: "🧴", store: "Natura da Terra", city: "Curitiba, PR", quote: "Produto natural precisa transmitir cuidado. As fotos com IA deram essa sensação que eu nunca conseguia com celular. As vendas online dobraram em 30 dias." },
-  { logo: "🩱", store: "Praia & Estilo", city: "Florianópolis, SC", quote: "Moda praia é difícil de fotografar sem modelo e estúdio. Com a IA resolvi isso em minutos. Hoje meus produtos parecem de loja física de shopping." },
-  { logo: "🎒", store: "Uni Papelaria", city: "Campinas, SP", quote: "Vendo material escolar e nunca pensei que foto ia fazer diferença. Depois de usar a IA, meu cliente perguntou se tinha aberto loja física. Só tem online." },
-  { logo: "🕯️", store: "Lume Aromas", city: "Salvador, BA", quote: "Vela artesanal é um produto de presença. A foto gerada pela IA capturou exatamente o clima que eu queria. Agora vendo para presente corporativo também." },
-  { logo: "🐾", store: "Patinhas Pet Shop", city: "Porto Alegre, RS", quote: "Roupinha de pet parece coisa pequena, mas quando coloquei as fotos de IA no Shopee, minhas vendas foram de 10 pra 60 pedidos por semana." },
+  { color: "#6366f1", store: "Kick Store SP",    city: "São Paulo, SP",       quote: "Vendia tênis em brechó online mas ninguém valorizava. Depois das fotos com IA, o pessoal parou de questionar o preço." },
+  { color: "#dd2a7b", store: "Ateliê da Cami",   city: "Recife, PE",          quote: "Sempre achei que era o preço o problema. Quando troquei as fotos com a IA, as pessoas pararam de pechinchar." },
+  { color: "#8134af", store: "Modinha Kids",      city: "Belo Horizonte, MG",  quote: "Postei o vídeo da fantasia num domingo à noite. Na segunda tinha 40 mensagens no direct." },
+  { color: "#f58529", store: "Óticas Bem Ver",    city: "Fortaleza, CE",       quote: "Com a IA ficou tão profissional que minha cliente perguntou se eu tinha contratado fotógrafo." },
+  { color: "#16c784", store: "Bolsas da Rê",      city: "Rio de Janeiro, RJ",  quote: "Postei uma foto gerada pela IA e o Reels chegou a 80 mil visualizações em 3 dias." },
+  { color: "#6366f1", store: "Natura da Terra",   city: "Curitiba, PR",        quote: "As fotos com IA deram uma sensação de cuidado que eu nunca conseguia com celular. Vendas dobraram." },
+  { color: "#dd2a7b", store: "Praia & Estilo",    city: "Florianópolis, SC",   quote: "Moda praia sem modelo e estúdio. Com a IA resolvi isso em minutos. Parece loja de shopping." },
+  { color: "#8134af", store: "Uni Papelaria",     city: "Campinas, SP",        quote: "Meu cliente perguntou se tinha aberto loja física. Só tem online — as fotos com IA enganam bem." },
+  { color: "#f58529", store: "Lume Aromas",       city: "Salvador, BA",        quote: "A foto capturou exatamente o clima que eu queria. Agora vendo para presente corporativo também." },
+  { color: "#16c784", store: "Patinhas Pet Shop", city: "Porto Alegre, RS",    quote: "Minhas vendas foram de 10 pra 60 pedidos por semana só depois de trocar as fotos no Shopee." },
 ];
 
+// Duplica para o loop infinito ficar contínuo
+const REFS_LOOP = [...REFS, ...REFS];
+
 function Screen2({ onNext }: { onNext: () => void }) {
-  const [cur, setCur] = useState(0);
-  const [prev, setPrev] = useState<number | null>(null);
-  const [dir, setDir] = useState<1 | -1>(1);
+  const [offset, setOffset] = useState(0);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Avança 1px a cada 20ms = ~50px/s, bem devagar
   useEffect(() => {
-    const t = setTimeout(() => slide(1), 4000);
-    return () => clearTimeout(t);
-  }, [cur]);
-
-  function slide(d: 1 | -1) {
-    setDir(d);
-    setPrev(cur);
-    setCur((c) => (c + d + REFS.length) % REFS.length);
-    setTimeout(() => setPrev(null), 450);
-  }
-
-  const r = REFS[cur];
-  const p = prev !== null ? REFS[prev] : null;
+    tickRef.current = setInterval(() => {
+      setOffset((o) => {
+        // cada card tem ~160px de largura + 10px gap = 170. reset quando passou 10 cards
+        const cardW = 170;
+        const resetAt = cardW * REFS.length;
+        return o >= resetAt ? 0 : o + 0.4;
+      });
+    }, 16);
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+  }, []);
 
   return (
-    <div style={{ ...s.contentScreen, justifyContent: "space-between" } as React.CSSProperties}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ position: "fixed", inset: 0, maxWidth: 430, margin: "0 auto", background: BG, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-        <h1 style={{ ...s.screenTitle, margin: 0, fontSize: 24, lineHeight: 1.3, animation: "fadeUp 0.5s ease both" }}>
+      {/* Conteúdo fixo no topo */}
+      <div style={{ padding: "52px 24px 20px", flexShrink: 0 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.3, margin: 0, animation: "fadeUp 0.5s ease both" }}>
           Você trabalha muito.<br />
           <span style={{ color: ACCENT }}>Sua foto precisa trabalhar também.</span>
         </h1>
-
-        {/* Card com animação de troca */}
-        <div style={{ position: "relative", height: 170, overflow: "hidden", animation: "fadeUp 0.5s ease 0.15s both" }}>
-          {/* card anterior saindo */}
-          {p && (
-            <div key={`prev-${prev}`} style={{
-              position: "absolute", inset: 0,
-              background: CARD, borderRadius: 18, padding: "16px 18px",
-              border: `1px solid ${LINE}`,
-              animation: `slideOut${dir > 0 ? "L" : "R"} 0.4s ease forwards`,
-            }}>
-              <CardInner r={p} />
-            </div>
-          )}
-          {/* card atual entrando */}
-          <div key={`cur-${cur}`} style={{
-            position: "absolute", inset: 0,
-            background: CARD, borderRadius: 18, padding: "16px 18px",
-            border: `1px solid ${LINE}`,
-            animation: prev !== null ? `slideIn${dir > 0 ? "R" : "L"} 0.4s ease forwards` : "none",
-          }}>
-            <CardInner r={r} />
-          </div>
-        </div>
-
-        {/* Dots + setas */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, animation: "fadeUp 0.5s ease 0.25s both" }}>
-          <button onClick={() => slide(-1)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 18, cursor: "pointer", padding: "0 4px" }}>‹</button>
-          {REFS.map((_, i) => (
-            <div key={i} onClick={() => { setDir(i > cur ? 1 : -1); setPrev(cur); setCur(i); setTimeout(() => setPrev(null), 450); }}
-              style={{ width: i === cur ? 16 : 5, height: 5, borderRadius: 99, background: i === cur ? ACCENT : "rgba(255,255,255,0.2)", transition: "all 0.3s", cursor: "pointer" }} />
-          ))}
-          <button onClick={() => slide(1)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 18, cursor: "pointer", padding: "0 4px" }}>›</button>
-        </div>
-
-        {/* Prova social */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, animation: "fadeUp 0.5s ease 0.35s both" }}>
-          <div style={{ display: "flex" }}>
-            {["#f58529","#dd2a7b","#8134af","#6366f1","#16c784"].map((c, i) => (
-              <div key={i} style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}88)`, border: "2px solid #07080b", marginLeft: i === 0 ? 0 : -7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
-                {["👩","👨","👩","👨","👩"][i]}
-              </div>
-            ))}
-          </div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
-            mais de <span style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700 }}>26.000 vendedores</span> já usam
-          </div>
-        </div>
-
       </div>
 
-      <div style={{ ...s.bottomArea, animation: "fadeUp 0.5s ease 0.45s both" }}>
+      {/* Faixa de cards deslizando — ocupa o espaço do meio */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 10, overflow: "hidden" }}>
+        {/* Linha 1 — desliza para esquerda */}
+        <div style={{ overflow: "hidden", paddingLeft: 24 }}>
+          <div style={{ display: "flex", gap: 10, transform: `translateX(-${offset}px)`, willChange: "transform" }}>
+            {REFS_LOOP.map((r, i) => (
+              <MiniCard key={i} r={r} />
+            ))}
+          </div>
+        </div>
+        {/* Linha 2 — desliza para direita (offset invertido, começa deslocada) */}
+        <div style={{ overflow: "hidden", paddingLeft: 24 }}>
+          <div style={{ display: "flex", gap: 10, transform: `translateX(-${Math.max(0, (REFS.length * 170 / 2) - offset)}px)`, willChange: "transform" }}>
+            {[...REFS_LOOP].reverse().map((r, i) => (
+              <MiniCard key={i} r={r} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Prova social */}
+      <div style={{ padding: "0 24px 12px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <div style={{ display: "flex" }}>
+          {["#f58529","#dd2a7b","#8134af","#6366f1","#16c784"].map((c, i) => (
+            <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}88)`, border: "2px solid #07080b", marginLeft: i === 0 ? 0 : -6, flexShrink: 0 }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
+          mais de <span style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700 }}>26.000 vendedores</span> já usam
+        </div>
+      </div>
+
+      {/* Botão fixo no fundo */}
+      <div style={{ padding: "0 24px 32px", flexShrink: 0 }}>
         <button style={s.btnYellow} onClick={onNext}>Quero vender mais →</button>
       </div>
 
       <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes slideInR { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }
-        @keyframes slideInL { from { opacity:0; transform:translateX(-60px); } to { opacity:1; transform:translateX(0); } }
-        @keyframes slideOutL { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(-60px); } }
-        @keyframes slideOutR { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(60px); } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
       `}</style>
     </div>
   );
 }
 
-function CardInner({ r }: { r: typeof REFS[0] }) {
+function MiniCard({ r }: { r: typeof REFS[0] }) {
   return (
-    <>
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.6, marginBottom: 12 }}>
+    <div style={{ width: 160, flexShrink: 0, background: CARD, borderRadius: 14, padding: "12px 14px", border: `1px solid ${LINE}` }}>
+      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", lineHeight: 1.5, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" } as React.CSSProperties}>
         "{r.quote}"
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${ACCENT}44, ${ACCENT}22)`, border: `1px solid ${ACCENT}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
-          {r.logo}
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg, ${r.color}, ${r.color}88)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <span style={{ fontSize: 11, fontWeight: 900, color: "#fff" }}>{r.store.slice(0, 2).toUpperCase()}</span>
         </div>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{r.store}</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{r.city}</div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.store}</div>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>{r.city}</div>
         </div>
-        <div style={{ marginLeft: "auto", fontSize: 12, color: "#fbbf24", flexShrink: 0 }}>★★★★★</div>
       </div>
-    </>
+    </div>
   );
 }
 
