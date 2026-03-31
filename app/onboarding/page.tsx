@@ -388,72 +388,72 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* TELA 2 — Apelo emocional / conversão */}
+        {/* TELA 2 — Apelo emocional realista */}
         {screen === 2 && (
           <div style={{ ...s.contentScreen, justifyContent: "space-between" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-              {/* Headline emocional */}
-              <h1 style={{ ...s.screenTitle, margin: 0, fontSize: 26 }}>
-                Foto ruim{" "}
-                <span style={{ color: "#f87171" }}>custa venda.</span>{" "}
-                Foto boa{" "}
-                <span style={{ color: "#4ade80" }}>faz o cliente comprar na hora.</span>
+              <h1 style={{ ...s.screenTitle, margin: 0, fontSize: 24, lineHeight: 1.3, animation: "fadeUp 0.5s ease both" }}>
+                Você trabalha muito.<br />
+                <span style={{ color: ACCENT }}>Sua foto precisa trabalhar também.</span>
               </h1>
 
-              {/* Card dor */}
-              <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 18, padding: "16px 18px" }}>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 8, fontWeight: 700, letterSpacing: "0.05em" }}>A REALIDADE SEM IA</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                  {[
-                    "Cliente abre o anúncio e fecha sem comprar",
-                    "Foto tirada com pressa não transmite valor",
-                    "Concorrente com foto melhor leva a venda",
-                  ].map((t) => (
-                    <div key={t} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
-                      <span style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }}>✕</span>
-                      {t}
-                    </div>
-                  ))}
+              {/* Depoimento realista 1 */}
+              <div style={{ background: CARD, borderRadius: 18, padding: "16px 18px", border: `1px solid ${LINE}`, animation: "fadeUp 0.5s ease 0.15s both" }}>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", lineHeight: 1.6, marginBottom: 12 }}>
+                  "Vendia meu colar artesanal há 2 anos. Sempre achei que era o preço o problema. Quando troquei as fotos com a IA, as pessoas pararam de pechinchar."
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #f58529, #dd2a7b)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>👩</div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Camila R.</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Acessórios artesanais, SP</div>
+                  </div>
+                  <div style={{ marginLeft: "auto", fontSize: 13, color: "#fbbf24" }}>★★★★★</div>
                 </div>
               </div>
 
-              {/* Card solução */}
-              <div style={{ background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 18, padding: "16px 18px" }}>
-                <div style={{ fontSize: 13, color: "#4ade80", marginBottom: 8, fontWeight: 700, letterSpacing: "0.05em" }}>COM A IA</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                  {[
-                    "Foto profissional em segundos, sem estúdio",
-                    "Vídeo para Reels e TikTok no mesmo clique",
-                    "Produto parece caro — cliente paga mais",
-                  ].map((t) => (
-                    <div key={t} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.4 }}>
-                      <span style={{ color: "#4ade80", flexShrink: 0, marginTop: 1 }}>✓</span>
-                      {t}
-                    </div>
-                  ))}
+              {/* Depoimento realista 2 */}
+              <div style={{ background: CARD, borderRadius: 18, padding: "16px 18px", border: `1px solid ${LINE}`, animation: "fadeUp 0.5s ease 0.3s both" }}>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", lineHeight: 1.6, marginBottom: 12 }}>
+                  "Minha loja de roupas infantis tava parada. Postei o vídeo da fantasia gerado pela IA num domingo à noite. Na segunda tinha 40 mensagens no direct."
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #8134af, #6366f1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>👨</div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Lucas M.</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Moda infantil, MG</div>
+                  </div>
+                  <div style={{ marginLeft: "auto", fontSize: 13, color: "#fbbf24" }}>★★★★★</div>
                 </div>
               </div>
 
-              {/* Prova social */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, background: CARD, borderRadius: 16, padding: "14px 16px", border: `1px solid ${LINE}` }}>
-                <div style={{ display: "flex", flexShrink: 0 }}>
+              {/* Prova social sutil */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, animation: "fadeUp 0.5s ease 0.45s both" }}>
+                <div style={{ display: "flex" }}>
                   {["#f58529","#dd2a7b","#8134af","#6366f1","#16c784"].map((c, i) => (
-                    <div key={i} style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}88)`, border: "2px solid #111820", marginLeft: i === 0 ? 0 : -8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
+                    <div key={i} style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}88)`, border: "2px solid #07080b", marginLeft: i === 0 ? 0 : -7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
                       {["👩","👨","👩","👨","👩"][i]}
                     </div>
                   ))}
                 </div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.4 }}>
-                  <span style={{ color: "#fff", fontWeight: 800 }}>+26.000</span> empreendedores já vendem mais com IA
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>
+                  mais de <span style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700 }}>26.000 vendedores</span> já usam
                 </div>
               </div>
 
             </div>
 
-            <div style={s.bottomArea}>
+            <div style={{ ...s.bottomArea, animation: "fadeUp 0.5s ease 0.55s both" }}>
               <button style={s.btnYellow} onClick={goNext}>Quero vender mais →</button>
             </div>
+
+            <style>{`
+              @keyframes fadeUp {
+                from { opacity: 0; transform: translateY(22px); }
+                to   { opacity: 1; transform: translateY(0); }
+              }
+            `}</style>
           </div>
         )}
 
