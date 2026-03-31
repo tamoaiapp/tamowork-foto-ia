@@ -161,108 +161,157 @@ function DemoCarousel() {
   );
 }
 
-const REFS = [
-  { color: "#6366f1", store: "Kick Store SP",    city: "São Paulo, SP",       quote: "Vendia tênis em brechó online mas ninguém valorizava. Depois das fotos com IA, o pessoal parou de questionar o preço." },
-  { color: "#dd2a7b", store: "Ateliê da Cami",   city: "Recife, PE",          quote: "Sempre achei que era o preço o problema. Quando troquei as fotos com a IA, as pessoas pararam de pechinchar." },
-  { color: "#8134af", store: "Modinha Kids",      city: "Belo Horizonte, MG",  quote: "Postei o vídeo da fantasia num domingo à noite. Na segunda tinha 40 mensagens no direct." },
-  { color: "#f58529", store: "Óticas Bem Ver",    city: "Fortaleza, CE",       quote: "Com a IA ficou tão profissional que minha cliente perguntou se eu tinha contratado fotógrafo." },
-  { color: "#16c784", store: "Bolsas da Rê",      city: "Rio de Janeiro, RJ",  quote: "Postei uma foto gerada pela IA e o Reels chegou a 80 mil visualizações em 3 dias." },
-  { color: "#6366f1", store: "Natura da Terra",   city: "Curitiba, PR",        quote: "As fotos com IA deram uma sensação de cuidado que eu nunca conseguia com celular. Vendas dobraram." },
-  { color: "#dd2a7b", store: "Praia & Estilo",    city: "Florianópolis, SC",   quote: "Moda praia sem modelo e estúdio. Com a IA resolvi isso em minutos. Parece loja de shopping." },
-  { color: "#8134af", store: "Uni Papelaria",     city: "Campinas, SP",        quote: "Meu cliente perguntou se tinha aberto loja física. Só tem online — as fotos com IA enganam bem." },
-  { color: "#f58529", store: "Lume Aromas",       city: "Salvador, BA",        quote: "A foto capturou exatamente o clima que eu queria. Agora vendo para presente corporativo também." },
-  { color: "#16c784", store: "Patinhas Pet Shop", city: "Porto Alegre, RS",    quote: "Minhas vendas foram de 10 pra 60 pedidos por semana só depois de trocar as fotos no Shopee." },
+// lg: logo css — shape: "sq"=quadrado, "ci"=círculo, "pi"=pílula | g: gradiente [from, to]
+const ROWS: { store: string; city: string; quote: string; ab: string; g: [string,string]; shape: "sq"|"ci"|"pi" }[][] = [
+  [
+    { store:"Kick Store",    city:"São Paulo, SP",      ab:"KS", g:["#6366f1","#818cf8"], shape:"sq", quote:"Vendia tênis em brechó e ninguém valorizava. Depois das fotos com IA, o pessoal parou de pechinchar." },
+    { store:"Ateliê Cami",   city:"Recife, PE",         ab:"AC", g:["#ec4899","#f472b6"], shape:"ci", quote:"Troquei as fotos com IA e as vendas dobraram no mesmo mês. Não esperava resultado tão rápido." },
+    { store:"Modinha Kids",  city:"BH, MG",             ab:"MK", g:["#8b5cf6","#a78bfa"], shape:"pi", quote:"40 mensagens no direct depois de um vídeo gerado pela IA num domingo à noite." },
+    { store:"Óticas BemVer", city:"Fortaleza, CE",      ab:"OB", g:["#f97316","#fb923c"], shape:"sq", quote:"A cliente perguntou se eu tinha contratado fotógrafo. A foto foi tirada com meu celular." },
+    { store:"Bolsas da Rê",  city:"Rio de Janeiro, RJ", ab:"BR", g:["#10b981","#34d399"], shape:"ci", quote:"Reels com foto de IA chegou a 80 mil visualizações em 3 dias. Antes mal passava de 200." },
+    { store:"Lume Aromas",   city:"Salvador, BA",       ab:"LA", g:["#f59e0b","#fbbf24"], shape:"pi", quote:"A foto capturou exatamente o clima artesanal que eu queria. Agora vendo para empresa também." },
+    { store:"Malu Cosméticos",city:"Natal, RG",         ab:"MC", g:["#ec4899","#f9a8d4"], shape:"sq", quote:"Produto de beleza precisa de foto bonita. Com a IA os produtos parecem de marca grande." },
+    { store:"Tri Suplementos",city:"Goiânia, GO",       ab:"TS", g:["#3b82f6","#60a5fa"], shape:"ci", quote:"Meu concorrente usa estúdio caro. Eu uso IA e minha foto ficou melhor que a dele." },
+    { store:"Casa & Decor",  city:"Curitiba, PR",       ab:"CD", g:["#14b8a6","#2dd4bf"], shape:"pi", quote:"Móvel em foto ruim parece barato. Com IA o produto transmite qualidade antes mesmo de ver o preço." },
+    { store:"Viva Moda",     city:"Porto Alegre, RS",   ab:"VM", g:["#a855f7","#c084fc"], shape:"sq", quote:"Triplicamos as consultas no WhatsApp depois de atualizar as fotos do catálogo com IA." },
+  ],
+  [
+    { store:"Praia & Estilo",city:"Florianópolis, SC",  ab:"PE", g:["#0ea5e9","#38bdf8"], shape:"pi", quote:"Moda praia sem modelo e estúdio. Com a IA ficou em minutos. Parece foto de revista." },
+    { store:"Uni Papelaria", city:"Campinas, SP",       ab:"UP", g:["#f43f5e","#fb7185"], shape:"sq", quote:"Meu cliente perguntou se abri loja física. Só tenho online. As fotos com IA mudaram tudo." },
+    { store:"Natura da Terra",city:"Belo Horizonte, MG",ab:"NT", g:["#22c55e","#4ade80"], shape:"ci", quote:"Produto natural precisa passar cuidado. A IA fez isso em segundos. Nunca consegui com celular." },
+    { store:"Patinhas Pet",  city:"Porto Alegre, RS",   ab:"PP", g:["#f97316","#fdba74"], shape:"pi", quote:"De 10 para 60 pedidos por semana no Shopee só de trocar as fotos dos produtos com IA." },
+    { store:"Doce Arte",     city:"Fortaleza, CE",      ab:"DA", g:["#ec4899","#f9a8d4"], shape:"sq", quote:"Bolo de festa precisa de foto que dá água na boca. Com IA meu WhatsApp não para de chamar." },
+    { store:"TechAcessórios",city:"São Paulo, SP",      ab:"TA", g:["#6366f1","#a5b4fc"], shape:"ci", quote:"Eletrônico em foto escura não vende. Com IA ficou com aquela cara de loja premium do Mercado Livre." },
+    { store:"Artes do Mar",  city:"Maceió, AL",         ab:"AM", g:["#0284c7","#0ea5e9"], shape:"pi", quote:"Artesanato precisa de foto que conta a história. A IA entendeu isso sem eu precisar explicar." },
+    { store:"BabyLuxo",      city:"Brasília, DF",       ab:"BL", g:["#d946ef","#e879f9"], shape:"sq", quote:"Enxoval de bebê precisa transmitir delicadeza. As fotos com IA conseguem isso de forma incrível." },
+    { store:"FitNutrição",   city:"Recife, PE",         ab:"FN", g:["#16a34a","#22c55e"], shape:"ci", quote:"Suplemento em foto ruim parece falsificado. Com IA o produto ganhou credibilidade instantânea." },
+    { store:"Sabores da Vó", city:"Salvador, BA",       ab:"SV", g:["#dc2626","#f87171"], shape:"pi", quote:"Comida caseira com foto de IA vende como gourmet. Aumentei o preço e as vendas subiram mesmo assim." },
+  ],
+  [
+    { store:"Couros & Cia",  city:"Franca, SP",         ab:"CC", g:["#78716c","#a8a29e"], shape:"sq", quote:"Bolsa de couro precisa de foto que mostra textura. A IA fez isso melhor que qualquer celular." },
+    { store:"Bike Total",    city:"Manaus, AM",         ab:"BT", g:["#0891b2","#22d3ee"], shape:"ci", quote:"Bicicleta é produto caro. Foto com IA passou confiança e reduzimos as perguntas antes de comprar." },
+    { store:"Jardim Vivo",   city:"Cuiabá, MT",         ab:"JV", g:["#65a30d","#84cc16"], shape:"pi", quote:"Planta em foto escura parece murcha. Com IA os vasos ficam lindos e as vendas online decolaram." },
+    { store:"Studio Tattoo", city:"São Paulo, SP",      ab:"ST", g:["#1c1917","#44403c"], shape:"sq", quote:"Tatuagem precisa de foto nítida. A IA melhorou tudo que o celular não conseguia capturar." },
+    { store:"Mel & Cera",    city:"Ribeirão Preto, SP", ab:"ME", g:["#d97706","#fbbf24"], shape:"ci", quote:"Produto artesanal de mel parece premium com IA. O preço subiu e a fila de encomendas também." },
+    { store:"Óptica Vision", city:"Belém, PA",          ab:"OV", g:["#0f766e","#14b8a6"], shape:"pi", quote:"Armação de óculos precisa de ângulo certo. Com IA cada produto parece catálogo de importado." },
+    { store:"Mimos de Luz",  city:"Fortaleza, CE",      ab:"ML", g:["#be185d","#ec4899"], shape:"sq", quote:"Lembranças de festa vendem pela aparência. Com IA o produto virou referência no meu nicho." },
+    { store:"Roots Calçados",city:"Novo Hamburgo, RS",  ab:"RC", g:["#b45309","#d97706"], shape:"ci", quote:"Calçado sem modelo é difícil de vender online. A IA resolve isso de um jeito que parece real." },
+    { store:"Toque Floral",  city:"Campinas, SP",       ab:"TF", g:["#9333ea","#c084fc"], shape:"pi", quote:"Buquê de flores precisa de foto que transmite cheiro. Com IA as encomendas pelo Insta explodiram." },
+    { store:"Bem Estar Shop",city:"Uberlândia, MG",     ab:"BE", g:["#0369a1","#0ea5e9"], shape:"sq", quote:"Produto de bem-estar precisa de foto tranquila. A IA gerou exatamente essa sensação que eu queria." },
+  ],
 ];
 
-// Duplica para o loop infinito ficar contínuo
-const REFS_LOOP = [...REFS, ...REFS];
+const PEOPLE = [
+  { name:"Ana C.",    city:"SP", skin:"#c68642", hair:"#1a0a00" },
+  { name:"Pedro M.",  city:"RJ", skin:"#8d5524", hair:"#0d0d0d" },
+  { name:"Juliana R.",city:"MG", skin:"#e8b89a", hair:"#2d1b00" },
+  { name:"Carlos S.", city:"CE", skin:"#c68642", hair:"#0d0d0d" },
+  { name:"Mariana F.",city:"PE", skin:"#f1c27d", hair:"#3b1f00" },
+  { name:"Lucas T.",  city:"PR", skin:"#e8b89a", hair:"#0d0d0d" },
+  { name:"Fernanda L.",city:"BA",skin:"#8d5524", hair:"#1a0a00" },
+];
+
+const CARD_W = 190;
 
 function Screen2({ onNext }: { onNext: () => void }) {
-  const [offset, setOffset] = useState(0);
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Avança 1px a cada 20ms = ~50px/s, bem devagar
+  const [off, setOff] = useState(0);
   useEffect(() => {
-    tickRef.current = setInterval(() => {
-      setOffset((o) => {
-        // cada card tem ~160px de largura + 10px gap = 170. reset quando passou 10 cards
-        const cardW = 170;
-        const resetAt = cardW * REFS.length;
-        return o >= resetAt ? 0 : o + 0.4;
-      });
-    }, 16);
-    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+    const id = setInterval(() => setOff(o => {
+      const reset = CARD_W * ROWS[0].length;
+      return o >= reset ? 0 : o + 0.35;
+    }), 16);
+    return () => clearInterval(id);
   }, []);
 
-  return (
-    <div style={{ position: "fixed", inset: 0, maxWidth: 430, margin: "0 auto", background: BG, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+  const speeds = [1, 0.75, 1.25]; // velocidade relativa por linha
 
-      {/* Conteúdo fixo no topo */}
-      <div style={{ padding: "52px 24px 20px", flexShrink: 0 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.3, margin: 0, animation: "fadeUp 0.5s ease both" }}>
+  return (
+    <div style={{ position:"fixed", inset:0, maxWidth:430, margin:"0 auto", background:BG, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+
+      <div style={{ padding:"52px 24px 16px", flexShrink:0 }}>
+        <h1 style={{ fontSize:24, fontWeight:800, lineHeight:1.3, margin:0, animation:"fadeUp 0.5s ease both" }}>
           Você trabalha muito.<br />
-          <span style={{ color: ACCENT }}>Sua foto precisa trabalhar também.</span>
+          <span style={{ color:ACCENT }}>Sua foto precisa trabalhar também.</span>
         </h1>
       </div>
 
-      {/* Faixa de cards deslizando — ocupa o espaço do meio */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 10, overflow: "hidden" }}>
-        {/* Linha 1 — desliza para esquerda */}
-        <div style={{ overflow: "hidden", paddingLeft: 24 }}>
-          <div style={{ display: "flex", gap: 10, transform: `translateX(-${offset}px)`, willChange: "transform" }}>
-            {REFS_LOOP.map((r, i) => (
-              <MiniCard key={i} r={r} />
+      {/* 3 faixas */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", gap:10, overflow:"hidden" }}>
+        {ROWS.map((row, ri) => {
+          const loop = [...row, ...row];
+          const dir = ri % 2 === 0 ? 1 : -1;
+          const o = off * speeds[ri];
+          const reset = CARD_W * row.length;
+          const tx = dir > 0 ? -(o % reset) : -(reset - (o % reset));
+          return (
+            <div key={ri} style={{ overflow:"hidden" }}>
+              <div style={{ display:"flex", gap:10, paddingLeft:16, transform:`translateX(${tx}px)`, willChange:"transform" }}>
+                {loop.map((r, i) => <RefCard key={i} r={r} />)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pessoas reais */}
+      <div style={{ padding:"10px 24px 8px", flexShrink:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ display:"flex" }}>
+            {PEOPLE.map((p, i) => (
+              <svg key={i} width="30" height="30" viewBox="0 0 30 30" style={{ marginLeft: i===0?0:-8, borderRadius:"50%", border:"2px solid #07080b", flexShrink:0 }}>
+                <circle cx="15" cy="15" r="15" fill={p.skin}/>
+                {/* cabelo */}
+                <ellipse cx="15" cy="9" rx="8" ry="6" fill={p.hair}/>
+                <rect x="7" y="9" width="16" height="5" fill={p.hair}/>
+                {/* olhos */}
+                <circle cx="11.5" cy="14" r="1.3" fill="#fff"/><circle cx="11.5" cy="14" r="0.7" fill="#333"/>
+                <circle cx="18.5" cy="14" r="1.3" fill="#fff"/><circle cx="18.5" cy="14" r="0.7" fill="#333"/>
+                {/* nariz */}
+                <ellipse cx="15" cy="17" rx="1" ry="0.7" fill={p.skin} style={{filter:"brightness(0.85)"}}/>
+                {/* boca */}
+                <path d="M12 19.5 Q15 21.5 18 19.5" stroke="#9b6060" strokeWidth="1" fill="none" strokeLinecap="round"/>
+                {/* ombros */}
+                <ellipse cx="15" cy="29" rx="10" ry="6" fill={p.skin} style={{filter:"brightness(0.9)"}}/>
+              </svg>
             ))}
           </div>
-        </div>
-        {/* Linha 2 — desliza para direita (offset invertido, começa deslocada) */}
-        <div style={{ overflow: "hidden", paddingLeft: 24 }}>
-          <div style={{ display: "flex", gap: 10, transform: `translateX(-${Math.max(0, (REFS.length * 170 / 2) - offset)}px)`, willChange: "transform" }}>
-            {[...REFS_LOOP].reverse().map((r, i) => (
-              <MiniCard key={i} r={r} />
-            ))}
+          <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)" }}>
+            mais de <span style={{ color:"rgba(255,255,255,0.85)", fontWeight:700 }}>26.000 vendedores</span> já usam
           </div>
         </div>
       </div>
 
-      {/* Prova social */}
-      <div style={{ padding: "0 24px 12px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <div style={{ display: "flex" }}>
-          {["#f58529","#dd2a7b","#8134af","#6366f1","#16c784"].map((c, i) => (
-            <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}88)`, border: "2px solid #07080b", marginLeft: i === 0 ? 0 : -6, flexShrink: 0 }} />
-          ))}
-        </div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
-          mais de <span style={{ color: "rgba(255,255,255,0.8)", fontWeight: 700 }}>26.000 vendedores</span> já usam
-        </div>
-      </div>
-
-      {/* Botão fixo no fundo */}
-      <div style={{ padding: "0 24px 32px", flexShrink: 0 }}>
+      <div style={{ padding:"0 24px 28px", flexShrink:0 }}>
         <button style={s.btnYellow} onClick={onNext}>Quero vender mais →</button>
       </div>
 
-      <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
-      `}</style>
+      <style>{`@keyframes fadeUp { from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)} }`}</style>
     </div>
   );
 }
 
-function MiniCard({ r }: { r: typeof REFS[0] }) {
+function StoreLogo({ r }: { r: typeof ROWS[0][0] }) {
+  const radius = r.shape === "ci" ? "50%" : r.shape === "pi" ? "20px" : "8px";
   return (
-    <div style={{ width: 160, flexShrink: 0, background: CARD, borderRadius: 14, padding: "12px 14px", border: `1px solid ${LINE}` }}>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", lineHeight: 1.5, marginBottom: 10, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" } as React.CSSProperties}>
+    <div style={{ width:36, height:36, borderRadius:radius, background:`linear-gradient(135deg, ${r.g[0]}, ${r.g[1]})`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:`0 2px 8px ${r.g[0]}55` }}>
+      <span style={{ fontSize:12, fontWeight:900, color:"#fff", letterSpacing:"-0.5px" }}>{r.ab}</span>
+    </div>
+  );
+}
+
+function RefCard({ r }: { r: typeof ROWS[0][0] }) {
+  return (
+    <div style={{ width:CARD_W, flexShrink:0, background:CARD, borderRadius:14, padding:"13px 14px", border:`1px solid ${LINE}` }}>
+      <div style={{ fontSize:12, color:"rgba(255,255,255,0.72)", lineHeight:1.55, marginBottom:11, display:"-webkit-box", WebkitLineClamp:3, WebkitBoxOrient:"vertical", overflow:"hidden" } as React.CSSProperties}>
         "{r.quote}"
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-        <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg, ${r.color}, ${r.color}88)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 900, color: "#fff" }}>{r.store.slice(0, 2).toUpperCase()}</span>
+      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        <StoreLogo r={r} />
+        <div style={{ minWidth:0 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:"#fff", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{r.store}</div>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginTop:1 }}>{r.city}</div>
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.store}</div>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>{r.city}</div>
-        </div>
+        <div style={{ marginLeft:"auto", fontSize:11, color:"#fbbf24", flexShrink:0 }}>★★★★★</div>
       </div>
     </div>
   );
