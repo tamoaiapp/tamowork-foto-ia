@@ -3,8 +3,7 @@ import { VIDEO_COMFY_BASES, getVideoHistory } from "@/lib/comfyui/video-client";
 import { checkRunpodJob, RUNPOD_VIDEO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { finalizeVideoJob } from "@/lib/video-jobs/finalize";
 
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
-const MAX_ATTEMPTS = 60; // 60 × 30s = 30 minutos
+const MAX_ATTEMPTS = 60; // 60 ciclos de cron = ~60 minutos
 
 export async function checkVideoJob(jobId: string) {
   const supabase = createServerClient();
@@ -55,7 +54,8 @@ export async function checkVideoJob(jobId: string) {
     } else if (result.status === "failed") {
       await supabase.from("video_jobs").update({ status: "failed", error_message: "Falha no RunPod Serverless" }).eq("id", jobId);
     } else {
-      await scheduleNextCheck(jobId);
+      // Pendente — o cron verifica novamente no próximo ciclo
+      return;
     }
     return;
   }
@@ -72,17 +72,6 @@ export async function checkVideoJob(jobId: string) {
     await finalizeVideoJob(jobId, result.outputUrl);
   } else if (result.status === "failed") {
     await supabase.from("video_jobs").update({ status: "failed", error_message: "Falha no ComfyUI" }).eq("id", jobId);
-  } else {
-    await scheduleNextCheck(jobId);
   }
-}
-
-async function scheduleNextCheck(jobId: string) {
-  const { qstash } = await import("@/lib/qstash/client");
-  await qstash.publishJSON({
-    url: `${process.env.APP_URL}/api/internal/video-jobs/check`,
-    delay: 30,
-    body: { jobId },
-    headers: { "x-internal-secret": INTERNAL_SECRET },
-  });
+  // Se pendente, o cron verifica novamente no próximo ciclo
 }

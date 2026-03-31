@@ -5,12 +5,26 @@ export interface Rule {
 
 export const RULES: Record<string, Rule> = {
   wear_head_top: {
-    pos_add: ["Product is worn on the head of a real person, correct orientation, realistic scale."],
-    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
+    pos_add: [
+      "Product is worn on the head of a real person, correct orientation, realistic scale.",
+      "If the input shows the product resting on a surface, table, or held in a hand, remove that and show it worn on a real person's head instead.",
+    ],
+    neg_add: [
+      "No product on table.", "No product on surface.", "No floating.", "No packaging.",
+      "No hand holding the product.", "Do not show product alone without a person wearing it.",
+    ],
   },
   wear_head_face: {
-    pos_add: ["Product is worn on the face of a real person in correct usage position."],
-    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
+    pos_add: [
+      "Product is worn on the face of a real person in correct usage position.",
+      "If the input shows the product held in a hand, resting on a surface, or inside a case, remove that and show it worn on a real person's face instead.",
+      "Show the product naturally on the face, correct scale and alignment.",
+    ],
+    neg_add: [
+      "No product on table.", "No product on surface.", "No floating.", "No packaging.",
+      "No hand holding the glasses or product.", "No glasses case.", "No product alone.",
+      "Do not show product alone without a person wearing it.",
+    ],
   },
   wear_head_ear: {
     pos_add: [
@@ -25,19 +39,28 @@ export const RULES: Record<string, Rule> = {
     ],
   },
   wear_neck: {
-    pos_add: ["Product is worn around the neck of a real person, centered, realistic size."],
-    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
+    pos_add: [
+      "Product is worn around the neck of a real person, centered, realistic size.",
+      "If the input shows the product laid flat on a surface, inside a box, or displayed on a card, remove that entirely and show it worn on a real person's neck instead.",
+      "Show the necklace, choker, or scarf naturally draped on the neck, correct scale.",
+    ],
+    neg_add: [
+      "No product on table.", "No product on surface.", "No product laid flat.", "No floating.", "No packaging.", "No jewelry box.", "No display card.",
+      "Do not show product alone without a person wearing it.",
+    ],
   },
   wear_torso_upper: {
     pos_add: [
       "The clothing is actively worn on the upper body of a real person.",
       "Show the garment on a person — not on a hanger, not on a table, not floating.",
+      "If the input shows the product in a flat lay (laid flat on a bed or floor), reconstruct it being worn by a real person instead.",
+      "If the input shows the product inside a plastic bag or garment bag, remove the bag and show the garment on a real person.",
       "The person must be visible from at least waist up, wearing the product naturally.",
       "Realistic fit, natural pose, correct fabric drape.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No product on hanger.",
-      "No floating garment.", "No packaging.", "No disembodied clothing.",
+      "No product on table.", "No product on surface.", "No product on hanger.", "No product on floor.",
+      "No flat lay.", "No plastic bag.", "No garment bag.", "No floating garment.", "No packaging.", "No disembodied clothing.",
       "Do not show the product alone without a person wearing it.",
     ],
   },
@@ -45,12 +68,14 @@ export const RULES: Record<string, Rule> = {
     pos_add: [
       "The clothing is actively worn on the full body of a real person.",
       "Show the complete outfit on a person — not on a hanger, not on a table, not floating.",
+      "If the input shows the product in a flat lay (laid flat on a bed or floor), reconstruct it being worn by a real person instead.",
+      "If the input shows the product inside a plastic bag, garment bag, or packaging, remove it and show the garment on a real person.",
       "Full body shot preferred — show the garment from shoulders to hem.",
       "Realistic fit, natural pose, correct fabric drape.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No product on hanger.",
-      "No floating garment.", "No packaging.", "No disembodied clothing.",
+      "No product on table.", "No product on surface.", "No product on hanger.", "No product on floor.",
+      "No flat lay.", "No plastic bag.", "No garment bag.", "No floating garment.", "No packaging.", "No disembodied clothing.",
       "Do not show the product alone without a person wearing it.",
     ],
   },
@@ -58,18 +83,26 @@ export const RULES: Record<string, Rule> = {
     pos_add: [
       "The clothing is actively worn on the lower body of a real person.",
       "Show the garment on a person — not on a hanger, not on a table, not floating.",
+      "If the input shows the product in a flat lay (laid flat on a bed or floor), reconstruct it being worn by a real person instead.",
       "The product must be clearly visible from waist to knee or ankle as appropriate.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No product on hanger.",
-      "No floating garment.", "No packaging.", "No disembodied clothing.",
+      "No product on table.", "No product on surface.", "No product on hanger.", "No product on floor.",
+      "No flat lay.", "No floating garment.", "No packaging.", "No disembodied clothing.",
       "Do not show the product alone without a person wearing it.",
       "Do not place the product on the upper body.",
     ],
   },
   wear_feet: {
-    pos_add: ["Product is worn on the feet of a real person, correct orientation and realistic scale."],
-    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
+    pos_add: [
+      "Product is worn on the feet of a real person, correct orientation and realistic scale.",
+      "If the input shows a pair of shoes or sneakers displayed side by side on a surface or against a plain background, remove the surface and show the footwear worn on a real person's feet instead.",
+      "Show both feet naturally, standing or walking pose.",
+    ],
+    neg_add: [
+      "No product on table.", "No product on surface.", "No shoes displayed alone.", "No floating.", "No packaging.",
+      "Do not show product alone without a person wearing it.",
+    ],
   },
   wear_wrist: {
     pos_add: [
@@ -92,8 +125,15 @@ export const RULES: Record<string, Rule> = {
     ],
   },
   wear_back: {
-    pos_add: ["Product is worn on the back of a real person, person facing away from camera."],
-    neg_add: ["No product on table.", "No product on surface.", "No floating.", "No packaging.", "Do not show product alone without a person wearing it."],
+    pos_add: [
+      "Product is worn on the back of a real person, person facing away from camera.",
+      "If the input shows the backpack resting on the ground, a surface, or hanging on a wall or door, remove that and show it worn on a real person's back instead.",
+      "Both shoulder straps should be visible and on the person's shoulders, correct fit.",
+    ],
+    neg_add: [
+      "No product on table.", "No product on surface.", "No product on floor.", "No product hanging on wall.", "No floating.", "No packaging.",
+      "Do not show product alone without a person wearing it.",
+    ],
   },
   wear_crossbody: {
     pos_add: [
@@ -123,13 +163,15 @@ export const RULES: Record<string, Rule> = {
   hold_bag_hand: {
     pos_add: [
       "A real person holds the bag naturally in one hand.",
+      "If the input shows the bag hanging on a wall hook, door handle, or chair, remove that and show a real person holding the bag instead.",
+      "If the input shows the bag placed on a table or floor, show a real person holding it instead.",
       "The bag must be clearly visible and unobstructed.",
       "Natural relaxed standing pose.",
       "Realistic product size relative to the hand and body.",
     ],
     neg_add: [
       "No mannequin.", "No dummy.", "No packaging.",
-      "No product on table.", "No product alone.", "No floating bag.",
+      "No product on table.", "No product on floor.", "No bag hanging on wall.", "No bag on hook.", "No product alone.", "No floating bag.",
       "Do not show bag without a person holding it.",
     ],
   },

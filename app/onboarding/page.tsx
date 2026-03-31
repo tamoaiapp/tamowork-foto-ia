@@ -17,15 +17,17 @@ const BA_PAIRS = [
   { before: "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1774901746173x960644641282296700/634901.jpg",               after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/27e549d1-8cf3-408d-8ca6-b6ebd3a4f12a.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzI3ZTU0OWQxLThjZjMtNDA4ZC04Y2E2LWI2ZWJkM2E0ZjEyYS5qcGciLCJpYXQiOjE3NzQ5MDIwNDcsImV4cCI6MTc3NTUwNjg0N30.PtCzKjw16ubKpl0gLkUxoTpQwvWjVM7x3blP3Zgiu34" },
 ];
 
-type Screen = 1 | 2 | 3 | 4 | 5 | 6 | "register" | "paywall";
+type Screen = 1 | 2 | 3 | "register" | "paywall";
 type Plan = "weekly" | "annual";
 
 const BRAND = "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)";
-const ACCENT = "#a855f7"; // roxo para textos coloridos
+const ACCENT = "#a855f7";
 const BG = "#07080b";
 const CARD = "#111820";
 const LINE = "rgba(255,255,255,0.07)";
-const TOTAL_STEPS = 7; // telas 1-6 + registro + paywall
+const TOTAL_STEPS = 5; // telas 1-3 + registro + paywall
+
+const DEMO_VIDEO_URL = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/demo-video.mp4";
 
 function BaCarousel() {
   const [idx, setIdx] = useState(0);
@@ -103,7 +105,10 @@ function BaCarousel() {
         ))}
       </div>
 
-      <style>{`@keyframes baFadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }`}</style>
+      <style>{`
+        @keyframes baFadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+      `}</style>
     </div>
   );
 }
@@ -149,10 +154,7 @@ export default function OnboardingPage() {
       setScreen((s) => {
         if (s === 1) return 2;
         if (s === 2) return 3;
-        if (s === 3) return 4;
-        if (s === 4) return 5;
-        if (s === 5) return 6;
-        if (s === 6) return "register";
+        if (s === 3) return "register";
         return "paywall";
       });
       setAnimating(false);
@@ -249,6 +251,7 @@ export default function OnboardingPage() {
   }
 
   const step = screen === "paywall" ? TOTAL_STEPS : screen === "register" ? TOTAL_STEPS - 1 : typeof screen === "number" ? screen : 1;
+
   const progress = step / TOTAL_STEPS;
 
   return (
@@ -279,46 +282,59 @@ export default function OnboardingPage() {
 
       <div style={{ ...s.screen, opacity: animating ? 0 : 1, transition: "opacity 0.2s" }}>
 
-        {/* TELA 1 — Gancho */}
+        {/* TELA 1 — Antes/Depois */}
         {screen === 1 && (
           <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: ACCENT }}>
-              Transforme qualquer produto em imagem profissional
-            </h1>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "inline-block", background: `${ACCENT}22`, border: `1px solid ${ACCENT}44`, borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, color: ACCENT, letterSpacing: "0.04em", marginBottom: 14 }}>
+                IA PARA PRODUTOS
+              </div>
+              <h1 style={{ ...s.screenTitle, margin: 0 }}>
+                Transforme a foto do seu produto em{" "}
+                <span style={{ color: ACCENT }}>imagem profissional</span>
+              </h1>
+            </div>
             <BaCarousel />
-            <p style={s.screenSub}>Sem estúdio. Sem fotógrafo. Sem complicação.</p>
+            <p style={{ ...s.screenSub, marginTop: 12, fontSize: 14 }}>
+              Qualquer foto vira conteúdo pronto para vender.{"\n"}Sem estúdio. Sem fotógrafo.
+            </p>
             <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={goNext}>Próximo</button>
+              <button style={s.btnYellow} onClick={goNext}>Ver como funciona</button>
             </div>
           </div>
         )}
 
-        {/* TELA 2 — Dor */}
+        {/* TELA 2 — Vídeo */}
         {screen === 2 && (
           <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: "#fff" }}>
-              Você está perdendo vendas por fotos ruins
-            </h1>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: "inline-block", background: "#16c78422", border: "1px solid #16c78444", borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, color: "#16c784", letterSpacing: "0.04em", marginBottom: 14 }}>
+                FOTO + VÍDEO COM IA
+              </div>
+              <h1 style={{ ...s.screenTitle, margin: 0 }}>
+                Gera fotos{" "}
+                <span style={{ color: ACCENT }}>e vídeos</span>{" "}
+                do seu produto
+              </h1>
+            </div>
             <div style={s.imageArea}>
-              <div style={s.painCard}>
-                <div style={s.painLeft}>
-                  <div style={s.painProductBad}>
-                    <span style={{ fontSize: 48 }}>📷</span>
-                    <div style={{ color: "#ef4444", fontSize: 13, fontWeight: 700, marginTop: 8 }}>Foto ruim</div>
-                    <div style={{ color: "#6b7280", fontSize: 12, marginTop: 4 }}>0 vendas hoje</div>
-                  </div>
-                </div>
-                <div style={s.painRight}>
-                  <div style={s.painProductGood}>
-                    <span style={{ fontSize: 48 }}>🌟</span>
-                    <div style={{ color: ACCENT, fontSize: 13, fontWeight: 700, marginTop: 8 }}>Foto profissional</div>
-                    <div style={{ color: "#22c55e", fontSize: 12, marginTop: 4 }}>+47 vendas hoje</div>
-                  </div>
+              <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: "#0c1018", border: `1px solid ${ACCENT}30`, boxShadow: `0 0 40px ${ACCENT}20` }}>
+                <video
+                  src={DEMO_VIDEO_URL}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  style={{ width: "100%", display: "block", borderRadius: 20 }}
+                />
+                <div style={{ position: "absolute", bottom: 12, left: 12, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", borderRadius: 10, padding: "5px 12px", fontSize: 12, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block", animation: "pulse 1.5s infinite" }} />
+                  Vídeo gerado por IA
                 </div>
               </div>
             </div>
-            <p style={s.screenSub}>
-              Clientes compram com os olhos.{"\n"}Se sua imagem não chama atenção, você perde dinheiro.
+            <p style={{ ...s.screenSub, marginTop: 12, fontSize: 14 }}>
+              Pronto para Reels, TikTok e Stories.{"\n"}Gerado automaticamente em segundos.
             </p>
             <div style={s.bottomArea}>
               <button style={s.btnYellow} onClick={goNext}>Próximo</button>
@@ -326,138 +342,56 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* TELA 3 — Solução */}
+        {/* TELA 3 — Social proof + ilimitado */}
         {screen === 3 && (
           <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: ACCENT }}>
-              Crie fotos e vídeos que vendem
-            </h1>
+            <div style={{ marginBottom: 20 }}>
+              <h1 style={{ ...s.screenTitle, margin: 0 }}>
+                Mais de{" "}
+                <span style={{ color: ACCENT }}>26.000</span>{" "}
+                empreendedores já usam
+              </h1>
+            </div>
             <div style={s.imageArea}>
-              <div style={s.solutionGrid}>
-                {[
-                  { label: "Instagram", bg: "linear-gradient(135deg, #f58529, #dd2a7b, #8134af)", icon: "📸" },
-                  { label: "Shopee", bg: "linear-gradient(135deg, #e8390e, #ff6b35)", icon: "🛒" },
-                  { label: "WhatsApp", bg: "linear-gradient(135deg, #25d366, #128c7e)", icon: "💬" },
-                  { label: "Catálogo", bg: "linear-gradient(135deg, #6366f1, #a855f7)", icon: "📋" },
-                ].map((item) => (
-                  <div key={item.label} style={{ ...s.solutionCard, background: item.bg }}>
-                    <span style={{ fontSize: 32 }}>{item.icon}</span>
-                    <span style={s.solutionCardLabel}>{item.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <p style={s.screenSub}>
-              Gere conteúdo pronto para Instagram, Shopee, WhatsApp e catálogo.
-            </p>
-            <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={goNext}>Próximo</button>
-            </div>
-          </div>
-        )}
-
-        {/* TELA 4 — Diferencial ilimitado */}
-        {screen === 4 && (
-          <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: "#fff" }}>
-              Fotos e vídeos{" "}
-              <span style={{ color: ACCENT }}>ilimitados</span>{" "}
-              com IA
-            </h1>
-            <div style={s.imageArea}>
-              <div style={s.unlimitedGrid}>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} style={{
-                    ...s.unlimitedCard,
-                    background: [
-                      "linear-gradient(135deg, #1a1a2e, #16213e)",
-                      "linear-gradient(135deg, #0f3460, #533483)",
-                      "linear-gradient(135deg, #533483, #e94560)",
-                      "linear-gradient(135deg, #16213e, #0f3460)",
-                      "linear-gradient(135deg, #e94560, #533483)",
-                      "linear-gradient(135deg, #0f3460, #1a1a2e)",
-                    ][i],
-                    animationDelay: `${i * 0.1}s`,
-                  }}>
-                    <span style={{ fontSize: 28 }}>{"📦🛍️👟👜📱🎁"[i]}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={s.unlimitedBadge}>∞ ilimitado</div>
-            </div>
-            <p style={s.screenSub}>
-              Teste quantas ideias quiser.{"\n"}Crie até encontrar o visual perfeito para vender.
-            </p>
-            <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={goNext}>Próximo</button>
-            </div>
-          </div>
-        )}
-
-        {/* TELA 5 — Velocidade */}
-        {screen === 5 && (
-          <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: ACCENT }}>
-              Pronto em segundos
-            </h1>
-            <div style={s.imageArea}>
-              <div style={s.speedCard}>
-                <div style={s.speedRow}>
-                  <div style={s.speedItem}>
-                    <div style={s.speedIcon}>😰</div>
-                    <div style={s.speedLabel}>Foto tradicional</div>
-                    <div style={s.speedTime}>3–5 horas</div>
-                  </div>
-                  <div style={s.speedVs}>VS</div>
-                  <div style={s.speedItem}>
-                    <div style={s.speedIcon}>⚡</div>
-                    <div style={s.speedLabel}>TamoWork IA</div>
-                    <div style={{ ...s.speedTime, color: ACCENT }}>~30 segundos</div>
-                  </div>
-                </div>
-                <div style={s.speedBar}>
-                  <div style={s.speedBarFill} />
-                </div>
-                <div style={s.speedNote}>Enquanto outros levam horas, você já vendeu.</div>
-              </div>
-            </div>
-            <p style={s.screenSub}>
-              Enquanto outros levam horas para produzir,{"\n"}você cria em poucos segundos.
-            </p>
-            <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={goNext}>Próximo</button>
-            </div>
-          </div>
-        )}
-
-        {/* TELA 6 — Posicionamento */}
-        {screen === 6 && (
-          <div style={s.contentScreen}>
-            <h1 style={{ ...s.screenTitle, color: "#fff" }}>
-              Seu{" "}
-              <span style={{ color: ACCENT }}>funcionário de conteúdo</span>{" "}
-              com IA
-            </h1>
-            <div style={s.imageArea}>
-              <div style={s.employeeCard}>
-                <div style={s.employeeAvatar}>🤖</div>
-                <div style={s.employeeName}>TamoWork IA</div>
-                <div style={s.employeeRole}>Criador de Conteúdo</div>
-                <div style={s.employeeTasks}>
-                  {["Cria fotos profissionais", "Gera vídeos para vender", "Trabalha 24h por dia", "Nunca falta nem atrasa"].map((t) => (
-                    <div key={t} style={s.employeeTask}>
-                      <span style={{ color: ACCENT, marginRight: 8 }}>✓</span>
-                      {t}
+              {/* Avatares simulados */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <div style={{ display: "flex" }}>
+                  {["#f58529","#dd2a7b","#8134af","#6366f1","#16c784"].map((c, i) => (
+                    <div key={i} style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}99)`, border: "2px solid #07080b", marginLeft: i === 0 ? 0 : -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
+                      {["👩","👨","👩","👨","👩"][i]}
                     </div>
                   ))}
                 </div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.3 }}>
+                  <span style={{ color: "#fff", fontWeight: 700 }}>+26.000</span> empreendedores{"\n"}usando todo dia
+                </div>
+              </div>
+
+              {/* Card ilimitado */}
+              <div style={{ background: `linear-gradient(135deg, ${ACCENT}18, ${ACCENT}08)`, border: `1px solid ${ACCENT}30`, borderRadius: 20, padding: 20, marginBottom: 14 }}>
+                <div style={{ fontSize: 36, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 4 }}>∞ Ilimitado</div>
+                <div style={{ fontSize: 15, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>
+                  Crie quantas fotos e vídeos quiser.{"\n"}Sem limite. Sem fila. Sem custo extra.
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {[
+                  { num: "+26k", label: "usuários ativos" },
+                  { num: "∞", label: "fotos e vídeos" },
+                  { num: "~30s", label: "por imagem" },
+                  { num: "4.9★", label: "avaliação" },
+                ].map((stat) => (
+                  <div key={stat.label} style={{ background: CARD, borderRadius: 14, padding: "14px 16px", border: `1px solid ${LINE}` }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: ACCENT }}>{stat.num}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{stat.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
-            <p style={s.screenSub}>
-              Ele cria suas fotos e vídeos automaticamente{"\n"}enquanto você foca em vender.
-            </p>
             <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={goNext}>Continuar</button>
+              <button style={s.btnYellow} onClick={goNext}>Quero começar</button>
             </div>
           </div>
         )}
@@ -541,23 +475,22 @@ export default function OnboardingPage() {
           <div style={s.paywallScreen}>
             <div style={s.paywallScroll}>
               <h1 style={s.paywallTitle}>
-                Desbloqueie sua{"\n"}
-                <span style={{ color: ACCENT }}>máquina de vendas</span>{"\n"}
-                com IA
+                Fotos e vídeos{" "}
+                <span style={{ color: ACCENT }}>ilimitados</span>{" "}
+                para vender mais
               </h1>
               <p style={s.paywallSub}>
-                Crie fotos e vídeos ilimitados para seus produtos e venda mais todos os dias.
+                Acesso completo. Cancele quando quiser.
               </p>
 
               {/* Benefícios */}
               <div style={s.benefitsList}>
                 {[
                   "Fotos ilimitadas para seus produtos",
-                  "Vídeos ilimitados prontos para vender",
-                  "Conteúdo para Instagram, Shopee e WhatsApp",
-                  "Estilos profissionais automáticos",
-                  "Alta resolução",
-                  "Sem marca d'água",
+                  "Vídeos ilimitados prontos para Reels e TikTok",
+                  "Modelos humanos com IA",
+                  "Alta resolução sem marca d'água",
+                  "Pronto para Instagram, Shopee e WhatsApp",
                 ].map((b) => (
                   <div key={b} style={s.benefitItem}>
                     <span style={s.benefitCheck}>✓</span>
@@ -566,13 +499,30 @@ export default function OnboardingPage() {
                 ))}
               </div>
 
-              {/* Frase de conversão */}
-              <div style={s.conversionLine}>
-                Uma única imagem que vende já pode pagar o app.
-              </div>
-
               {/* Planos */}
               <div style={s.plansArea}>
+                {/* Anual — destaque */}
+                <button
+                  style={{ ...s.planCard, ...(selectedPlan === "annual" ? s.planCardSelected : {}), position: "relative", overflow: "visible" }}
+                  onClick={() => setSelectedPlan("annual")}
+                >
+                  <div style={{ position: "absolute", top: -11, right: 14, background: BRAND, color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 20, letterSpacing: "0.06em" }}>
+                    MAIS POPULAR
+                  </div>
+                  <div style={s.planRadio}>
+                    <div style={{ ...s.planRadioInner, ...(selectedPlan === "annual" ? s.planRadioActive : {}) }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={s.planName}>Plano Anual</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>R$228 cobrado uma vez por ano</div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textDecoration: "line-through" }}>R$39/sem</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$19<span style={{ fontSize: 12, fontWeight: 500 }}>/mês</span></div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: ACCENT, lineHeight: 1 }}>R$0,63<span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.5)" }}>/dia</span></div>
+                  </div>
+                </button>
+
                 {/* Semanal */}
                 <button
                   style={{ ...s.planCard, ...(selectedPlan === "weekly" ? s.planCardSelected : {}) }}
@@ -581,33 +531,21 @@ export default function OnboardingPage() {
                   <div style={s.planRadio}>
                     <div style={{ ...s.planRadioInner, ...(selectedPlan === "weekly" ? s.planRadioActive : {}) }} />
                   </div>
-                  <div style={s.planInfo}>
+                  <div style={{ flex: 1 }}>
                     <div style={s.planName}>Semanal</div>
-                    <div style={s.planDesc}>Acesso completo + uso ilimitado</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Acesso completo por 7 dias</div>
                   </div>
-                  <div style={s.planPrice}>R$29,90</div>
-                </button>
-
-                {/* Anual */}
-                <button
-                  style={{ ...s.planCard, ...(selectedPlan === "annual" ? s.planCardSelected : {}) }}
-                  onClick={() => setSelectedPlan("annual")}
-                >
-                  <div style={s.planRadio}>
-                    <div style={{ ...s.planRadioInner, ...(selectedPlan === "annual" ? s.planRadioActive : {}) }} />
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$39<span style={{ fontSize: 12, fontWeight: 500 }}>/sem</span></div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>R$5,57/dia</div>
                   </div>
-                  <div style={s.planInfo}>
-                    <div style={s.planNameRow}>
-                      <span style={s.planName}>Anual</span>
-                      <span style={s.planBadge}>MAIS VANTAJOSO</span>
-                    </div>
-                    <div style={s.planDesc}>Melhor custo + acesso completo</div>
-                  </div>
-                  <div style={s.planPrice}>R$199,90</div>
                 </button>
               </div>
 
-              <div style={s.cancelNote}>↺ Cancelamento a Qualquer Momento</div>
+              <div style={s.cancelNote}>↺ Cancele quando quiser</div>
+              <div style={{ ...s.conversionLine, marginTop: 8 }}>
+                Uma foto que vende já paga o mês inteiro.
+              </div>
             </div>
 
             <div style={s.paywallBottom}>
@@ -616,7 +554,7 @@ export default function OnboardingPage() {
                 onClick={handleCheckout}
                 disabled={loadingCheckout}
               >
-                {loadingCheckout ? "Aguarde..." : "Começar a vender com IA"}
+                {loadingCheckout ? "Aguarde..." : "Começar agora"}
               </button>
               <button style={s.btnGhost} onClick={skip}>
                 Talvez mais tarde

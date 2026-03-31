@@ -1,13 +1,9 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { qstash } from "@/lib/qstash/client";
 import { pickVideoComfyBase, uploadImageToVideoComfy, submitVideoWorkflow, buildVideoWorkflow } from "@/lib/comfyui/video-client";
 import { submitRunpodJob, RUNPOD_VIDEO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { ensureVideoPodRunning } from "@/lib/runpod/pods";
-import { checkVideoJob } from "@/lib/video-jobs/check";
 
-const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
 const USE_SERVERLESS = process.env.RUNPOD_SERVERLESS_ENABLED === "true";
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
 
 export async function submitVideoJob(jobId: string) {
   const supabase = createServerClient();
@@ -34,12 +30,8 @@ export async function submitVideoJob(jobId: string) {
     const podReady = await ensureVideoPodRunning(comfyBase);
 
     if (!podReady) {
-      await qstash.publishJSON({
-        url: `${process.env.APP_URL}/api/internal/video-jobs/submit`,
-        delay: 180,
-        body: { jobId },
-        headers: { "x-internal-secret": INTERNAL_SECRET },
-      });
+      // Pod não está pronto — volta para queued, o cron tenta novamente em 1 min
+      await supabase.from("video_jobs").update({ status: "queued" }).eq("id", jobId);
       return;
     }
 
@@ -53,15 +45,5 @@ export async function submitVideoJob(jobId: string) {
     .from("video_jobs")
     .update({ status: "submitted", external_job_id: externalJobId, provider })
     .eq("id", jobId);
-
-  if (isLocalhost) {
-    setTimeout(() => checkVideoJob(jobId).catch(console.error), 20_000);
-  } else {
-    await qstash.publishJSON({
-      url: `${process.env.APP_URL}/api/internal/video-jobs/check`,
-      delay: 20,
-      body: { jobId },
-      headers: { "x-internal-secret": INTERNAL_SECRET },
-    });
-  }
+  // O cron de 1 minuto vai verificar o resultado automaticamente
 }
