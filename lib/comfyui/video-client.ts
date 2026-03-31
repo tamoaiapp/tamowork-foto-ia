@@ -38,13 +38,15 @@ export function buildVideoWorkflow(
   imageName: string,
   promptPos: string,
   durationSec = 6,
-  fps = 16
+  fps = 16,
+  promptNeg?: string
 ): Record<string, unknown> {
   const workflow = JSON.parse(JSON.stringify(videoTemplate)) as Record<string, unknown>;
   const seed = Math.floor(Math.random() * 999_999_999);
   const frames = Math.max(1, Math.floor(durationSec * fps));
   (workflow["52"] as { inputs: { image: string } }).inputs.image = imageName;
   (workflow["6"] as { inputs: { text: string } }).inputs.text = promptPos || "a smooth slow camera move";
+  if (promptNeg) (workflow["7"] as { inputs: { text: string } }).inputs.text = promptNeg;
   (workflow["50"] as { inputs: { length: number } }).inputs.length = frames;
   (workflow["63"] as { inputs: { frame_rate: number; filename_prefix: string } }).inputs.frame_rate = fps;
   (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
@@ -60,7 +62,8 @@ export async function submitVideoWorkflow(
   promptPos: string,
   comfyBase: string,
   durationSec = 6,
-  fps = 16
+  fps = 16,
+  promptNeg?: string
 ): Promise<string> {
   const workflow = JSON.parse(JSON.stringify(videoTemplate)) as Record<string, unknown>;
   const seed = Math.floor(Math.random() * 999_999_999);
@@ -68,6 +71,7 @@ export async function submitVideoWorkflow(
 
   (workflow["52"] as { inputs: { image: string } }).inputs.image = imageName;
   (workflow["6"] as { inputs: { text: string } }).inputs.text = promptPos || "a smooth slow camera move";
+  if (promptNeg) (workflow["7"] as { inputs: { text: string } }).inputs.text = promptNeg;
   (workflow["50"] as { inputs: { length: number } }).inputs.length = frames;
   (workflow["63"] as { inputs: { frame_rate: number; filename_prefix: string } }).inputs.frame_rate = fps;
   (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;

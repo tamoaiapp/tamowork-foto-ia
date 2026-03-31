@@ -21,7 +21,7 @@ export async function submitVideoJob(jobId: string) {
   let provider: string;
 
   if (USE_SERVERLESS) {
-    const workflow = buildVideoWorkflow(jobId, "product.jpg", job.prompt ?? "");
+    const workflow = buildVideoWorkflow(jobId, "product.jpg", job.prompt ?? "", 6, 16, job.prompt_neg ?? undefined);
     const runpodJobId = await submitRunpodJob(RUNPOD_VIDEO_ENDPOINT, workflow, job.input_image_url);
     externalJobId = `runpod:${runpodJobId}`;
     provider = "runpod-serverless";
@@ -36,7 +36,7 @@ export async function submitVideoJob(jobId: string) {
     }
 
     const imageName = await uploadImageToVideoComfy(job.input_image_url, comfyBase, jobId);
-    const promptId = await submitVideoWorkflow(jobId, imageName, job.prompt ?? "", comfyBase);
+    const promptId = await submitVideoWorkflow(jobId, imageName, job.prompt ?? "", comfyBase, 6, 16, job.prompt_neg ?? undefined);
     externalJobId = `${comfyIndex}:${promptId}`;
     provider = "comfyui-direct";
   }
