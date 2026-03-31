@@ -65,6 +65,14 @@ function DemoCarousel() {
 
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Nome do produto */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>{card.label}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT, background: `${ACCENT}22`, padding: "3px 10px", borderRadius: 20 }}>
+          {idx + 1}/{DEMO_CARDS.length}
+        </span>
+      </div>
+
       {/* Fotos lado a lado — mesma dimensão */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
         <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
@@ -357,10 +365,10 @@ export default function OnboardingPage() {
 
         {/* TELA 1 — carrossel antes/depois + vídeo */}
         {screen === 1 && (
-          <div style={{ ...s.contentScreen, overflowY: "auto", paddingBottom: 100 }}>
-            <div style={{ marginBottom: 16 }}>
-              <h1 style={{ ...s.screenTitle, margin: 0 }}>
-                Tire foto de qualquer jeito,{" "}
+          <div style={{ ...s.contentScreen, overflowY: "auto", paddingTop: 20, paddingBottom: 100 }}>
+            <div style={{ marginBottom: 14 }}>
+              <h1 style={{ ...s.screenTitle, margin: 0, fontSize: 24 }}>
+                Tire foto de qualquer jeito dos seus produtos,{" "}
                 <span style={{ color: ACCENT }}>transforma em foto que vende</span>{" "}
                 e faz vídeo viral
               </h1>
