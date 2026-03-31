@@ -7,14 +7,8 @@ import { supabase } from "@/lib/supabase/client";
 const S3 = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object";
 const VID = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/video-jobs";
 
-// 5 produtos reais: foto original → foto IA → vídeo IA
+// ordem: óculos primeiro (pedido do usuário), depois tênis (novo vídeo), fantasia (novo vídeo), colar
 const DEMO_CARDS = [
-  {
-    label: "Tênis bordado",
-    before: `${S3}/public/input-images/onboard/tenis.jpg`,
-    after:  `${S3}/sign/image-jobs/800f27c5-7d73-4603-b252-d2e9853563b8.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzgwMGYyN2M1LTdkNzMtNDYwMy1iMjUyLWQyZTk4NTM1NjNiOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.WnYrCu2rEopYvByQKFu8L5Hm-3jzA9IXUqgjuFI2unQ`,
-    video:  `${VID}/672c7f47-ee51-4c2b-ace0-f3d15c6a0eaf.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzY3MmM3ZjQ3LWVlNTEtNGMyYi1hY2UwLWYzZDE1YzZhMGVhZi5tcDQiLCJpYXQiOjE3NzQ5NTg2NTQsImV4cCI6MjA5MDMxODY1NH0.WJJZKpxoKbbjl2ZxQl77YlVSUMkSmBl12IDc9ftz_H0`,
-  },
   {
     label: "Óculos retrô",
     before: `${S3}/public/input-images/onboard/oculos.jpeg`,
@@ -22,10 +16,16 @@ const DEMO_CARDS = [
     video:  `${VID}/396aed09-3745-4d78-8b0a-5aec13513282.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzM5NmFlZDA5LTM3NDUtNGQ3OC04YjBhLTVhZWMxMzUxMzI4Mi5tcDQiLCJpYXQiOjE3NzQ5NTg2NTMsImV4cCI6MjA5MDMxODY1M30.5H9g-PfaOIG0HUMAdTb-SiyWNbovLhoUSb1n0Pq4YrM`,
   },
   {
+    label: "Tênis bordado",
+    before: `${S3}/public/input-images/onboard/tenis.jpg`,
+    after:  `${S3}/sign/image-jobs/800f27c5-7d73-4603-b252-d2e9853563b8.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzgwMGYyN2M1LTdkNzMtNDYwMy1iMjUyLWQyZTk4NTM1NjNiOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.WnYrCu2rEopYvByQKFu8L5Hm-3jzA9IXUqgjuFI2unQ`,
+    video:  null as string | null, // job 6ce857bd — aguardando
+  },
+  {
     label: "Fantasia infantil",
     before: `${S3}/public/input-images/onboard/fantasia.webp`,
     after:  `${S3}/sign/image-jobs/4bfe5d4a-7d6a-41e9-8c15-15ecbc4e1571.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzRiZmU1ZDRhLTdkNmEtNDFlOS04YzE1LTE1ZWNiYzRlMTU3MS5qcGciLCJpYXQiOjE3NzQ5NTgwMDUsImV4cCI6MjA5MDMxODAwNX0.mItnYXMEOLDmMn8ViKTZz219qSx9dNOKoGoEWyYCbno`,
-    video:  `${VID}/38f6de40-45a0-4fb4-9b3e-d37859915b0c.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzM4ZjZkZTQwLTQ1YTAtNGZiNC05YjNlLWQzNzg1OTkxNWIwYy5tcDQiLCJpYXQiOjE3NzQ5NTg2NTQsImV4cCI6MjA5MDMxODY1NH0.ooqzvZ8VwJ3hZcieVImRNXLPhBj9qY8gQu2pB6I2UkE`,
+    video:  null as string | null, // job 11af3ceb — aguardando
   },
   {
     label: "Colar de praia",
@@ -101,18 +101,26 @@ function DemoCarousel() {
         </div>
       </div>
 
-      {/* Vídeo abaixo — avança ao terminar */}
+      {/* Vídeo abaixo — avança ao terminar. Se não tem vídeo, pula sozinho após 3s */}
       <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#000", lineHeight: 0 }}>
-        <video
-          ref={videoRef}
-          key={card.video}
-          src={card.video}
-          autoPlay
-          muted
-          playsInline
-          onEnded={() => goTo(idx + 1)}
-          style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
-        />
+        {card.video ? (
+          <video
+            ref={videoRef}
+            key={card.video}
+            src={card.video}
+            autoPlay
+            muted
+            playsInline
+            onEnded={() => goTo(idx + 1)}
+            style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+          />
+        ) : (
+          <img
+            src={card.after}
+            alt="foto ia"
+            style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+          />
+        )}
         {/* badge produto */}
         <div style={{
           position: "absolute", top: 8, left: 8,
@@ -124,12 +132,12 @@ function DemoCarousel() {
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />
           {card.label}
         </div>
-        {/* badge vídeo ia */}
+        {/* badge */}
         <span style={{
           position: "absolute", bottom: 8, left: 8,
           background: `${ACCENT}dd`, color: "#fff",
           fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1,
-        }}>VÍDEO IA</span>
+        }}>{card.video ? "VÍDEO IA" : "FOTO IA"}</span>
       </div>
 
       {/* Dots */}
