@@ -27,7 +27,13 @@ const CARD = "#111820";
 const LINE = "rgba(255,255,255,0.07)";
 const TOTAL_STEPS = 5; // telas 1-3 + registro + paywall
 
-const DEMO_VIDEO_URL = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/demo-onboard.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2RlbW8tb25ib2FyZC5tcDQiLCJpYXQiOjE3NzQ5MjM0OTUsImV4cCI6MjA5MDI4MzQ5NX0.fNUSpGNbECK7EMUZZGJxxf5T87SBuZt7fYav-rppssA";
+const DEMO_VIDEOS = [
+  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_1.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb18xLm1wNCIsImlhdCI6MTc3NDkyNjM4OSwiZXhwIjoyMDkwMjg2Mzg5fQ.zSQNlXJw1bTyvIu17SAyk9VAdHOo94qH_x8zEw-hu9E",
+  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_2.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb18yLm1wNCIsImlhdCI6MTc3NDkyNjM5MSwiZXhwIjoyMDkwMjg2MzkxfQ.X1tycsSjEfSCrYZcf3KNG3qfi6FM5ojI9L2qoKXcM0Y",
+  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_3.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb18zLm1wNCIsImlhdCI6MTc3NDkyNjM5NCwiZXhwIjoyMDkwMjg2Mzk0fQ.RWnU_BV2t5WK7XYxw-5fJe6x-qoRlwt13W3Bv6wHgOg",
+  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_4.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb180Lm1wNCIsImlhdCI6MTc3NDkyNjM5NiwiZXhwIjoyMDkwMjg2Mzk2fQ.0OmJfHKPRnirq3lEXsHpNmyKfFypPRwY8qzPE0CgZ2I",
+  "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/onboard/video_demo_5.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL29uYm9hcmQvdmlkZW9fZGVtb181Lm1wNCIsImlhdCI6MTc3NDkyNjM5OCwiZXhwIjoyMDkwMjg2Mzk4fQ.fWQhXjmRcemC2qStT_iAcSJa9ChtKRIM3xb-dFiYcnE",
+];
 
 function BaCarousel() {
   const [idx, setIdx] = useState(0);
@@ -109,6 +115,41 @@ function BaCarousel() {
         @keyframes baFadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
       `}</style>
+    </div>
+  );
+}
+
+function VideoCarousel() {
+  const [vidIdx, setVidIdx] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    timerRef.current = setTimeout(() => setVidIdx(i => (i + 1) % DEMO_VIDEOS.length), 5000);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [vidIdx]);
+
+  return (
+    <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: "#0c1018", border: `1px solid ${ACCENT}30`, boxShadow: `0 0 40px ${ACCENT}20` }}>
+      {DEMO_VIDEOS.map((src, i) => (
+        <video
+          key={src}
+          src={src}
+          autoPlay
+          muted
+          loop
+          playsInline
+          style={{ width: "100%", display: i === vidIdx ? "block" : "none", borderRadius: 20, animation: i === vidIdx ? "baFadeIn 0.5s ease" : "none" }}
+        />
+      ))}
+      <div style={{ position: "absolute", bottom: 10, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 5 }}>
+        {DEMO_VIDEOS.map((_, i) => (
+          <div key={i} onClick={() => setVidIdx(i)} style={{ width: i === vidIdx ? 16 : 6, height: 6, borderRadius: 99, background: i === vidIdx ? ACCENT : "rgba(255,255,255,0.3)", transition: "all 0.3s", cursor: "pointer" }} />
+        ))}
+      </div>
+      <div style={{ position: "absolute", bottom: 28, left: 12, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", borderRadius: 10, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 5 }}>
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block", animation: "pulse 1.5s infinite" }} />
+        Vídeo gerado por IA
+      </div>
     </div>
   );
 }
@@ -318,20 +359,7 @@ export default function OnboardingPage() {
               </h1>
             </div>
             <div style={s.imageArea}>
-              <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: "#0c1018", border: `1px solid ${ACCENT}30`, boxShadow: `0 0 40px ${ACCENT}20` }}>
-                <video
-                  src={DEMO_VIDEO_URL}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  style={{ width: "100%", display: "block", borderRadius: 20 }}
-                />
-                <div style={{ position: "absolute", bottom: 12, left: 12, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", borderRadius: 10, padding: "5px 12px", fontSize: 12, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block", animation: "pulse 1.5s infinite" }} />
-                  Vídeo gerado por IA
-                </div>
-              </div>
+              <VideoCarousel />
             </div>
             <p style={{ ...s.screenSub, marginTop: 12, fontSize: 14 }}>
               Pronto para Reels, TikTok e Stories.{"\n"}Gerado automaticamente em segundos.
