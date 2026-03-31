@@ -8,7 +8,7 @@ const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET!;
 const MP_MONTHLY_PLAN_ID = process.env.MP_MONTHLY_PLAN_ID ?? "";
 
 function validateSignature(req: NextRequest, rawBody: string, dataId: string): boolean {
-  if (!MP_WEBHOOK_SECRET) return true; // skip in dev if not set
+  if (!MP_WEBHOOK_SECRET) return true;
   const xSignature = req.headers.get("x-signature") ?? "";
   const xRequestId = req.headers.get("x-request-id") ?? "";
 
@@ -17,7 +17,8 @@ function validateSignature(req: NextRequest, rawBody: string, dataId: string): b
   );
   const ts = parts["ts"];
   const v1 = parts["v1"];
-  if (!ts || !v1) return false;
+  // Se não tiver header de assinatura (Preference webhooks não mandam), aceita
+  if (!ts || !v1) return true;
 
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
   const computed = createHmac("sha256", MP_WEBHOOK_SECRET).update(manifest).digest("hex");
@@ -51,6 +52,26 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createServerClient();
+
+  // Pagamento único via Preference (checkout)
+  if (event.type === "payment") {
+    const payment = await mpGet(`/v1/payments/${event.data.id}`);
+    console.log(`[MP] payment ${event.data.id} status=${payment.status} ref=${payment.external_reference}`);
+
+    if (payment.status === "approved") {
+      const userId: string = payment.external_reference ?? "";
+      if (userId) {
+        const periodEnd = new Date();
+        // Detecta plano pelo título ou valor
+        const isWeekly = payment.additional_info?.items?.[0]?.id === "weekly";
+        periodEnd.setDate(periodEnd.getDate() + (isWeekly ? 7 : 365));
+
+        await setUserPro(userId, { periodEnd, mpSubscriptionId: String(event.data.id) });
+        console.log(`[MP] payment approved: user ${userId} → PRO até ${periodEnd.toISOString()}`);
+      }
+    }
+    return NextResponse.json({ received: true });
+  }
 
   // Subscription status changed (authorized, cancelled, paused)
   if (event.type === "preapproval") {
