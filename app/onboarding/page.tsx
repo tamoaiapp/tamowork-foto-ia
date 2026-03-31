@@ -388,59 +388,71 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* TELA 2 — Ilimitado + 26k usuários */}
+        {/* TELA 2 — Apelo emocional / conversão */}
         {screen === 2 && (
-          <div style={s.contentScreen}>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: "inline-block", background: "#16c78422", border: "1px solid #16c78444", borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, color: "#16c784", letterSpacing: "0.04em", marginBottom: 14 }}>
-                ILIMITADO
-              </div>
-              <h1 style={{ ...s.screenTitle, margin: 0 }}>
-                Mais de{" "}
-                <span style={{ color: ACCENT }}>26.000</span>{" "}
-                empreendedores já usam
+          <div style={{ ...s.contentScreen, justifyContent: "space-between" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+              {/* Headline emocional */}
+              <h1 style={{ ...s.screenTitle, margin: 0, fontSize: 26 }}>
+                Foto ruim{" "}
+                <span style={{ color: "#f87171" }}>custa venda.</span>{" "}
+                Foto boa{" "}
+                <span style={{ color: "#4ade80" }}>faz o cliente comprar na hora.</span>
               </h1>
-            </div>
 
-            {/* Avatares */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-              <div style={{ display: "flex" }}>
-                {["#f58529","#dd2a7b","#8134af","#6366f1","#16c784"].map((c, i) => (
-                  <div key={i} style={{ width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}99)`, border: "2px solid #07080b", marginLeft: i === 0 ? 0 : -10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
-                    {["👩","👨","👩","👨","👩"][i]}
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.4 }}>
-                <span style={{ color: "#fff", fontWeight: 700 }}>+26.000</span> empreendedores{"\n"}usando todo dia
-              </div>
-            </div>
-
-            {/* Card ilimitado */}
-            <div style={{ background: `linear-gradient(135deg, ${ACCENT}18, ${ACCENT}08)`, border: `1px solid ${ACCENT}30`, borderRadius: 22, padding: "22px 20px", marginBottom: 14 }}>
-              <div style={{ fontSize: 40, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", marginBottom: 6 }}>∞ Ilimitado</div>
-              <div style={{ fontSize: 15, color: "rgba(255,255,255,0.65)", lineHeight: 1.6 }}>
-                Crie quantas fotos e vídeos quiser.{"\n"}Sem limite. Sem fila. Sem custo extra.
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
-              {[
-                { num: "+26k", label: "usuários ativos" },
-                { num: "∞", label: "fotos e vídeos" },
-                { num: "~30s", label: "por imagem" },
-                { num: "4.9★", label: "avaliação" },
-              ].map((stat) => (
-                <div key={stat.label} style={{ background: CARD, borderRadius: 14, padding: "14px 16px", border: `1px solid ${LINE}` }}>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: ACCENT }}>{stat.num}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{stat.label}</div>
+              {/* Card dor */}
+              <div style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 18, padding: "16px 18px" }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 8, fontWeight: 700, letterSpacing: "0.05em" }}>A REALIDADE SEM IA</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {[
+                    "Cliente abre o anúncio e fecha sem comprar",
+                    "Foto tirada com pressa não transmite valor",
+                    "Concorrente com foto melhor leva a venda",
+                  ].map((t) => (
+                    <div key={t} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.4 }}>
+                      <span style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }}>✕</span>
+                      {t}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Card solução */}
+              <div style={{ background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 18, padding: "16px 18px" }}>
+                <div style={{ fontSize: 13, color: "#4ade80", marginBottom: 8, fontWeight: 700, letterSpacing: "0.05em" }}>COM A IA</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {[
+                    "Foto profissional em segundos, sem estúdio",
+                    "Vídeo para Reels e TikTok no mesmo clique",
+                    "Produto parece caro — cliente paga mais",
+                  ].map((t) => (
+                    <div key={t} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 1.4 }}>
+                      <span style={{ color: "#4ade80", flexShrink: 0, marginTop: 1 }}>✓</span>
+                      {t}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Prova social */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, background: CARD, borderRadius: 16, padding: "14px 16px", border: `1px solid ${LINE}` }}>
+                <div style={{ display: "flex", flexShrink: 0 }}>
+                  {["#f58529","#dd2a7b","#8134af","#6366f1","#16c784"].map((c, i) => (
+                    <div key={i} style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${c}, ${c}88)`, border: "2px solid #111820", marginLeft: i === 0 ? 0 : -8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
+                      {["👩","👨","👩","👨","👩"][i]}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", lineHeight: 1.4 }}>
+                  <span style={{ color: "#fff", fontWeight: 800 }}>+26.000</span> empreendedores já vendem mais com IA
+                </div>
+              </div>
+
             </div>
 
             <div style={s.bottomArea}>
-              <button style={s.btnYellow} onClick={goNext}>Quero começar →</button>
+              <button style={s.btnYellow} onClick={goNext}>Quero vender mais →</button>
             </div>
           </div>
         )}
