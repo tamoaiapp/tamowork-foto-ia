@@ -48,8 +48,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ init_point: pref.init_point });
-  } catch (err) {
-    console.error("[checkout/mp]", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : JSON.stringify(err);
+    const cause = (err as { cause?: unknown })?.cause;
+    console.error("[checkout/mp]", msg, cause);
+    return NextResponse.json({ error: msg, cause }, { status: 500 });
   }
 }
