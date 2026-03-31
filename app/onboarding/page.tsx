@@ -121,35 +121,88 @@ function BaCarousel() {
 
 function VideoCarousel() {
   const [vidIdx, setVidIdx] = useState(0);
+  const [prevIdx, setPrevIdx] = useState<number | null>(null);
+  const [animating, setAnimating] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  function goTo(next: number) {
+    if (animating) return;
+    setPrevIdx(vidIdx);
+    setAnimating(true);
+    setTimeout(() => {
+      setVidIdx(next);
+      setPrevIdx(null);
+      setAnimating(false);
+    }, 600);
+  }
+
   useEffect(() => {
-    timerRef.current = setTimeout(() => setVidIdx(i => (i + 1) % DEMO_VIDEOS.length), 5000);
+    timerRef.current = setTimeout(() => goTo((vidIdx + 1) % DEMO_VIDEOS.length), 5000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [vidIdx]);
 
   return (
-    <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: "#0c1018", border: `1px solid ${ACCENT}30`, boxShadow: `0 0 40px ${ACCENT}20` }}>
-      {DEMO_VIDEOS.map((src, i) => (
-        <video
-          key={src}
-          src={src}
-          autoPlay
-          muted
-          loop
-          playsInline
-          style={{ width: "100%", display: i === vidIdx ? "block" : "none", borderRadius: 20, animation: i === vidIdx ? "baFadeIn 0.5s ease" : "none" }}
-        />
-      ))}
-      <div style={{ position: "absolute", bottom: 10, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 5 }}>
+    <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: "#0c1018", border: `1px solid ${ACCENT}30`, boxShadow: `0 0 40px ${ACCENT}20`, aspectRatio: "9/16", maxHeight: 420 }}>
+      {DEMO_VIDEOS.map((src, i) => {
+        const isActive = i === vidIdx;
+        const isPrev = i === prevIdx;
+        if (!isActive && !isPrev) return null;
+        return (
+          <video
+            key={src}
+            src={src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%",
+              objectFit: "cover",
+              borderRadius: 20,
+              animation: isActive && animating
+                ? "vidSlideIn 0.6s cubic-bezier(0.4,0,0.2,1) forwards"
+                : isPrev && animating
+                ? "vidSlideOut 0.6s cubic-bezier(0.4,0,0.2,1) forwards"
+                : isActive
+                ? "vidFadeIn 0.4s ease forwards"
+                : "none",
+              zIndex: isActive ? 2 : 1,
+            }}
+          />
+        );
+      })}
+
+      {/* Overlay gradiente bottom */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(transparent, rgba(0,0,0,0.7))", zIndex: 3, borderRadius: "0 0 20px 20px" }} />
+
+      {/* Dots */}
+      <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 5, zIndex: 4 }}>
         {DEMO_VIDEOS.map((_, i) => (
-          <div key={i} onClick={() => setVidIdx(i)} style={{ width: i === vidIdx ? 16 : 6, height: 6, borderRadius: 99, background: i === vidIdx ? ACCENT : "rgba(255,255,255,0.3)", transition: "all 0.3s", cursor: "pointer" }} />
+          <div key={i} onClick={() => goTo(i)} style={{ width: i === vidIdx ? 18 : 6, height: 6, borderRadius: 99, background: i === vidIdx ? "#fff" : "rgba(255,255,255,0.35)", transition: "all 0.35s ease", cursor: "pointer" }} />
         ))}
       </div>
-      <div style={{ position: "absolute", bottom: 28, left: 12, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", borderRadius: 10, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 5 }}>
+
+      {/* Badge */}
+      <div style={{ position: "absolute", top: 12, left: 12, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", borderRadius: 10, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 5, zIndex: 4 }}>
         <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block", animation: "pulse 1.5s infinite" }} />
         Vídeo gerado por IA
       </div>
+
+      <style>{`
+        @keyframes vidSlideIn {
+          from { opacity: 0; transform: scale(1.06) translateX(30px); }
+          to   { opacity: 1; transform: scale(1) translateX(0); }
+        }
+        @keyframes vidSlideOut {
+          from { opacity: 1; transform: scale(1) translateX(0); }
+          to   { opacity: 0; transform: scale(0.96) translateX(-30px); }
+        }
+        @keyframes vidFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }
