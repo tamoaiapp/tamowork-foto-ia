@@ -1,10 +1,8 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { qstash } from "@/lib/qstash/client";
 import { submitImageJob } from "@/lib/image-jobs/submit";
 import { getUserPlan } from "@/lib/plans";
 
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
 
 const FREE_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 horas
 
@@ -60,26 +58,11 @@ export async function createImageJob(
 
   if (error) throw error;
 
+  // Em localhost dispara imediatamente; em prod o cron de 1 min pega o job
   if (isLocalhost) {
     submitImageJob(job.id).catch((err) =>
       console.error("[submit-local] erro:", err)
     );
-  } else {
-    try {
-      await qstash.publishJSON({
-        url: `${process.env.APP_URL}/api/internal/image-jobs/submit`,
-        body: { jobId: job.id },
-        headers: { "x-internal-secret": INTERNAL_SECRET },
-      });
-    } catch (err) {
-      console.error("[qstash] falha ao publicar job:", err);
-      // Marca como failed imediatamente se QStash falhar
-      await supabase.from("image_jobs").update({
-        status: "failed",
-        error_message: "Falha ao enfileirar job (QStash error)",
-      }).eq("id", job.id);
-      throw new Error("Falha ao enfileirar geração. Tente novamente.");
-    }
   }
 
   return job;

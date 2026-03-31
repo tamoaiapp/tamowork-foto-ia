@@ -1,10 +1,8 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { qstash } from "@/lib/qstash/client";
 import { getUserPlan } from "@/lib/plans";
 import { submitVideoJob } from "@/lib/video-jobs/submit";
 
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
 
 export class ProRequiredError extends Error {
   constructor() { super("pro_required"); }
@@ -32,16 +30,11 @@ export async function createVideoJob(
 
   if (error) throw error;
 
+  // Em localhost dispara imediatamente; em prod o cron de 1 min pega o job
   if (isLocalhost) {
     submitVideoJob(job.id).catch((err) =>
       console.error("[video-submit-local] erro:", err)
     );
-  } else {
-    qstash.publishJSON({
-      url: `${process.env.APP_URL}/api/internal/video-jobs/submit`,
-      body: { jobId: job.id },
-      headers: { "x-internal-secret": INTERNAL_SECRET },
-    }).catch((err) => console.error("[qstash-video] falha:", err));
   }
 
   return job;
