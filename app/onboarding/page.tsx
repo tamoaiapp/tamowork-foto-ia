@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
 const S3 = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object";
+const VID = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/video-jobs";
 
 // 5 produtos reais: foto original → foto IA → vídeo IA
 const DEMO_CARDS = [
@@ -12,31 +13,31 @@ const DEMO_CARDS = [
     label: "Tênis bordado",
     before: `${S3}/public/input-images/onboard/tenis.jpg`,
     after:  `${S3}/sign/image-jobs/800f27c5-7d73-4603-b252-d2e9853563b8.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzgwMGYyN2M1LTdkNzMtNDYwMy1iMjUyLWQyZTk4NTM1NjNiOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.WnYrCu2rEopYvByQKFu8L5Hm-3jzA9IXUqgjuFI2unQ`,
-    video:  null as string | null, // será preenchido quando o vídeo ficar pronto
+    video:  `${VID}/672c7f47-ee51-4c2b-ace0-f3d15c6a0eaf.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzY3MmM3ZjQ3LWVlNTEtNGMyYi1hY2UwLWYzZDE1YzZhMGVhZi5tcDQiLCJpYXQiOjE3NzQ5NTg2NTQsImV4cCI6MjA5MDMxODY1NH0.WJJZKpxoKbbjl2ZxQl77YlVSUMkSmBl12IDc9ftz_H0`,
   },
   {
     label: "Óculos retrô",
     before: `${S3}/public/input-images/onboard/oculos.jpeg`,
     after:  `${S3}/sign/image-jobs/d7b2fe90-4383-4f6d-92bb-672b210de218.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2Q3YjJmZTkwLTQzODMtNGY2ZC05MmJiLTY3MmIyMTBkZTIxOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDUsImV4cCI6MjA5MDMxODAwNX0.4DG7PNfy--I0dO76hrsxIQvYnKgZ9YkaYicebKzR98w`,
-    video:  null as string | null,
+    video:  `${VID}/396aed09-3745-4d78-8b0a-5aec13513282.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzM5NmFlZDA5LTM3NDUtNGQ3OC04YjBhLTVhZWMxMzUxMzI4Mi5tcDQiLCJpYXQiOjE3NzQ5NTg2NTMsImV4cCI6MjA5MDMxODY1M30.5H9g-PfaOIG0HUMAdTb-SiyWNbovLhoUSb1n0Pq4YrM`,
   },
   {
     label: "Fantasia infantil",
     before: `${S3}/public/input-images/onboard/fantasia.webp`,
     after:  `${S3}/sign/image-jobs/4bfe5d4a-7d6a-41e9-8c15-15ecbc4e1571.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzRiZmU1ZDRhLTdkNmEtNDFlOS04YzE1LTE1ZWNiYzRlMTU3MS5qcGciLCJpYXQiOjE3NzQ5NTgwMDUsImV4cCI6MjA5MDMxODAwNX0.mItnYXMEOLDmMn8ViKTZz219qSx9dNOKoGoEWyYCbno`,
-    video:  null as string | null,
+    video:  `${VID}/38f6de40-45a0-4fb4-9b3e-d37859915b0c.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzM4ZjZkZTQwLTQ1YTAtNGZiNC05YjNlLWQzNzg1OTkxNWIwYy5tcDQiLCJpYXQiOjE3NzQ5NTg2NTQsImV4cCI6MjA5MDMxODY1NH0.ooqzvZ8VwJ3hZcieVImRNXLPhBj9qY8gQu2pB6I2UkE`,
   },
   {
     label: "Colar de praia",
     before: `${S3}/public/input-images/onboard/colar.webp`,
     after:  `${S3}/sign/image-jobs/e307caef-e00b-4e45-b27e-311090bbe285.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2UzMDdjYWVmLWUwMGItNGU0NS1iMjdlLTMxMTA5MGJiZTI4NS5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.8y-i7FEDxSDPJxHkwKwZ4LkctT1a04eTOw46Tek0UXE`,
-    video:  null as string | null,
+    video:  `${VID}/aa76a131-3cde-4c1d-bbfa-af6686fcc1be.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzL2FhNzZhMTMxLTNjZGUtNGMxZC1iYmZhLWFmNjY4NmZjYzFiZS5tcDQiLCJpYXQiOjE3NzQ5NTg2NTQsImV4cCI6MjA5MDMxODY1NH0.FgXQHovRxQK3TEwLOWY2weOCbPPdvlsrIZVS1B4Nyfc`,
   },
   {
     label: "Vestido estampado",
     before: `${S3}/public/input-images/onboard/vestido.jpg`,
     after:  `${S3}/sign/image-jobs/be971c3f-bd0a-4aaa-afcc-a6ddef73949b.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2JlOTcxYzNmLWJkMGEtNGFhYS1hZmNjLWE2ZGRlZjczOTQ5Yi5qcGciLCJpYXQiOjE3NzQ5NTgwMDMsImV4cCI6MjA5MDMxODAwM30.9u6Jm4fbeuHD2JMAt5aJcYnRyS_N-Vmjj7_JzzWqSC8`,
-    video:  null as string | null,
+    video:  `${VID}/457fe425-76b3-4c1d-b937-f34bddcade55.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzQ1N2ZlNDI1LTc2YjMtNGMxZC1iOTM3LWYzNGJkZGNhZGU1NS5tcDQiLCJpYXQiOjE3NzQ5NTg2NTMsImV4cCI6MjA5MDMxODY1M30.skCUaShLsrOh_kLGDTjFhXmt68tANbrNApqaoT9O80I`,
   },
 ];
 
@@ -50,129 +51,102 @@ const CARD = "#111820";
 const LINE = "rgba(255,255,255,0.07)";
 const TOTAL_STEPS = 3;
 
-// vídeos serão preenchidos quando os jobs ficarem prontos
-const DEMO_VIDEOS: string[] = [];
-
-function DemoCards() {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
-      {DEMO_CARDS.map((card) => (
-        <div key={card.label} style={{
-          background: CARD, borderRadius: 18, overflow: "hidden",
-          border: `1px solid rgba(255,255,255,0.07)`,
-        }}>
-          {/* Label */}
-          <div style={{ padding: "10px 14px 6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{card.label}</span>
-            {card.video
-              ? <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT, background: `${ACCENT}22`, padding: "2px 8px", borderRadius: 20 }}>▶ VÍDEO IA</span>
-              : <span style={{ fontSize: 10, color: "#4e5c72", background: "#1a2030", padding: "2px 8px", borderRadius: 20 }}>📸 FOTO IA</span>
-            }
-          </div>
-
-          {/* Before → After */}
-          <div style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
-            <div style={{ flex: 1, position: "relative" }}>
-              <img src={card.before} alt="antes" style={{ width: "100%", aspectRatio: "1", objectFit: "cover" }} />
-              <span style={{ position: "absolute", bottom: 6, left: 6, background: "rgba(0,0,0,0.7)", color: "#888", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, letterSpacing: 1 }}>ANTES</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", padding: "0 6px", flexShrink: 0, fontSize: 16, color: ACCENT }}>→</div>
-            <div style={{ flex: 1.4, position: "relative" }}>
-              <img src={card.after} alt="depois" style={{ width: "100%", aspectRatio: "1", objectFit: "cover" }} />
-              <span style={{ position: "absolute", bottom: 6, left: 6, background: ACCENT, color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, letterSpacing: 1 }}>DEPOIS</span>
-            </div>
-          </div>
-        </div>
-      ))}
-      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
-    </div>
-  );
-}
-
-function VideoCarousel() {
-  const [vidIdx, setVidIdx] = useState(0);
-  const [prevIdx, setPrevIdx] = useState<number | null>(null);
-  const [animating, setAnimating] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+function DemoCarousel() {
+  const [idx, setIdx] = useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   function goTo(next: number) {
-    if (animating) return;
-    setPrevIdx(vidIdx);
-    setAnimating(true);
-    setTimeout(() => {
-      setVidIdx(next);
-      setPrevIdx(null);
-      setAnimating(false);
-    }, 600);
+    setIdx((next + DEMO_CARDS.length) % DEMO_CARDS.length);
   }
 
+  // quando troca de card, reinicia o vídeo
   useEffect(() => {
-    timerRef.current = setTimeout(() => goTo((vidIdx + 1) % DEMO_VIDEOS.length), 5000);
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [vidIdx]);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [idx]);
+
+  const card = DEMO_CARDS[idx];
 
   return (
-    <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: "#0c1018", border: `1px solid ${ACCENT}30`, boxShadow: `0 0 40px ${ACCENT}20`, aspectRatio: "9/16", maxHeight: 420 }}>
-      {DEMO_VIDEOS.map((src, i) => {
-        const isActive = i === vidIdx;
-        const isPrev = i === prevIdx;
-        if (!isActive && !isPrev) return null;
-        return (
-          <video
-            key={src}
-            src={src}
-            autoPlay
-            muted
-            loop
-            playsInline
-            style={{
-              position: "absolute", inset: 0,
-              width: "100%", height: "100%",
-              objectFit: "cover",
-              borderRadius: 20,
-              animation: isActive && animating
-                ? "vidSlideIn 0.6s cubic-bezier(0.4,0,0.2,1) forwards"
-                : isPrev && animating
-                ? "vidSlideOut 0.6s cubic-bezier(0.4,0,0.2,1) forwards"
-                : isActive
-                ? "vidFadeIn 0.4s ease forwards"
-                : "none",
-              zIndex: isActive ? 2 : 1,
-            }}
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Fotos lado a lado — mesma dimensão */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+          <img
+            src={card.before}
+            alt="antes"
+            style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
           />
-        );
-      })}
+          <span style={{
+            position: "absolute", bottom: 6, left: 6,
+            background: "rgba(0,0,0,0.72)", color: "#aaa",
+            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1,
+          }}>ANTES</span>
+        </div>
+        <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+          <img
+            src={card.after}
+            alt="foto ia"
+            style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+          />
+          <span style={{
+            position: "absolute", bottom: 6, left: 6,
+            background: ACCENT, color: "#fff",
+            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1,
+          }}>FOTO IA</span>
+        </div>
+      </div>
 
-      {/* Overlay gradiente bottom */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(transparent, rgba(0,0,0,0.7))", zIndex: 3, borderRadius: "0 0 20px 20px" }} />
+      {/* Vídeo abaixo — avança ao terminar */}
+      <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#000", lineHeight: 0 }}>
+        <video
+          ref={videoRef}
+          key={card.video}
+          src={card.video}
+          autoPlay
+          muted
+          playsInline
+          onEnded={() => goTo(idx + 1)}
+          style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+        />
+        {/* badge produto */}
+        <div style={{
+          position: "absolute", top: 8, left: 8,
+          background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)",
+          borderRadius: 8, padding: "3px 10px",
+          fontSize: 11, fontWeight: 700, color: "#fff",
+          display: "flex", alignItems: "center", gap: 5,
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />
+          {card.label}
+        </div>
+        {/* badge vídeo ia */}
+        <span style={{
+          position: "absolute", bottom: 8, left: 8,
+          background: `${ACCENT}dd`, color: "#fff",
+          fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1,
+        }}>VÍDEO IA</span>
+      </div>
 
       {/* Dots */}
-      <div style={{ position: "absolute", bottom: 12, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 5, zIndex: 4 }}>
-        {DEMO_VIDEOS.map((_, i) => (
-          <div key={i} onClick={() => goTo(i)} style={{ width: i === vidIdx ? 18 : 6, height: 6, borderRadius: 99, background: i === vidIdx ? "#fff" : "rgba(255,255,255,0.35)", transition: "all 0.35s ease", cursor: "pointer" }} />
+      <div style={{ display: "flex", justifyContent: "center", gap: 5 }}>
+        {DEMO_CARDS.map((_, i) => (
+          <div
+            key={i}
+            onClick={() => goTo(i)}
+            style={{
+              width: i === idx ? 18 : 6, height: 6,
+              borderRadius: 99,
+              background: i === idx ? ACCENT : "rgba(255,255,255,0.25)",
+              transition: "all 0.3s ease", cursor: "pointer",
+            }}
+          />
         ))}
       </div>
 
-      {/* Badge */}
-      <div style={{ position: "absolute", top: 12, left: 12, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", borderRadius: 10, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 5, zIndex: 4 }}>
-        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block", animation: "pulse 1.5s infinite" }} />
-        Vídeo gerado por IA
-      </div>
-
-      <style>{`
-        @keyframes vidSlideIn {
-          from { opacity: 0; transform: scale(1.06) translateX(30px); }
-          to   { opacity: 1; transform: scale(1) translateX(0); }
-        }
-        @keyframes vidSlideOut {
-          from { opacity: 1; transform: scale(1) translateX(0); }
-          to   { opacity: 0; transform: scale(0.96) translateX(-30px); }
-        }
-        @keyframes vidFadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-      `}</style>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
     </div>
   );
 }
@@ -387,7 +361,7 @@ export default function OnboardingPage() {
 
       <div style={{ ...s.screen, opacity: animating ? 0 : 1, transition: "opacity 0.2s" }}>
 
-        {/* TELA 1 — 5 cards Antes/Depois */}
+        {/* TELA 1 — carrossel antes/depois + vídeo */}
         {screen === 1 && (
           <div style={{ ...s.contentScreen, overflowY: "auto", paddingBottom: 100 }}>
             <div style={{ marginBottom: 16 }}>
@@ -395,11 +369,12 @@ export default function OnboardingPage() {
                 IA PARA PRODUTOS
               </div>
               <h1 style={{ ...s.screenTitle, margin: 0 }}>
-                Transforme qualquer foto em{" "}
-                <span style={{ color: ACCENT }}>imagem profissional</span>
+                Tire foto de qualquer jeito,{" "}
+                <span style={{ color: ACCENT }}>transforma em foto que vende</span>{" "}
+                e faz vídeo viral
               </h1>
             </div>
-            <DemoCards />
+            <DemoCarousel />
             <div style={{ ...s.bottomArea, position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: `linear-gradient(transparent, ${BG} 40%)`, paddingTop: 40, paddingBottom: 20 }}>
               <button style={s.btnYellow} onClick={goNext}>Ver como funciona →</button>
             </div>
