@@ -422,9 +422,11 @@ export default function OnboardingPage() {
       if (json.init_point) {
         localStorage.setItem("tw_onboarding_done", "1");
         window.location.href = json.init_point;
+      } else {
+        alert("Erro ao abrir pagamento. Tente novamente.\n" + (json.error ?? ""));
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      alert("Erro de conexão. Tente novamente.");
     } finally {
       setLoadingCheckout(false);
     }
@@ -461,26 +463,26 @@ export default function OnboardingPage() {
               e.preventDefault();
               setRegLoading(true);
               setRegError("");
+
+              // Tenta cadastrar
               const { data, error } = await supabase.auth.signUp({ email: regEmail, password: regPassword, options: { data: { full_name: regName } } });
-              if (error) {
-                const m = error.message.toLowerCase();
-                if (m.includes("already registered") || m.includes("already exists")) {
-                  const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({ email: regEmail, password: regPassword });
-                  if (loginErr) { setRegError("Senha incorreta."); setRegLoading(false); return; }
-                  setShowRegPopup(false);
-                  await goToCheckout(loginData.session!.access_token);
-                } else {
-                  setRegError("Erro ao criar conta. Tente novamente.");
+
+              // Se já existe, tenta logar diretamente
+              if (error || !data.session) {
+                const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({ email: regEmail, password: regPassword });
+                if (loginErr || !loginData.session) {
+                  setRegError("Verifique seu e-mail e senha e tente novamente.");
+                  setRegLoading(false);
+                  return;
                 }
+                setShowRegPopup(false);
+                await goToCheckout(loginData.session.access_token);
                 setRegLoading(false);
                 return;
               }
-              if (data.session) {
-                setShowRegPopup(false);
-                await goToCheckout(data.session.access_token);
-              } else {
-                setRegError("Confirme seu e-mail para continuar.");
-              }
+
+              setShowRegPopup(false);
+              await goToCheckout(data.session.access_token);
               setRegLoading(false);
             }} style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
               <input type="text" placeholder="Seu nome" value={regName} onChange={e => setRegName(e.target.value)} required style={s.regInput} />
