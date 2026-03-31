@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { createServerClient } from "@/lib/supabase/server";
 
-const mp = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN! });
+const mp = new MercadoPagoConfig({ accessToken: (process.env.MP_ACCESS_TOKEN ?? "").trim() });
 const APP_URL = process.env.APP_URL ?? "https://www.tamowork.com";
 const IS_TEST = !!process.env.MP_TEST_PLAN_ID; // remove esta var para voltar ao valor real
 
