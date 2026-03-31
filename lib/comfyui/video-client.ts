@@ -38,7 +38,7 @@ export function buildVideoWorkflow(
   imageName: string,
   promptPos: string,
   durationSec = 6,
-  fps = 12
+  fps = 16
 ): Record<string, unknown> {
   const workflow = JSON.parse(JSON.stringify(videoTemplate)) as Record<string, unknown>;
   const seed = Math.floor(Math.random() * 999_999_999);
@@ -60,7 +60,7 @@ export async function submitVideoWorkflow(
   promptPos: string,
   comfyBase: string,
   durationSec = 6,
-  fps = 12
+  fps = 16
 ): Promise<string> {
   const workflow = JSON.parse(JSON.stringify(videoTemplate)) as Record<string, unknown>;
   const seed = Math.floor(Math.random() * 999_999_999);
