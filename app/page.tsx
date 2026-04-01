@@ -172,7 +172,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!job || !isGenerating) return;
     const status = job.status;
-    const limitSec = (status === "queued" || status === "submitted") ? 180 : 360;
+    const limitSec = (status === "queued" || status === "submitted") ? 600 : 600;
     // Se temos created_at, calcula elapsed real; senão usa o contador local
     const realElapsed = job.created_at
       ? Math.floor((Date.now() - new Date(job.created_at).getTime()) / 1000)
