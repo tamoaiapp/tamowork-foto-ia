@@ -1,5 +1,5 @@
 // Service Worker — TamoWork Fotos IA
-const CACHE = "tamowork-v1";
+const CACHE = "tamowork-v2";
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -26,31 +26,33 @@ self.addEventListener("fetch", (e) => {
   );
 });
 
-// Notificação disparada pelo app (postMessage)
-self.addEventListener("message", (e) => {
-  if (e.data?.type === "NOTIFY_DONE") {
-    const title = e.data.title ?? "Sua foto ficou pronta! ✨";
-    const body  = e.data.body  ?? "Toque para ver o resultado no TamoWork.";
-    self.registration.showNotification(title, {
-      body,
+// Push notification real (Web Push API)
+self.addEventListener("push", (e) => {
+  let data = { title: "Sua foto ficou pronta! ✨", body: "Toque para ver o resultado.", url: "/conta" };
+  try { data = { ...data, ...e.data.json() }; } catch {}
+
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       tag: "job-done",
       renotify: true,
-      data: { url: "/conta" },
-    });
-  }
+      data: { url: data.url },
+    })
+  );
 });
 
-// Clique na notificação abre o app
+// Clique abre o app na página certa
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
+  const url = e.notification.data?.url ?? "/conta";
   e.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const client of list) {
-        if (client.url.includes("/conta")) return client.focus();
+        if (client.url.includes(url)) return client.focus();
       }
-      return clients.openWindow("/conta");
+      return clients.openWindow(url);
     })
   );
 });
