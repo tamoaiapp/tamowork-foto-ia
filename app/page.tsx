@@ -743,7 +743,6 @@ export default function HomePage() {
             />
             <div style={styles.resultActions}>
               <a href={videoJob.output_video_url} download="video-ia.mp4" style={styles.downloadBtn}>⬇ Baixar vídeo</a>
-              <button onClick={resetVideo} style={styles.newBtn}>🎬 Novo vídeo</button>
               <button onClick={resetAll} style={styles.newBtn}>📷 Nova foto</button>
             </div>
           </div>
