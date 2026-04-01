@@ -89,6 +89,9 @@ export default function HomePage() {
   const [videoSubmitting, setVideoSubmitting] = useState(false);
   const [videoError, setVideoError] = useState("");
   const videoPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [videoElapsedSec, setVideoElapsedSec] = useState(0);
+  const [videoDisplayProgress, setVideoDisplayProgress] = useState(0);
+  const videoElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const countdown = useCountdown(rateLimitedUntil);
 
@@ -361,13 +364,27 @@ export default function HomePage() {
     if (!videoJob || !user) return;
     if (["done", "failed", "canceled"].includes(videoJob.status ?? "")) {
       if (videoPollRef.current) clearInterval(videoPollRef.current);
+      if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
       if (videoJob.status === "done") sendNotification("Seu vídeo está pronto! 🎬", "Clique para ver o vídeo gerado.");
       return;
     }
+    // Timer de tempo decorrido para barra de progresso
+    setVideoElapsedSec(0);
+    videoElapsedRef.current = setInterval(() => setVideoElapsedSec((s) => s + 1), 1000);
     videoPollRef.current = setInterval(() => fetchVideoStatus(videoJob.id), 15_000);
-    return () => { if (videoPollRef.current) clearInterval(videoPollRef.current); };
+    return () => {
+      if (videoPollRef.current) clearInterval(videoPollRef.current);
+      if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoJob?.id, videoJob?.status, user]);
+
+  // Animação suave da barra de vídeo (máx 90% em ~4min)
+  useEffect(() => {
+    const MAX_SEC = 240;
+    const target = Math.min(90, Math.round((videoElapsedSec / MAX_SEC) * 90));
+    setVideoDisplayProgress((prev) => prev + (target - prev) * 0.08);
+  }, [videoElapsedSec]);
 
   async function fetchVideoStatus(jobId: string) {
     const token = await getToken();
@@ -661,6 +678,17 @@ export default function HomePage() {
                 <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
               </span>
             </div>
+            {/* Barra de progresso do vídeo */}
+            <div style={styles.progressBarBg}>
+              <div style={{
+                ...styles.progressBarFill,
+                width: `${videoDisplayProgress}%`,
+                background: videoDisplayProgress > 80
+                  ? "linear-gradient(90deg, #6366f1, #22c55e)"
+                  : "linear-gradient(90deg, #6366f1, #a855f7)",
+              }} />
+            </div>
+
             <p style={{ ...styles.centerDesc, marginBottom: 20 }}>
               Vídeos levam 3–5 minutos. Pode fechar — te avisamos quando ficar pronto. 🔔
             </p>
