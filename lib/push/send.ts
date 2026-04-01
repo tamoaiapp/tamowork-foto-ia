@@ -1,10 +1,16 @@
 import webpush from "web-push";
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+let vapidConfigured = false;
+function ensureVapid() {
+  if (vapidConfigured) return;
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return;
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT ?? "mailto:contato@tamowork.com",
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+  vapidConfigured = true;
+}
 
 export async function sendPushToUser(
   subscriptions: { endpoint: string; p256dh: string; auth: string }[],
@@ -12,6 +18,9 @@ export async function sendPushToUser(
   body: string,
   url = "/conta"
 ) {
+  ensureVapid();
+  if (!vapidConfigured) return;
+
   const payload = JSON.stringify({ title, body, url });
 
   await Promise.allSettled(
