@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import JobProgress from "./JobProgress";
 
 interface AccountJob {
   id: string;
@@ -27,6 +28,7 @@ export default function ContaPage() {
   const [jobs, setJobs] = useState<AccountJob[]>([]);
   const [planData, setPlanData] = useState<PlanData | null>(null);
   const [email, setEmail] = useState("");
+  const [token, setToken] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [canceling, setCanceling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
@@ -48,8 +50,9 @@ export default function ContaPage() {
       setEmail(user.email ?? "");
 
       const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token ?? "";
-      const res = await fetch("/api/account", { headers: { Authorization: `Bearer ${token}` } });
+      const t = session.session?.access_token ?? "";
+      setToken(t);
+      const res = await fetch("/api/account", { headers: { Authorization: `Bearer ${t}` } });
       if (res.ok) {
         const data = await res.json();
         setJobs(data.jobs ?? []);
@@ -279,37 +282,51 @@ export default function ContaPage() {
             <div style={styles.empty}>Nenhuma foto gerada ainda.</div>
           ) : (
             <div style={styles.jobGrid}>
-              {jobs.map((job) => (
-                <div key={job.id} style={styles.jobCard}>
-                  <div style={styles.jobThumb}>
-                    {(job.output_image_url || job.input_image_url) ? (
-                      <img src={job.output_image_url ?? job.input_image_url} alt="foto" style={styles.jobImg} />
-                    ) : (
-                      <div style={styles.jobNoImg}>📷</div>
-                    )}
-                    {job.status === "done" && <span style={styles.jobBadgeDone}>✓</span>}
-                    {job.status !== "done" && (
-                      <span style={styles.jobBadgeStatus}>{job.status}</span>
-                    )}
+              {jobs.map((job) => {
+                const isActive = ["queued", "submitted", "processing"].includes(job.status);
+                return (
+                  <div key={job.id} style={styles.jobCard}>
+                    <div style={styles.jobThumb}>
+                      {(job.output_image_url || job.input_image_url) ? (
+                        <img
+                          src={job.output_image_url ?? job.input_image_url}
+                          alt="foto"
+                          style={{ ...styles.jobImg, opacity: isActive ? 0.4 : 1 }}
+                        />
+                      ) : (
+                        <div style={styles.jobNoImg}>📷</div>
+                      )}
+                      {job.status === "done" && <span style={styles.jobBadgeDone}>✓</span>}
+                      {job.status === "failed" && <span style={{ ...styles.jobBadgeStatus, background: "#f87171" }}>✗</span>}
+                    </div>
+                    <div style={{ ...styles.jobInfo, flex: 1 }}>
+                      <div style={styles.jobDate}>{formatDate(job.created_at)}</div>
+                      {job.prompt && (
+                        <div style={styles.jobPrompt} title={job.prompt}>
+                          {job.prompt.length > 50 ? job.prompt.slice(0, 50) + "…" : job.prompt}
+                        </div>
+                      )}
+                      {isActive && token && (
+                        <JobProgress
+                          jobId={job.id}
+                          token={token}
+                          onDone={(url) => setJobs((prev) =>
+                            prev.map((j) => j.id === job.id ? { ...j, status: "done", output_image_url: url } : j)
+                          )}
+                        />
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDelete(job.id)}
+                      disabled={deletingId === job.id}
+                      style={styles.deleteBtn}
+                      title="Apagar"
+                    >
+                      {deletingId === job.id ? "..." : "🗑"}
+                    </button>
                   </div>
-                  <div style={styles.jobInfo}>
-                    <div style={styles.jobDate}>{formatDate(job.created_at)}</div>
-                    {job.prompt && (
-                      <div style={styles.jobPrompt} title={job.prompt}>
-                        {job.prompt.length > 50 ? job.prompt.slice(0, 50) + "…" : job.prompt}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleDelete(job.id)}
-                    disabled={deletingId === job.id}
-                    style={styles.deleteBtn}
-                    title="Apagar"
-                  >
-                    {deletingId === job.id ? "..." : "🗑"}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
