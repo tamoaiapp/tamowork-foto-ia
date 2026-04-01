@@ -29,8 +29,10 @@ self.addEventListener("fetch", (e) => {
 // Notificação disparada pelo app (postMessage)
 self.addEventListener("message", (e) => {
   if (e.data?.type === "NOTIFY_DONE") {
-    self.registration.showNotification("Sua foto ficou pronta! ✨", {
-      body: "Abra o TamoWork para ver o resultado.",
+    const title = e.data.title ?? "Sua foto ficou pronta! ✨";
+    const body  = e.data.body  ?? "Toque para ver o resultado no TamoWork.";
+    self.registration.showNotification(title, {
+      body,
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       tag: "job-done",

@@ -310,6 +310,7 @@ export default function ContaPage() {
                         <JobProgress
                           jobId={job.id}
                           token={token}
+                          prompt={job.prompt}
                           onDone={(url) => setJobs((prev) =>
                             prev.map((j) => j.id === job.id ? { ...j, status: "done", output_image_url: url } : j)
                           )}

@@ -11,6 +11,7 @@ interface ProgressData {
 interface Props {
   jobId: string;
   token: string;
+  prompt?: string;
   onDone: (outputUrl: string) => void;
 }
 
@@ -22,14 +23,20 @@ async function requestNotificationPermission(): Promise<boolean> {
   return result === "granted";
 }
 
-function fireNotification() {
+function fireNotification(prompt?: string) {
   if (!("serviceWorker" in navigator)) return;
+  // Extrai nome do produto do prompt (antes de " | cenário:")
+  const product = prompt?.split(" | cenário:")[0]?.trim() ?? "";
+  const title = product
+    ? `Foto de ${product} pronta! ✨`
+    : "Sua foto ficou pronta! ✨";
+  const body = "Toque para ver o resultado no TamoWork.";
   navigator.serviceWorker.ready.then((reg) => {
-    reg.active?.postMessage({ type: "NOTIFY_DONE" });
+    reg.active?.postMessage({ type: "NOTIFY_DONE", title, body });
   });
 }
 
-export default function JobProgress({ jobId, token, onDone }: Props) {
+export default function JobProgress({ jobId, token, prompt, onDone }: Props) {
   const [data, setData] = useState<ProgressData | null>(null);
   const [displayProgress, setDisplayProgress] = useState(0);
   const [notifStatus, setNotifStatus] = useState<"unknown" | "granted" | "denied">("unknown");
@@ -54,7 +61,7 @@ export default function JobProgress({ jobId, token, onDone }: Props) {
       const json: ProgressData = await res.json();
       setData(json);
       if (json.status === "done" && json.output_image_url) {
-        fireNotification();
+        fireNotification(prompt);
         onDone(json.output_image_url);
       }
     } catch {
