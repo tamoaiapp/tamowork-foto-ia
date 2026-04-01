@@ -124,6 +124,25 @@ export default function HomePage() {
         }
       }
 
+      // Restaura estado de vídeo ao recarregar a página
+      const vres = await fetch("/api/video-jobs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (vres.ok) {
+        const vdata: VideoJob[] = await vres.json();
+        const activeVideo = vdata.find(
+          (v) => v.status !== "done" && v.status !== "failed" && v.status !== "canceled"
+        );
+        const doneVideo = vdata.find((v) => v.status === "done");
+        if (activeVideo) {
+          setVideoJob(activeVideo);
+          setVideoMode(true);
+        } else if (doneVideo) {
+          setVideoJob(doneVideo);
+          setVideoMode(true);
+        }
+      }
+
       setLoading(false);
     });
   }, [router]);
@@ -417,10 +436,18 @@ export default function HomePage() {
 
   function resetVideo() {
     if (videoPollRef.current) clearInterval(videoPollRef.current);
+    if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
     setVideoMode(false);
     setVideoJob(null);
     setVideoPrompt("");
     setVideoError("");
+    setVideoDisplayProgress(0);
+    setVideoElapsedSec(0);
+  }
+
+  function resetAll() {
+    resetVideo();
+    resetJob();
   }
 
   async function handleDownload(url: string) {
@@ -716,7 +743,8 @@ export default function HomePage() {
             />
             <div style={styles.resultActions}>
               <a href={videoJob.output_video_url} download="video-ia.mp4" style={styles.downloadBtn}>⬇ Baixar vídeo</a>
-              <button onClick={resetVideo} style={styles.newBtn}>🔄 Novo vídeo</button>
+              <button onClick={resetVideo} style={styles.newBtn}>🎬 Novo vídeo</button>
+              <button onClick={resetAll} style={styles.newBtn}>📷 Nova foto</button>
             </div>
           </div>
         )}
