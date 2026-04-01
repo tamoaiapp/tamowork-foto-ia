@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.tamowork.app",
+    "sha256_cert_fingerprints": [
+      "3A:4A:02:0A:51:D5:DF:72:A1:A4:3B:9F:55:F3:EF:4D:DD:D6:8E:52:8C:8B:61:D8:B1:BC:21:94:5C:1F:9A:9C"
+    ]
+  }
+}]
