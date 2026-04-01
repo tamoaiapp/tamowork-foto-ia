@@ -1,9 +1,7 @@
-// Service Worker minimal — TamoWork Fotos IA
+// Service Worker — TamoWork Fotos IA
 const CACHE = "tamowork-v1";
 
-self.addEventListener("install", (e) => {
-  self.skipWaiting();
-});
+self.addEventListener("install", () => self.skipWaiting());
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
@@ -14,7 +12,7 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
-// Network first — sempre busca online, cai no cache só se offline
+// Network first
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   e.respondWith(
@@ -25,5 +23,32 @@ self.addEventListener("fetch", (e) => {
         return res;
       })
       .catch(() => caches.match(e.request))
+  );
+});
+
+// Notificação disparada pelo app (postMessage)
+self.addEventListener("message", (e) => {
+  if (e.data?.type === "NOTIFY_DONE") {
+    self.registration.showNotification("Sua foto ficou pronta! ✨", {
+      body: "Abra o TamoWork para ver o resultado.",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: "job-done",
+      renotify: true,
+      data: { url: "/conta" },
+    });
+  }
+});
+
+// Clique na notificação abre o app
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (client.url.includes("/conta")) return client.focus();
+      }
+      return clients.openWindow("/conta");
+    })
   );
 });

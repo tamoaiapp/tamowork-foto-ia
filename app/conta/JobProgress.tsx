@@ -14,9 +14,36 @@ interface Props {
   onDone: (outputUrl: string) => void;
 }
 
+async function requestNotificationPermission(): Promise<boolean> {
+  if (!("Notification" in window)) return false;
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") return false;
+  const result = await Notification.requestPermission();
+  return result === "granted";
+}
+
+function fireNotification() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.ready.then((reg) => {
+    reg.active?.postMessage({ type: "NOTIFY_DONE" });
+  });
+}
+
 export default function JobProgress({ jobId, token, onDone }: Props) {
   const [data, setData] = useState<ProgressData | null>(null);
   const [displayProgress, setDisplayProgress] = useState(0);
+  const [notifStatus, setNotifStatus] = useState<"unknown" | "granted" | "denied">("unknown");
+
+  // Detecta estado atual de notificação
+  useEffect(() => {
+    if (!("Notification" in window)) { setNotifStatus("denied"); return; }
+    setNotifStatus(Notification.permission === "granted" ? "granted" : "unknown");
+  }, []);
+
+  async function handleEnableNotif() {
+    const ok = await requestNotificationPermission();
+    setNotifStatus(ok ? "granted" : "denied");
+  }
 
   const fetchProgress = useCallback(async () => {
     try {
@@ -27,6 +54,7 @@ export default function JobProgress({ jobId, token, onDone }: Props) {
       const json: ProgressData = await res.json();
       setData(json);
       if (json.status === "done" && json.output_image_url) {
+        fireNotification();
         onDone(json.output_image_url);
       }
     } catch {
@@ -61,9 +89,7 @@ export default function JobProgress({ jobId, token, onDone }: Props) {
 
   if (!data || data.status === "done") return null;
 
-  const isFailed = data.status === "failed" || data.status === "canceled";
-
-  if (isFailed) {
+  if (data.status === "failed" || data.status === "canceled") {
     return <div style={s.error}>Erro ao processar. Tente novamente.</div>;
   }
 
@@ -79,10 +105,23 @@ export default function JobProgress({ jobId, token, onDone }: Props) {
             : "linear-gradient(90deg, #6366f1, #a855f7)",
         }} />
       </div>
-      {/* Aviso */}
-      <div style={s.warning}>
-        Não feche o app — sua imagem está sendo gerada
+
+      {/* Pode fechar */}
+      <div style={s.closeMsg}>
+        Pode fechar o app — te avisamos quando estiver pronto
       </div>
+
+      {/* Pedir notificação se ainda não concedida */}
+      {notifStatus === "unknown" && (
+        <button onClick={handleEnableNotif} style={s.notifBtn}>
+          🔔 Ativar notificações
+        </button>
+      )}
+      {notifStatus === "denied" && (
+        <div style={s.notifOff}>
+          Notificações bloqueadas — ative nas configurações do navegador
+        </div>
+      )}
     </div>
   );
 }
@@ -98,16 +137,33 @@ const s: Record<string, React.CSSProperties> = {
     background: "rgba(255,255,255,0.08)",
     borderRadius: 99,
     overflow: "hidden",
-    marginBottom: 6,
+    marginBottom: 8,
   },
   barFill: {
     height: "100%",
     borderRadius: 99,
     transition: "width 0.4s ease",
   },
-  warning: {
+  closeMsg: {
     fontSize: 11,
     color: "#8394b0",
+    marginBottom: 6,
+  },
+  notifBtn: {
+    background: "rgba(168,85,247,0.12)",
+    border: "1px solid rgba(168,85,247,0.3)",
+    borderRadius: 8,
+    color: "#a855f7",
+    fontSize: 12,
+    fontWeight: 600,
+    padding: "5px 12px",
+    cursor: "pointer",
+    marginTop: 2,
+  },
+  notifOff: {
+    fontSize: 11,
+    color: "#4e5c72",
+    marginTop: 2,
   },
   error: {
     fontSize: 12,
