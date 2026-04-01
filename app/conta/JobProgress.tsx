@@ -4,11 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 
 interface ProgressData {
   status: string;
-  position: number;
-  queueSize: number;
-  estimatedSeconds: number;
   progress: number;
-  phase: string;
   output_image_url?: string;
 }
 
@@ -16,23 +12,6 @@ interface Props {
   jobId: string;
   token: string;
   onDone: (outputUrl: string) => void;
-}
-
-const PHASE_LABELS: Record<string, string> = {
-  queued:     "Na fila...",
-  submitted:  "Enviando para IA...",
-  processing: "Gerando imagem...",
-  done:       "Pronto!",
-  failed:     "Erro",
-  canceled:   "Cancelado",
-};
-
-function formatTime(seconds: number): string {
-  if (seconds <= 0) return "alguns segundos";
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}min ${s}s` : `${m}min`;
 }
 
 export default function JobProgress({ jobId, token, onDone }: Props) {
@@ -55,7 +34,6 @@ export default function JobProgress({ jobId, token, onDone }: Props) {
     }
   }, [jobId, token, onDone]);
 
-  // Polling: a cada 4s enquanto não terminar
   useEffect(() => {
     fetchProgress();
     const interval = setInterval(() => {
@@ -68,137 +46,72 @@ export default function JobProgress({ jobId, token, onDone }: Props) {
     return () => clearInterval(interval);
   }, [fetchProgress, data?.status]);
 
-  // Animação suave da barra de progresso
+  // Animação suave
   useEffect(() => {
     if (!data) return;
     const target = data.progress;
-    const step = () => {
+    const timer = setInterval(() => {
       setDisplayProgress((prev) => {
         if (Math.abs(prev - target) < 1) return target;
         return prev + (target - prev) * 0.12;
       });
-    };
-    const timer = setInterval(step, 50);
+    }, 50);
     return () => clearInterval(timer);
   }, [data?.progress]);
 
-  if (!data) {
-    return (
-      <div style={s.wrap}>
-        <div style={s.label}>Verificando...</div>
-        <div style={s.barBg}><div style={{ ...s.barFill, width: "5%" }} /></div>
-      </div>
-    );
+  if (!data || data.status === "done") return null;
+
+  const isFailed = data.status === "failed" || data.status === "canceled";
+
+  if (isFailed) {
+    return <div style={s.error}>Erro ao processar. Tente novamente.</div>;
   }
-
-  const { status, position, estimatedSeconds, phase } = data;
-  const isDone = status === "done";
-  const isFailed = status === "failed" || status === "canceled";
-
-  if (isDone) return null; // onDone já foi chamado, o pai vai renderizar a imagem
 
   return (
     <div style={s.wrap}>
-      {/* Label da fase */}
-      <div style={s.header}>
-        <span style={{ ...s.label, color: isFailed ? "#f87171" : "#eef2f9" }}>
-          {PHASE_LABELS[phase] ?? phase}
-        </span>
-        {!isFailed && (
-          <span style={s.percent}>{Math.round(displayProgress)}%</span>
-        )}
+      {/* Barra */}
+      <div style={s.barBg}>
+        <div style={{
+          ...s.barFill,
+          width: `${displayProgress}%`,
+          background: displayProgress > 80
+            ? "linear-gradient(90deg, #6366f1, #22c55e)"
+            : "linear-gradient(90deg, #6366f1, #a855f7)",
+        }} />
       </div>
-
-      {/* Barra de progresso */}
-      {!isFailed && (
-        <div style={s.barBg}>
-          <div
-            style={{
-              ...s.barFill,
-              width: `${displayProgress}%`,
-              background: displayProgress > 80
-                ? "linear-gradient(90deg, #6366f1, #22c55e)"
-                : "linear-gradient(90deg, #6366f1, #a855f7)",
-            }}
-          />
-        </div>
-      )}
-
-      {/* Info de fila */}
-      {phase === "queued" && position > 0 && (
-        <div style={s.info}>
-          <span style={s.infoItem}>
-            📋 <strong style={{ color: "#eef2f9" }}>{position}</strong> na fila
-          </span>
-          {estimatedSeconds > 0 && (
-            <span style={s.infoItem}>
-              ⏱ Aprox. <strong style={{ color: "#eef2f9" }}>{formatTime(estimatedSeconds)}</strong>
-            </span>
-          )}
-        </div>
-      )}
-
-      {phase === "processing" && estimatedSeconds > 0 && (
-        <div style={s.info}>
-          <span style={s.infoItem}>
-            ⏱ Falta aprox. <strong style={{ color: "#eef2f9" }}>{formatTime(estimatedSeconds)}</strong>
-          </span>
-        </div>
-      )}
-
-      {phase === "submitted" && (
-        <div style={s.info}>
-          <span style={s.infoItem}>Enviando imagem para processamento...</span>
-        </div>
-      )}
+      {/* Aviso */}
+      <div style={s.warning}>
+        Não feche o app — sua imagem está sendo gerada
+      </div>
     </div>
   );
 }
 
-const PURPLE = "#a855f7";
-
 const s: Record<string, React.CSSProperties> = {
   wrap: {
-    padding: "12px 0 4px",
+    paddingTop: 10,
     width: "100%",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#eef2f9",
-  },
-  percent: {
-    fontSize: 13,
-    fontWeight: 700,
-    color: PURPLE,
   },
   barBg: {
     width: "100%",
-    height: 6,
+    height: 5,
     background: "rgba(255,255,255,0.08)",
     borderRadius: 99,
     overflow: "hidden",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   barFill: {
     height: "100%",
     borderRadius: 99,
-    transition: "width 0.3s ease",
-    background: `linear-gradient(90deg, #6366f1, ${PURPLE})`,
+    transition: "width 0.4s ease",
   },
-  info: {
-    display: "flex",
-    gap: 16,
-    flexWrap: "wrap" as const,
-  },
-  infoItem: {
-    fontSize: 12,
+  warning: {
+    fontSize: 11,
     color: "#8394b0",
+  },
+  error: {
+    fontSize: 12,
+    color: "#f87171",
+    paddingTop: 6,
   },
 };
