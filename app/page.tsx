@@ -78,6 +78,10 @@ export default function HomePage() {
   const [elapsedSec, setElapsedSec] = useState(0);
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Progress bar
+  const [progressVal, setProgressVal] = useState(0);
+  const [displayProgress, setDisplayProgress] = useState(0);
+
   // Video state
   const [videoMode, setVideoMode] = useState(false);
   const [videoJob, setVideoJob] = useState<VideoJob | null>(null);
@@ -232,6 +236,37 @@ export default function HomePage() {
     else if (data.status === "failed") sendNotification("Erro na geração", "Não foi possível gerar a foto. Tente novamente.");
     setJob(data);
   }
+
+  async function fetchProgress(jobId: string) {
+    const token = await getToken();
+    const res = await fetch(`/api/image-jobs/${jobId}/progress`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    setProgressVal(data.progress ?? 0);
+  }
+
+  // Poll progress
+  useEffect(() => {
+    const activeStatuses = ["queued", "submitted", "processing"];
+    if (!job?.id || !activeStatuses.includes(job.status ?? "")) return;
+    fetchProgress(job.id);
+    const iv = setInterval(() => fetchProgress(job.id), 4000);
+    return () => clearInterval(iv);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job?.id, job?.status]);
+
+  // Smooth progress animation
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setDisplayProgress((prev) => {
+        if (Math.abs(prev - progressVal) < 1) return progressVal;
+        return prev + (progressVal - prev) * 0.12;
+      });
+    }, 50);
+    return () => clearInterval(iv);
+  }, [progressVal]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
@@ -523,14 +558,16 @@ export default function HomePage() {
               </span>
             </div>
 
-            {/* Tempo estimado */}
+            {/* Barra de progresso */}
             {!submitting && (
-              <div style={styles.timeEstimate}>
-                {elapsedSec < 45
-                  ? `⏱ Tempo estimado: ~${Math.max(1, 45 - elapsedSec)}s`
-                  : elapsedSec < 60
-                  ? "⏳ Vai demorar mais alguns segundos..."
-                  : null}
+              <div style={styles.progressBarBg}>
+                <div style={{
+                  ...styles.progressBarFill,
+                  width: `${displayProgress}%`,
+                  background: displayProgress > 80
+                    ? "linear-gradient(90deg, #6366f1, #22c55e)"
+                    : "linear-gradient(90deg, #6366f1, #a855f7)",
+                }} />
               </div>
             )}
 
@@ -871,6 +908,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   timeEstimate: {
     fontSize: 13, color: "#8394b0", textAlign: "center", marginBottom: 16, minHeight: 20,
+  },
+  progressBarBg: {
+    width: "100%", height: 5, background: "rgba(255,255,255,0.08)",
+    borderRadius: 99, overflow: "hidden", marginBottom: 16,
+  },
+  progressBarFill: {
+    height: "100%", borderRadius: 99, transition: "width 0.4s ease",
   },
   centerTitle: { fontSize: 20, fontWeight: 700, textAlign: "center", margin: "0 0 8px" },
   centerDesc: { color: "#8394b0", fontSize: 14, textAlign: "center", margin: "0 0 24px", lineHeight: 1.6 },
