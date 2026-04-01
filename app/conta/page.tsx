@@ -5,6 +5,35 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import JobProgress from "./JobProgress";
 
+const VAPID_PUBLIC_KEY = "BOFpGK6deSOtMczLOppZ8RXLb8XbAP0cs4hDHOZtJrDsnLhvzdPQXeojc5CohPhnj0PvNkPd7B7HKLtUva03cGk";
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
+
+async function registerPush(token: string) {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+    const json = sub.toJSON();
+    await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 interface AccountJob {
   id: string;
   status: string;
@@ -32,6 +61,7 @@ export default function ContaPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [canceling, setCanceling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
+  const [notifStatus, setNotifStatus] = useState<"unknown" | "granted" | "denied" | "dismissed">("unknown");
 
   // Change email
   const [newEmail, setNewEmail] = useState("");
@@ -59,8 +89,30 @@ export default function ContaPage() {
         setPlanData(data.plan);
       }
       setLoading(false);
+
+      // Check notification permission
+      if ("Notification" in window) {
+        if (Notification.permission === "granted") {
+          setNotifStatus("granted");
+          registerPush(t); // auto-register silently if already granted
+        } else if (Notification.permission === "denied") {
+          setNotifStatus("denied");
+        }
+      } else {
+        setNotifStatus("denied");
+      }
     });
   }, [router]);
+
+  async function handleEnableNotif() {
+    const perm = await Notification.requestPermission();
+    if (perm === "granted") {
+      setNotifStatus("granted");
+      if (token) await registerPush(token);
+    } else {
+      setNotifStatus("denied");
+    }
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -275,6 +327,22 @@ export default function ContaPage() {
           </div>
         </section>
 
+        {/* Banner de notificação — aparece quando há job ativo e permissão não concedida */}
+        {jobs.some((j) => ["queued", "submitted", "processing"].includes(j.status)) &&
+          notifStatus === "unknown" && (
+          <div style={styles.notifBanner}>
+            <div style={styles.notifBannerIcon}>🔔</div>
+            <div style={styles.notifBannerText}>
+              <div style={styles.notifBannerTitle}>Sua foto está sendo gerada</div>
+              <div style={styles.notifBannerSub}>Ative para receber aviso quando ficar pronta — mesmo com o app fechado</div>
+            </div>
+            <div style={styles.notifBannerBtns}>
+              <button onClick={handleEnableNotif} style={styles.notifBannerBtn}>Ativar</button>
+              <button onClick={() => setNotifStatus("dismissed")} style={styles.notifBannerSkip}>Agora não</button>
+            </div>
+          </div>
+        )}
+
         {/* Últimas criações */}
         <section style={styles.section}>
           <h2 style={styles.sectionTitle}>Suas criações</h2>
@@ -438,5 +506,26 @@ const styles: Record<string, React.CSSProperties> = {
   deleteBtn: {
     background: "transparent", border: "none", fontSize: 18, cursor: "pointer",
     color: "#4e5c72", padding: "4px 6px", borderRadius: 8, flexShrink: 0,
+  },
+
+  // Notification banner
+  notifBanner: {
+    background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))",
+    border: "1px solid rgba(168,85,247,0.3)",
+    borderRadius: 16, padding: "16px 18px",
+    display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" as const,
+  },
+  notifBannerIcon: { fontSize: 24, flexShrink: 0 },
+  notifBannerText: { flex: 1, minWidth: 160 },
+  notifBannerTitle: { fontSize: 14, fontWeight: 700, color: "#eef2f9", marginBottom: 3 },
+  notifBannerSub: { fontSize: 12, color: "#8394b0", lineHeight: 1.4 },
+  notifBannerBtns: { display: "flex", gap: 8, flexShrink: 0 },
+  notifBannerBtn: {
+    background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none",
+    borderRadius: 10, padding: "9px 18px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+  },
+  notifBannerSkip: {
+    background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 10, padding: "9px 14px", color: "#4e5c72", fontSize: 13, cursor: "pointer",
   },
 };
