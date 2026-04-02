@@ -8,7 +8,7 @@ interface Props {
   onSave: (dataUrl: string) => void;
 }
 
-type Tool = "text" | "logo" | "removebg" | null;
+type Tool = "text" | null;
 
 interface TextLayer {
   id: string;
@@ -18,17 +18,17 @@ interface TextLayer {
   fontSize: number;
   color: string;
   fontWeight: string;
-  dragging: boolean;
 }
 
 interface ImageLayer {
   id: string;
   src: string;
+  type: "logo" | "foto";
   x: number;
   y: number;
   width: number;
   height: number;
-  dragging: boolean;
+  bgRemoved: boolean;
 }
 
 const PRESETS = [
@@ -38,32 +38,40 @@ const PRESETS = [
   { label: "✏️ Texto livre", text: "Seu texto aqui", fontSize: 20, color: "#ffffff", fontWeight: "normal" },
 ];
 
+const LOGO_STORAGE_KEY = "tamowork_saved_logo";
+
 export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [tool, setTool] = useState<Tool>(null);
   const [texts, setTexts] = useState<TextLayer[]>([]);
-  const [logos, setLogos] = useState<ImageLayer[]>([]);
+  const [images, setImages] = useState<ImageLayer[]>([]);
   const [bgRemoved, setBgRemoved] = useState(false);
   const [removingBg, setRemovingBg] = useState(false);
+  const [removingLayerBg, setRemovingLayerBg] = useState(false);
   const [bgRemovedUrl, setBgRemovedUrl] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState<string | null>(null);
   const [canvasSize, setCanvasSize] = useState({ w: 360, h: 360 });
+  const [savedLogo, setSavedLogo] = useState<string | null>(null);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const bgImgRef = useRef<HTMLImageElement | null>(null);
   const logoFileRef = useRef<HTMLInputElement>(null);
-  const dragRef = useRef<{ id: string; type: "text" | "logo"; startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const photoFileRef = useRef<HTMLInputElement>(null);
+  const dragRef = useRef<{ id: string; type: "text" | "image"; startX: number; startY: number; origX: number; origY: number } | null>(null);
 
-  // Load background image and set canvas size
+  // Load saved logo from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(LOGO_STORAGE_KEY);
+    if (saved) setSavedLogo(saved);
+  }, []);
+
+  // Load background image
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       const maxW = Math.min(360, window.innerWidth - 32);
       const ratio = img.height / img.width;
-      const w = maxW;
-      const h = Math.round(w * ratio);
-      setCanvasSize({ w, h });
+      setCanvasSize({ w: maxW, h: Math.round(maxW * ratio) });
       bgImgRef.current = img;
     };
     img.src = bgRemovedUrl ?? imageUrl;
@@ -79,10 +87,7 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
     canvas.width = canvasSize.w;
     canvas.height = canvasSize.h;
 
-    // Background
     if (bgRemoved && bgRemovedUrl) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Checkerboard for transparency
       const size = 12;
       for (let y = 0; y < canvas.height; y += size) {
         for (let x = 0; x < canvas.width; x += size) {
@@ -93,36 +98,33 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
     }
     ctx.drawImage(bgImgRef.current, 0, 0, canvas.width, canvas.height);
 
-    // Logo layers
-    logos.forEach((logo) => {
+    // Image layers
+    images.forEach((layer) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
-        ctx.drawImage(img, logo.x, logo.y, logo.width, logo.height);
-        if (selectedId === logo.id) {
+        ctx.drawImage(img, layer.x, layer.y, layer.width, layer.height);
+        if (selectedId === layer.id) {
           ctx.strokeStyle = "#a855f7";
           ctx.lineWidth = 2;
           ctx.setLineDash([4, 4]);
-          ctx.strokeRect(logo.x - 2, logo.y - 2, logo.width + 4, logo.height + 4);
+          ctx.strokeRect(layer.x - 2, layer.y - 2, layer.width + 4, layer.height + 4);
           ctx.setLineDash([]);
         }
       };
-      img.src = logo.src;
+      img.src = layer.src;
     });
 
     // Text layers
     texts.forEach((t) => {
       ctx.font = `${t.fontWeight} ${t.fontSize}px Outfit, sans-serif`;
       ctx.fillStyle = t.color;
-      // Shadow
       ctx.shadowColor = "rgba(0,0,0,0.7)";
       ctx.shadowBlur = 6;
       ctx.shadowOffsetX = 1;
       ctx.shadowOffsetY = 1;
       ctx.fillText(t.text, t.x, t.y);
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
+      ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 
       if (selectedId === t.id) {
         const metrics = ctx.measureText(t.text);
@@ -133,22 +135,51 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
         ctx.setLineDash([]);
       }
     });
-  }, [texts, logos, canvasSize, selectedId, bgRemoved, bgRemovedUrl]);
+  }, [texts, images, canvasSize, selectedId, bgRemoved, bgRemovedUrl]);
 
   function addText(preset: typeof PRESETS[0]) {
     const id = `text_${Date.now()}`;
     setTexts((prev) => [...prev, {
-      id,
-      text: preset.text,
-      x: canvasSize.w / 2 - 80,
-      y: canvasSize.h / 2,
-      fontSize: preset.fontSize,
-      color: preset.color,
-      fontWeight: preset.fontWeight,
-      dragging: false,
+      id, text: preset.text,
+      x: canvasSize.w / 2 - 80, y: canvasSize.h / 2,
+      fontSize: preset.fontSize, color: preset.color, fontWeight: preset.fontWeight,
     }]);
     setSelectedId(id);
     setTool(null);
+  }
+
+  function addImageLayer(src: string, type: "logo" | "foto") {
+    const id = `${type}_${Date.now()}`;
+    const size = type === "logo" ? 100 : 160;
+    setImages((prev) => [...prev, {
+      id, src, type,
+      x: canvasSize.w / 2 - size / 2,
+      y: canvasSize.h / 2 - size / 2,
+      width: size, height: size,
+      bgRemoved: false,
+    }]);
+    setSelectedId(id);
+  }
+
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string;
+      localStorage.setItem(LOGO_STORAGE_KEY, src);
+      setSavedLogo(src);
+      addImageLayer(src, "logo");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => addImageLayer(ev.target?.result as string, "foto");
+    reader.readAsDataURL(file);
   }
 
   function handleCanvasPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
@@ -156,11 +187,9 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Check text hits (bottom-up)
     for (let i = texts.length - 1; i >= 0; i--) {
       const t = texts[i];
-      const canvas = canvasRef.current!;
-      const ctx = canvas.getContext("2d")!;
+      const ctx = canvasRef.current!.getContext("2d")!;
       ctx.font = `${t.fontWeight} ${t.fontSize}px Outfit, sans-serif`;
       const w = ctx.measureText(t.text).width;
       if (x >= t.x - 4 && x <= t.x + w + 4 && y >= t.y - t.fontSize - 4 && y <= t.y + 10) {
@@ -170,16 +199,14 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
       }
     }
 
-    // Check logo hits
-    for (let i = logos.length - 1; i >= 0; i--) {
-      const l = logos[i];
+    for (let i = images.length - 1; i >= 0; i--) {
+      const l = images[i];
       if (x >= l.x && x <= l.x + l.width && y >= l.y && y <= l.y + l.height) {
         setSelectedId(l.id);
-        dragRef.current = { id: l.id, type: "logo", startX: x, startY: y, origX: l.x, origY: l.y };
+        dragRef.current = { id: l.id, type: "image", startX: x, startY: y, origX: l.x, origY: l.y };
         return;
       }
     }
-
     setSelectedId(null);
   }
 
@@ -193,40 +220,16 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
 
     if (dragRef.current.type === "text") {
       setTexts((prev) => prev.map((t) =>
-        t.id === dragRef.current!.id
-          ? { ...t, x: dragRef.current!.origX + dx, y: dragRef.current!.origY + dy }
-          : t
+        t.id === dragRef.current!.id ? { ...t, x: dragRef.current!.origX + dx, y: dragRef.current!.origY + dy } : t
       ));
     } else {
-      setLogos((prev) => prev.map((l) =>
-        l.id === dragRef.current!.id
-          ? { ...l, x: dragRef.current!.origX + dx, y: dragRef.current!.origY + dy }
-          : l
+      setImages((prev) => prev.map((l) =>
+        l.id === dragRef.current!.id ? { ...l, x: dragRef.current!.origX + dx, y: dragRef.current!.origY + dy } : l
       ));
     }
   }
 
-  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const src = ev.target?.result as string;
-      const id = `logo_${Date.now()}`;
-      setLogos((prev) => [...prev, {
-        id, src,
-        x: canvasSize.w / 2 - 60,
-        y: canvasSize.h / 2 - 60,
-        width: 120, height: 120,
-        dragging: false,
-      }]);
-      setSelectedId(id);
-    };
-    reader.readAsDataURL(file);
-    setTool(null);
-  }
-
-  async function handleRemoveBg() {
+  async function handleRemoveBgMain() {
     setRemovingBg(true);
     try {
       const { removeBackground } = await import("@imgly/background-removal");
@@ -234,7 +237,6 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
       const url = URL.createObjectURL(blob);
       setBgRemovedUrl(url);
       setBgRemoved(true);
-
       const img = new Image();
       img.onload = () => { bgImgRef.current = img; };
       img.src = url;
@@ -242,24 +244,68 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
       alert("Não foi possível remover o fundo. Tente novamente.");
     } finally {
       setRemovingBg(false);
-      setTool(null);
+    }
+  }
+
+  async function handleRemoveLayerBg(layerId: string) {
+    const layer = images.find((l) => l.id === layerId);
+    if (!layer) return;
+    setRemovingLayerBg(true);
+    try {
+      const { removeBackground } = await import("@imgly/background-removal");
+      const blob = await removeBackground(layer.src);
+      const url = URL.createObjectURL(blob);
+      setImages((prev) => prev.map((l) => l.id === layerId ? { ...l, src: url, bgRemoved: true } : l));
+      // Update saved logo if it's the logo layer
+      if (layer.type === "logo") {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target?.result as string;
+          localStorage.setItem(LOGO_STORAGE_KEY, dataUrl);
+          setSavedLogo(dataUrl);
+        };
+        reader.readAsDataURL(blob);
+      }
+    } catch {
+      alert("Não foi possível remover o fundo. Tente novamente.");
+    } finally {
+      setRemovingLayerBg(false);
     }
   }
 
   function deleteSelected() {
-    if (!selectedId) return;
     setTexts((prev) => prev.filter((t) => t.id !== selectedId));
-    setLogos((prev) => prev.filter((l) => l.id !== selectedId));
+    setImages((prev) => prev.filter((l) => l.id !== selectedId));
     setSelectedId(null);
   }
 
-  function handleSave() {
+  function resizeSelected(delta: number) {
+    setImages((prev) => prev.map((l) => {
+      if (l.id !== selectedId) return l;
+      const newW = Math.max(40, l.width + delta);
+      const ratio = l.height / l.width;
+      return { ...l, width: newW, height: Math.round(newW * ratio) };
+    }));
+  }
+
+  function handleSaveClick() {
+    const logosWithoutBgRemoval = images.filter((l) => l.type === "logo" && !l.bgRemoved);
+    if (logosWithoutBgRemoval.length > 0) {
+      setShowSaveConfirm(true);
+    } else {
+      doSave();
+    }
+  }
+
+  function doSave() {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    setShowSaveConfirm(false);
     onSave(canvas.toDataURL("image/png"));
   }
 
   const selectedText = texts.find((t) => t.id === selectedId);
+  const selectedImage = images.find((l) => l.id === selectedId);
 
   return (
     <div style={s.overlay}>
@@ -268,11 +314,11 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
         <div style={s.header}>
           <button onClick={onClose} style={s.closeBtn}>✕</button>
           <span style={s.headerTitle}>Editar foto</span>
-          <button onClick={handleSave} style={s.saveBtn}>⬇ Salvar</button>
+          <button onClick={handleSaveClick} style={s.saveBtn}>⬇ Salvar</button>
         </div>
 
         {/* Canvas */}
-        <div ref={containerRef} style={{ ...s.canvasWrap, width: canvasSize.w, height: canvasSize.h }}>
+        <div style={{ ...s.canvasWrap, width: canvasSize.w, height: canvasSize.h }}>
           <canvas
             ref={canvasRef}
             width={canvasSize.w}
@@ -284,26 +330,50 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
           />
         </div>
 
-        {/* Selected text editor */}
-        {selectedText && editingText === null && (
-          <div style={s.textEditor}>
+        {/* Selected text controls */}
+        {selectedText && (
+          <div style={s.layerControls}>
             <input
               style={s.textInput}
               value={selectedText.text}
               onChange={(e) => setTexts((prev) => prev.map((t) => t.id === selectedText.id ? { ...t, text: e.target.value } : t))}
-              placeholder="Digite o texto..."
             />
-            <div style={s.textControls}>
-              <input
-                type="range" min="12" max="72" value={selectedText.fontSize}
+            <div style={s.controlRow}>
+              <span style={s.controlLabel}>Tamanho</span>
+              <input type="range" min="12" max="72" value={selectedText.fontSize}
                 onChange={(e) => setTexts((prev) => prev.map((t) => t.id === selectedText.id ? { ...t, fontSize: Number(e.target.value) } : t))}
                 style={{ flex: 1 }}
               />
-              <input
-                type="color" value={selectedText.color}
+              <input type="color" value={selectedText.color}
                 onChange={(e) => setTexts((prev) => prev.map((t) => t.id === selectedText.id ? { ...t, color: e.target.value } : t))}
                 style={s.colorPicker}
               />
+              <button onClick={deleteSelected} style={s.deleteBtn}>🗑</button>
+            </div>
+          </div>
+        )}
+
+        {/* Selected image controls */}
+        {selectedImage && (
+          <div style={s.layerControls}>
+            <div style={s.controlRow}>
+              <span style={s.controlLabel}>
+                {selectedImage.type === "logo" ? "🖼 Logo" : "📷 Foto"}
+              </span>
+              <button onClick={() => resizeSelected(-20)} style={s.iconBtn}>−</button>
+              <button onClick={() => resizeSelected(20)} style={s.iconBtn}>+</button>
+              {!selectedImage.bgRemoved && (
+                <button
+                  onClick={() => handleRemoveLayerBg(selectedImage.id)}
+                  disabled={removingLayerBg}
+                  style={s.removeBgBtn}
+                >
+                  {removingLayerBg ? "⏳ removendo..." : "✂️ remover fundo"}
+                </button>
+              )}
+              {selectedImage.bgRemoved && (
+                <span style={s.bgRemovedBadge}>✓ fundo removido</span>
+              )}
               <button onClick={deleteSelected} style={s.deleteBtn}>🗑</button>
             </div>
           </div>
@@ -317,29 +387,35 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
             <span style={s.toolLabel}>Texto</span>
           </button>
 
-          {/* Logo */}
-          <button style={{ ...s.toolBtn, ...(tool === "logo" ? s.toolBtnActive : {}) }} onClick={() => logoFileRef.current?.click()}>
-            <span style={s.toolIcon}>🖼</span>
-            <span style={s.toolLabel}>Logo</span>
-          </button>
+          {/* Logo — salva automaticamente */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            <button style={s.toolBtn} onClick={() => logoFileRef.current?.click()}>
+              <span style={s.toolIcon}>🖼</span>
+              <span style={s.toolLabel}>Logo</span>
+            </button>
+            {savedLogo && (
+              <button style={s.useSavedBtn} onClick={() => addImageLayer(savedLogo, "logo")}>
+                usar salva
+              </button>
+            )}
+          </div>
           <input ref={logoFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleLogoUpload} />
 
-          {/* Remover fundo */}
-          <button style={{ ...s.toolBtn, ...(bgRemoved ? s.toolBtnActive : {}) }} onClick={handleRemoveBg} disabled={removingBg}>
+          {/* Foto por cima */}
+          <button style={s.toolBtn} onClick={() => photoFileRef.current?.click()}>
+            <span style={s.toolIcon}>📷</span>
+            <span style={s.toolLabel}>Foto</span>
+          </button>
+          <input ref={photoFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} />
+
+          {/* Remover fundo da imagem principal */}
+          <button style={{ ...s.toolBtn, ...(bgRemoved ? s.toolBtnActive : {}) }} onClick={handleRemoveBgMain} disabled={removingBg}>
             <span style={s.toolIcon}>{removingBg ? "⏳" : "✂️"}</span>
             <span style={s.toolLabel}>{removingBg ? "..." : "Fundo"}</span>
           </button>
-
-          {/* Apagar selecionado */}
-          {selectedId && (
-            <button style={{ ...s.toolBtn, borderColor: "rgba(239,68,68,0.4)" }} onClick={deleteSelected}>
-              <span style={s.toolIcon}>🗑</span>
-              <span style={s.toolLabel}>Apagar</span>
-            </button>
-          )}
         </div>
 
-        {/* Text presets dropdown */}
+        {/* Text presets */}
         {tool === "text" && (
           <div style={s.presets}>
             {PRESETS.map((p) => (
@@ -350,6 +426,33 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
           </div>
         )}
       </div>
+
+      {/* Confirm save modal */}
+      {showSaveConfirm && (
+        <div style={s.confirmOverlay}>
+          <div style={s.confirmBox}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>🖼️</div>
+            <div style={s.confirmTitle}>A logo tem fundo</div>
+            <div style={s.confirmDesc}>Quer remover o fundo da logo antes de salvar?</div>
+            <div style={s.confirmBtns}>
+              <button
+                style={s.confirmYes}
+                onClick={async () => {
+                  const logoLayer = images.find((l) => l.type === "logo" && !l.bgRemoved);
+                  if (logoLayer) await handleRemoveLayerBg(logoLayer.id);
+                  doSave();
+                }}
+                disabled={removingLayerBg}
+              >
+                {removingLayerBg ? "Removendo..." : "✂️ Remover e salvar"}
+              </button>
+              <button style={s.confirmNo} onClick={doSave}>
+                Salvar assim mesmo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -370,6 +473,7 @@ const s: Record<string, React.CSSProperties> = {
     width: "100%", display: "flex", alignItems: "center",
     justifyContent: "space-between", padding: "14px 16px",
     borderBottom: "1px solid rgba(255,255,255,0.07)",
+    position: "sticky", top: 0, background: "#07080b", zIndex: 10,
   },
   headerTitle: { fontSize: 15, fontWeight: 700, color: "#eef2f9" },
   closeBtn: {
@@ -380,26 +484,36 @@ const s: Record<string, React.CSSProperties> = {
     background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none",
     borderRadius: 10, padding: "7px 16px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
   },
-  canvasWrap: {
-    margin: "12px auto",
-    borderRadius: 12, overflow: "hidden",
-    cursor: "crosshair",
-  },
-  textEditor: {
-    width: "calc(100% - 32px)", padding: "10px 16px",
+  canvasWrap: { margin: "12px auto", borderRadius: 12, overflow: "hidden", cursor: "crosshair" },
+
+  layerControls: {
+    width: "calc(100% - 32px)", padding: "10px 14px",
     background: "#111820", borderRadius: 12, marginBottom: 8,
     display: "flex", flexDirection: "column", gap: 8,
   },
+  controlRow: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const },
+  controlLabel: { fontSize: 12, color: "#8394b0", fontWeight: 600, flexShrink: 0 },
   textInput: {
     background: "#0c1018", border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 8, padding: "8px 12px", color: "#eef2f9", fontSize: 14, outline: "none",
+    borderRadius: 8, padding: "8px 12px", color: "#eef2f9", fontSize: 14, outline: "none", width: "100%",
   },
-  textControls: { display: "flex", alignItems: "center", gap: 10 },
-  colorPicker: { width: 32, height: 32, borderRadius: 6, border: "none", cursor: "pointer", padding: 2, background: "transparent" },
+  colorPicker: { width: 32, height: 32, borderRadius: 6, border: "none", cursor: "pointer", padding: 2, background: "transparent", flexShrink: 0 },
   deleteBtn: {
     background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
-    borderRadius: 8, color: "#f87171", cursor: "pointer", padding: "4px 10px",
+    borderRadius: 8, color: "#f87171", cursor: "pointer", padding: "4px 10px", flexShrink: 0,
   },
+  iconBtn: {
+    background: "#0c1018", border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 8, color: "#eef2f9", cursor: "pointer", padding: "4px 12px", fontSize: 16, flexShrink: 0,
+  },
+  removeBgBtn: {
+    background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.3)",
+    borderRadius: 8, color: "#a855f7", cursor: "pointer", padding: "4px 10px", fontSize: 12, fontWeight: 600, flexShrink: 0,
+  },
+  bgRemovedBadge: {
+    fontSize: 11, color: "#34d399", fontWeight: 600, flexShrink: 0,
+  },
+
   toolbar: {
     display: "flex", gap: 10, padding: "10px 16px 4px",
     width: "100%", overflowX: "auto",
@@ -409,11 +523,15 @@ const s: Record<string, React.CSSProperties> = {
     background: "#111820", border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 12, padding: "10px 18px", cursor: "pointer", flexShrink: 0,
   },
-  toolBtnActive: {
-    borderColor: "#a855f7", background: "rgba(168,85,247,0.1)",
-  },
+  toolBtnActive: { borderColor: "#a855f7", background: "rgba(168,85,247,0.1)" },
   toolIcon: { fontSize: 20 },
   toolLabel: { fontSize: 11, color: "#8394b0", fontWeight: 600 },
+  useSavedBtn: {
+    background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)",
+    borderRadius: 8, color: "#a855f7", fontSize: 10, fontWeight: 700,
+    cursor: "pointer", padding: "3px 8px", whiteSpace: "nowrap" as const,
+  },
+
   presets: {
     display: "flex", gap: 8, padding: "0 16px 12px",
     width: "100%", overflowX: "auto",
@@ -422,5 +540,28 @@ const s: Record<string, React.CSSProperties> = {
     background: "#111820", border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 20, padding: "7px 14px", color: "#eef2f9",
     fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" as const, flexShrink: 0,
+  },
+
+  // Confirm modal
+  confirmOverlay: {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    zIndex: 300, padding: 24,
+  },
+  confirmBox: {
+    background: "#0c1018", border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 20, padding: "28px 24px", maxWidth: 320, width: "100%",
+    textAlign: "center",
+  },
+  confirmTitle: { fontSize: 17, fontWeight: 700, color: "#eef2f9", marginBottom: 8 },
+  confirmDesc: { fontSize: 13, color: "#8394b0", lineHeight: 1.5, marginBottom: 20 },
+  confirmBtns: { display: "flex", flexDirection: "column", gap: 10 },
+  confirmYes: {
+    background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none",
+    borderRadius: 12, padding: "13px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer",
+  },
+  confirmNo: {
+    background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 14, cursor: "pointer",
   },
 };
