@@ -5,6 +5,9 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import BottomNav from "@/app/components/BottomNav";
+import ModeSelector, { type CreationMode } from "@/app/components/ModeSelector";
+import dynamic from "next/dynamic";
+const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type Plan = "free" | "pro";
@@ -82,6 +85,13 @@ export default function HomePage() {
   // Progress bar
   const [progressVal, setProgressVal] = useState(0);
   const [displayProgress, setDisplayProgress] = useState(0);
+
+  // Creation mode
+  const [creationMode, setCreationMode] = useState<CreationMode>("simulacao");
+
+  // Photo editor
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null);
 
   // Video state
   const [videoMode, setVideoMode] = useState(false);
@@ -540,6 +550,18 @@ export default function HomePage() {
             )}
 
             <form onSubmit={handleSubmit} style={styles.form}>
+              {/* Seletor de modo */}
+              <ModeSelector
+                selected={creationMode}
+                onChange={(m) => {
+                  setCreationMode(m);
+                  if (m === "fundo_branco") setCenario("fundo branco limpo, luz de estúdio");
+                  else if (m === "simulacao") setCenario("");
+                  else if (m === "personalizado") setCenario("");
+                }}
+                isPro={plan === "pro"}
+              />
+
               <div
                 style={{ ...styles.dropzone, ...(preview ? styles.dropzoneWithPreview : {}) }}
                 onClick={() => fileRef.current?.click()}
@@ -561,10 +583,25 @@ export default function HomePage() {
                 <input type="text" placeholder="Ex: bolo de chocolate artesanal com morango" value={produto} onChange={(e) => setProduto(e.target.value)} required style={styles.input} />
               </div>
 
-              <div style={styles.fieldGroup}>
-                <label style={styles.label}>Cenário</label>
-                <input type="text" placeholder="Ex: mesa rústica, fundo branco, estúdio com luz suave" value={cenario} onChange={(e) => setCenario(e.target.value)} required style={styles.input} />
-              </div>
+              {creationMode !== "fundo_branco" && (
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>
+                    {creationMode === "personalizado" ? "Descreva o resultado que quer" : "Cenário"}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={
+                      creationMode === "simulacao" ? "Ex: mesa rústica, estúdio com luz suave" :
+                      creationMode === "catalogo" ? "Ex: ambiente urbano, loja moderna" :
+                      "Descreva livremente o que a IA deve criar"
+                    }
+                    value={cenario}
+                    onChange={(e) => setCenario(e.target.value)}
+                    required
+                    style={styles.input}
+                  />
+                </div>
+              )}
 
               {timeoutError && <div style={{ ...styles.error, borderColor: "rgba(251,191,36,0.4)", background: "rgba(251,191,36,0.08)", color: "#fbbf24" }}>{timeoutError}</div>}
               {formError && <div style={styles.error}>{formError}</div>}
@@ -645,10 +682,15 @@ export default function HomePage() {
         {job?.status === "done" && job.output_image_url && !videoMode && (
           <div style={{ ...styles.card, animation: "fadeIn 0.5s ease" }}>
             <h2 style={styles.centerTitle}>Sua foto está pronta! ✨</h2>
-            <img src={job.output_image_url} alt="Foto gerada" style={styles.resultImg} />
-            <button onClick={() => handleDownload(job.output_image_url!)} style={styles.downloadBtn}>
-              ⬇ Baixar foto
-            </button>
+            <img src={editedImageUrl ?? job.output_image_url} alt="Foto gerada" style={styles.resultImg} />
+            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
+                ⬇ Baixar foto
+              </button>
+              <button onClick={() => setEditorOpen(true)} style={styles.editBtn}>
+                ✏️ Editar
+              </button>
+            </div>
             <div style={styles.resultActions}>
               <button onClick={resetJob} style={styles.newBtn}>🔄 Gerar outra foto</button>
               {plan === "pro" ? (
@@ -770,6 +812,18 @@ export default function HomePage() {
         )}
       </main>
       <BottomNav hasActiveJob={isGenerating} />
+
+      {/* Mini editor */}
+      {editorOpen && job?.output_image_url && (
+        <PhotoEditor
+          imageUrl={editedImageUrl ?? job.output_image_url}
+          onClose={() => setEditorOpen(false)}
+          onSave={(dataUrl) => {
+            setEditedImageUrl(dataUrl);
+            setEditorOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -965,6 +1019,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   timeEstimate: {
     fontSize: 13, color: "#8394b0", textAlign: "center", marginBottom: 16, minHeight: 20,
+  },
+  editBtn: {
+    background: "#111820", border: "1px solid rgba(168,85,247,0.4)",
+    borderRadius: 12, padding: "12px 18px", color: "#a855f7",
+    fontSize: 14, fontWeight: 700, cursor: "pointer", flexShrink: 0,
   },
   progressBarBg: {
     width: "100%", height: 5, background: "rgba(255,255,255,0.08)",

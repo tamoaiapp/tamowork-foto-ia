@@ -9,9 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@imgly/background-removal": "^1.7.0",
     "@supabase/supabase-js": "^2.100.1",
     "@types/web-push": "^3.6.4",
     "@upstash/qstash": "^2.10.1",
+    "fabric": "^5.5.2",
     "mercadopago": "^2.12.0",
     "next": "^16.2.1",
     "react": "^19.0.0",
