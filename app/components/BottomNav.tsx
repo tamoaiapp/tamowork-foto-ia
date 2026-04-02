@@ -6,47 +6,68 @@ interface Props {
   hasActiveJob?: boolean;
 }
 
+function IconCriar({ active }: { active: boolean }) {
+  const c = active ? "#a855f7" : "#4e5c72";
+  return active ? (
+    // Filled: circle preenchido com plus branco
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="#a855f7" />
+      <line x1="12" y1="7" x2="12" y2="17" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+      <line x1="7" y1="12" x2="17" y2="12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  ) : (
+    // Outline
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="7" x2="12" y2="17" />
+      <line x1="7" y1="12" x2="17" y2="12" />
+    </svg>
+  );
+}
+
+function IconFeed({ active }: { active: boolean }) {
+  return active ? (
+    // Filled: casa estilo Instagram
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H15v-5h-6v5H4a1 1 0 01-1-1V10.5z" fill="#a855f7" />
+    </svg>
+  ) : (
+    // Outline
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4e5c72" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H15v-5h-6v5H4a1 1 0 01-1-1V10.5z" />
+    </svg>
+  );
+}
+
+function IconCriacoes({ active }: { active: boolean }) {
+  const c = active ? "#a855f7" : "#4e5c72";
+  return active ? (
+    // Filled: 4 quadrados preenchidos
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="3" width="7.5" height="7.5" rx="2" fill="#a855f7" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" fill="#a855f7" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" fill="#a855f7" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" fill="#a855f7" />
+    </svg>
+  ) : (
+    // Outline
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+    </svg>
+  );
+}
+
 export default function BottomNav({ hasActiveJob = false }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
   const tabs = [
-    {
-      key: "criar",
-      label: "Criar",
-      path: "/",
-      icon: (active: boolean) => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "#a855f7" : "#4e5c72"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="16" />
-          <line x1="8" y1="12" x2="16" y2="12" />
-        </svg>
-      ),
-    },
-    {
-      key: "explorar",
-      label: "Explorar",
-      path: "/explorar",
-      icon: (active: boolean) => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "#a855f7" : "#4e5c72"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-      ),
-    },
-    {
-      key: "criacoes",
-      label: "Criações",
-      path: "/conta",
-      icon: (active: boolean) => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "#a855f7" : "#4e5c72"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="7" rx="1" />
-          <rect x="14" y="3" width="7" height="7" rx="1" />
-          <rect x="3" y="14" width="7" height="7" rx="1" />
-          <rect x="14" y="14" width="7" height="7" rx="1" />
-        </svg>
-      ),
-    },
+    { key: "criar", label: "Criar", path: "/" },
+    { key: "explorar", label: "Feed", path: "/explorar" },
+    { key: "criacoes", label: "Criações", path: "/criacoes" },
   ];
 
   const isActive = (path: string) => {
@@ -59,16 +80,12 @@ export default function BottomNav({ hasActiveJob = false }: Props) {
       {tabs.map((tab) => {
         const active = isActive(tab.path);
         return (
-          <button
-            key={tab.key}
-            onClick={() => router.push(tab.path)}
-            style={s.tab}
-          >
+          <button key={tab.key} onClick={() => router.push(tab.path)} style={s.tab}>
             <div style={{ position: "relative" }}>
-              {tab.icon(active)}
-              {tab.key === "criar" && hasActiveJob && (
-                <span style={s.activeDot} />
-              )}
+              {tab.key === "criar" && <IconCriar active={active} />}
+              {tab.key === "explorar" && <IconFeed active={active} />}
+              {tab.key === "criacoes" && <IconCriacoes active={active} />}
+              {tab.key === "criar" && hasActiveJob && <span style={s.activeDot} />}
             </div>
             <span style={{ ...s.label, color: active ? "#a855f7" : "#4e5c72" }}>
               {tab.label}

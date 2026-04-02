@@ -20,6 +20,7 @@ body {
   color: var(--text);
   font-family: 'Outfit', sans-serif;
   margin: 0;
+  overflow-x: clip;
 }
 
 input, textarea, select, button {

@@ -8,6 +8,7 @@ import BottomNav from "@/app/components/BottomNav";
 import ModeSelector, { type CreationMode } from "@/app/components/ModeSelector";
 import dynamic from "next/dynamic";
 const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
+const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type Plan = "free" | "pro";
@@ -50,6 +51,73 @@ function formatMs(ms: number) {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
+const BASE_CATALOG = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/catalog";
+
+const CATALOG_MODELS = [
+  { id: "mulher1",         label: "Mulher 1",  url: `${BASE_CATALOG}/mulher1.jpg` },
+  { id: "mulher2",         label: "Mulher 2",  url: `${BASE_CATALOG}/mulher2.jpg` },
+  { id: "mulher3",         label: "Mulher 3",  url: `${BASE_CATALOG}/mulher3.jpg` },
+  { id: "homem1",          label: "Homem 1",   url: `${BASE_CATALOG}/homem1.jpg` },
+  { id: "homem2",          label: "Homem 2",   url: `${BASE_CATALOG}/homem2.jpg` },
+  { id: "homem3",          label: "Homem 3",   url: `${BASE_CATALOG}/homem3.jpg` },
+  { id: "crianca_menino",  label: "Menino",    url: `${BASE_CATALOG}/crianca_menino.jpg` },
+  { id: "crianca_menina",  label: "Menina",    url: `${BASE_CATALOG}/crianca_menina.jpg` },
+];
+
+function CatalogModelPicker({
+  selected, onSelect, onCustom,
+}: { selected: string | null; onSelect: (url: string) => void; onCustom: () => void }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8,
+      }}>
+        {CATALOG_MODELS.map(m => (
+          <div
+            key={m.id}
+            onClick={() => onSelect(m.url)}
+            style={{
+              borderRadius: 12, overflow: "hidden", cursor: "pointer",
+              border: selected === m.url ? "2.5px solid #a855f7" : "2px solid rgba(255,255,255,0.07)",
+              aspectRatio: "3/4", position: "relative",
+              boxShadow: selected === m.url ? "0 0 0 3px rgba(168,85,247,0.25)" : "none",
+              transition: "border-color 0.15s",
+            }}
+          >
+            <img src={m.url} alt={m.label} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} />
+            {selected === m.url && (
+              <div style={{
+                position: "absolute", top: 4, right: 4,
+                background: "#a855f7", borderRadius: "50%",
+                width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, color: "#fff", fontWeight: 800,
+              }}>✓</div>
+            )}
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+              padding: "8px 4px 4px", fontSize: 9, fontWeight: 700,
+              color: "rgba(255,255,255,0.9)", textAlign: "center",
+            }}>{m.label}</div>
+          </div>
+        ))}
+      </div>
+      {/* Opção de enviar própria foto */}
+      <button
+        type="button"
+        onClick={onCustom}
+        style={{
+          background: "rgba(255,255,255,0.04)", border: "1.5px dashed rgba(255,255,255,0.15)",
+          borderRadius: 12, padding: "10px", color: "#8394b0",
+          fontSize: 13, fontWeight: 600, cursor: "pointer",
+        }}
+      >
+        📷 Usar minha própria foto
+      </button>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -62,6 +130,10 @@ export default function HomePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Catálogo: foto do modelo
+  const [modelFile, setModelFile] = useState<File | null>(null);
+  const [modelPreview, setModelPreview] = useState<string | null>(null);
+  const modelFileRef = useRef<HTMLInputElement>(null);
 
   // Job state
   const [job, setJob] = useState<Job | null>(null);
@@ -88,6 +160,7 @@ export default function HomePage() {
 
   // Creation mode
   const [creationMode, setCreationMode] = useState<CreationMode>("simulacao");
+  const [modeSelected, setModeSelected] = useState(false); // true = mostra form, false = mostra menu
 
   // Photo editor
   const [editorOpen, setEditorOpen] = useState(false);
@@ -132,6 +205,20 @@ export default function HomePage() {
         } else {
           const done = jobs.find((j) => j.status === "done");
           if (done) setJob(done);
+        }
+
+        // Detecta rate limit no carregamento: free user com job recente (<3h)
+        if (userPlan === "free") {
+          const FREE_COOLDOWN_MS = 3 * 60 * 60 * 1000;
+          const lastJob = jobs
+            .filter((j) => j.status !== "canceled")
+            .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())[0];
+          if (lastJob?.created_at) {
+            const nextAvailable = new Date(new Date(lastJob.created_at).getTime() + FREE_COOLDOWN_MS);
+            if (nextAvailable > new Date()) {
+              setRateLimitedUntil(nextAvailable);
+            }
+          }
         }
       }
 
@@ -310,7 +397,29 @@ export default function HomePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!imageFile) { setFormError("Envie uma foto do produto"); return; }
+
+    // Modo vídeo: rota separada
+    if (creationMode === "video") {
+      if (!imageFile) { setFormError("Envie uma foto"); return; }
+      setFormError("");
+      setVideoError("");
+      try {
+        const token = await getToken();
+        const form = new FormData();
+        form.append("file", imageFile);
+        const uploadRes = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
+        if (!uploadRes.ok) throw new Error("Falha ao enviar imagem");
+        const { url: imageUrl } = await uploadRes.json();
+        await handleVideoSubmit(imageUrl);
+        setVideoMode(true);
+      } catch (err) {
+        setFormError(err instanceof Error ? err.message : "Erro");
+      }
+      return;
+    }
+
+    if (creationMode === "catalogo" && !modelFile && !modelPreview) { setFormError("Escolha um modelo"); return; }
+    if (!imageFile) { setFormError("Envie a foto do produto"); return; }
     if (!produto.trim()) { setFormError("Descreva o produto"); return; }
     if (creationMode !== "fundo_branco" && !cenario.trim()) { setFormError("Descreva o cenário da foto"); return; }
 
@@ -323,7 +432,7 @@ export default function HomePage() {
     try {
       const token = await getToken();
 
-      // Upload da imagem
+      // Upload da imagem do produto
       const form = new FormData();
       form.append("file", imageFile);
       const uploadRes = await fetch("/api/upload", {
@@ -331,7 +440,10 @@ export default function HomePage() {
         headers: { Authorization: `Bearer ${token}` },
         body: form,
       });
-      if (!uploadRes.ok) throw new Error("Falha ao enviar imagem");
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json().catch(() => ({}));
+        throw new Error(errData.error ?? "Falha ao enviar imagem");
+      }
       const { url: imageUrl } = await uploadRes.json();
 
       // Fundo branco: processa no servidor, sem fila GPU
@@ -354,14 +466,35 @@ export default function HomePage() {
           throw new Error(err.error ?? "Falha ao processar");
         }
         const data = await res.json();
-        // Já vem como done — mostra resultado direto
         setJob({ id: data.jobId, status: "done", output_image_url: data.output_image_url });
         setSubmitting(false);
         return;
       }
 
-      // Outros modos: vai para fila GPU normalmente
-      const prompt = cenario.trim() ? `${produto} | cenário: ${cenario}` : produto;
+      // Catálogo: modelo pode ser do catálogo (URL pública) ou upload manual
+      let modelImageUrl: string | null = null;
+      if (creationMode === "catalogo" && !modelFile && modelPreview?.startsWith("http")) {
+        // Modelo do catálogo — usa URL diretamente
+        modelImageUrl = modelPreview;
+      } else if (creationMode === "catalogo" && modelFile) {
+        const mform = new FormData();
+        mform.append("file", modelFile);
+        const mres = await fetch("/api/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: mform,
+        });
+        if (!mres.ok) throw new Error("Falha ao enviar foto do modelo");
+        const { url } = await mres.json();
+        modelImageUrl = url;
+      }
+
+      // Monta prompt (catálogo codifica model_img no prefixo)
+      const basePrompt = cenario.trim() ? `${produto} | cenário: ${cenario}` : produto;
+      const prompt = modelImageUrl
+        ? `model_img:${modelImageUrl} | ${basePrompt}`
+        : basePrompt;
+
       const jobRes = await fetch("/api/image-jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -400,6 +533,9 @@ export default function HomePage() {
     setCenario("");
     setImageFile(null);
     setPreview(null);
+    setModelFile(null);
+    setModelPreview(null);
+    setModeSelected(false); // volta para o menu
   }
 
   async function handleCancel() {
@@ -510,7 +646,48 @@ export default function HomePage() {
 
   const isGenerating = (submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled")) && job?.status !== "done";
 
-  if (loading) return <div style={styles.centered}>Carregando...</div>;
+  if (loading) return (
+    <div style={styles.page}>
+      <style>{`
+        @keyframes skeletonShimmer {
+          0% { background-position: -400px 0; }
+          100% { background-position: 400px 0; }
+        }
+      `}</style>
+      <header style={styles.header}>
+        <div style={skl.logoBlock} />
+        <div style={skl.avatarBlock} />
+      </header>
+      <main style={styles.main}>
+        <div style={skl.labelBlock} />
+        <div style={skl.grid}>
+          {[0,1,2,3].map(i => (
+            <div key={i} style={skl.card}>
+              <div style={{ position: "relative" as const, width: "100%", aspectRatio: "3 / 4" }}>
+                <div style={skl.cardImg} />
+                {/* overlay de texto no rodapé do card */}
+                <div style={skl.cardOverlay}>
+                  <div style={skl.cardTextSm} />
+                  <div style={skl.cardTextLg} />
+                </div>
+              </div>
+              <div style={skl.cardFooter}>
+                <div style={skl.cardBtn} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+      <div style={skl.bottomNav}>
+        {[0,1,2].map(i => (
+          <div key={i} style={skl.navItem}>
+            <div style={skl.navIcon} />
+            <div style={skl.navLabel} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div style={styles.page}>
@@ -526,6 +703,11 @@ export default function HomePage() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseBtnAnim {
+          0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.55); transform: scale(1); }
+          60% { box-shadow: 0 0 0 14px rgba(168,85,247,0); transform: scale(1.03); }
+          100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); transform: scale(1); }
         }
       `}</style>
 
@@ -544,67 +726,175 @@ export default function HomePage() {
       </header>
 
       <main style={styles.main}>
-        {/* Formulário */}
-        {!isGenerating && job?.status !== "done" && (
-          <div style={styles.card}>
-            <h1 style={styles.title}>Gere fotos profissionais do seu produto</h1>
-            <p style={styles.desc}>
-              Envie uma foto, descreva o produto e escolha um cenário. A IA transforma em imagem profissional.
-            </p>
-
-            {/* Rate limit */}
-            {rateLimitedUntil && countdown > 0 && (
-              <div style={styles.rateLimitBox}>
-                <div style={styles.rateLimitIcon}>⏳</div>
-                <div style={{ flex: 1 }}>
-                  <div style={styles.rateLimitTitle}>Próxima foto disponível em</div>
-                  <div style={styles.rateLimitTimer}>{formatMs(countdown)}</div>
-                  <div style={styles.rateLimitSub}>
-                    Plano gratuito: 1 foto a cada 3 horas.
-                  </div>
-                  <div style={{ marginTop: 14, background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 14, padding: "14px 16px" }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#c4b5fd", marginBottom: 4 }}>
-                      Por menos de R$0,61/dia você gera sem limites
-                    </div>
-                    <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 12, lineHeight: 1.5 }}>
-                      Fotos ilimitadas + vídeos com IA. Sem fila, sem espera.
-                    </div>
-                    <button onClick={() => router.push("/planos")} style={styles.unlockBtn}>
-                      🔓 Destravar agora
-                    </button>
-                  </div>
+        {/* PASSO 1: Menu de escolha de modo */}
+        {!isGenerating && job?.status !== "done" && !modeSelected && (
+          <div style={styles.menuWrap}>
+            {rateLimitedUntil && countdown > 0 ? (
+              <div style={{ ...styles.card, textAlign: "center", padding: "36px 32px" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#8394b0", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+                  Plano gratuito · 1 foto a cada 3h
                 </div>
+                <div style={{ fontSize: 14, color: "#eef2f9", marginBottom: 6 }}>Próxima foto disponível em</div>
+                <div style={{ fontSize: 44, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 20, fontVariantNumeric: "tabular-nums" }}>
+                  {formatMs(countdown)}
+                </div>
+                <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 24, lineHeight: 1.6 }}>
+                  Por menos de <strong style={{ color: "#c4b5fd" }}>R$0,61/dia</strong> você gera fotos e vídeos sem limite
+                </div>
+                <button onClick={() => router.push("/planos")} style={styles.pulsingBtn}>
+                  🔓 Libere agora
+                </button>
               </div>
-            )}
-
-            <form onSubmit={handleSubmit} style={styles.form}>
-              {/* Seletor de modo */}
+            ) : (
               <ModeSelector
                 selected={creationMode}
                 onChange={(m) => {
                   setCreationMode(m);
+                  setImageFile(null); setPreview(null);
+                  setModelFile(null); setModelPreview(null);
                   if (m === "fundo_branco") setCenario("fundo branco limpo, luz de estúdio");
-                  else if (m === "simulacao") setCenario("");
-                  else if (m === "personalizado") setCenario("");
+                  else setCenario("");
+                  setModeSelected(true);
                 }}
-                isPro={plan === "pro"}
               />
+            )}
+          </div>
+        )}
 
-              <div
-                style={{ ...styles.dropzone, ...(preview ? styles.dropzoneWithPreview : {}) }}
-                onClick={() => fileRef.current?.click()}
-              >
-                {preview ? (
-                  <img src={preview} alt="preview" style={styles.previewImg} />
-                ) : (
-                  <>
-                    <div style={styles.uploadIcon}>📷</div>
-                    <div style={styles.uploadText}>Clique para enviar a foto do produto</div>
-                    <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
-                  </>
-                )}
-                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+        {/* PASSO 2: Modo Promo — componente próprio */}
+        {!isGenerating && job?.status !== "done" && modeSelected && creationMode === "promo" && (
+          <PromoCreator onBack={() => setModeSelected(false)} />
+        )}
+
+        {/* PASSO 2: Formulário após escolher o modo */}
+        {!isGenerating && job?.status !== "done" && modeSelected && creationMode !== "promo" && (
+          <div style={styles.card}>
+            {/* Botão voltar */}
+            <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
+              ← Voltar
+            </button>
+
+            <div style={styles.modeHeader}>
+              <div style={styles.modeName}>
+                {{
+                  simulacao: "Simulação de uso",
+                  fundo_branco: "Fundo branco",
+                  catalogo: "Catálogo com modelo",
+                  personalizado: "Personalizado",
+                  video: "Criar vídeo",
+                }[creationMode]}
               </div>
+            </div>
+
+            <form onSubmit={handleSubmit} style={styles.form}>
+
+              {/* ── MODO VÍDEO ── */}
+              {creationMode === "video" ? (
+                <>
+                  <div
+                    style={{ ...styles.dropzone, ...(preview ? styles.dropzoneWithPreview : {}) }}
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    {preview ? (
+                      <img src={preview} alt="preview" style={styles.previewImg} />
+                    ) : (
+                      <>
+                        <div style={styles.uploadIcon}>🎬</div>
+                        <div style={styles.uploadText}>Envie a foto que vira vídeo</div>
+                        <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
+                      </>
+                    )}
+                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+                  </div>
+
+                  <div style={styles.fieldGroup}>
+                    <label style={styles.label}>O que você quer que aconteça? <span style={{ color: "#4e5c72" }}>(opcional)</span></label>
+                    <input
+                      type="text"
+                      placeholder="Ex: câmera girando suavemente, produto rotacionando"
+                      value={videoPrompt}
+                      onChange={(e) => setVideoPrompt(e.target.value)}
+                      style={styles.input}
+                    />
+                  </div>
+
+                  {plan !== "pro" && (
+                    <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 4 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#c4b5fd", marginBottom: 4 }}>🔒 Disponível no plano Pro</div>
+                      <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 12 }}>Vídeos com IA a partir de R$0,61/dia</div>
+                      <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>✨ Assinar agora</button>
+                    </div>
+                  )}
+
+                  {videoError && <div style={styles.error}>{videoError}</div>}
+
+                  <button
+                    type="submit"
+                    disabled={videoSubmitting || !imageFile || plan !== "pro"}
+                    style={{ ...styles.submitBtn, opacity: (videoSubmitting || !imageFile || plan !== "pro") ? 0.5 : 1 }}
+                  >
+                    {videoSubmitting ? "Enviando..." : "🎬 Gerar vídeo"}
+                  </button>
+                </>
+              ) : (
+              <>
+              {/* ── MODOS DE FOTO ── */}
+              {creationMode === "catalogo" ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div>
+                    <div style={styles.uploadLabel}>1. Escolha o modelo</div>
+                    <CatalogModelPicker
+                      selected={modelPreview}
+                      onSelect={(url) => {
+                        setModelPreview(url);
+                        setModelFile(null); // modelo do catálogo: URL direta
+                      }}
+                      onCustom={() => modelFileRef.current?.click()}
+                    />
+                    <input ref={modelFileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      setModelFile(f); setModelPreview(f ? URL.createObjectURL(f) : null);
+                    }} style={{ display: "none" }} />
+                  </div>
+                  <div>
+                    <div style={styles.uploadLabel}>2. Foto do produto</div>
+                    <div
+                      style={{ ...styles.dropzone, ...(preview ? styles.dropzoneWithPreview : {}), marginBottom: 0 }}
+                      onClick={() => fileRef.current?.click()}
+                    >
+                      {preview ? (
+                        <img src={preview} alt="produto" style={styles.previewImg} />
+                      ) : (
+                        <>
+                          <div style={styles.uploadIcon}>📦</div>
+                          <div style={styles.uploadText}>Foto do produto</div>
+                          <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
+                        </>
+                      )}
+                      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{ ...styles.dropzone, ...(preview ? styles.dropzoneWithPreview : {}) }}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {preview ? (
+                    <img src={preview} alt="preview" style={styles.previewImg} />
+                  ) : (
+                    <>
+                      <div style={styles.uploadIcon}>📷</div>
+                      <div style={styles.uploadText}>
+                        {creationMode === "fundo_branco" ? "Foto do produto (qualquer fundo)" : "Foto do produto"}
+                      </div>
+                      <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
+                    </>
+                  )}
+                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+                </div>
+              )}
 
               <div style={styles.fieldGroup}>
                 <label style={styles.label}>O que é o produto?</label>
@@ -636,14 +926,13 @@ export default function HomePage() {
 
               <button
                 type="submit"
-                disabled={submitting || (!!rateLimitedUntil && countdown > 0) || !cenario.trim()}
-                style={{
-                  ...styles.submitBtn,
-                  opacity: (submitting || (!!rateLimitedUntil && countdown > 0) || !cenario.trim()) ? 0.5 : 1,
-                }}
+                disabled={submitting || !cenario.trim()}
+                style={{ ...styles.submitBtn, opacity: (submitting || !cenario.trim()) ? 0.5 : 1 }}
               >
                 {submitting ? "Enviando..." : "✨ Gerar foto com IA"}
               </button>
+              </>
+              )}
             </form>
           </div>
         )}
@@ -651,13 +940,6 @@ export default function HomePage() {
         {/* Gerando — blur animation estilo GPT */}
         {isGenerating && (
           <div style={styles.card}>
-            {/* Banner de fechar app — aparece após 60s no topo */}
-            {elapsedSec >= 60 && (
-              <div style={styles.closeBanner}>
-                📱 Pode fechar o app — te avisamos quando ficar pronta
-              </div>
-            )}
-
             {/* Título animado */}
             <div style={styles.generatingTitle}>
               <span style={styles.shimmerText}>Transformando sua foto</span>
@@ -858,7 +1140,7 @@ export default function HomePage() {
 
 function NotifyButton({ onRequest }: { onRequest: () => Promise<void> }) {
   const [state, setState] = useState<"idle" | "granted" | "denied">(() => {
-    if (typeof Notification === "undefined") return "idle";
+    if (typeof Notification === "undefined") return "granted";
     if (Notification.permission === "granted") return "granted";
     if (Notification.permission === "denied") return "denied";
     return "idle";
@@ -871,50 +1153,49 @@ function NotifyButton({ onRequest }: { onRequest: () => Promise<void> }) {
     }
   }
 
-  if (state === "granted") return null;
+  if (state === "granted") {
+    return (
+      <div style={notifyStyles.notice}>
+        Pode fechar o app — te avisamos quando ficar pronta
+      </div>
+    );
+  }
+
+  if (state === "denied") {
+    return (
+      <div style={notifyStyles.notice}>
+        Pode fechar o app — ative notificações no navegador para receber aviso
+      </div>
+    );
+  }
 
   return (
-    <div style={notifyStyles.box}>
-      {state === "idle" && (
-        <button onClick={handle} style={notifyStyles.btn}>
-          🔔 Ativar notificação para avisar quando ficar pronta
-        </button>
-      )}
-      {state === "denied" && (
-        <div style={notifyStyles.denied}>Ative nas configurações do navegador para receber aviso quando ficar pronta.</div>
-      )}
-    </div>
+    <button onClick={handle} style={notifyStyles.btn}>
+      Ativar aviso quando ficar pronta
+    </button>
   );
 }
 
 const notifyStyles: Record<string, React.CSSProperties> = {
-  box: {
-    background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.2)",
-    borderRadius: 16, padding: "18px 20px", marginBottom: 16, textAlign: "center",
-  },
-  closeText: {
-    fontSize: 14, color: "#c4b5fd", lineHeight: 1.6, marginBottom: 14,
+  notice: {
+    fontSize: 13, color: "#8394b0", textAlign: "center",
+    padding: "10px 0", lineHeight: 1.5,
   },
   btn: {
-    background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none",
-    borderRadius: 12, padding: "11px 24px", color: "#fff",
-    fontSize: 14, fontWeight: 600, cursor: "pointer",
-  },
-  granted: {
-    fontSize: 13, color: "#34d399", fontWeight: 500,
-  },
-  denied: {
-    fontSize: 12, color: "#f87171", lineHeight: 1.5,
+    width: "100%", background: "rgba(99,102,241,0.12)",
+    border: "1px solid rgba(99,102,241,0.25)",
+    borderRadius: 12, padding: "12px 20px", color: "#c4b5fd",
+    fontSize: 13, fontWeight: 600, cursor: "pointer",
   },
 };
 
 function statusLabel(status: JobStatus, elapsedSec: number): string {
   if (status === "processing") return "Gerando sua foto...";
-  if (status === "submitted") return elapsedSec < 20 ? "Vou fazer sua foto agora..." : "Pode fechar o app — te aviso quando ficar pronta 👍";
+  if (status === "submitted") return elapsedSec < 20 ? "Enviando para a IA..." : "Processando...";
   if (status === "queued") {
-    if (elapsedSec < 5) return "Vou fazer sua foto agora...";
-    if (elapsedSec < 20) return "Preparando tudo para você...";
-    return "Pode fechar o app — te aviso quando ficar pronta 👍";
+    if (elapsedSec < 5) return "Preparando...";
+    if (elapsedSec < 20) return "Na fila...";
+    return "Processando...";
   }
   return "Processando...";
 }
@@ -945,7 +1226,8 @@ const styles: Record<string, React.CSSProperties> = {
     background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: 10, padding: "6px 14px", color: "#8394b0", fontSize: 13, cursor: "pointer",
   },
-  main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "40px 24px" },
+  main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "20px 16px" },
+  menuWrap: { width: "100%", maxWidth: 560 },
   card: {
     background: "#111820", border: "1px solid rgba(255,255,255,0.07)",
     borderRadius: 22, padding: "36px 32px", width: "100%", maxWidth: 520, margin: "0 auto",
@@ -1039,12 +1321,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#4e5c72", fontSize: 13, cursor: "pointer", padding: "4px 8px",
     textDecoration: "underline", textDecorationStyle: "dotted" as const,
   },
-  closeBanner: {
-    background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)",
-    borderRadius: 12, padding: "12px 16px", marginBottom: 16,
-    fontSize: 13, fontWeight: 600, color: "#c4b5fd", textAlign: "center",
-    animation: "fadeIn 0.4s ease",
-  },
   timeEstimate: {
     fontSize: 13, color: "#8394b0", textAlign: "center", marginBottom: 16, minHeight: 20,
   },
@@ -1108,4 +1384,55 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none", borderRadius: 10, padding: "10px 18px",
     color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", width: "100%",
   },
+  backToMenuBtn: {
+    background: "transparent", border: "none", color: "#8394b0",
+    fontSize: 14, cursor: "pointer", padding: "0 0 16px 0",
+    display: "flex", alignItems: "center", gap: 4, fontWeight: 600,
+  },
+  modeHeader: { marginBottom: 16 },
+  modeName: {
+    fontSize: 18, fontWeight: 800, color: "#eef2f9",
+  },
+  uploadLabel: {
+    fontSize: 11, fontWeight: 700, color: "#8394b0", textTransform: "uppercase" as const,
+    letterSpacing: "0.05em", marginBottom: 6,
+  },
+  pulsingBtn: {
+    background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
+    border: "none", borderRadius: 16, padding: "16px 40px",
+    color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer",
+    width: "100%", animation: "pulseBtnAnim 1.6s ease-in-out infinite",
+    boxShadow: "0 0 0 0 rgba(168,85,247,0.5)",
+  },
+};
+
+const SKL_BASE: React.CSSProperties = {
+  background: "linear-gradient(90deg, #111820 25%, #1a2235 50%, #111820 75%)",
+  backgroundSize: "800px 100%",
+  animation: "skeletonShimmer 1.4s ease-in-out infinite",
+  borderRadius: 10,
+};
+
+const skl: Record<string, React.CSSProperties> = {
+  logoBlock: { ...SKL_BASE, width: 110, height: 22, borderRadius: 8 },
+  avatarBlock: { ...SKL_BASE, width: 32, height: 32, borderRadius: "50%" },
+  labelBlock: { ...SKL_BASE, width: 160, height: 14, borderRadius: 6, marginBottom: 12 },
+  grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
+  card: { background: "#111820", borderRadius: 16, overflow: "hidden", border: "1.5px solid rgba(255,255,255,0.07)" },
+  cardImg: { ...SKL_BASE, width: "100%", aspectRatio: "3 / 4", borderRadius: 0 },
+  cardFooter: { padding: "10px 10px 12px" },
+  cardBtn: { ...SKL_BASE, height: 38, borderRadius: 10 },
+  bottomNav: {
+    position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+    width: "100%", maxWidth: 560,
+    background: "#0c1018", borderTop: "1px solid rgba(255,255,255,0.07)",
+    display: "flex", zIndex: 50,
+    paddingBottom: "env(safe-area-inset-bottom, 0px)",
+  },
+  navItem: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 0 14px" },
+  navIcon: { ...SKL_BASE, width: 24, height: 24, borderRadius: 6 },
+  navLabel: { ...SKL_BASE, width: 36, height: 10, borderRadius: 4 },
+  cardOverlay: { position: "absolute" as const, bottom: 12, left: 12, right: 12, display: "flex", flexDirection: "column" as const, gap: 6 },
+  cardTextSm: { ...SKL_BASE, height: 10, width: "55%", borderRadius: 4, background: "linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%)", backgroundSize: "800px 100%" },
+  cardTextLg: { ...SKL_BASE, height: 14, width: "80%", borderRadius: 4, background: "linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 75%)", backgroundSize: "800px 100%" },
 };

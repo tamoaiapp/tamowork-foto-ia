@@ -63,34 +63,59 @@ export async function stopIdleVideoPod(): Promise<void> {
 // Checa se o pod está pronto (rápido, sem wait).
 // Se não estiver, dispara o resume e retorna false imediatamente.
 // O caller agenda retry via QStash para daqui ~4 minutos.
-export async function ensureFotoPodRunning(comfyBase: string): Promise<boolean> {
+// Verifica se ComfyUI está saudável (retorna JSON com system_stats)
+async function isComfyHealthy(comfyBase: string): Promise<boolean> {
   try {
     const r = await fetch(`${comfyBase}/system_stats`, { signal: AbortSignal.timeout(8000) });
-    if (r.ok) return true;
+    if (!r.ok) return false;
+    const ct = r.headers.get("content-type") ?? "";
+    if (!ct.includes("application/json")) return false;
+    const json = await r.json() as Record<string, unknown>;
+    return !!json.system; // resposta válida tem campo "system"
   } catch {
-    // Pod não está respondendo — iniciar
+    return false;
   }
+}
 
-  // Dispara resume (não aguarda ficar pronto)
+export async function ensureFotoPodRunning(comfyBase: string): Promise<boolean> {
+  const healthy = await isComfyHealthy(comfyBase);
+  if (healthy) return true;
+
+  // ComfyUI não está saudável — extrai podId da URL
   const match = comfyBase.match(/https?:\/\/([a-z0-9]+)-\d+\.proxy\.runpod\.net/);
-  if (match) {
-    await resumePod(match[1]).catch(() => {});
-  } else {
-    for (const podId of FOTO_POD_IDS) {
+  const podId = match ? match[1] : null;
+
+  if (podId) {
+    // Verifica status do pod no RunPod
+    const status = await getPodStatus(podId);
+    if (status === "RUNNING") {
+      // Pod RUNNING mas ComfyUI travado → stop + resume para reiniciar
+      await stopPod(podId).catch(() => {});
+      await new Promise(r => setTimeout(r, 2000));
       await resumePod(podId).catch(() => {});
+    } else {
+      // Pod EXITED → só resume
+      await resumePod(podId).catch(() => {});
+    }
+  } else {
+    for (const id of FOTO_POD_IDS) {
+      await resumePod(id).catch(() => {});
     }
   }
 
-  return false; // pod iniciando — caller deve agendar retry
+  return false; // pod reiniciando — cron tentará novamente no próximo minuto
 }
 
 export async function ensureVideoPodRunning(comfyBase: string): Promise<boolean> {
-  try {
-    const r = await fetch(`${comfyBase}/system_stats`, { signal: AbortSignal.timeout(8000) });
-    if (r.ok) return true;
-  } catch {
-    await resumePod(VIDEO_POD_ID).catch(() => {});
+  const healthy = await isComfyHealthy(comfyBase);
+  if (healthy) return true;
+
+  const status = await getPodStatus(VIDEO_POD_ID);
+  if (status === "RUNNING") {
+    await stopPod(VIDEO_POD_ID).catch(() => {});
+    await new Promise(r => setTimeout(r, 2000));
   }
+  await resumePod(VIDEO_POD_ID).catch(() => {});
 
   return false;
 }

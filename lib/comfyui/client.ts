@@ -120,6 +120,35 @@ export async function submitWorkflow(
   return data.prompt_id;
 }
 
+// Submete o workflow de catálogo (2 imagens: produto + modelo)
+import catalogTemplateJson from "./catalog_template.json";
+
+export async function submitCatalogWorkflow(
+  jobId: string,
+  productImageName: string,
+  modelImageName: string,
+  promptPos: string,
+  promptNeg: string,
+  comfyBase: string
+): Promise<string> {
+  const workflow = JSON.parse(JSON.stringify(catalogTemplateJson)) as Record<string, unknown>;
+  (workflow["11"] as { inputs: { image: string } }).inputs.image = productImageName;
+  (workflow["200"] as { inputs: { image: string } }).inputs.image = modelImageName;
+  (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt = `${promptPos}\n#job:${jobId}\n`;
+  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = promptNeg;
+  (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
+  (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
+
+  const res = await fetch(`${comfyBase}/prompt`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: workflow }),
+  });
+  if (!res.ok) throw new Error(`submitCatalogWorkflow error: ${res.status}`);
+  const data = await res.json() as { prompt_id: string };
+  return data.prompt_id;
+}
+
 // Consulta o histórico do ComfyUI para verificar se o job está pronto
 export async function getComfyHistory(
   promptId: string,
