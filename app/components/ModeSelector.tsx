@@ -28,14 +28,14 @@ const MODES = [
     icon: "🧍",
     label: "Catálogo",
     desc: "Modelo humano com IA",
-    pro: true,
+    pro: false,
   },
   {
     id: "personalizado" as CreationMode,
     icon: "✏️",
     label: "Personalizado",
     desc: "Você no controle",
-    pro: true,
+    pro: false,
   },
 ];
 
