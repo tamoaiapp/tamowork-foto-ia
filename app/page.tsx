@@ -312,7 +312,7 @@ export default function HomePage() {
     e.preventDefault();
     if (!imageFile) { setFormError("Envie uma foto do produto"); return; }
     if (!produto.trim()) { setFormError("Descreva o produto"); return; }
-    if (!cenario.trim()) { setFormError("Descreva o cenário da foto"); return; }
+    if (creationMode !== "fundo_branco" && !cenario.trim()) { setFormError("Descreva o cenário da foto"); return; }
 
     setFormError("");
     setTimeoutError("");
@@ -323,6 +323,7 @@ export default function HomePage() {
     try {
       const token = await getToken();
 
+      // Upload da imagem
       const form = new FormData();
       form.append("file", imageFile);
       const uploadRes = await fetch("/api/upload", {
@@ -333,11 +334,38 @@ export default function HomePage() {
       if (!uploadRes.ok) throw new Error("Falha ao enviar imagem");
       const { url: imageUrl } = await uploadRes.json();
 
+      // Fundo branco: processa no servidor, sem fila GPU
+      if (creationMode === "fundo_branco") {
+        const prompt = `${produto} | fundo branco`;
+        const res = await fetch("/api/white-bg", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ prompt, input_image_url: imageUrl }),
+        });
+
+        if (res.status === 429) {
+          const err = await res.json();
+          setRateLimitedUntil(new Date(err.nextAvailableAt));
+          setSubmitting(false);
+          return;
+        }
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error ?? "Falha ao processar");
+        }
+        const data = await res.json();
+        // Já vem como done — mostra resultado direto
+        setJob({ id: data.jobId, status: "done", output_image_url: data.output_image_url });
+        setSubmitting(false);
+        return;
+      }
+
+      // Outros modos: vai para fila GPU normalmente
       const prompt = cenario.trim() ? `${produto} | cenário: ${cenario}` : produto;
       const jobRes = await fetch("/api/image-jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt, input_image_url: imageUrl }),
+        body: JSON.stringify({ prompt, input_image_url: imageUrl, mode: creationMode }),
       });
 
       if (jobRes.status === 429) {

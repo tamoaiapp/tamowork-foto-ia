@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@imgly/background-removal": "^1.7.0",
+    "@imgly/background-removal-node": "^1.4.5",
     "@supabase/supabase-js": "^2.100.1",
     "@types/web-push": "^3.6.4",
     "@upstash/qstash": "^2.10.1",
