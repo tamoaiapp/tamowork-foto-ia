@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import BottomNav from "@/app/components/BottomNav";
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type Plan = "free" | "pro";
@@ -768,6 +769,7 @@ export default function HomePage() {
           </div>
         )}
       </main>
+      <BottomNav hasActiveJob={isGenerating} />
     </div>
   );
 }
@@ -836,7 +838,7 @@ function statusLabel(status: JobStatus, elapsedSec: number): string {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", display: "flex", flexDirection: "column" },
+  page: { minHeight: "100vh", display: "flex", flexDirection: "column", paddingBottom: 68 },
   centered: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#8394b0" },
   header: {
     display: "flex", alignItems: "center", justifyContent: "space-between",

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import JobProgress from "./JobProgress";
+import BottomNav from "@/app/components/BottomNav";
 
 const VAPID_PUBLIC_KEY = "BOFpGK6deSOtMczLOppZ8RXLb8XbAP0cs4hDHOZtJrDsnLhvzdPQXeojc5CohPhnj0PvNkPd7B7HKLtUva03cGk";
 
@@ -401,12 +402,13 @@ export default function ContaPage() {
         </section>
 
       </main>
+      <BottomNav />
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", background: "#07080b" },
+  page: { minHeight: "100vh", background: "#07080b", paddingBottom: 68 },
   centered: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#8394b0" },
   header: {
     display: "flex", alignItems: "center", justifyContent: "space-between",
