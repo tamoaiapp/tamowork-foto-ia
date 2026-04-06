@@ -10,12 +10,14 @@ import { VIDEO_COMFY_BASES } from "@/lib/comfyui/video-client";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
 
-// Jobs queued há mais de 12 minutos sem submeter → falha (pod não subiu)
-const QUEUED_TIMEOUT_MS = 12 * 60 * 1000;
-// Jobs em submitted/processing há mais de 10 min → reinicia automaticamente
-const RESTART_AFTER_MS = 10 * 60 * 1000;
-// Após 30 min total (3 reinicios × 10 min) → desiste e falha
-const TOTAL_FAIL_MS = 30 * 60 * 1000;
+// Jobs queued há mais de 90 minutos sem submeter → falha (pod não subiu)
+// 90 min dá tempo para 30+ jobs processarem em fila (2-3 min/job)
+const QUEUED_TIMEOUT_MS = 90 * 60 * 1000;
+// Jobs em submitted/processing há mais de 5 min → reinicia automaticamente
+// Reduzido de 10 para 5 min para desbloquear fila mais rápido após OOM
+const RESTART_AFTER_MS = 5 * 60 * 1000;
+// Após 15 min total → desiste e falha (era 30 min)
+const TOTAL_FAIL_MS = 15 * 60 * 1000;
 
 // Vercel Cron: roda a cada 1 minuto
 export async function GET(req: NextRequest) {
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
     { data: failImageJobs },
     { data: failVideoJobs },
   ] = await Promise.all([
-    supabase.from("image_jobs").select("id").eq("status", "queued").gte("updated_at", staleQueuedCutoff).limit(5),
+    supabase.from("image_jobs").select("id").eq("status", "queued").gte("updated_at", staleQueuedCutoff).limit(1),
     supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", checkCutoff).gte("updated_at", restartCutoff).limit(10),
     supabase.from("image_jobs").select("id").eq("status", "queued").lt("updated_at", staleQueuedCutoff).limit(20),
     supabase.from("video_jobs").select("id").eq("status", "queued").gte("updated_at", staleQueuedCutoff).limit(3),
@@ -134,15 +136,30 @@ export async function GET(req: NextRequest) {
     videoPodOnline = await ensureVideoPodRunning(videoBase);
   }
 
-  // Submete image jobs queued (só se pod online)
+  // Submete image jobs queued (só se pod online E sem job em andamento)
   if (fotoPodOnline) {
-    for (const job of queuedJobs ?? []) {
-      try {
-        await submitImageJob(job.id);
-        results.push({ id: job.id, action: "img-submit", ok: true });
-      } catch (e) {
-        results.push({ id: job.id, action: "img-submit", ok: false, error: String((e as Error)?.message ?? e) });
+    const { count: activeCount } = await supabase
+      .from("image_jobs")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["submitted", "processing"]);
+
+    if ((activeCount ?? 0) === 0) {
+      const job = (queuedJobs ?? [])[0];
+      if (job) {
+        try {
+          await submitImageJob(job.id);
+          results.push({ id: job.id, action: "img-submit", ok: true });
+        } catch (e) {
+          const errMsg = String((e as Error)?.message ?? e);
+          results.push({ id: job.id, action: "img-submit", ok: false, error: errMsg });
+          // Marcar como failed para não bloquear a fila indefinidamente
+          await supabase.from("image_jobs")
+            .update({ status: "failed", error_message: errMsg })
+            .eq("id", job.id);
+        }
       }
+    } else {
+      results.push({ id: "queue", action: "img-skip", ok: true, error: `${activeCount} job(s) em andamento` });
     }
   }
 
@@ -156,14 +173,26 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Submete video jobs queued (só se pod online)
+  // Submete video jobs queued (1 por vez, só se pod online E sem vídeo em andamento)
   if (videoPodOnline || !videoBase) {
-    for (const job of queuedVideoJobs ?? []) {
-      try {
-        await submitVideoJob(job.id);
-        results.push({ id: job.id, action: "vid-submit", ok: true });
-      } catch (e) {
-        results.push({ id: job.id, action: "vid-submit", ok: false, error: String((e as Error)?.message ?? e) });
+    const { count: activeVideoCount } = await supabase
+      .from("video_jobs")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["submitted", "processing"]);
+
+    if ((activeVideoCount ?? 0) === 0) {
+      const job = (queuedVideoJobs ?? [])[0];
+      if (job) {
+        try {
+          await submitVideoJob(job.id);
+          results.push({ id: job.id, action: "vid-submit", ok: true });
+        } catch (e) {
+          const errMsg = String((e as Error)?.message ?? e);
+          results.push({ id: job.id, action: "vid-submit", ok: false, error: errMsg });
+          await supabase.from("video_jobs")
+            .update({ status: "failed", error_message: errMsg })
+            .eq("id", job.id);
+        }
       }
     }
   }

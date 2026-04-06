@@ -71,9 +71,49 @@ async function isComfyHealthy(comfyBase: string): Promise<boolean> {
     const ct = r.headers.get("content-type") ?? "";
     if (!ct.includes("application/json")) return false;
     const json = await r.json() as Record<string, unknown>;
-    return !!json.system; // resposta válida tem campo "system"
+    return !!json.system;
   } catch {
     return false;
+  }
+}
+
+// Tenta destravar ComfyUI sem reiniciar o pod (interrupt + clear queue)
+// Retorna true se conseguiu destravar, false se precisar de restart completo
+async function tryUnfreezeComfy(comfyBase: string): Promise<boolean> {
+  try {
+    // 1. Interrompe job atual travado
+    await fetch(`${comfyBase}/interrupt`, {
+      method: "POST",
+      signal: AbortSignal.timeout(5000),
+    }).catch(() => {});
+
+    // 2. Limpa a fila interna do ComfyUI
+    await fetch(`${comfyBase}/queue`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clear: true }),
+      signal: AbortSignal.timeout(5000),
+    }).catch(() => {});
+
+    // 3. Aguarda 3s e verifica se voltou
+    await new Promise(r => setTimeout(r, 3000));
+    return await isComfyHealthy(comfyBase);
+  } catch {
+    return false;
+  }
+}
+
+// Grace period: só faz restart se pod está rodando há mais de 15 min sem ComfyUI responder
+// Evita matar o pod enquanto o Qwen ainda está carregando (~10-12 min)
+const RESTART_GRACE_MS = 15 * 60 * 1000;
+
+async function getPodUptimeMs(podId: string): Promise<number> {
+  try {
+    const r = await gql(`{ pod(input: { podId: "${podId}" }) { runtime { uptimeInSeconds } } }`);
+    const uptime = (r.data?.pod as { runtime?: { uptimeInSeconds?: number } } | null)?.runtime?.uptimeInSeconds ?? 0;
+    return uptime * 1000;
+  } catch {
+    return 0;
   }
 }
 
@@ -81,20 +121,27 @@ export async function ensureFotoPodRunning(comfyBase: string): Promise<boolean> 
   const healthy = await isComfyHealthy(comfyBase);
   if (healthy) return true;
 
-  // ComfyUI não está saudável — extrai podId da URL
+  // Tenta destravar sem restart (só funciona se ComfyUI já subiu mas travou)
+  const unfrozen = await tryUnfreezeComfy(comfyBase);
+  if (unfrozen) return true;
+
   const match = comfyBase.match(/https?:\/\/([a-z0-9]+)-\d+\.proxy\.runpod\.net/);
   const podId = match ? match[1] : null;
 
   if (podId) {
-    // Verifica status do pod no RunPod
     const status = await getPodStatus(podId);
     if (status === "RUNNING") {
-      // Pod RUNNING mas ComfyUI travado → stop + resume para reiniciar
+      // Só reinicia se passou do grace period — senão o Qwen ainda está carregando
+      const uptimeMs = await getPodUptimeMs(podId);
+      if (uptimeMs < RESTART_GRACE_MS) {
+        // Pod novo, ainda carregando — aguarda
+        return false;
+      }
+      // Pod rodando há muito tempo mas ComfyUI morto → stop + resume
       await stopPod(podId).catch(() => {});
       await new Promise(r => setTimeout(r, 2000));
       await resumePod(podId).catch(() => {});
     } else {
-      // Pod EXITED → só resume
       await resumePod(podId).catch(() => {});
     }
   } else {
@@ -103,15 +150,20 @@ export async function ensureFotoPodRunning(comfyBase: string): Promise<boolean> 
     }
   }
 
-  return false; // pod reiniciando — cron tentará novamente no próximo minuto
+  return false;
 }
 
 export async function ensureVideoPodRunning(comfyBase: string): Promise<boolean> {
   const healthy = await isComfyHealthy(comfyBase);
   if (healthy) return true;
 
+  const unfrozen = await tryUnfreezeComfy(comfyBase);
+  if (unfrozen) return true;
+
   const status = await getPodStatus(VIDEO_POD_ID);
   if (status === "RUNNING") {
+    const uptimeMs = await getPodUptimeMs(VIDEO_POD_ID);
+    if (uptimeMs < RESTART_GRACE_MS) return false;
     await stopPod(VIDEO_POD_ID).catch(() => {});
     await new Promise(r => setTimeout(r, 2000));
   }

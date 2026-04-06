@@ -33,17 +33,56 @@ export async function criarPrompt(
   return res.json();
 }
 
-// Escolhe instância do ComfyUI — prioriza pod 2 no horário comercial (8h-20h BRT)
+// Sempre usa o pod 1 (index 0) — fila de 1 job por vez garante que não sobrecarrega
 export function pickComfyBase(): { base: string; index: number } {
-  if (COMFY_BASES.length <= 1) return { base: COMFY_BASES[0], index: 0 };
+  return { base: COMFY_BASES[0], index: 0 };
+}
 
-  const hourBRT = (new Date().getUTCHours() - 3 + 24) % 24;
-  const isBusinessHours = hourBRT >= 8 && hourBRT < 20;
+// Deleta o output gerado do workspace do ComfyUI (arquivo pesado que enche o disco)
+// Deve ser chamado APÓS a imagem já ter sido salva no Supabase
+export async function deleteComfyOutput(jobId: string, comfyBase: string): Promise<void> {
+  try {
+    const filename = `job_${jobId}_00001_.png`;
+    await fetch(`${comfyBase}/upload/image`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename, subfolder: "", type: "output" }),
+      signal: AbortSignal.timeout(5000),
+    }).catch(() => {});
+  } catch {
+    // best-effort
+  }
+}
 
-  // Durante horário comercial: pod 2 (index 1) tem prioridade
-  // Fora do horário: apenas pod 1 (index 0)
-  const index = isBusinessHours ? 1 : 0;
-  return { base: COMFY_BASES[index], index };
+// Limpa arquivos temporários do ComfyUI após job concluído
+// Evita que o disco de 200GB encha com imagens acumuladas
+export async function cleanupComfyJob(jobId: string, comfyBase: string): Promise<void> {
+  try {
+    // Deleta do histórico do ComfyUI (libera memória do processo)
+    await fetch(`${comfyBase}/history`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ delete: [jobId] }),
+      signal: AbortSignal.timeout(5000),
+    }).catch(() => {});
+
+    // Deleta arquivos de input do job (product_* e model_*)
+    const filesToDelete = [
+      `prod_${jobId.replace(/-/g, "").slice(0, 12)}`,
+      `model_${jobId.replace(/-/g, "").slice(0, 12)}`,
+      `job_${jobId}`,
+    ];
+    for (const name of filesToDelete) {
+      await fetch(`${comfyBase}/upload/image`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: name + ".jpg" }),
+        signal: AbortSignal.timeout(3000),
+      }).catch(() => {});
+    }
+  } catch {
+    // Limpeza é best-effort — não deve falhar o job
+  }
 }
 
 // Faz download da imagem e envia para o ComfyUI

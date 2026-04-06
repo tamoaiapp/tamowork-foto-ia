@@ -12,6 +12,15 @@ const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ss
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type Plan = "free" | "pro";
+// State machine explícito: sem_trabalho | trabalhando | terminado
+type WorkState = "sem_trabalho" | "trabalhando" | "terminado";
+
+function deriveWorkState(job: { status: JobStatus; output_image_url?: string } | null): WorkState {
+  if (!job) return "sem_trabalho";
+  if (job.status === "done" && job.output_image_url) return "terminado";
+  if (job.status === "queued" || job.status === "submitted" || job.status === "processing") return "trabalhando";
+  return "sem_trabalho"; // failed, canceled, ou done sem imagem
+}
 
 interface Job {
   id: string;
@@ -28,6 +37,7 @@ interface VideoJob {
   output_video_url?: string;
   input_image_url?: string;
   error_message?: string;
+  created_at?: string;
 }
 
 function useCountdown(target: Date | null) {
@@ -53,56 +63,80 @@ function formatMs(ms: number) {
 
 const BASE_CATALOG = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/catalog";
 
-const CATALOG_MODELS = [
-  { id: "mulher1",         label: "Mulher 1",  url: `${BASE_CATALOG}/mulher1.jpg` },
-  { id: "mulher2",         label: "Mulher 2",  url: `${BASE_CATALOG}/mulher2.jpg` },
-  { id: "mulher3",         label: "Mulher 3",  url: `${BASE_CATALOG}/mulher3.jpg` },
-  { id: "homem1",          label: "Homem 1",   url: `${BASE_CATALOG}/homem1.jpg` },
-  { id: "homem2",          label: "Homem 2",   url: `${BASE_CATALOG}/homem2.jpg` },
-  { id: "homem3",          label: "Homem 3",   url: `${BASE_CATALOG}/homem3.jpg` },
-  { id: "crianca_menino",  label: "Menino",    url: `${BASE_CATALOG}/crianca_menino.jpg` },
-  { id: "crianca_menina",  label: "Menina",    url: `${BASE_CATALOG}/crianca_menina.jpg` },
+const CATALOG_GROUPS = [
+  {
+    label: "Mulheres",
+    models: [
+      { id: "mulher1", label: "Mulher 1", url: `${BASE_CATALOG}/mulher1.jpg` },
+      { id: "mulher2", label: "Mulher 2", url: `${BASE_CATALOG}/mulher2.jpg` },
+    ],
+  },
+  {
+    label: "Homens",
+    models: [
+      { id: "homem1", label: "Homem 1", url: `${BASE_CATALOG}/homem1.jpg` },
+      { id: "homem2", label: "Homem 2", url: `${BASE_CATALOG}/homem2.jpg` },
+    ],
+  },
+  {
+    label: "Crianças",
+    models: [
+      { id: "crianca_menino", label: "Menino", url: `${BASE_CATALOG}/crianca_menino.jpg` },
+      { id: "crianca_menina", label: "Menina", url: `${BASE_CATALOG}/crianca_menina.jpg` },
+    ],
+  },
+  {
+    label: "Bebês",
+    models: [
+      { id: "bebe_menino", label: "Bebê M", url: `${BASE_CATALOG}/bebe_menino.jpg` },
+      { id: "bebe_menina", label: "Bebê F", url: `${BASE_CATALOG}/bebe_menina.jpg` },
+    ],
+  },
 ];
 
 function CatalogModelPicker({
   selected, onSelect, onCustom,
 }: { selected: string | null; onSelect: (url: string) => void; onCustom: () => void }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{
-        display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8,
-      }}>
-        {CATALOG_MODELS.map(m => (
-          <div
-            key={m.id}
-            onClick={() => onSelect(m.url)}
-            style={{
-              borderRadius: 12, overflow: "hidden", cursor: "pointer",
-              border: selected === m.url ? "2.5px solid #a855f7" : "2px solid rgba(255,255,255,0.07)",
-              aspectRatio: "3/4", position: "relative",
-              boxShadow: selected === m.url ? "0 0 0 3px rgba(168,85,247,0.25)" : "none",
-              transition: "border-color 0.15s",
-            }}
-          >
-            <img src={m.url} alt={m.label} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} />
-            {selected === m.url && (
-              <div style={{
-                position: "absolute", top: 4, right: 4,
-                background: "#a855f7", borderRadius: "50%",
-                width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, color: "#fff", fontWeight: 800,
-              }}>✓</div>
-            )}
-            <div style={{
-              position: "absolute", bottom: 0, left: 0, right: 0,
-              background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
-              padding: "8px 4px 4px", fontSize: 9, fontWeight: 700,
-              color: "rgba(255,255,255,0.9)", textAlign: "center",
-            }}>{m.label}</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {CATALOG_GROUPS.map(group => (
+        <div key={group.label}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#8394b0", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+            {group.label}
           </div>
-        ))}
-      </div>
-      {/* Opção de enviar própria foto */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+            {group.models.map(m => (
+              <div
+                key={m.id}
+                onClick={() => onSelect(m.url)}
+                style={{
+                  borderRadius: 12, overflow: "hidden", cursor: "pointer",
+                  border: selected === m.url ? "2.5px solid #a855f7" : "2px solid rgba(255,255,255,0.07)",
+                  aspectRatio: "3/4", position: "relative",
+                  boxShadow: selected === m.url ? "0 0 0 3px rgba(168,85,247,0.25)" : "none",
+                  transition: "border-color 0.15s",
+                }}
+              >
+                <img src={m.url} alt={m.label} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} />
+                {selected === m.url && (
+                  <div style={{
+                    position: "absolute", top: 4, right: 4,
+                    background: "#a855f7", borderRadius: "50%",
+                    width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 10, color: "#fff", fontWeight: 800,
+                  }}>✓</div>
+                )}
+                <div style={{
+                  position: "absolute", bottom: 0, left: 0, right: 0,
+                  background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+                  padding: "8px 4px 4px", fontSize: 9, fontWeight: 700,
+                  color: "rgba(255,255,255,0.9)", textAlign: "center",
+                }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
       <button
         type="button"
         onClick={onCustom}
@@ -202,9 +236,14 @@ export default function HomePage() {
         if (active) {
           setJob(active);
           if (active.input_image_url) setPreview(active.input_image_url);
+          setModeSelected(true);
         } else {
-          const done = jobs.find((j) => j.status === "done");
-          if (done) setJob(done);
+          // Restaura o job done mais recente (criado nas últimas 3h) para mostrar resultado
+          const recentDone = jobs.find(
+            (j) => j.status === "done" && j.output_image_url &&
+            new Date(j.created_at ?? 0).getTime() > Date.now() - 3 * 60 * 60 * 1000
+          );
+          if (recentDone) setJob(recentDone);
         }
 
         // Detecta rate limit no carregamento: free user com job recente (<3h)
@@ -231,7 +270,11 @@ export default function HomePage() {
         const activeVideo = vdata.find(
           (v) => v.status !== "done" && v.status !== "failed" && v.status !== "canceled"
         );
-        const doneVideo = vdata.find((v) => v.status === "done");
+        // Só restaura vídeo done se foi criado nas últimas 24h
+        const doneVideo = vdata.find(
+          (v) => v.status === "done" &&
+          new Date(v.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
+        );
         if (activeVideo) {
           setVideoJob(activeVideo);
           setVideoMode(true);
@@ -294,9 +337,11 @@ export default function HomePage() {
 
   // Timeout automático: usa created_at do job para não resetar ao reabrir o app
   useEffect(() => {
-    if (!job || !isGenerating) return;
+    if (!job || workState !== "trabalhando") return;
     const status = job.status;
-    const limitSec = (status === "queued" || status === "submitted") ? 600 : 600;
+    // queued/submitted: até 90 min (fila pode ter muitos jobs)
+    // processing: 15 min (já está rodando, não deve demorar tanto)
+    const limitSec = (status === "queued" || status === "submitted") ? 5400 : 900;
     // Se temos created_at, calcula elapsed real; senão usa o contador local
     const realElapsed = job.created_at
       ? Math.floor((Date.now() - new Date(job.created_at).getTime()) / 1000)
@@ -330,7 +375,18 @@ export default function HomePage() {
 
   async function getToken() {
     const { data } = await supabase.auth.getSession();
-    return data.session?.access_token ?? "";
+    const token = data.session?.access_token ?? "";
+    // Se token expirou (exp no passado), forçar refresh
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload.exp && payload.exp * 1000 < Date.now() + 60_000) {
+          const { data: r } = await supabase.auth.refreshSession();
+          return r.session?.access_token ?? token;
+        }
+      } catch { /* ignora erro de parse */ }
+    }
+    return token;
   }
 
   async function requestNotificationPermission() {
@@ -395,6 +451,29 @@ export default function HomePage() {
     else setPreview(null);
   }
 
+  async function convertToJpegIfNeeded(file: File): Promise<File> {
+    const isHeic = file.type === "image/heic" || file.type === "image/heif" ||
+      file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
+    if (!isHeic) return file;
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext("2d")!.drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          if (blob) resolve(new File([blob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: "image/jpeg" }));
+          else resolve(file);
+        }, "image/jpeg", 0.92);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -405,8 +484,9 @@ export default function HomePage() {
       setVideoError("");
       try {
         const token = await getToken();
+        const fileToUpload = await convertToJpegIfNeeded(imageFile);
         const form = new FormData();
-        form.append("file", imageFile);
+        form.append("file", fileToUpload);
         const uploadRes = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
         if (!uploadRes.ok) throw new Error("Falha ao enviar imagem");
         const { url: imageUrl } = await uploadRes.json();
@@ -432,9 +512,10 @@ export default function HomePage() {
     try {
       const token = await getToken();
 
-      // Upload da imagem do produto
+      // Upload da imagem do produto (converte HEIC/HEIF para JPEG)
+      const fileToUpload = await convertToJpegIfNeeded(imageFile);
       const form = new FormData();
-      form.append("file", imageFile);
+      form.append("file", fileToUpload);
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -645,6 +726,8 @@ export default function HomePage() {
   }
 
   const isGenerating = (submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled")) && job?.status !== "done";
+  // State machine: sem_trabalho | trabalhando | terminado
+  const workState: WorkState = submitting ? "trabalhando" : deriveWorkState(job);
 
   if (loading) return (
     <div style={styles.page}>
@@ -727,7 +810,7 @@ export default function HomePage() {
 
       <main style={styles.main}>
         {/* PASSO 1: Menu de escolha de modo */}
-        {!isGenerating && job?.status !== "done" && !modeSelected && (
+        {workState === "sem_trabalho" && !modeSelected && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
               <div style={{ ...styles.card, textAlign: "center", padding: "36px 32px" }}>
@@ -763,12 +846,12 @@ export default function HomePage() {
         )}
 
         {/* PASSO 2: Modo Promo — componente próprio */}
-        {!isGenerating && job?.status !== "done" && modeSelected && creationMode === "promo" && (
+        {workState === "sem_trabalho" && modeSelected && creationMode === "promo" && (
           <PromoCreator onBack={() => setModeSelected(false)} />
         )}
 
         {/* PASSO 2: Formulário após escolher o modo */}
-        {!isGenerating && job?.status !== "done" && modeSelected && creationMode !== "promo" && (
+        {workState === "sem_trabalho" && modeSelected && creationMode !== "promo" && (
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
@@ -938,7 +1021,7 @@ export default function HomePage() {
         )}
 
         {/* Gerando — blur animation estilo GPT */}
-        {isGenerating && (
+        {workState === "trabalhando" && (
           <div style={styles.card}>
             {/* Título animado */}
             <div style={styles.generatingTitle}>
@@ -978,7 +1061,7 @@ export default function HomePage() {
                 <div style={styles.blurOverlay} />
                 <div style={styles.blurBadge}>
                   <span style={styles.blurDot} />
-                  {submitting ? "Enviando..." : statusLabel(job?.status ?? null, elapsedSec)}
+                  {submitting ? "Enviando..." : statusLabel(job?.status ?? null, elapsedSec, job?.created_at)}
                 </div>
               </div>
             )}
@@ -989,7 +1072,7 @@ export default function HomePage() {
         )}
 
         {/* Resultado */}
-        {job?.status === "done" && job.output_image_url && !videoMode && (
+        {workState === "terminado" && job && !videoMode && (
           <div style={{ ...styles.card, animation: "fadeIn 0.5s ease" }}>
             <h2 style={styles.centerTitle}>Sua foto está pronta! ✨</h2>
             <img src={editedImageUrl ?? job.output_image_url} alt="Foto gerada" style={styles.resultImg} />
@@ -1189,13 +1272,16 @@ const notifyStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-function statusLabel(status: JobStatus, elapsedSec: number): string {
+function statusLabel(status: JobStatus, elapsedSec: number, createdAt?: string): string {
+  const realElapsed = createdAt
+    ? Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
+    : elapsedSec;
   if (status === "processing") return "Gerando sua foto...";
-  if (status === "submitted") return elapsedSec < 20 ? "Enviando para a IA..." : "Processando...";
+  if (status === "submitted") return realElapsed < 20 ? "Enviando para a IA..." : "Processando...";
   if (status === "queued") {
-    if (elapsedSec < 5) return "Preparando...";
-    if (elapsedSec < 20) return "Na fila...";
-    return "Processando...";
+    if (realElapsed < 10) return "Preparando...";
+    if (realElapsed < 120) return "Na fila...";
+    return "Aguardando na fila...";
   }
   return "Processando...";
 }

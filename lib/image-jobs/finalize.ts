@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { sendPushToUser } from "@/lib/push/send";
+import { COMFY_BASES, cleanupComfyJob, deleteComfyOutput } from "@/lib/comfyui/client";
 
 export async function finalizeImageJob(jobId: string, imageData: Buffer | string) {
   const supabase = createServerClient();
@@ -21,11 +22,12 @@ export async function finalizeImageJob(jobId: string, imageData: Buffer | string
 
   if (uploadError) throw uploadError;
 
-  const { data: signedData, error: signError } = await supabase.storage
+  // URL pública permanente — sem expiração
+  const { data: publicData } = supabase.storage
     .from("image-jobs")
-    .createSignedUrl(fileName, 7 * 24 * 3600);
+    .getPublicUrl(fileName);
 
-  if (signError || !signedData) throw signError ?? new Error("URL assinada falhou");
+  const outputUrl = publicData.publicUrl;
 
   // Busca dados do job para montar notificação personalizada
   const { data: job } = await supabase
@@ -36,8 +38,12 @@ export async function finalizeImageJob(jobId: string, imageData: Buffer | string
 
   await supabase
     .from("image_jobs")
-    .update({ status: "done", output_image_url: signedData.signedUrl })
+    .update({ status: "done", output_image_url: outputUrl })
     .eq("id", jobId);
+
+  // Limpa inputs + histórico do ComfyUI e deleta output do workspace (libera disco)
+  cleanupComfyJob(jobId, COMFY_BASES[0]).catch(() => {});
+  deleteComfyOutput(jobId, COMFY_BASES[0]).catch(() => {});
 
   // Dispara push notification
   if (job?.user_id) {
