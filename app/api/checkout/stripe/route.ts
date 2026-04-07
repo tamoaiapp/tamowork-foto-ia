@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     customer_email: user.email,
     line_items: [
       {
-        price: process.env.STRIPE_PRICE_ID!,
+        price: process.env.STRIPE_PRICE_ID_USD!,
         quantity: 1,
       },
     ],

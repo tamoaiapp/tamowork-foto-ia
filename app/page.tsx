@@ -7,6 +7,7 @@ import type { User } from "@supabase/supabase-js";
 import BottomNav from "@/app/components/BottomNav";
 import ModeSelector, { type CreationMode } from "@/app/components/ModeSelector";
 import dynamic from "next/dynamic";
+import { useI18n, LangSelector } from "@/lib/i18n";
 const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 
@@ -154,6 +155,7 @@ function CatalogModelPicker({
 
 export default function HomePage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<Plan>("free");
@@ -281,6 +283,23 @@ export default function HomePage() {
         } else if (doneVideo) {
           setVideoJob(doneVideo);
           setVideoMode(true);
+        }
+      }
+
+      // Vindo de Criações: abrir modo vídeo para um job específico
+      const videoFromJob = sessionStorage.getItem("video_from_job");
+      if (videoFromJob) {
+        sessionStorage.removeItem("video_from_job");
+        const { data: session2 } = await supabase.auth.getSession();
+        const t2 = session2.session?.access_token ?? "";
+        const jr = await fetch(`/api/image-jobs/${videoFromJob}`, { headers: { Authorization: `Bearer ${t2}` } });
+        if (jr.ok) {
+          const j = await jr.json();
+          if (j.status === "done" && j.output_image_url) {
+            setJob(j);
+            setModeSelected(true);
+            setVideoMode(true);
+          }
         }
       }
 
@@ -798,6 +817,7 @@ export default function HomePage() {
       <header style={styles.header}>
         <div style={styles.logo}>TamoWork</div>
         <div style={styles.headerRight}>
+          <LangSelector />
           {plan === "pro" && <span style={styles.proBadge}>✦ Pro</span>}
           <button onClick={() => router.push("/conta")} style={styles.accountBtn} title={user?.email}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1074,26 +1094,32 @@ export default function HomePage() {
         {/* Resultado */}
         {workState === "terminado" && job && !videoMode && (
           <div style={{ ...styles.card, animation: "fadeIn 0.5s ease" }}>
-            <h2 style={styles.centerTitle}>Sua foto está pronta! ✨</h2>
+            <h2 style={styles.centerTitle}>{t("result_ready")}</h2>
             <img src={editedImageUrl ?? job.output_image_url} alt="Foto gerada" style={styles.resultImg} />
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
               <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
-                ⬇ Baixar foto
+                {t("result_download")}
               </button>
-              <button onClick={() => setEditorOpen(true)} style={styles.editBtn}>
-                ✏️ Editar
+              <button onClick={() => {
+                const url = editedImageUrl ?? job.output_image_url;
+                if (url) {
+                  sessionStorage.setItem("editor_image", url);
+                  router.push("/editor");
+                }
+              }} style={styles.editBtn}>
+                {t("result_edit")}
               </button>
             </div>
             <div style={styles.resultActions}>
-              <button onClick={resetJob} style={styles.newBtn}>🔄 Gerar outra foto</button>
+              <button onClick={resetJob} style={styles.newBtn}>{t("result_new")}</button>
               {plan === "pro" ? (
                 <button onClick={() => setVideoMode(true)} style={styles.videoBtn}>
-                  🎬 Criar vídeo
+                  {t("result_create_video")}
                 </button>
               ) : (
                 <button onClick={() => router.push("/planos")} style={styles.videoBtnLocked}>
-                  <div>🎬 Criar vídeo 🔒</div>
-                  <div style={{ fontSize: 11, opacity: 0.7, marginTop: 3 }}>Disponível para assinantes</div>
+                  <div>{t("result_video_locked")}</div>
+                  <div style={{ fontSize: 11, opacity: 0.7, marginTop: 3 }}>{t("result_video_locked_sub")}</div>
                 </button>
               )}
             </div>

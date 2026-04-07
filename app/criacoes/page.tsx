@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/app/components/BottomNav";
+import { useI18n } from "@/lib/i18n";
 
 interface AccountJob {
   id: string;
@@ -26,6 +27,7 @@ export default function CriacoesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [token, setToken] = useState("");
   const [selected, setSelected] = useState<AccountJob | null>(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -43,7 +45,7 @@ export default function CriacoesPage() {
   }, [router]);
 
   async function handleDelete(id: string) {
-    if (!confirm("Apagar esta foto?")) return;
+    if (!confirm(t("criacoes_confirm_delete"))) return;
     setDeletingId(id);
     await fetch(`/api/image-jobs/${id}`, {
       method: "DELETE",
@@ -54,21 +56,21 @@ export default function CriacoesPage() {
     if (selected?.id === id) setSelected(null);
   }
 
-  if (loading) return <div style={s.centered}>Carregando...</div>;
+  if (loading) return <div style={s.centered}>{t("loading")}</div>;
 
   return (
     <div style={s.page}>
       <header style={s.header}>
-        <div style={s.logo}>Criações</div>
+        <div style={s.logo}>{t("criacoes_title")}</div>
       </header>
 
       <main style={s.main}>
         {jobs.length === 0 ? (
           <div style={s.empty}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🖼</div>
-            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 600, marginBottom: 6 }}>Nenhuma foto ainda</div>
-            <div style={{ fontSize: 13, color: "#4e5c72", marginBottom: 20 }}>Gere sua primeira foto com IA</div>
-            <button onClick={() => router.push("/")} style={s.createBtn}>✨ Criar agora</button>
+            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 600, marginBottom: 6 }}>{t("criacoes_empty_title")}</div>
+            <div style={{ fontSize: 13, color: "#4e5c72", marginBottom: 20 }}>{t("criacoes_empty_sub")}</div>
+            <button onClick={() => router.push("/")} style={s.createBtn}>{t("criacoes_create")}</button>
           </div>
         ) : (
           <div style={s.grid}>
@@ -86,6 +88,16 @@ export default function CriacoesPage() {
         <div style={s.overlay} onClick={() => setSelected(null)}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
             <img src={selected.output_image_url!} alt="foto" style={s.modalImg} />
+            <div style={{ display: "flex", gap: 8, padding: "14px 16px 0" }}>
+              <button onClick={() => {
+                sessionStorage.setItem("editor_image", selected.output_image_url!);
+                router.push("/editor");
+              }} style={s.editBtn}>{t("criacoes_edit")}</button>
+              <button onClick={() => {
+                sessionStorage.setItem("video_from_job", selected.id);
+                router.push("/");
+              }} style={s.videoBtn}>{t("criacoes_video")}</button>
+            </div>
             <div style={s.modalActions}>
               <button onClick={async () => {
                 try {
@@ -96,9 +108,9 @@ export default function CriacoesPage() {
                   a.download = "foto-ia.jpg";
                   a.click();
                 } catch { window.open(selected.output_image_url!, "_blank"); }
-              }} style={s.dlBtn}>⬇ Baixar</button>
+              }} style={s.dlBtn}>{t("criacoes_download")}</button>
               <button onClick={() => handleDelete(selected.id)} disabled={deletingId === selected.id} style={s.delBtn}>
-                {deletingId === selected.id ? "..." : "🗑 Apagar"}
+                {deletingId === selected.id ? "..." : t("criacoes_delete")}
               </button>
             </div>
             <button onClick={() => setSelected(null)} style={s.closeBtn}>✕</button>
@@ -160,6 +172,16 @@ const s: Record<string, React.CSSProperties> = {
   modalImg: { width: "100%", display: "block", maxHeight: "70vh", objectFit: "contain" },
   modalActions: {
     display: "flex", gap: 10, padding: "16px 16px 20px",
+  },
+  editBtn: {
+    flex: 1, background: "#1a2235", border: "1px solid rgba(168,85,247,0.3)",
+    borderRadius: 12, padding: "11px 0",
+    color: "#a855f7", fontSize: 14, fontWeight: 700, cursor: "pointer",
+  },
+  videoBtn: {
+    flex: 1, background: "#1a2235", border: "1px solid rgba(99,102,241,0.3)",
+    borderRadius: 12, padding: "11px 0",
+    color: "#818cf8", fontSize: 14, fontWeight: 700, cursor: "pointer",
   },
   dlBtn: {
     flex: 1, background: "linear-gradient(135deg, #6366f1, #a855f7)",

@@ -10,6 +10,26 @@ import { VIDEO_COMFY_BASES } from "@/lib/comfyui/video-client";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
 
+// Erros de rede/pod transitórios → merecem retry
+// Erros de dados permanentes (404 na imagem, prompt inválido) → falha imediata
+function isTransientError(msg: string): boolean {
+  const m = msg.toLowerCase();
+  return (
+    m.includes("fetch failed") ||
+    m.includes("timeout") ||
+    m.includes("timed out") ||
+    m.includes("aborted") ||
+    m.includes("econnrefused") ||
+    m.includes("econnreset") ||
+    m.includes("enotfound") ||
+    m.includes("socket") ||
+    m.includes("network") ||
+    m.includes("503") ||
+    m.includes("502") ||
+    m.includes("504")
+  );
+}
+
 // Jobs queued há mais de 90 minutos sem submeter → falha (pod não subiu)
 // 90 min dá tempo para 30+ jobs processarem em fila (2-3 min/job)
 const QUEUED_TIMEOUT_MS = 90 * 60 * 1000;
@@ -152,10 +172,24 @@ export async function GET(req: NextRequest) {
         } catch (e) {
           const errMsg = String((e as Error)?.message ?? e);
           results.push({ id: job.id, action: "img-submit", ok: false, error: errMsg });
-          // Marcar como failed para não bloquear a fila indefinidamente
-          await supabase.from("image_jobs")
-            .update({ status: "failed", error_message: errMsg })
-            .eq("id", job.id);
+
+          // Erros transitórios (rede, timeout, pod reiniciando) → requeue com 1 retry
+          // Erros permanentes (imagem inválida 404, prompt ruim) → falha imediata
+          const isTransient = isTransientError(errMsg);
+          const { data: jobData } = await supabase.from("image_jobs")
+            .select("attempts").eq("id", job.id).single();
+          const attempts = (jobData?.attempts ?? 0) + 1;
+
+          if (isTransient && attempts <= 2) {
+            await supabase.from("image_jobs")
+              .update({ status: "queued", attempts, error_message: `Tentativa ${attempts}: ${errMsg}` })
+              .eq("id", job.id);
+            results.push({ id: job.id, action: "img-submit-retry", ok: true, error: `retry ${attempts}` });
+          } else {
+            await supabase.from("image_jobs")
+              .update({ status: "failed", error_message: errMsg })
+              .eq("id", job.id);
+          }
         }
       }
     } else {

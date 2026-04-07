@@ -244,6 +244,13 @@ export default function PlanosPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMP, setLoadingMP] = useState(false);
   const [loadingMPMonthly, setLoadingMPMonthly] = useState(false);
+  const [loadingStripe, setLoadingStripe] = useState(false);
+  const [isBR, setIsBR] = useState(true);
+
+  useEffect(() => {
+    const lang = (typeof navigator !== "undefined" ? navigator.language : "pt-BR") || "pt-BR";
+    setIsBR(lang.startsWith("pt"));
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -279,6 +286,28 @@ export default function PlanosPage() {
       alert("Erro ao iniciar pagamento. Tente novamente.");
     } finally {
       setLoadingMPMonthly(false);
+    }
+  }
+
+  async function handleStripe() {
+    if (!user) return;
+    setLoadingStripe(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/checkout/stripe", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      const json = await res.json();
+      if (json.url) {
+        window.location.href = json.url;
+      } else {
+        alert("Payment error. Please try again.");
+      }
+    } catch {
+      alert("Payment error. Please try again.");
+    } finally {
+      setLoadingStripe(false);
     }
   }
 
@@ -338,13 +367,21 @@ export default function PlanosPage() {
         <div style={styles.cardsRow}>
           {/* Annual Card */}
           <div style={styles.cardAnnual}>
-            <span style={styles.badge}>MAIS POPULAR</span>
-            <div style={styles.planLabel}>Plano Anual</div>
-            <div style={styles.price}>
-              R$19<span style={styles.pricePeriod}> /mês</span>
-            </div>
-            <div style={styles.priceBilled}>Cobrado R$228 por ano</div>
-            <div style={styles.priceHighlight}>Menos de R$0,61 por dia</div>
+            <span style={styles.badge}>{isBR ? "MAIS POPULAR" : "MOST POPULAR"}</span>
+            <div style={styles.planLabel}>{isBR ? "Plano Anual" : "Annual Plan"}</div>
+            {isBR ? (
+              <>
+                <div style={styles.price}>R$19<span style={styles.pricePeriod}> /mês</span></div>
+                <div style={styles.priceBilled}>Cobrado R$228 por ano</div>
+                <div style={styles.priceHighlight}>Menos de R$0,61 por dia</div>
+              </>
+            ) : (
+              <>
+                <div style={styles.price}>$100<span style={styles.pricePeriod}> /year</span></div>
+                <div style={styles.priceBilled}>Billed $100 once a year</div>
+                <div style={styles.priceHighlight}>Less than $0.28 per day</div>
+              </>
+            )}
             <div style={styles.divider} />
             <ul style={styles.featureList}>
               {annualFeatures.map((f) => (
@@ -354,22 +391,36 @@ export default function PlanosPage() {
                 </li>
               ))}
             </ul>
-            <button
-              style={{ ...styles.btnPrimary, opacity: loadingMP ? 0.7 : 1 }}
-              onClick={handleMercadoPago}
-              disabled={loadingMP}
-              onMouseEnter={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
-              onMouseLeave={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-            >
-              {loadingMP ? "Aguarde..." : "Assinar por R$228/ano"}
-            </button>
-            <div style={styles.btnNote}>Economize R$360 comparado ao mensal</div>
+            {isBR ? (
+              <button
+                style={{ ...styles.btnPrimary, opacity: loadingMP ? 0.7 : 1 }}
+                onClick={handleMercadoPago}
+                disabled={loadingMP}
+                onMouseEnter={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+                onMouseLeave={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+              >
+                {loadingMP ? "Aguarde..." : "Assinar por R$228/ano"}
+              </button>
+            ) : (
+              <button
+                style={{ ...styles.btnPrimary, opacity: loadingStripe ? 0.7 : 1 }}
+                onClick={handleStripe}
+                disabled={loadingStripe}
+                onMouseEnter={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+                onMouseLeave={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+              >
+                {loadingStripe ? "Loading..." : "Subscribe for $100/year"}
+              </button>
+            )}
+            <div style={styles.btnNote}>
+              {isBR ? "Economize R$360 comparado ao mensal" : "Save vs monthly billing"}
+            </div>
           </div>
 
-          {/* Monthly Card */}
-          <div style={styles.cardMonthly}>
-            <div style={{ height: 28, marginBottom: 16 }} /> {/* spacer to align with badge */}
-            <div style={styles.planLabel}>Plano Mensal</div>
+          {/* Monthly Card — BR only */}
+          <div style={{ ...styles.cardMonthly, ...(isBR ? {} : { opacity: 0.45, pointerEvents: "none" }) }}>
+            <div style={{ height: 28, marginBottom: 16 }} />
+            <div style={styles.planLabel}>{isBR ? "Plano Mensal" : "Monthly Plan"}</div>
             <div style={styles.price}>
               R$49<span style={styles.pricePeriod}> /mês</span>
             </div>
@@ -406,7 +457,9 @@ export default function PlanosPage() {
             >
               {loadingMPMonthly ? "Aguarde..." : "Assinar por R$49/mês"}
             </button>
-            <div style={styles.btnNote}>&nbsp;</div>
+            <div style={styles.btnNote}>
+              {isBR ? "\u00a0" : "Brazil only (MercadoPago)"}
+            </div>
           </div>
         </div>
 

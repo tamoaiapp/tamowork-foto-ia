@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { useI18n, LangSelector } from "@/lib/i18n";
 
 const S3 = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object";
 const VID = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/video-jobs";
@@ -48,6 +49,7 @@ const TOTAL_STEPS = 3;
 function DemoCarousel() {
   const [idx, setIdx] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const { t } = useI18n();
 
   function goTo(next: number) {
     setIdx((next + DEMO_CARDS.length) % DEMO_CARDS.length);
@@ -85,7 +87,7 @@ function DemoCarousel() {
             position: "absolute", bottom: 6, left: 6,
             background: "rgba(0,0,0,0.72)", color: "#aaa",
             fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1,
-          }}>ANTES</span>
+          }}>{t("onboard_before").toUpperCase()}</span>
         </div>
         <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
           <img
@@ -97,7 +99,7 @@ function DemoCarousel() {
             position: "absolute", bottom: 6, left: 6,
             background: ACCENT, color: "#fff",
             fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1,
-          }}>FOTO IA</span>
+          }}>{t("onboard_after").toUpperCase()} IA</span>
         </div>
       </div>
 
@@ -214,6 +216,7 @@ const PEOPLE = [
 const CARD_W = 190;
 
 function Screen2({ onNext }: { onNext: () => void }) {
+  const { t } = useI18n();
   const [off, setOff] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setOff(o => {
@@ -270,7 +273,7 @@ function Screen2({ onNext }: { onNext: () => void }) {
       </div>
 
       <div style={{ padding:"0 24px 28px", flexShrink:0 }}>
-        <button style={s.btnYellow} onClick={onNext}>Quero vender mais →</button>
+        <button style={s.btnYellow} onClick={onNext}>{t("onboard_next")} →</button>
       </div>
 
       <style>{`@keyframes fadeUp { from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)} }`}</style>
@@ -307,6 +310,7 @@ function RefCard({ r }: { r: typeof ROWS[0][0] }) {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [screen, setScreen] = useState<Screen>(1);
   const [selectedPlan, setSelectedPlan] = useState<Plan>("annual");
   const [loadingCheckout, setLoadingCheckout] = useState(false);
@@ -444,11 +448,10 @@ export default function OnboardingPage() {
   return (
     <div style={s.root}>
       {/* Progress bar */}
-      {(
-        <div style={s.progressBar}>
-          <div style={{ ...s.progressFill, width: `${progress * 100}%` }} />
-        </div>
-      )}
+      <div style={s.progressBar}>
+        <div style={{ ...s.progressFill, width: `${progress * 100}%` }} />
+      </div>
+      <div style={{ position: "absolute", top: 14, right: 16, zIndex: 101 }}><LangSelector /></div>
 
       {/* Popup cadastro rápido antes do checkout */}
       {showRegPopup && (
@@ -490,7 +493,7 @@ export default function OnboardingPage() {
               <input type="password" placeholder="Senha (mín. 6 caracteres)" value={regPassword} onChange={e => setRegPassword(e.target.value)} required minLength={6} style={s.regInput} />
               {regError && <div style={{ fontSize: 12, color: "#f87171", textAlign: "center" }}>{regError}</div>}
               <button type="submit" disabled={regLoading} style={{ ...s.btnYellow, opacity: regLoading ? 0.7 : 1, marginTop: 4 }}>
-                {regLoading ? "Aguarde..." : "Continuar para pagamento →"}
+                {regLoading ? t("loading") : t("onboard_next") + " →"}
               </button>
               <button type="button" style={s.popupBtnGhost} onClick={() => setShowRegPopup(false)}>Cancelar</button>
             </form>
@@ -529,7 +532,7 @@ export default function OnboardingPage() {
             </div>
             <DemoCarousel />
             <div style={{ ...s.bottomArea, position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: `linear-gradient(transparent, ${BG} 40%)`, paddingTop: 40, paddingBottom: 20 }}>
-              <button style={s.btnYellow} onClick={goNext}>Ver como funciona →</button>
+              <button style={s.btnYellow} onClick={goNext}>{t("onboard_next")} →</button>
             </div>
           </div>
         )}
@@ -617,9 +620,9 @@ export default function OnboardingPage() {
                 onClick={handleCheckoutClick}
                 disabled={loadingCheckout}
               >
-                {loadingCheckout ? "Aguarde..." : "Começar agora"}
+                {loadingCheckout ? t("loading") : t("onboard_start")}
               </button>
-              <button style={s.btnGhost} onClick={skip}>Talvez mais tarde</button>
+              <button style={s.btnGhost} onClick={skip}>{t("onboard_try_free")}</button>
               <div style={s.legalRow}>
                 <span style={s.legalLink}>Política de Privacidade</span>
                 <span style={s.legalLink}>Restaurar Compras</span>

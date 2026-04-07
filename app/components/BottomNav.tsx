@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   hasActiveJob?: boolean;
@@ -25,16 +26,20 @@ function IconCriar({ active }: { active: boolean }) {
   );
 }
 
-function IconFeed({ active }: { active: boolean }) {
+function IconEditor({ active }: { active: boolean }) {
+  const c = active ? "#a855f7" : "#4e5c72";
   return active ? (
-    // Filled: casa estilo Instagram
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H15v-5h-6v5H4a1 1 0 01-1-1V10.5z" fill="#a855f7" />
+      <rect x="3" y="3" width="18" height="18" rx="3" fill="#a855f7" opacity="0.2"/>
+      <path d="M8 16l2.5-3.5 2 2.5 2.5-3.5L19 16H8z" fill="#a855f7"/>
+      <circle cx="9" cy="9" r="1.5" fill="#a855f7"/>
+      <rect x="3" y="3" width="18" height="18" rx="3" stroke="#a855f7" strokeWidth="1.8"/>
     </svg>
   ) : (
-    // Outline
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4e5c72" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H15v-5h-6v5H4a1 1 0 01-1-1V10.5z" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="3"/>
+      <path d="M8 16l2.5-3.5 2 2.5 2.5-3.5L19 16H8z"/>
+      <circle cx="9" cy="9" r="1.5" fill={c} stroke="none"/>
     </svg>
   );
 }
@@ -63,11 +68,12 @@ function IconCriacoes({ active }: { active: boolean }) {
 export default function BottomNav({ hasActiveJob = false }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useI18n();
 
   const tabs = [
-    { key: "criar", label: "Criar", path: "/" },
-    { key: "explorar", label: "Feed", path: "/explorar" },
-    { key: "criacoes", label: "Criações", path: "/criacoes" },
+    { key: "criar", label: t("nav_criar"), path: "/" },
+    { key: "editor", label: t("nav_editor"), path: "/editor" },
+    { key: "criacoes", label: t("nav_criacoes"), path: "/criacoes" },
   ];
 
   const isActive = (path: string) => {
@@ -83,7 +89,7 @@ export default function BottomNav({ hasActiveJob = false }: Props) {
           <button key={tab.key} onClick={() => router.push(tab.path)} style={s.tab}>
             <div style={{ position: "relative" }}>
               {tab.key === "criar" && <IconCriar active={active} />}
-              {tab.key === "explorar" && <IconFeed active={active} />}
+              {tab.key === "editor" && <IconEditor active={active} />}
               {tab.key === "criacoes" && <IconCriacoes active={active} />}
               {tab.key === "criar" && hasActiveJob && <span style={s.activeDot} />}
             </div>

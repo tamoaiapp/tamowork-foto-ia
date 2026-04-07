@@ -28,6 +28,7 @@ export async function criarPrompt(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ produto_frase, cenario }),
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`criarPrompt error: ${res.status}`);
   return res.json();
@@ -87,7 +88,7 @@ export async function cleanupComfyJob(jobId: string, comfyBase: string): Promise
 
 // Faz download da imagem e envia para o ComfyUI
 export async function uploadImageToComfy(imageUrl: string, comfyBase: string, jobId?: string): Promise<string> {
-  const imgRes = await fetch(imageUrl);
+  const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(60_000) });
   if (!imgRes.ok) throw new Error(`Falha ao baixar imagem: ${imgRes.status}`);
   const buffer = await imgRes.arrayBuffer();
 
@@ -107,6 +108,7 @@ export async function uploadImageToComfy(imageUrl: string, comfyBase: string, jo
     method: "POST",
     headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
     body: multipart,
+    signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) throw new Error(`Upload ComfyUI error: ${res.status}`);
 
@@ -152,6 +154,7 @@ export async function submitWorkflow(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: workflow }),
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`submitWorkflow error: ${res.status}`);
 
@@ -182,6 +185,7 @@ export async function submitCatalogWorkflow(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: workflow }),
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`submitCatalogWorkflow error: ${res.status}`);
   const data = await res.json() as { prompt_id: string };
@@ -193,7 +197,7 @@ export async function getComfyHistory(
   promptId: string,
   comfyBase: string
 ): Promise<{ outputUrl: string | null; status: "done" | "failed" | "pending" }> {
-  const res = await fetch(`${comfyBase}/history/${promptId}`);
+  const res = await fetch(`${comfyBase}/history/${promptId}`, { signal: AbortSignal.timeout(15_000) });
   if (!res.ok) return { outputUrl: null, status: "pending" };
 
   const history = await res.json() as Record<string, unknown>;
