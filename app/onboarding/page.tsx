@@ -46,6 +46,26 @@ const CARD = "#111820";
 const LINE = "rgba(255,255,255,0.07)";
 const TOTAL_STEPS = 3;
 
+// Indicador de steps visível (bolinhas + número)
+function StepDots({ current, total }: { current: number; total: number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px 0 2px" }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            width: i + 1 === current ? 22 : 7,
+            height: 7,
+            borderRadius: 99,
+            background: i + 1 === current ? ACCENT : "rgba(255,255,255,0.18)",
+            transition: "all 0.35s ease",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function DemoCarousel() {
   const [idx, setIdx] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -234,8 +254,11 @@ function Screen2({ onNext }: { onNext: () => void }) {
       <div style={{ padding:"52px 24px 16px", flexShrink:0 }}>
         <h1 style={{ fontSize:24, fontWeight:800, lineHeight:1.3, margin:0, animation:"fadeUp 0.5s ease both" }}>
           Você trabalha muito.<br />
-          <span style={{ color:ACCENT }}>Sua foto precisa trabalhar também.</span>
+          <span style={{ color:ACCENT }}>Sua foto precisa trabalhar igual.</span>
         </h1>
+        <p style={{ fontSize:15, color:"rgba(255,255,255,0.55)", margin:"10px 0 0", lineHeight:1.5 }}>
+          Veja o que outros vendedores estão conseguindo com as fotos de IA.
+        </p>
       </div>
 
       {/* 3 faixas */}
@@ -457,10 +480,10 @@ export default function OnboardingPage() {
       {showRegPopup && (
         <div style={s.popupOverlay}>
           <div style={{ ...s.popupBox, padding: "28px 24px" }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>👤</div>
-            <div style={s.popupTitle}>Crie sua conta</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 20, textAlign: "center" }}>
-              É rápido. Depois vamos ao pagamento.
+            <div style={{ fontSize: 32, marginBottom: 8 }}>👤</div>
+            <div style={s.popupTitle}>Crie sua conta grátis</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", marginBottom: 20, textAlign: "center", lineHeight: 1.5 }}>
+              Só precisa de nome, e-mail e senha.<br />Leva menos de 1 minuto.
             </div>
             <form onSubmit={async (e) => {
               e.preventDefault();
@@ -525,9 +548,9 @@ export default function OnboardingPage() {
           <div style={{ ...s.contentScreen, overflowY: "auto", paddingTop: 20, paddingBottom: 100 }}>
             <div style={{ marginBottom: 14 }}>
               <h1 style={{ ...s.screenTitle, margin: 0, fontSize: 24 }}>
-                Tire foto de qualquer jeito dos seus produtos,{" "}
-                <span style={{ color: ACCENT }}>transforma em foto que vende</span>{" "}
-                e faz vídeo viral
+                Fotografou do jeito que deu?{" "}
+                <span style={{ color: ACCENT }}>A IA transforma em foto de loja profissional</span>{" "}
+                — em segundos.
               </h1>
             </div>
             <DemoCarousel />
@@ -545,20 +568,20 @@ export default function OnboardingPage() {
           <div style={s.paywallScreen}>
             <div style={s.paywallScroll}>
               <h1 style={s.paywallTitle}>
-                Fotos e vídeos{" "}
-                <span style={{ color: ACCENT }}>ilimitados</span>{" "}
-                para vender mais
+                Fotos profissionais{" "}
+                <span style={{ color: ACCENT }}>sem limite</span>{" "}
+                para vender muito mais
               </h1>
-              <p style={s.paywallSub}>Acesso completo. Sem limite de uso.</p>
+              <p style={s.paywallSub}>Acesso completo por menos de R$1 por dia. Cancele quando quiser.</p>
 
               {/* Benefícios */}
               <div style={s.benefitsList}>
                 {[
-                  "Fotos ilimitadas para seus produtos",
-                  "Vídeos ilimitados prontos para Reels e TikTok",
-                  "Modelos humanos com IA",
-                  "Alta resolução sem marca d'água",
-                  "Pronto para Instagram, Shopee e WhatsApp",
+                  "Quantas fotos quiser, sem fila",
+                  "Vídeos animados prontos para Instagram e TikTok",
+                  "Modelo humano usa sua roupa — sem fotógrafo",
+                  "Foto em alta qualidade, sem marca d'água",
+                  "Funciona para Shopee, Instagram e WhatsApp",
                 ].map((b) => (
                   <div key={b} style={s.benefitItem}>
                     <span style={s.benefitCheck}>✓</span>
@@ -574,20 +597,20 @@ export default function OnboardingPage() {
                   style={{ ...s.planCard, ...(selectedPlan === "annual" ? s.planCardSelected : {}), position: "relative", overflow: "visible" }}
                   onClick={() => setSelectedPlan("annual")}
                 >
-                  <div style={{ position: "absolute", top: -11, right: 14, background: BRAND, color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 20, letterSpacing: "0.06em" }}>
+                  <div style={{ position: "absolute", top: -11, right: 14, background: "linear-gradient(135deg, #16c784, #0ea86a)", color: "#fff", fontSize: 11, fontWeight: 800, padding: "4px 12px", borderRadius: 20, letterSpacing: "0.04em" }}>
                     MAIS POPULAR
                   </div>
                   <div style={s.planRadio}>
                     <div style={{ ...s.planRadioInner, ...(selectedPlan === "annual" ? s.planRadioActive : {}) }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={s.planName}>Plano Anual</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>R$348 cobrado uma vez por ano</div>
+                    <div style={{ ...s.planName, fontSize: 17 }}>Anual — melhor valor</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>Cobrado R$348 uma vez por ano</div>
+                    <div style={{ fontSize: 12, color: "#16c784", fontWeight: 700, marginTop: 2 }}>Economize R$240 vs. semanal</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textDecoration: "line-through" }}>R$47/sem</div>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$29<span style={{ fontSize: 12, fontWeight: 500 }}>/mês</span></div>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: ACCENT, lineHeight: 1 }}>R$0,95<span style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.5)" }}>/dia</span></div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>R$29<span style={{ fontSize: 13, fontWeight: 500 }}>/mês</span></div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: ACCENT, lineHeight: 1.3 }}>R$0,95/dia</div>
                   </div>
                 </button>
 
@@ -610,8 +633,8 @@ export default function OnboardingPage() {
                 </button>
               </div>
 
-              <div style={s.cancelNote}>↺ Cancele quando quiser</div>
-              <div style={{ ...s.conversionLine, marginTop: 8 }}>Uma foto que vende já paga o mês inteiro.</div>
+              <div style={{ ...s.cancelNote, fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>Cancele quando quiser — sem burocracia</div>
+              <div style={{ ...s.conversionLine, marginTop: 8 }}>Uma única foto bem feita já paga o mês inteiro.</div>
             </div>
 
             <div style={s.paywallBottom}>
@@ -651,8 +674,8 @@ const s: Record<string, React.CSSProperties> = {
     overflow: "hidden",
   },
   progressBar: {
-    height: 3,
-    background: "rgba(255,255,255,0.1)",
+    height: 5,
+    background: "rgba(255,255,255,0.12)",
     position: "fixed",
     top: 0,
     left: "50%",

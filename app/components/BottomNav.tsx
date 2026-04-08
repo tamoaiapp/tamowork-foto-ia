@@ -10,13 +10,13 @@ interface Props {
 function IconCriar({ active }: { active: boolean }) {
   const c = active ? "#a855f7" : "#4e5c72";
   return active ? (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" fill="#a855f7" />
       <line x1="12" y1="7" x2="12" y2="17" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
       <line x1="7" y1="12" x2="17" y2="12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   ) : (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round">
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="7" x2="12" y2="17" />
       <line x1="7" y1="12" x2="17" y2="12" />
@@ -27,14 +27,14 @@ function IconCriar({ active }: { active: boolean }) {
 function IconEditor({ active }: { active: boolean }) {
   const c = active ? "#a855f7" : "#4e5c72";
   return active ? (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="3" width="18" height="18" rx="3" fill="#a855f7" opacity="0.2"/>
       <path d="M8 16l2.5-3.5 2 2.5 2.5-3.5L19 16H8z" fill="#a855f7"/>
       <circle cx="9" cy="9" r="1.5" fill="#a855f7"/>
       <rect x="3" y="3" width="18" height="18" rx="3" stroke="#a855f7" strokeWidth="1.8"/>
     </svg>
   ) : (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="18" height="18" rx="3"/>
       <path d="M8 16l2.5-3.5 2 2.5 2.5-3.5L19 16H8z"/>
       <circle cx="9" cy="9" r="1.5" fill={c} stroke="none"/>
@@ -45,14 +45,14 @@ function IconEditor({ active }: { active: boolean }) {
 function IconCriacoes({ active }: { active: boolean }) {
   const c = active ? "#a855f7" : "#4e5c72";
   return active ? (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="3" width="7.5" height="7.5" rx="2" fill="#a855f7" />
       <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" fill="#a855f7" />
       <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" fill="#a855f7" />
       <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" fill="#a855f7" />
     </svg>
   ) : (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
       <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
       <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
@@ -138,16 +138,17 @@ const s: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 4,
-    padding: "10px 0 12px",
+    gap: 5,
+    padding: "12px 0 14px",
     background: "transparent",
     border: "none",
     cursor: "pointer",
+    minHeight: 64,
   },
   label: {
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: "0.02em",
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: "0.01em",
   },
   activeDot: {
     position: "absolute",

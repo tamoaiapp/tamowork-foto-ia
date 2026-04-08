@@ -23,47 +23,48 @@ const MODES: {
   badge?: string;
 }[] = [
   {
+    id: "fundo_branco",
+    name: "Fundo branco",
+    title: "Foto igual Mercado Livre",
+    desc: "Fundo limpo e profissional. Ideal para lojas online.",
+    img: `${BASE}/fundo_branco_split.jpg`,
+    badge: "Mais usado",
+  },
+  {
     id: "simulacao",
-    name: "Simulação de uso",
-    title: "Produto em contexto real",
-    desc: "Coloca seu produto em cenas reais",
+    name: "Foto em cena",
+    title: "Produto em ambiente real",
+    desc: "Coloca seu produto numa cena bonita e real.",
     img: `${BASE}/simulacao.jpg`,
   },
   {
     id: "catalogo",
-    name: "Catálogo com modelo",
-    title: "Produto vestido por IA",
-    desc: "Modelo virtual veste sua peça",
+    name: "Com modelo",
+    title: "Roupa vestida por IA",
+    desc: "Modelo virtual usa sua peça sem precisar de fotógrafo.",
     img: `${BASE}/modelo_opt1.jpg`,
   },
   {
-    id: "fundo_branco",
-    name: "Fundo branco",
-    title: "Ideal para e-commerce",
-    desc: "Fundo limpo, luz de estúdio",
-    img: `${BASE}/fundo_branco_split.jpg`,
-  },
-  {
     id: "video",
-    name: "Criar vídeo",
-    title: "Anime sua foto com IA",
-    desc: "Transforma foto em vídeo",
+    name: "Vídeo animado",
+    title: "Foto que se mexe",
+    desc: "Transforma sua foto num vídeo pronto para Reels.",
     img: "",
     badge: "PRO",
   },
   {
-    id: "personalizado",
-    name: "Personalizado",
-    title: "Você no controle",
-    desc: "Descreva a cena que quiser",
-    img: `${BASE}/produto.jpg`,
+    id: "promo",
+    name: "Post de promoção",
+    title: "Arte pronta para postar",
+    desc: "Cria post com preço e texto para divulgar no Instagram.",
+    img: `${BASE}/promo_thumb.jpg`,
   },
   {
-    id: "promo",
-    name: "Criar promoção",
-    title: "Arte pronta para postar",
-    desc: "Posts prontos com preço e texto",
-    img: `${BASE}/promo_thumb.jpg`,
+    id: "personalizado",
+    name: "Do meu jeito",
+    title: "Você escolhe a cena",
+    desc: "Descreva o que quer e a IA cria do seu jeito.",
+    img: `${BASE}/produto.jpg`,
   },
 ];
 
@@ -153,9 +154,11 @@ function ModeCard({ name, title, desc, badge, onClick, media, img }: {
         {badge && (
           <div style={{
             position: "absolute", top: 10, right: 10,
-            background: "linear-gradient(135deg, #6366f1, #a855f7)",
-            borderRadius: 6, padding: "3px 8px",
-            fontSize: 10, fontWeight: 800, color: "#fff", letterSpacing: "0.06em",
+            background: badge === "Mais usado"
+              ? "linear-gradient(135deg, #16c784, #0ea86a)"
+              : "linear-gradient(135deg, #6366f1, #a855f7)",
+            borderRadius: 6, padding: "4px 10px",
+            fontSize: 11, fontWeight: 800, color: "#fff", letterSpacing: "0.04em",
           }}>{badge}</div>
         )}
         {/* Overlay text */}
@@ -170,14 +173,14 @@ function ModeCard({ name, title, desc, badge, onClick, media, img }: {
       </div>
 
       {/* Footer */}
-      <div style={{ padding: "10px 12px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }} className="mode-card-footer">
+      <div style={{ padding: "12px 12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minHeight: 64 }} className="mode-card-footer">
         <span style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.4 }} className="mode-card-desc">{desc}</span>
         <button
           style={{
             background: hovered ? "rgba(168,85,247,0.25)" : "rgba(168,85,247,0.1)",
             border: "1px solid rgba(168,85,247,0.35)",
-            borderRadius: 8, padding: "7px 14px",
-            color: "#c4b5fd", fontSize: 12, fontWeight: 700,
+            borderRadius: 10, padding: "10px 16px",
+            color: "#c4b5fd", fontSize: 13, fontWeight: 700,
             cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
             transition: "background 0.15s",
           }}
@@ -210,6 +213,8 @@ export default function ModeSelector({ onChange }: Props) {
           aspect-ratio: 3 / 4;
         }
         .mode-card-desc { display: none; }
+        .mode-card-footer { min-height: 56px; }
+        .mode-card-footer button { min-height: 40px; }
 
         @media (min-width: 900px) {
           .mode-selector .mode-title {

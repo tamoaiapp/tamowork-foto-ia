@@ -32,7 +32,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   hero: {
     textAlign: "center",
-    marginBottom: 52,
+    marginBottom: 48,
   },
   heroHeadline: {
     fontSize: "clamp(26px, 4vw, 42px)",
@@ -49,9 +49,21 @@ const styles: Record<string, React.CSSProperties> = {
   heroSub: {
     fontSize: 17,
     color: "#8394b0",
-    margin: "0 auto",
+    margin: "0 auto 16px",
     maxWidth: 520,
     lineHeight: 1.6,
+  },
+  heroTrust: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    background: "rgba(22,199,132,0.1)",
+    border: "1px solid rgba(22,199,132,0.25)",
+    borderRadius: 20,
+    padding: "8px 16px",
+    fontSize: 13,
+    color: "#16c784",
+    fontWeight: 600,
   },
   cardsRow: {
     display: "grid",
@@ -82,10 +94,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: "inline-block",
     background: "rgba(22,199,132,0.15)",
     color: "#16c784",
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: "0.1em",
-    padding: "4px 10px",
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    padding: "5px 12px",
     borderRadius: 20,
     marginBottom: 16,
     alignSelf: "flex-start",
@@ -117,8 +129,8 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 6,
   },
   priceHighlight: {
-    fontSize: 13,
-    fontWeight: 600,
+    fontSize: 16,
+    fontWeight: 800,
     color: "#a855f7",
     marginBottom: 24,
   },
@@ -151,22 +163,23 @@ const styles: Record<string, React.CSSProperties> = {
   },
   btnPrimary: {
     width: "100%",
-    padding: "15px 0",
+    padding: "18px 0",
     borderRadius: 14,
     border: "none",
     background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
     color: "#fff",
-    fontSize: 16,
-    fontWeight: 700,
+    fontSize: 17,
+    fontWeight: 800,
     cursor: "pointer",
     fontFamily: "inherit",
     letterSpacing: "-0.01em",
     transition: "opacity 0.15s, transform 0.1s",
-    marginBottom: 10,
+    marginBottom: 8,
+    boxShadow: "0 4px 20px rgba(139,92,246,0.4)",
   },
   btnSecondary: {
     width: "100%",
-    padding: "15px 0",
+    padding: "16px 0",
     borderRadius: 14,
     border: "1.5px solid rgba(139,92,246,0.4)",
     background: "transparent",
@@ -177,11 +190,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "inherit",
     letterSpacing: "-0.01em",
     transition: "border-color 0.15s, background 0.15s",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   btnNote: {
-    fontSize: 12,
-    color: "#4e5c72",
+    fontSize: 13,
+    color: "#8394b0",
     textAlign: "center" as const,
   },
   strikethrough: {
@@ -224,18 +237,18 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 const annualFeatures = [
-  "Fotos ilimitadas com IA",
-  "Vídeos ilimitados com IA",
-  "Sem fila de espera",
-  "Resultados em alta resolução",
-  "Acesso a novos recursos primeiro",
+  "Fotos ilimitadas — sem limite",
+  "Vídeos ilimitados para Reels e TikTok",
+  "Foto pronta na hora, sem fila",
+  "Alta qualidade, sem marca d'água",
+  "Novidades antes de todo mundo",
 ];
 
 const monthlyFeatures = [
-  "Fotos ilimitadas com IA",
-  "Vídeos ilimitados com IA",
-  "Sem fila de espera",
-  "Resultados em alta resolução",
+  "Fotos ilimitadas — sem limite",
+  "Vídeos ilimitados para Reels e TikTok",
+  "Foto pronta na hora, sem fila",
+  "Alta qualidade, sem marca d'água",
 ];
 
 export default function PlanosPage() {
@@ -356,11 +369,16 @@ export default function PlanosPage() {
         {/* Hero */}
         <div style={styles.hero}>
           <h1 style={styles.heroHeadline}>
-            Fotos e vídeos ilimitados por menos de R$0,61 por dia
+            Fotos profissionais para seus produtos por menos de R$0,63 por dia
           </h1>
           <p style={styles.heroSub}>
-            Transforme qualquer produto em foto profissional com IA. Sem limite de uso, sem fila de espera.
+            Tire foto com o celular, a IA transforma em foto de loja profissional. Sem fotógrafo, sem estúdio.
           </p>
+          <div style={styles.heroTrust}>
+            <span>Cancele quando quiser</span>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span>Sem fidelidade</span>
+          </div>
         </div>
 
         {/* Pricing Cards */}
@@ -399,7 +417,7 @@ export default function PlanosPage() {
                 onMouseEnter={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
                 onMouseLeave={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
               >
-                {loadingMP ? "Aguarde..." : "Assinar por R$228/ano"}
+                {loadingMP ? "Aguarde..." : "Quero assinar agora — R$228/ano"}
               </button>
             ) : (
               <button
@@ -409,11 +427,11 @@ export default function PlanosPage() {
                 onMouseEnter={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
                 onMouseLeave={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
               >
-                {loadingStripe ? "Loading..." : "Subscribe for $100/year"}
+                {loadingStripe ? "Loading..." : "Subscribe now — $100/year"}
               </button>
             )}
-            <div style={styles.btnNote}>
-              {isBR ? "Economize R$360 comparado ao mensal" : "Save vs monthly billing"}
+            <div style={{ ...styles.btnNote, fontWeight: 700, color: "#16c784" }}>
+              {isBR ? "Economize R$360 comparado ao plano mensal" : "Save vs monthly billing"}
             </div>
           </div>
 
@@ -467,23 +485,23 @@ export default function PlanosPage() {
         <div style={styles.valueSection}>
           <div style={styles.valueCard}>
             <span style={styles.valueIcon}>⚡</span>
-            <div style={styles.valueTitle}>Sem fila de espera</div>
+            <div style={styles.valueTitle}>Foto pronta na hora</div>
             <div style={styles.valueDesc}>
-              Suas fotos são priorizadas. Gere quantas quiser, quando quiser.
+              Sem esperar na fila. Gere quantas fotos quiser, a qualquer hora do dia.
             </div>
           </div>
           <div style={styles.valueCard}>
             <span style={styles.valueIcon}>🎬</span>
-            <div style={styles.valueTitle}>Fotos E vídeos</div>
+            <div style={styles.valueTitle}>Foto e vídeo com IA</div>
             <div style={styles.valueDesc}>
-              Crie vídeos animados dos seus produtos. Recurso exclusivo para assinantes.
+              Crie vídeos animados dos seus produtos para postar no Reels e TikTok.
             </div>
           </div>
           <div style={styles.valueCard}>
-            <span style={styles.valueIcon}>💰</span>
-            <div style={styles.valueTitle}>Menos de R$0,61/dia</div>
+            <span style={styles.valueIcon}>☕</span>
+            <div style={styles.valueTitle}>Menos que um café</div>
             <div style={styles.valueDesc}>
-              Por menos que um café, você automatiza toda a criação visual do seu negócio.
+              R$0,63 por dia. Menos do que um cafezinho para transformar seu negócio.
             </div>
           </div>
         </div>

@@ -67,10 +67,15 @@ export default function CriacoesPage() {
       <main style={s.main} className="app-main">
         {jobs.length === 0 ? (
           <div style={s.empty}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🖼</div>
-            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 600, marginBottom: 6 }}>{t("criacoes_empty_title")}</div>
-            <div style={{ fontSize: 13, color: "#4e5c72", marginBottom: 20 }}>{t("criacoes_empty_sub")}</div>
-            <button onClick={() => router.push("/")} style={s.createBtn}>{t("criacoes_create")}</button>
+            <div style={{ fontSize: 52, marginBottom: 16 }}>📸</div>
+            <div style={{ fontSize: 18, color: "#eef2f9", fontWeight: 700, marginBottom: 8 }}>Suas fotos aparecem aqui</div>
+            <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 8, lineHeight: 1.6, maxWidth: 260, textAlign: "center" }}>
+              Você ainda não criou nenhuma foto. Comece agora — é fácil e rápido!
+            </div>
+            <div style={{ fontSize: 13, color: "#4e5c72", marginBottom: 24 }}>
+              Tire uma foto do seu produto e veja a mágica acontecer.
+            </div>
+            <button onClick={() => router.push("/")} style={s.createBtn}>Criar minha primeira foto</button>
           </div>
         ) : (
           <div style={s.grid} className="criacoes-grid">
@@ -127,11 +132,11 @@ const s: Record<string, React.CSSProperties> = {
   page: { minHeight: "100vh", background: "#07080b", paddingBottom: 68 },
   centered: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#8394b0" },
   header: {
-    padding: "20px 20px 12px",
+    padding: "20px 20px 14px",
     background: "#07080b",
   },
   logo: {
-    fontSize: 20, fontWeight: 800, color: "#eef2f9",
+    fontSize: 22, fontWeight: 800, color: "#eef2f9",
   },
   main: { padding: "8px 12px" },
   empty: {
@@ -140,8 +145,9 @@ const s: Record<string, React.CSSProperties> = {
   },
   createBtn: {
     background: "linear-gradient(135deg, #6366f1, #a855f7)",
-    border: "none", borderRadius: 14, padding: "13px 28px",
-    color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer",
+    border: "none", borderRadius: 14, padding: "16px 32px",
+    color: "#fff", fontSize: 16, fontWeight: 700, cursor: "pointer",
+    boxShadow: "0 4px 20px rgba(139,92,246,0.4)",
   },
   grid: {
     display: "grid",
@@ -185,8 +191,9 @@ const s: Record<string, React.CSSProperties> = {
   },
   dlBtn: {
     flex: 1, background: "linear-gradient(135deg, #6366f1, #a855f7)",
-    border: "none", borderRadius: 12, padding: "13px 0",
-    color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer",
+    border: "none", borderRadius: 12, padding: "16px 0",
+    color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer",
+    boxShadow: "0 4px 16px rgba(139,92,246,0.4)",
   },
   delBtn: {
     flex: 1, background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.25)",

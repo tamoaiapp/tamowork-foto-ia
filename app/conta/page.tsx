@@ -228,7 +228,7 @@ export default function ContaPage() {
 
             {/* Perfil */}
             <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Minha conta</h2>
+              <h2 style={styles.sectionTitle}>Meu perfil</h2>
               <div style={styles.profileCard}>
                 <div style={styles.avatar}>{email.charAt(0).toUpperCase()}</div>
                 <div style={styles.profileInfo}>
@@ -243,20 +243,41 @@ export default function ContaPage() {
 
             {/* Assinatura */}
             <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Assinatura</h2>
+              <h2 style={styles.sectionTitle}>Minha assinatura</h2>
               <div style={styles.subCard}>
                 {!isProActive && (
                   <>
-                    <div style={styles.subStatus}>Plano Gratuito</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#4e5c72", flexShrink: 0 }} />
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}>Plano Gratuito</div>
+                    </div>
                     <div style={styles.subDesc}>1 foto a cada 3 horas. Sem acesso a vídeos.</div>
+                    <div style={{
+                      background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12))",
+                      border: "1px solid rgba(168,85,247,0.25)",
+                      borderRadius: 14, padding: "16px", marginBottom: 14,
+                    }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#eef2f9", marginBottom: 4 }}>
+                        Fotos ilimitadas por R$0,63/dia
+                      </div>
+                      <div style={{ fontSize: 13, color: "#8394b0", lineHeight: 1.5 }}>
+                        Sem limite de uso, sem fila de espera, sem fotógrafo.
+                      </div>
+                    </div>
                     <button onClick={() => router.push("/planos")} style={styles.upgradeBtn}>
-                      ✨ Assinar agora — R$0,61/dia
+                      Quero assinar agora
                     </button>
+                    <div style={{ fontSize: 12, color: "#4e5c72", textAlign: "center", marginTop: 8 }}>
+                      Cancele quando quiser — sem fidelidade
+                    </div>
                   </>
                 )}
                 {isMonthly && (
                   <>
-                    <div style={styles.subStatus}><span style={styles.proBadge}>✦ Pro</span> Mensal</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16c784", flexShrink: 0 }} />
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> Mensal — ativo</div>
+                    </div>
                     <div style={styles.subDesc}>Próxima renovação: {formatDate(planData?.period_end)}</div>
                     {cancelDone ? (
                       <div style={styles.canceledMsg}>
@@ -271,7 +292,10 @@ export default function ContaPage() {
                 )}
                 {isAnnual && (
                   <>
-                    <div style={styles.subStatus}><span style={styles.proBadge}>✦ Pro</span> Anual</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16c784", flexShrink: 0 }} />
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> Anual — ativo</div>
+                    </div>
                     <div style={styles.subDesc}>Assinatura feita em {formatDate(planData?.created_at)}</div>
                     <div style={styles.subDesc}>Válido até {formatDate(planData?.period_end)}</div>
                   </>
@@ -286,7 +310,7 @@ export default function ContaPage() {
 
             {/* Alterar email */}
             <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Alterar e-mail</h2>
+              <h2 style={styles.sectionTitle}>Mudar e-mail</h2>
               <div style={styles.subCard}>
                 <div style={styles.currentLabel}>E-mail atual: <strong style={{ color: "#eef2f9" }}>{email}</strong></div>
                 <form onSubmit={handleChangeEmail} style={styles.credForm}>
@@ -306,7 +330,7 @@ export default function ContaPage() {
 
             {/* Alterar senha */}
             <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Alterar senha</h2>
+              <h2 style={styles.sectionTitle}>Mudar senha</h2>
               <div style={styles.subCard}>
                 <form onSubmit={handleChangePassword} style={{ ...styles.credForm, flexDirection: "column" }}>
                   <input
@@ -385,7 +409,8 @@ const styles: Record<string, React.CSSProperties> = {
   subDesc: { fontSize: 13, color: "#8394b0", marginBottom: 14, lineHeight: 1.5 },
   upgradeBtn: {
     background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)", border: "none",
-    borderRadius: 12, padding: "12px 20px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", width: "100%",
+    borderRadius: 12, padding: "16px 20px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", width: "100%",
+    boxShadow: "0 4px 16px rgba(139,92,246,0.4)",
   },
   cancelBtn: {
     background: "transparent", border: "1px solid rgba(239,68,68,0.4)",
