@@ -191,7 +191,7 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
   );
 }
 
-function ProUpsell({ onAssinar }: { onAssinar: () => void }) {
+function ProUpsell({ onAssinar }: { onAssinar: (plan: "annual" | "monthly") => void }) {
   const [selected, setSelected] = useState<"annual" | "monthly">("annual");
 
   const BENEFITS = [
@@ -257,7 +257,7 @@ function ProUpsell({ onAssinar }: { onAssinar: () => void }) {
       </div>
 
       {/* CTA */}
-      <button onClick={onAssinar} style={pu.btn}>
+      <button onClick={() => onAssinar(selected)} style={pu.btn}>
         {selected === "annual" ? "Assinar por R$228/ano" : "Assinar por R$49/mês"}
       </button>
       <div style={pu.guarantee}>Cancela quando quiser · Sem fidelidade</div>
@@ -565,7 +565,8 @@ export default function HomePage() {
           if (j.status === "done" && j.output_image_url) {
             setJob(j);
             setModeSelected(true);
-            setVideoMode(true);
+            // Só abre vídeo se for PRO
+            if (userPlan === "pro") setVideoMode(true);
           }
         }
       }
@@ -887,6 +888,24 @@ export default function HomePage() {
       setFormError(err instanceof Error ? err.message : "Erro ao processar");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleAssinarDireto(selectedPlan: "annual" | "monthly") {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token ?? "";
+      const body = selectedPlan === "monthly" ? { plan: "monthly" } : {};
+      const res = await fetch("/api/checkout/mercadopago", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (json.init_point) window.location.href = json.init_point;
+      else router.push("/planos");
+    } catch {
+      router.push("/planos");
     }
   }
 
@@ -1467,7 +1486,13 @@ export default function HomePage() {
                 {t("result_edit")}
               </button>
               <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
+                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
+                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.5, cursor: "not-allowed" }}>
+                    🔒 Limite diário atingido
+                  </button>
+                ) : (
+                  <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
+                )}
                 {plan === "pro" ? (
                   <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, flex: 1 }}>
                     {t("result_create_video")}
@@ -1492,7 +1517,13 @@ export default function HomePage() {
                 }} style={styles.editBtn}>{t("result_edit")}</button>
               </div>
               <div style={styles.resultActions}>
-                <button onClick={resetJob} style={styles.newBtn}>{t("result_new")}</button>
+                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
+                  <button disabled style={{ ...styles.newBtn, opacity: 0.5, cursor: "not-allowed" }}>
+                    🔒 Limite diário
+                  </button>
+                ) : (
+                  <button onClick={resetJob} style={styles.newBtn}>{t("result_new")}</button>
+                )}
                 {plan === "pro" ? (
                   <button onClick={() => setVideoMode(true)} style={styles.videoBtn}>{t("result_create_video")}</button>
                 ) : (
@@ -1508,37 +1539,56 @@ export default function HomePage() {
 
         {/* Upsell PRO — aparece abaixo do resultado só para free */}
         {workState === "terminado" && plan === "free" && !videoMode && (
-          <ProUpsell onAssinar={() => router.push("/planos")} />
+          <ProUpsell onAssinar={handleAssinarDireto} />
         )}
 
         {/* Vídeo — form */}
         {videoMode && !videoJob && job?.status === "done" && job.output_image_url && (
-          <div style={styles.card}>
-            <button onClick={resetVideo} style={styles.backBtn}>← Voltar</button>
-            <h2 style={styles.centerTitle}>🎬 Criar vídeo da foto</h2>
-            <p style={{ ...styles.centerDesc, marginBottom: 16 }}>
-              Descreva como a câmera vai se mover ou o que vai acontecer na cena.
-            </p>
-            <img src={job.output_image_url} alt="base" style={{ ...styles.resultImg, marginBottom: 16 }} />
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Movimento <span style={{ color: "#4e5c72" }}>(opcional)</span></label>
-              <input
-                type="text"
-                placeholder="Ex: câmera girando suavemente para a esquerda"
-                value={videoPrompt}
-                onChange={(e) => setVideoPrompt(e.target.value)}
-                style={styles.input}
-              />
+          plan !== "pro" ? (
+            /* Free tentou abrir vídeo — redireciona para planos */
+            <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🎬</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#eef2f9", marginBottom: 8 }}>Vídeo animado é exclusivo do PRO</div>
+              <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 24, lineHeight: 1.5 }}>Assine e gere vídeos incríveis dos seus produtos com IA.</div>
+              <button onClick={() => router.push("/planos")} style={{ ...styles.submitBtn, marginBottom: 12 }}>✨ Assinar PRO</button>
+              <button onClick={() => { setVideoMode(false); }} style={styles.backBtn}>← Voltar</button>
             </div>
-            {videoError && <div style={{ ...styles.error, marginTop: 12 }}>{videoError}</div>}
-            <button
-              onClick={() => handleVideoSubmit(job.output_image_url!)}
-              disabled={videoSubmitting}
-              style={{ ...styles.submitBtn, marginTop: 16, opacity: videoSubmitting ? 0.6 : 1 }}
-            >
-              {videoSubmitting ? "Enviando..." : "🎬 Gerar vídeo"}
-            </button>
-          </div>
+          ) : isGenerating ? (
+            /* Tem foto sendo gerada — não pode criar vídeo agora */
+            <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#eef2f9", marginBottom: 8 }}>Aguarde sua foto ficar pronta</div>
+              <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 24 }}>Não é possível criar um vídeo enquanto uma foto está sendo gerada.</div>
+              <button onClick={() => { setVideoMode(false); }} style={styles.backBtn}>← Voltar</button>
+            </div>
+          ) : (
+            <div style={styles.card}>
+              <button onClick={resetVideo} style={styles.backBtn}>← Voltar</button>
+              <h2 style={styles.centerTitle}>🎬 Criar vídeo da foto</h2>
+              <p style={{ ...styles.centerDesc, marginBottom: 16 }}>
+                Descreva como a câmera vai se mover ou o que vai acontecer na cena.
+              </p>
+              <img src={job.output_image_url} alt="base" style={{ ...styles.resultImg, marginBottom: 16 }} />
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Movimento <span style={{ color: "#4e5c72" }}>(opcional)</span></label>
+                <input
+                  type="text"
+                  placeholder="Ex: câmera girando suavemente para a esquerda"
+                  value={videoPrompt}
+                  onChange={(e) => setVideoPrompt(e.target.value)}
+                  style={styles.input}
+                />
+              </div>
+              {videoError && <div style={{ ...styles.error, marginTop: 12 }}>{videoError}</div>}
+              <button
+                onClick={() => handleVideoSubmit(job.output_image_url!)}
+                disabled={videoSubmitting}
+                style={{ ...styles.submitBtn, marginTop: 16, opacity: videoSubmitting ? 0.6 : 1 }}
+              >
+                {videoSubmitting ? "Enviando..." : "🎬 Gerar vídeo"}
+              </button>
+            </div>
+          )
         )}
 
         {/* Vídeo — gerando */}

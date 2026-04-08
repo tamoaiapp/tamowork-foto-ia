@@ -4,5 +4,11 @@
       "path": "/api/internal/jobs/recover",
       "schedule": "* * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/white-bg/route.ts": {
+      "maxDuration": 60,
+      "memory": 3008
+    }
+  }
 }

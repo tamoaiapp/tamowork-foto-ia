@@ -28,7 +28,6 @@ const MODES: {
     title: "Foto igual Mercado Livre",
     desc: "Fundo limpo e profissional. Ideal para lojas online.",
     img: `${BASE}/fundo_branco_split.jpg`,
-    badge: "Mais usado",
   },
   {
     id: "simulacao",
