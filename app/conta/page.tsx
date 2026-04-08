@@ -251,7 +251,7 @@ export default function ContaPage() {
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#4e5c72", flexShrink: 0 }} />
                       <div style={{ ...styles.subStatus, marginBottom: 0 }}>Plano Gratuito</div>
                     </div>
-                    <div style={styles.subDesc}>1 foto a cada 3 horas. Sem acesso a vídeos.</div>
+                    <div style={styles.subDesc}>1 foto por dia. Sem acesso a vídeos.</div>
                     <div style={{
                       background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12))",
                       border: "1px solid rgba(168,85,247,0.25)",

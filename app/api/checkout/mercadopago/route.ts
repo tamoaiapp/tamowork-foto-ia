@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const isWeekly = body.plan === "monthly";
 
-  const price = IS_TEST ? 1 : isWeekly ? 47 : 348;
+  const price = IS_TEST ? 1 : isWeekly ? 49 : 228;
   const title = IS_TEST
     ? "TamoWork Pro — Teste R$1"
     : isWeekly

@@ -507,15 +507,15 @@ export default function HomePage() {
           if (active.input_image_url) setPreview(active.input_image_url);
           setModeSelected(true);
         } else {
-          // Restaura o job done mais recente (criado nas últimas 3h) para mostrar resultado
+          // Restaura o job done mais recente (criado nas últimas 24h) para mostrar resultado
           const recentDone = jobs.find(
             (j) => j.status === "done" && j.output_image_url &&
-            new Date(j.created_at ?? 0).getTime() > Date.now() - 3 * 60 * 60 * 1000
+            new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
           );
           if (recentDone) setJob(recentDone);
         }
 
-        // Detecta rate limit no carregamento: free user com job recente (<3h)
+        // Detecta rate limit no carregamento: free user com job recente (<24h)
         if (userPlan === "free") {
           const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
           const lastJob = jobs
