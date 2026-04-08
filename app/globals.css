@@ -69,7 +69,7 @@ input, textarea, select, button {
   }
 
   /* Wrapper de conteúdo — desloca para direita do sidebar */
-  .app-content {
+  .app-content:not(.no-sidebar) {
     margin-left: 220px;
   }
 

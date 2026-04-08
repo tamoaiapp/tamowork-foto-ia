@@ -74,10 +74,15 @@ function IconAccount() {
   );
 }
 
+const HIDDEN_PATHS = ["/login", "/onboarding", "/privacidade"];
+
 export default function DesktopSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useI18n();
+
+  // Não mostra o sidebar em páginas públicas/auth
+  if (HIDDEN_PATHS.some((p) => pathname.startsWith(p))) return null;
 
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/";

@@ -1,29 +1,153 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useI18n, LangSelector } from "@/lib/i18n";
 
-const EXAMPLES = [
+const S3 = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object";
+const VID = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/video-jobs";
+
+const DEMO_CARDS = [
   {
-    before: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/input-images/catalog/mulher1.jpg`,
-    after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/output-images/demo/demo1.jpg",
-    label: "Moda",
+    label: "Óculos retrô",
+    before: `${S3}/public/input-images/onboard/oculos.jpeg`,
+    after:  `${S3}/sign/image-jobs/d7b2fe90-4383-4f6d-92bb-672b210de218.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2Q3YjJmZTkwLTQzODMtNGY2ZC05MmJiLTY3MmIyMTBkZTIxOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDUsImV4cCI6MjA5MDMxODAwNX0.4DG7PNfy--I0dO76hrsxIQvYnKgZ9YkaYicebKzR98w`,
+    video:  `${VID}/396aed09-3745-4d78-8b0a-5aec13513282.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzM5NmFlZDA5LTM3NDUtNGQ3OC04YjBhLTVhZWMxMzUxMzI4Mi5tcDQiLCJpYXQiOjE3NzQ5NTg2NTMsImV4cCI6MjA5MDMxODY1M30.5H9g-PfaOIG0HUMAdTb-SiyWNbovLhoUSb1n0Pq4YrM`,
   },
   {
-    before: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/input-images/catalog/homem1.jpg`,
-    after: "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/output-images/demo/demo2.jpg",
-    label: "Produto",
+    label: "Tênis bordado",
+    before: `${S3}/public/input-images/onboard/tenis.jpg`,
+    after:  `${S3}/sign/image-jobs/800f27c5-7d73-4603-b252-d2e9853563b8.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzgwMGYyN2M1LTdkNzMtNDYwMy1iMjUyLWQyZTk4NTM1NjNiOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.WnYrCu2rEopYvByQKFu8L5Hm-3jzA9IXUqgjuFI2unQ`,
+    video:  `${VID}/6ce857bd-9f7f-43db-a624-08da9a9050bd.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzZjZTg1N2JkLTlmN2YtNDNkYi1hNjI0LTA4ZGE5YTkwNTBiZC5tcDQiLCJpYXQiOjE3NzQ5NjE1NTksImV4cCI6MjA5MDMyMTU1OX0.q_JFA0rsLIL73L560WcYZAQI_iSW7m4sMdqxFfAA6OQ`,
+  },
+  {
+    label: "Fantasia infantil",
+    before: `${S3}/public/input-images/onboard/fantasia.webp`,
+    after:  `${S3}/sign/image-jobs/4bfe5d4a-7d6a-41e9-8c15-15ecbc4e1571.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzLzRiZmU1ZDRhLTdkNmEtNDFlOS04YzE1LTE1ZWNiYzRlMTU3MS5qcGciLCJpYXQiOjE3NzQ5NTgwMDUsImV4cCI6MjA5MDMxODAwNX0.mItnYXMEOLDmMn8ViKTZz219qSx9dNOKoGoEWyYCbno`,
+    video:  `${VID}/11af3ceb-12fa-4c05-bb66-5f4ad981bc1c.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzLzExYWYzY2ViLTEyZmEtNGMwNS1iYjY2LTVmNGFkOTgxYmMxYy5tcDQiLCJpYXQiOjE3NzQ5NjE1NjAsImV4cCI6MjA5MDMyMTU2MH0.UEaFTP_FxncuvR_FYvzqFgC4e-TwdDXUdmw2v6xTj1g`,
+  },
+  {
+    label: "Colar de praia",
+    before: `${S3}/public/input-images/onboard/colar.webp`,
+    after:  `${S3}/sign/image-jobs/e307caef-e00b-4e45-b27e-311090bbe285.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2UzMDdjYWVmLWUwMGItNGU0NS1iMjdlLTMxMTA5MGJiZTI4NS5qcGciLCJpYXQiOjE3NzQ5NTgwMDQsImV4cCI6MjA5MDMxODAwNH0.8y-i7FEDxSDPJxHkwKwZ4LkctT1a04eTOw46Tek0UXE`,
+    video:  `${VID}/aa76a131-3cde-4c1d-bbfa-af6686fcc1be.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJ2aWRlby1qb2JzL2FhNzZhMTMxLTNjZGUtNGMxZC1iYmZhLWFmNjY4NmZjYzFiZS5tcDQiLCJpYXQiOjE3NzQ5NTg2NTQsImV4cCI6MjA5MDMxODY1NH0.FgXQHovRxQK3TEwLOWY2weOCbPPdvlsrIZVS1B4Nyfc`,
   },
 ];
 
-const FEATURES = [
-  { icon: "✨", label: "IA profissional" },
-  { icon: "⚡", label: "30 segundos" },
-  { icon: "🎨", label: "Fundo perfeito" },
-  { icon: "📦", label: "Qualquer produto" },
-];
+const ACCENT = "#a855f7";
+
+function DemoCarousel() {
+  const [idx, setIdx] = useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const { t } = useI18n();
+
+  function goTo(next: number) {
+    setIdx((next + DEMO_CARDS.length) % DEMO_CARDS.length);
+  }
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [idx]);
+
+  const card = DEMO_CARDS[idx];
+
+  return (
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Nome + contador */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>{card.label}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: ACCENT, background: `${ACCENT}22`, padding: "3px 10px", borderRadius: 20 }}>
+          {idx + 1}/{DEMO_CARDS.length}
+        </span>
+      </div>
+
+      {/* Antes / Depois lado a lado */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+          <img
+            src={card.before}
+            alt="antes"
+            style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+          />
+          <span style={{
+            position: "absolute", bottom: 6, left: 6,
+            background: "rgba(0,0,0,0.72)", color: "#aaa",
+            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1,
+          }}>ANTES</span>
+        </div>
+        <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+          <img
+            src={card.after}
+            alt="foto ia"
+            style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+          />
+          <span style={{
+            position: "absolute", bottom: 6, left: 6,
+            background: ACCENT, color: "#fff",
+            fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1,
+          }}>DEPOIS IA</span>
+        </div>
+      </div>
+
+      {/* Vídeo — avança ao terminar */}
+      <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#000", lineHeight: 0 }}>
+        {card.video ? (
+          <video
+            ref={videoRef}
+            key={card.video}
+            src={card.video}
+            autoPlay
+            muted
+            playsInline
+            onEnded={() => goTo(idx + 1)}
+            style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+          />
+        ) : (
+          <img
+            src={card.after}
+            alt="foto ia"
+            style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", display: "block" }}
+          />
+        )}
+        <div style={{
+          position: "absolute", top: 8, left: 8,
+          background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)",
+          borderRadius: 8, padding: "3px 10px",
+          fontSize: 11, fontWeight: 700, color: "#fff",
+          display: "flex", alignItems: "center", gap: 5,
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />
+          {card.label}
+        </div>
+        <span style={{
+          position: "absolute", bottom: 8, left: 8,
+          background: `${ACCENT}dd`, color: "#fff",
+          fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1,
+        }}>{card.video ? "VÍDEO IA" : "FOTO IA"}</span>
+      </div>
+
+      {/* Dots */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 5 }}>
+        {DEMO_CARDS.map((_, i) => (
+          <div
+            key={i}
+            onClick={() => goTo(i)}
+            style={{
+              width: i === idx ? 18 : 6, height: 6,
+              borderRadius: 99,
+              background: i === idx ? ACCENT : "rgba(255,255,255,0.25)",
+              transition: "all 0.3s ease", cursor: "pointer",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -79,14 +203,13 @@ export default function LoginPage() {
 
       {/* Hero */}
       <div style={s.hero}>
-        {/* Glow */}
-        <div style={s.glow1} />
-        <div style={s.glow2} />
+        {/* Glow de fundo */}
+        <div style={s.glow} />
 
         {/* Logo */}
         <div style={s.logoWrap}>
           <div style={s.logoIcon}>
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
               <rect width="32" height="32" rx="10" fill="url(#lg)" />
               <path d="M10 22l4-5.5 3 3.5 3.5-5L25 22H10z" fill="white" opacity="0.95" />
               <circle cx="13" cy="12" r="2.5" fill="white" opacity="0.95" />
@@ -105,38 +228,22 @@ export default function LoginPage() {
         </div>
 
         {/* Headline */}
-        <h1 style={s.headline}>
-          Fotos de produto<br />
-          <span style={s.headlineAccent}>profissionais com IA</span>
-        </h1>
-        <p style={s.sub}>{t("login_tagline")}</p>
-
-        {/* Feature pills */}
-        <div style={s.pills}>
-          {FEATURES.map((f) => (
-            <div key={f.label} style={s.pill}>
-              <span>{f.icon}</span>
-              <span>{f.label}</span>
-            </div>
-          ))}
+        <div style={s.headlineBlock}>
+          <h1 style={s.headline}>
+            Foto e vídeo de produto{" "}
+            <span style={s.headlineAccent}>profissional com IA</span>
+          </h1>
+          <p style={s.sub}>Tira uma foto simples e a IA transforma em imagem de catálogo e vídeo animado.</p>
         </div>
 
-        {/* Example strip */}
-        <div style={s.exampleStrip}>
-          <ExampleCard />
-          <ExampleCard alt />
-          <ExampleCard />
-        </div>
+        {/* Demo carousel */}
+        <DemoCarousel />
       </div>
 
       {/* Auth card */}
       <div style={s.card}>
         {/* Google — ação principal */}
-        <button
-          onClick={handleGoogle}
-          disabled={googleLoading}
-          style={s.googleBtn}
-        >
+        <button onClick={handleGoogle} disabled={googleLoading} style={s.googleBtn}>
           {googleLoading ? (
             <span style={s.spinner} />
           ) : (
@@ -153,7 +260,7 @@ export default function LoginPage() {
         {/* Divider */}
         <div style={s.divider}>
           <div style={s.dividerLine} />
-          <span style={s.dividerText}>ou continue com e-mail</span>
+          <span style={s.dividerText}>ou e-mail</span>
           <div style={s.dividerLine} />
         </div>
 
@@ -163,7 +270,6 @@ export default function LoginPage() {
           </button>
         ) : (
           <>
-            {/* Tabs */}
             <div style={s.tabs}>
               <button
                 style={{ ...s.tab, ...(mode === "login" ? s.tabActive : {}) }}
@@ -196,10 +302,8 @@ export default function LoginPage() {
                 required
                 style={s.input}
               />
-
               {error && <div style={s.errorBox}>{error}</div>}
               {msg && <div style={s.successBox}>{msg}</div>}
-
               <button type="submit" disabled={loading} style={s.submitBtn}>
                 {loading
                   ? (mode === "login" ? t("login_logging") : t("login_creating"))
@@ -214,50 +318,8 @@ export default function LoginPage() {
           <a href="/privacidade" style={{ color: "#8394b0", textDecoration: "underline" }}>termos de uso</a>.
         </p>
       </div>
-    </div>
-  );
-}
 
-/* Cartão de exemplo decorativo — gradiente simulando before/after */
-function ExampleCard({ alt }: { alt?: boolean }) {
-  return (
-    <div style={{
-      flex: "0 0 auto",
-      width: 120,
-      height: 160,
-      borderRadius: 14,
-      overflow: "hidden",
-      position: "relative",
-      border: "1px solid rgba(255,255,255,0.08)",
-      background: alt
-        ? "linear-gradient(160deg, #1a1030 0%, #2d1b4e 50%, #1a0e2e 100%)"
-        : "linear-gradient(160deg, #0f1a2e 0%, #1a2a4a 50%, #0e1828 100%)",
-    }}>
-      {/* Brilho no centro */}
-      <div style={{
-        position: "absolute", top: "30%", left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: 60, height: 60,
-        borderRadius: "50%",
-        background: alt
-          ? "radial-gradient(circle, rgba(168,85,247,0.4) 0%, transparent 70%)"
-          : "radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%)",
-      }} />
-      {/* Ícone produto simulado */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0,
-        background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent)",
-        padding: "20px 8px 8px",
-        display: "flex", alignItems: "center", gap: 4,
-      }}>
-        <div style={{
-          width: 6, height: 6, borderRadius: "50%",
-          background: "#16c784",
-        }} />
-        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
-          {alt ? "Gerado com IA" : "Foto profissional"}
-        </span>
-      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -269,55 +331,38 @@ const s: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     alignItems: "center",
     background: "#07080b",
-    overflowX: "hidden",
   },
 
-  /* Hero */
   hero: {
     width: "100%",
     maxWidth: 480,
-    padding: "60px 24px 32px",
+    padding: "56px 20px 28px",
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
     gap: 20,
     position: "relative",
-    textAlign: "center",
   },
-  glow1: {
+  glow: {
     position: "absolute",
     top: 0,
     left: "50%",
     transform: "translateX(-50%)",
-    width: 400,
-    height: 300,
+    width: 360,
+    height: 220,
     borderRadius: "50%",
-    background: "radial-gradient(ellipse, rgba(99,102,241,0.18) 0%, transparent 70%)",
-    pointerEvents: "none",
-  },
-  glow2: {
-    position: "absolute",
-    top: 80,
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: 300,
-    height: 200,
-    borderRadius: "50%",
-    background: "radial-gradient(ellipse, rgba(168,85,247,0.12) 0%, transparent 70%)",
+    background: "radial-gradient(ellipse, rgba(99,102,241,0.16) 0%, transparent 70%)",
     pointerEvents: "none",
   },
 
-  /* Logo */
   logoWrap: {
     display: "flex",
     alignItems: "center",
-    gap: 12,
-    position: "relative",
+    gap: 10,
   },
   logoIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 11,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -325,7 +370,7 @@ const s: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(255,255,255,0.08)",
   },
   logoText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 800,
     background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
     WebkitBackgroundClip: "text",
@@ -338,18 +383,21 @@ const s: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     color: "#4e5c72",
     letterSpacing: "0.04em",
-    marginTop: 1,
+    marginTop: 2,
   },
 
-  /* Headline */
+  headlineBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
   headline: {
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: 800,
     color: "#eef2f9",
-    lineHeight: 1.2,
+    lineHeight: 1.25,
     letterSpacing: "-0.02em",
     margin: 0,
-    position: "relative",
   },
   headlineAccent: {
     background: "linear-gradient(135deg, #818cf8, #a855f7)",
@@ -357,61 +405,26 @@ const s: Record<string, React.CSSProperties> = {
     WebkitTextFillColor: "transparent",
   },
   sub: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#8394b0",
     margin: 0,
-    maxWidth: 300,
     lineHeight: 1.5,
-    position: "relative",
-  },
-
-  /* Pills */
-  pills: {
-    display: "flex",
-    flexWrap: "wrap" as const,
-    gap: 8,
-    justifyContent: "center",
-    position: "relative",
-  },
-  pill: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    padding: "6px 12px",
-    borderRadius: 99,
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    fontSize: 12,
-    fontWeight: 600,
-    color: "#8394b0",
-  },
-
-  /* Example strip */
-  exampleStrip: {
-    display: "flex",
-    gap: 10,
-    justifyContent: "center",
-    position: "relative",
-    overflow: "visible",
   },
 
   /* Auth card */
   card: {
     width: "100%",
-    maxWidth: 400,
+    maxWidth: 480,
     background: "#0c1018",
     borderTop: "1px solid rgba(255,255,255,0.07)",
     borderRadius: "24px 24px 0 0",
-    padding: "28px 24px 40px",
+    padding: "24px 20px 40px",
     display: "flex",
     flexDirection: "column",
-    gap: 14,
+    gap: 12,
     marginTop: "auto",
-    position: "sticky",
-    bottom: 0,
   },
 
-  /* Google button */
   googleBtn: {
     width: "100%",
     display: "flex",
@@ -426,7 +439,6 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 15,
     fontWeight: 700,
     cursor: "pointer",
-    transition: "opacity 0.2s",
   },
   spinner: {
     display: "inline-block",
@@ -438,7 +450,6 @@ const s: Record<string, React.CSSProperties> = {
     animation: "spin 0.8s linear infinite",
   },
 
-  /* Divider */
   divider: {
     display: "flex",
     alignItems: "center",
@@ -456,7 +467,6 @@ const s: Record<string, React.CSSProperties> = {
     whiteSpace: "nowrap" as const,
   },
 
-  /* Email toggle */
   emailToggle: {
     background: "transparent",
     border: "1.5px solid rgba(255,255,255,0.1)",
@@ -467,10 +477,8 @@ const s: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     cursor: "pointer",
     width: "100%",
-    transition: "border-color 0.2s, color 0.2s",
   },
 
-  /* Tabs */
   tabs: {
     display: "flex",
     gap: 6,
@@ -495,7 +503,6 @@ const s: Record<string, React.CSSProperties> = {
     color: "#eef2f9",
   },
 
-  /* Form */
   form: {
     display: "flex",
     flexDirection: "column",
@@ -522,10 +529,8 @@ const s: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     cursor: "pointer",
     width: "100%",
-    marginTop: 2,
   },
 
-  /* Feedback */
   errorBox: {
     background: "rgba(239,68,68,0.08)",
     border: "1px solid rgba(239,68,68,0.25)",
@@ -543,7 +548,6 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 13,
   },
 
-  /* Terms */
   terms: {
     color: "#4e5c72",
     fontSize: 11,
