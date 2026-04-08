@@ -1339,7 +1339,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 10, padding: "6px 14px", color: "#8394b0", fontSize: 13, cursor: "pointer",
   },
   main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "20px 16px" },
-  menuWrap: { width: "100%", maxWidth: 560 },
+  menuWrap: { width: "100%", maxWidth: 960 },
   card: {
     background: "#111820", border: "1px solid rgba(255,255,255,0.07)",
     borderRadius: 22, padding: "36px 32px", width: "100%", maxWidth: 520, margin: "0 auto",

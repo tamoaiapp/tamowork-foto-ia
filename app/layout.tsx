@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n";
+import DesktopSidebar from "@/app/components/DesktopSidebar";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"] });
@@ -35,7 +36,12 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={outfit.className} style={{ background: "#07080b", color: "#eef2f9", margin: 0, minHeight: "100vh" }}>
         <I18nProvider>
-        {children}
+          {/* Sidebar — visível só no desktop via CSS */}
+          <DesktopSidebar />
+          {/* Conteúdo — com margem esquerda no desktop para dar espaço ao sidebar */}
+          <div className="app-content">
+            {children}
+          </div>
         </I18nProvider>
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {

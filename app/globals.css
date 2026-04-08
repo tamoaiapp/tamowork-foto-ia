@@ -52,100 +52,72 @@ input, textarea, select, button {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Desktop sidebar ───────────────────────────────────────── */
+/* Escondido por padrão (mobile) */
+.desktop-sidebar {
+  display: none;
+}
+
 /* ─── Desktop layout (≥ 900px) ─────────────────────────────── */
 @media (min-width: 900px) {
-  /* Sidebar nav */
-  .bottom-nav {
-    left: 0 !important;
-    top: 0 !important;
-    bottom: auto !important;
-    width: 230px !important;
-    max-width: 230px !important;
-    height: 100vh !important;
-    flex-direction: column !important;
-    border-top: none !important;
-    border-right: 1px solid rgba(255,255,255,0.07) !important;
-    transform: none !important;
-    padding: 0 0 40px !important;
-    justify-content: flex-start !important;
-    align-items: stretch !important;
-    overflow-y: auto;
-    gap: 0 !important;
-    background: #0c1018 !important;
-  }
-
-  .sidebar-brand {
+  /* Mostra sidebar, esconde bottom nav */
+  .desktop-sidebar {
     display: flex !important;
   }
-
-  .nav-tab {
-    flex-direction: row !important;
-    justify-content: flex-start !important;
-    padding: 13px 26px !important;
-    gap: 14px !important;
-    width: 100% !important;
-    border-radius: 0 !important;
+  .bottom-nav {
+    display: none !important;
   }
 
-  .nav-tab:hover {
-    background: rgba(255,255,255,0.04) !important;
+  /* Wrapper de conteúdo — desloca para direita do sidebar */
+  .app-content {
+    margin-left: 220px;
   }
 
-  .nav-label {
-    font-size: 14px !important;
-    font-weight: 600 !important;
-  }
-
-  /* App page wrapper — afasta do sidebar */
+  /* Pages — sem padding-bottom do bottom nav */
   .app-layout {
     padding-bottom: 0 !important;
-    padding-left: 230px !important;
   }
 
-  /* Header */
+  /* Header mais espaçoso */
   .app-header {
     padding-left: 48px !important;
     padding-right: 48px !important;
   }
 
-  /* Main content — melhor uso do espaço */
+  /* Main content */
   .app-main {
     padding: 40px 60px !important;
     align-items: flex-start !important;
-    max-width: 1100px !important;
+    max-width: 1160px !important;
     margin-left: auto !important;
     margin-right: auto !important;
     width: 100% !important;
+    box-sizing: border-box !important;
   }
 
-  /* Cards — mais largos */
+  /* Cards — mais largos no desktop */
   .app-main > div,
   .app-card {
-    max-width: 840px !important;
+    max-width: 880px !important;
     width: 100% !important;
   }
 
   /* Grid de criações — 3 colunas */
   .criacoes-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    max-width: 960px !important;
+    max-width: 100% !important;
     width: 100% !important;
   }
 
-  /* Layout de 2 colunas: form à esq, preview à dir */
-  .desktop-two-col {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 32px !important;
-    align-items: flex-start !important;
-    max-width: 1000px !important;
-  }
-  .desktop-two-col > * {
-    max-width: none !important;
+  /* ModeSelector — ocupa mais espaço */
+  .app-main .mode-selector,
+  .mode-selector {
+    max-width: 100% !important;
+    width: 100% !important;
   }
 
-  /* Editor: canvas full-height, sem padding extra do sidebar no preview */
-  .editor-preview {
-    height: calc(100vh - 60px) !important;
+  /* Sidebar nav hover */
+  .sidebar-nav-item:hover {
+    background: rgba(255,255,255,0.04) !important;
   }
 }
