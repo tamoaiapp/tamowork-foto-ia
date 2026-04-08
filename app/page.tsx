@@ -811,11 +811,102 @@ export default function HomePage() {
           60% { box-shadow: 0 0 0 14px rgba(168,85,247,0); transform: scale(1.03); }
           100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); transform: scale(1); }
         }
+        /* Desktop: header simplificado */
+        @media (min-width: 900px) {
+          .page-logo { display: none !important; }
+          .page-header {
+            background: transparent !important;
+            border-bottom: none !important;
+            position: relative !important;
+            padding: 12px 48px !important;
+            justify-content: flex-end !important;
+          }
+          /* Estado gerando: 2 colunas */
+          .generating-wrap {
+            display: grid !important;
+            grid-template-columns: 340px 1fr !important;
+            gap: 0 !important;
+            max-width: 100% !important;
+            min-height: calc(100vh - 120px) !important;
+            background: #0d1117 !important;
+            border-radius: 20px !important;
+            overflow: hidden !important;
+            border: 1px solid rgba(255,255,255,0.06) !important;
+            padding: 0 !important;
+          }
+          .generating-panel {
+            padding: 48px 36px !important;
+            border-right: 1px solid rgba(255,255,255,0.06) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            gap: 20px !important;
+          }
+          .generating-preview {
+            height: 100% !important;
+            min-height: 500px !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+          }
+          /* Estado resultado: 2 colunas */
+          .result-wrap {
+            display: grid !important;
+            grid-template-columns: 1fr 360px !important;
+            gap: 0 !important;
+            max-width: 100% !important;
+            background: #0d1117 !important;
+            border-radius: 20px !important;
+            overflow: hidden !important;
+            border: 1px solid rgba(255,255,255,0.06) !important;
+            padding: 0 !important;
+            animation: fadeIn 0.5s ease !important;
+          }
+          .result-image-col {
+            background: #07080b;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 32px !important;
+            min-height: 500px !important;
+          }
+          .result-image-col img {
+            max-height: 70vh !important;
+            width: auto !important;
+            max-width: 100% !important;
+            border-radius: 12px !important;
+          }
+          .result-actions-col {
+            padding: 48px 36px !important;
+            border-left: 1px solid rgba(255,255,255,0.06) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            gap: 14px !important;
+          }
+          /* No desktop: esconde as ações mobile duplicadas */
+          .result-mobile-actions { display: none !important; }
+          /* Imagem resultado: proporcional, não estica */
+          .result-image-col img {
+            max-height: 75vh !important;
+            width: auto !important;
+            max-width: 100% !important;
+            object-fit: contain !important;
+            border-radius: 12px !important;
+            margin-bottom: 0 !important;
+          }
+        }
+        /* Mobile: esconde as ações desktop */
+        @media (max-width: 899px) {
+          .result-actions-col { display: none !important; }
+          .result-image-col { padding: 0 !important; background: transparent !important; }
+          .result-image-col img { border-radius: 16px !important; width: 100% !important; max-height: none !important; }
+          .generating-panel { padding: 0 !important; border: none !important; }
+        }
       `}</style>
 
       {/* Header */}
-      <header style={styles.header} className="app-header">
-        <div style={styles.logo}>TamoWork</div>
+      <header style={styles.header} className="app-header page-header">
+        <div style={styles.logo} className="page-logo">TamoWork</div>
         <div style={styles.headerRight}>
           <LangSelector />
           {plan === "pro" && <span style={styles.proBadge}>✦ Pro</span>}
@@ -1042,33 +1133,44 @@ export default function HomePage() {
 
         {/* Gerando — blur animation estilo GPT */}
         {workState === "trabalhando" && (
-          <div style={styles.card}>
-            {/* Título animado */}
-            <div style={styles.generatingTitle}>
-              <span style={styles.shimmerText}>Transformando sua foto</span>
-              <span style={styles.dots}>
-                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
-                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-              </span>
-            </div>
-
-            {/* Barra de progresso */}
-            {!submitting && (
-              <div style={styles.progressBarBg}>
-                <div style={{
-                  ...styles.progressBarFill,
-                  width: `${displayProgress}%`,
-                  background: displayProgress > 80
-                    ? "linear-gradient(90deg, #6366f1, #22c55e)"
-                    : "linear-gradient(90deg, #6366f1, #a855f7)",
-                }} />
+          <div style={styles.card} className="generating-wrap">
+            {/* Painel esquerdo: status */}
+            <div className="generating-panel">
+              <div style={styles.generatingTitle}>
+                <span style={styles.shimmerText}>Transformando sua foto</span>
+                <span style={styles.dots}>
+                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
+                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+                </span>
               </div>
-            )}
-
-            {/* Imagem com blur progressivo */}
+              {!submitting && (
+                <div style={styles.progressBarBg}>
+                  <div style={{
+                    ...styles.progressBarFill,
+                    width: `${displayProgress}%`,
+                    background: displayProgress > 80
+                      ? "linear-gradient(90deg, #6366f1, #22c55e)"
+                      : "linear-gradient(90deg, #6366f1, #a855f7)",
+                  }} />
+                </div>
+              )}
+              <NotifyButton onRequest={requestNotificationPermission} />
+              {showCancel && (
+                <button onClick={async () => {
+                  setCanceling(true);
+                  const token = await getToken();
+                  if (job?.id) await fetch(`/api/image-jobs/${job.id}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+                  setCanceling(false);
+                  resetJob();
+                }} disabled={canceling} style={styles.cancelBtn}>
+                  {canceling ? "Cancelando..." : "Cancelar"}
+                </button>
+              )}
+            </div>
+            {/* Preview (visível no mobile como bloco, no desktop como coluna direita) */}
             {preview && (
-              <div style={{ ...styles.blurWrapper, marginBottom: 20 }}>
+              <div style={{ ...styles.blurWrapper, marginBottom: 0 }} className="generating-preview">
                 <img
                   src={preview}
                   alt="produto"
@@ -1085,46 +1187,73 @@ export default function HomePage() {
                 </div>
               </div>
             )}
-
-            {/* Botão de notificação */}
-            <NotifyButton onRequest={requestNotificationPermission} />
           </div>
         )}
 
         {/* Resultado */}
         {workState === "terminado" && job && !videoMode && (
-          <div style={{ ...styles.card, animation: "fadeIn 0.5s ease" }}>
-            <h2 style={styles.centerTitle}>{t("result_ready")}</h2>
-            <img src={editedImageUrl ?? job.output_image_url} alt="Foto gerada" style={styles.resultImg} />
-            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
+          <div style={styles.card} className="result-wrap">
+            {/* Imagem — coluna esquerda no desktop */}
+            <div className="result-image-col">
+              <img
+                src={editedImageUrl ?? job.output_image_url}
+                alt="Foto gerada"
+                style={{ ...styles.resultImg, marginBottom: 0 }}
+              />
+            </div>
+            {/* Ações — coluna direita no desktop */}
+            <div className="result-actions-col">
+              <h2 style={{ ...styles.centerTitle, textAlign: "left" as const, marginBottom: 4 }}>{t("result_ready")}</h2>
+              <p style={{ fontSize: 13, color: "#8394b0", marginBottom: 8 }}>Sua foto foi gerada com sucesso</p>
+              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={styles.downloadBtn}>
                 {t("result_download")}
               </button>
               <button onClick={() => {
                 const url = editedImageUrl ?? job.output_image_url;
-                if (url) {
-                  sessionStorage.setItem("editor_image", url);
-                  router.push("/editor");
-                }
-              }} style={styles.editBtn}>
+                if (url) { sessionStorage.setItem("editor_image", url); router.push("/editor"); }
+              }} style={{ ...styles.editBtn, width: "100%", textAlign: "center" as const }}>
                 {t("result_edit")}
               </button>
+              <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
+                {plan === "pro" ? (
+                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, flex: 1 }}>
+                    {t("result_create_video")}
+                  </button>
+                ) : (
+                  <button onClick={() => router.push("/planos")} style={{ ...styles.videoBtnLocked, flex: 1 }}>
+                    <div>{t("result_video_locked")}</div>
+                    <div style={{ fontSize: 11, opacity: 0.7, marginTop: 3 }}>{t("result_video_locked_sub")}</div>
+                  </button>
+                )}
+              </div>
             </div>
-            <div style={styles.resultActions}>
-              <button onClick={resetJob} style={styles.newBtn}>{t("result_new")}</button>
-              {plan === "pro" ? (
-                <button onClick={() => setVideoMode(true)} style={styles.videoBtn}>
-                  {t("result_create_video")}
+            {/* Mobile: ações abaixo da imagem */}
+            <div className="result-mobile-actions" style={{ display: "block", padding: "0 24px 24px" }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
+                  {t("result_download")}
                 </button>
-              ) : (
-                <button onClick={() => router.push("/planos")} style={styles.videoBtnLocked}>
-                  <div>{t("result_video_locked")}</div>
-                  <div style={{ fontSize: 11, opacity: 0.7, marginTop: 3 }}>{t("result_video_locked_sub")}</div>
-                </button>
-              )}
+                <button onClick={() => {
+                  const url = editedImageUrl ?? job.output_image_url;
+                  if (url) { sessionStorage.setItem("editor_image", url); router.push("/editor"); }
+                }} style={styles.editBtn}>{t("result_edit")}</button>
+              </div>
+              <div style={styles.resultActions}>
+                <button onClick={resetJob} style={styles.newBtn}>{t("result_new")}</button>
+                {plan === "pro" ? (
+                  <button onClick={() => setVideoMode(true)} style={styles.videoBtn}>{t("result_create_video")}</button>
+                ) : (
+                  <button onClick={() => router.push("/planos")} style={styles.videoBtnLocked}>
+                    <div>{t("result_video_locked")}</div>
+                    <div style={{ fontSize: 11, opacity: 0.7, marginTop: 3 }}>{t("result_video_locked_sub")}</div>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
+
 
         {/* Vídeo — form */}
         {videoMode && !videoJob && job?.status === "done" && job.output_image_url && (
