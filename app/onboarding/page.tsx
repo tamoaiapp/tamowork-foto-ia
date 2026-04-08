@@ -37,7 +37,7 @@ const DEMO_CARDS = [
 ];
 
 type Screen = 1 | 2 | 3;
-type Plan = "weekly" | "annual";
+type Plan = "monthly" | "annual";
 
 const BRAND = "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)";
 const ACCENT = "#a855f7";
@@ -335,7 +335,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { t } = useI18n();
   const [screen, setScreen] = useState<Screen>(1);
-  const [selectedPlan, setSelectedPlan] = useState<Plan>("annual");
+  const [selectedPlan, setSelectedPlan] = useState<Plan>("annual"); // annual selecionado por padrão
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [showNotifPopup, setShowNotifPopup] = useState(false);
@@ -436,7 +436,7 @@ export default function OnboardingPage() {
   async function goToCheckout(token: string) {
     setLoadingCheckout(true);
     try {
-      const body = selectedPlan === "weekly" ? { plan: "monthly" } : {};
+      const body = selectedPlan === "monthly" ? { plan: "monthly" } : {};
       const res = await fetch("/api/checkout/mercadopago", {
         method: "POST",
         headers: {
@@ -592,7 +592,7 @@ export default function OnboardingPage() {
 
               {/* Planos */}
               <div style={s.plansArea}>
-                {/* Anual */}
+                {/* Anual — recomendado */}
                 <button
                   style={{ ...s.planCard, ...(selectedPlan === "annual" ? s.planCardSelected : {}), position: "relative", overflow: "visible" }}
                   onClick={() => setSelectedPlan("annual")}
@@ -605,30 +605,30 @@ export default function OnboardingPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ ...s.planName, fontSize: 17 }}>Anual — melhor valor</div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>Cobrado R$348 uma vez por ano</div>
-                    <div style={{ fontSize: 12, color: "#16c784", fontWeight: 700, marginTop: 2 }}>Economize R$240 vs. semanal</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>R$228 cobrado uma vez por ano</div>
+                    <div style={{ fontSize: 12, color: "#16c784", fontWeight: 700, marginTop: 2 }}>Economize R$360 vs. mensal</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>R$29<span style={{ fontSize: 13, fontWeight: 500 }}>/mês</span></div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: ACCENT, lineHeight: 1.3 }}>R$0,95/dia</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>R$19<span style={{ fontSize: 13, fontWeight: 500 }}>/mês</span></div>
+                    <div style={{ fontSize: 13, color: "#16c784", fontWeight: 700, lineHeight: 1.3 }}>R$0,63/dia</div>
                   </div>
                 </button>
 
-                {/* Semanal */}
+                {/* Mensal */}
                 <button
-                  style={{ ...s.planCard, ...(selectedPlan === "weekly" ? s.planCardSelected : {}) }}
-                  onClick={() => setSelectedPlan("weekly")}
+                  style={{ ...s.planCard, ...(selectedPlan === "monthly" ? s.planCardSelected : {}) }}
+                  onClick={() => setSelectedPlan("monthly")}
                 >
                   <div style={s.planRadio}>
-                    <div style={{ ...s.planRadioInner, ...(selectedPlan === "weekly" ? s.planRadioActive : {}) }} />
+                    <div style={{ ...s.planRadioInner, ...(selectedPlan === "monthly" ? s.planRadioActive : {}) }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={s.planName}>Semanal</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Acesso completo por 7 dias</div>
+                    <div style={s.planName}>Mensal</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Cobrado todo mês, cancele quando quiser</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$47<span style={{ fontSize: 12, fontWeight: 500 }}>/sem</span></div>
-                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>R$6,71/dia</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$49<span style={{ fontSize: 12, fontWeight: 500 }}>/mês</span></div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>R$1,63/dia</div>
                   </div>
                 </button>
               </div>
