@@ -202,134 +202,138 @@ export default function ContaPage() {
 
   return (
     <div style={styles.page} className="app-layout">
+      <style>{`
+        @media (min-width: 900px) {
+          .conta-header-logo { display: none !important; }
+          .conta-main { max-width: 100% !important; padding: 40px 60px !important; }
+          .conta-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 32px !important; align-items: start !important; }
+          .conta-left { display: flex; flex-direction: column; gap: 24px; }
+          .conta-right { display: flex; flex-direction: column; gap: 24px; }
+        }
+      `}</style>
+
       <header style={styles.header} className="app-header">
         <button onClick={() => router.push("/")} style={styles.backBtn}>← Voltar</button>
-        <div style={styles.logo}>TamoWork <span style={{ fontSize: 13, fontWeight: 400 }}>Foto IA</span></div>
+        <div style={styles.logo} className="conta-header-logo">
+          TamoWork <span style={{ fontSize: 13, fontWeight: 400 }}>Foto IA</span>
+        </div>
         <div style={{ width: 60 }} />
       </header>
 
-      <main style={styles.main} className="app-main">
+      <main style={styles.main} className="app-main conta-main">
+        <div className="conta-grid">
 
-        {/* Perfil */}
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Minha conta</h2>
-          <div style={styles.profileCard}>
-            <div style={styles.avatar}>
-              {email.charAt(0).toUpperCase()}
-            </div>
-            <div style={styles.profileInfo}>
-              <div style={styles.profileEmail}>{email}</div>
-              <div style={styles.profileSub}>
-                {isProActive ? <span style={styles.proBadge}>✦ Pro</span> : <span style={styles.freeBadge}>Gratuito</span>}
-              </div>
-            </div>
-            <button onClick={handleLogout} style={styles.logoutBtn}>Sair</button>
-          </div>
-        </section>
+          {/* Coluna esquerda: Perfil + Assinatura */}
+          <div className="conta-left">
 
-        {/* Assinatura */}
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Assinatura</h2>
-          <div style={styles.subCard}>
-            {!isProActive && (
-              <>
-                <div style={styles.subStatus}>Plano Gratuito</div>
-                <div style={styles.subDesc}>1 foto a cada 3 horas. Sem acesso a vídeos.</div>
-                <button onClick={() => router.push("/planos")} style={styles.upgradeBtn}>
-                  ✨ Assinar agora — R$0,61/dia
-                </button>
-              </>
-            )}
-            {isMonthly && (
-              <>
-                <div style={styles.subStatus}>
-                  <span style={styles.proBadge}>✦ Pro</span> Mensal
-                </div>
-                <div style={styles.subDesc}>Próxima renovação: {formatDate(planData?.period_end)}</div>
-                {cancelDone ? (
-                  <div style={styles.canceledMsg}>
-                    Cancelamento agendado — acesso mantido até {formatDate(planData?.period_end)}
+            {/* Perfil */}
+            <section style={styles.section}>
+              <h2 style={styles.sectionTitle}>Minha conta</h2>
+              <div style={styles.profileCard}>
+                <div style={styles.avatar}>{email.charAt(0).toUpperCase()}</div>
+                <div style={styles.profileInfo}>
+                  <div style={styles.profileEmail}>{email}</div>
+                  <div style={styles.profileSub}>
+                    {isProActive ? <span style={styles.proBadge}>✦ Pro</span> : <span style={styles.freeBadge}>Gratuito</span>}
                   </div>
-                ) : (
-                  <button onClick={handleCancelStripe} disabled={canceling} style={styles.cancelBtn}>
-                    {canceling ? "Cancelando..." : "Cancelar assinatura"}
-                  </button>
-                )}
-              </>
-            )}
-            {isAnnual && (
-              <>
-                <div style={styles.subStatus}>
-                  <span style={styles.proBadge}>✦ Pro</span> Anual
                 </div>
-                <div style={styles.subDesc}>Assinatura feita em {formatDate(planData?.created_at)}</div>
-                <div style={styles.subDesc}>Válido até {formatDate(planData?.period_end)}</div>
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* Alterar email */}
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Alterar e-mail</h2>
-          <div style={styles.subCard}>
-            <div style={styles.currentLabel}>E-mail atual: <strong style={{ color: "#eef2f9" }}>{email}</strong></div>
-            <form onSubmit={handleChangeEmail} style={styles.credForm}>
-              <input
-                type="email"
-                placeholder="Novo e-mail"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                required
-                style={styles.input}
-              />
-              <button type="submit" disabled={emailLoading} style={styles.credBtn}>
-                {emailLoading ? "Enviando..." : "Confirmar"}
-              </button>
-            </form>
-            {emailMsg && (
-              <div style={emailMsg.startsWith("Erro") ? styles.msgError : styles.msgSuccess}>
-                {emailMsg}
+                <button onClick={handleLogout} style={styles.logoutBtn}>Sair</button>
               </div>
-            )}
-          </div>
-        </section>
+            </section>
 
-        {/* Alterar senha */}
-        <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Alterar senha</h2>
-          <div style={styles.subCard}>
-            <form onSubmit={handleChangePassword} style={{ ...styles.credForm, flexDirection: "column" }}>
-              <input
-                type="password"
-                placeholder="Nova senha"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                style={styles.input}
-              />
-              <input
-                type="password"
-                placeholder="Confirmar nova senha"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                style={{ ...styles.input, marginTop: 10 }}
-              />
-              <button type="submit" disabled={passLoading} style={{ ...styles.credBtn, marginTop: 10 }}>
-                {passLoading ? "Salvando..." : "Alterar senha"}
-              </button>
-            </form>
-            {passMsg && (
-              <div style={passMsg.startsWith("Erro") || passMsg.includes("não coincidem") || passMsg.includes("ao menos") ? styles.msgError : styles.msgSuccess}>
-                {passMsg}
+            {/* Assinatura */}
+            <section style={styles.section}>
+              <h2 style={styles.sectionTitle}>Assinatura</h2>
+              <div style={styles.subCard}>
+                {!isProActive && (
+                  <>
+                    <div style={styles.subStatus}>Plano Gratuito</div>
+                    <div style={styles.subDesc}>1 foto a cada 3 horas. Sem acesso a vídeos.</div>
+                    <button onClick={() => router.push("/planos")} style={styles.upgradeBtn}>
+                      ✨ Assinar agora — R$0,61/dia
+                    </button>
+                  </>
+                )}
+                {isMonthly && (
+                  <>
+                    <div style={styles.subStatus}><span style={styles.proBadge}>✦ Pro</span> Mensal</div>
+                    <div style={styles.subDesc}>Próxima renovação: {formatDate(planData?.period_end)}</div>
+                    {cancelDone ? (
+                      <div style={styles.canceledMsg}>
+                        Cancelamento agendado — acesso mantido até {formatDate(planData?.period_end)}
+                      </div>
+                    ) : (
+                      <button onClick={handleCancelStripe} disabled={canceling} style={styles.cancelBtn}>
+                        {canceling ? "Cancelando..." : "Cancelar assinatura"}
+                      </button>
+                    )}
+                  </>
+                )}
+                {isAnnual && (
+                  <>
+                    <div style={styles.subStatus}><span style={styles.proBadge}>✦ Pro</span> Anual</div>
+                    <div style={styles.subDesc}>Assinatura feita em {formatDate(planData?.created_at)}</div>
+                    <div style={styles.subDesc}>Válido até {formatDate(planData?.period_end)}</div>
+                  </>
+                )}
               </div>
-            )}
+            </section>
+
           </div>
-        </section>
 
+          {/* Coluna direita: Configurações */}
+          <div className="conta-right">
 
+            {/* Alterar email */}
+            <section style={styles.section}>
+              <h2 style={styles.sectionTitle}>Alterar e-mail</h2>
+              <div style={styles.subCard}>
+                <div style={styles.currentLabel}>E-mail atual: <strong style={{ color: "#eef2f9" }}>{email}</strong></div>
+                <form onSubmit={handleChangeEmail} style={styles.credForm}>
+                  <input
+                    type="email" placeholder="Novo e-mail" value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)} required style={styles.input}
+                  />
+                  <button type="submit" disabled={emailLoading} style={styles.credBtn}>
+                    {emailLoading ? "Enviando..." : "Confirmar"}
+                  </button>
+                </form>
+                {emailMsg && (
+                  <div style={emailMsg.startsWith("Erro") ? styles.msgError : styles.msgSuccess}>{emailMsg}</div>
+                )}
+              </div>
+            </section>
+
+            {/* Alterar senha */}
+            <section style={styles.section}>
+              <h2 style={styles.sectionTitle}>Alterar senha</h2>
+              <div style={styles.subCard}>
+                <form onSubmit={handleChangePassword} style={{ ...styles.credForm, flexDirection: "column" }}>
+                  <input
+                    type="password" placeholder="Nova senha" value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)} required style={styles.input}
+                  />
+                  <input
+                    type="password" placeholder="Confirmar nova senha" value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)} required
+                    style={{ ...styles.input, marginTop: 10 }}
+                  />
+                  <button type="submit" disabled={passLoading} style={{ ...styles.credBtn, marginTop: 10 }}>
+                    {passLoading ? "Salvando..." : "Alterar senha"}
+                  </button>
+                </form>
+                {passMsg && (
+                  <div style={passMsg.startsWith("Erro") || passMsg.includes("não coincidem") || passMsg.includes("ao menos") ? styles.msgError : styles.msgSuccess}>
+                    {passMsg}
+                  </div>
+                )}
+              </div>
+            </section>
+
+          </div>
+        </div>
       </main>
+
       <BottomNav />
     </div>
   );
@@ -349,7 +353,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
   },
-  main: { maxWidth: 560, margin: "0 auto", padding: "32px 24px", display: "flex", flexDirection: "column", gap: 28 },
+  main: { maxWidth: 600, margin: "0 auto", padding: "32px 24px" },
   section: {},
   sectionTitle: { fontSize: 12, fontWeight: 700, color: "#8394b0", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.05em" } as React.CSSProperties,
 
