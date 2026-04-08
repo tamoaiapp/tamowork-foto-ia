@@ -1192,7 +1192,15 @@ export default function HomePage() {
 
       {/* Header */}
       <header style={styles.header} className="app-header page-header">
-        <div style={styles.logo} className="page-logo">TamoWork</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }} className="page-logo">
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #6366f1, #a855f7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+              <path d="M10 22l4-5.5 3 3.5 3.5-5L25 22H10z" fill="white" opacity="0.95"/>
+              <circle cx="13" cy="12" r="2.5" fill="white" opacity="0.95"/>
+            </svg>
+          </div>
+          <div style={styles.logo}>TamoWork</div>
+        </div>
         <div style={styles.headerRight}>
           <LangSelector />
           {plan === "pro" && <span style={styles.proBadge}>✦ Pro</span>}

@@ -393,8 +393,16 @@ export default function EditorPage() {
 
       {/* Header */}
       <header style={s.header} className="app-header">
-        <button onClick={() => { setPhoto(null); setLayers([]); }} style={s.back}>←</button>
-        <span style={s.title}>{t("editor_title")}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button onClick={() => { setPhoto(null); setLayers([]); }} style={s.back}>←</button>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #6366f1, #a855f7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+              <path d="M10 22l4-5.5 3 3.5 3.5-5L25 22H10z" fill="white" opacity="0.95"/>
+              <circle cx="13" cy="12" r="2.5" fill="white" opacity="0.95"/>
+            </svg>
+          </div>
+          <span style={s.title}>{t("editor_title")}</span>
+        </div>
         <button onClick={exportImage} style={s.dlBtn}>{t("editor_save")}</button>
       </header>
 
@@ -634,7 +642,7 @@ export default function EditorPage() {
 
 const s: Record<string, React.CSSProperties> = {
   page: { minHeight: "100vh", display: "flex", flexDirection: "column", background: "#07080b", paddingBottom: 68 },
-  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.07)" },
+  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "#0c1018", position: "sticky" as const, top: 0, zIndex: 10 },
   back: { background: "none", border: "none", color: "#eef2f9", fontSize: 20, cursor: "pointer", padding: "4px 8px" },
   title: { fontSize: 17, fontWeight: 700, color: "#eef2f9" },
   dlBtn: { background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", color: "#fff", borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer" },
