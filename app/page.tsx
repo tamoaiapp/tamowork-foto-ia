@@ -508,8 +508,11 @@ export default function HomePage() {
           setModeSelected(true);
         } else {
           // Restaura o job done mais recente (criado nas últimas 24h) para mostrar resultado
+          // Ignora jobs que o usuário descartou explicitamente (clicou em "criar nova foto")
+          const dismissedIds: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
           const recentDone = jobs.find(
             (j) => j.status === "done" && j.output_image_url &&
+            !dismissedIds.includes(j.id) &&
             new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
           );
           if (recentDone) setJob(recentDone);
@@ -910,6 +913,16 @@ export default function HomePage() {
   }
 
   function resetJob() {
+    // Marca o job atual como descartado para evitar restauração automática
+    if (job?.id) {
+      try {
+        const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+        if (!dismissed.includes(job.id)) {
+          dismissed.push(job.id);
+          sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed));
+        }
+      } catch { /* ignora */ }
+    }
     if (pollRef.current) clearInterval(pollRef.current);
     if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
     if (blurRef.current) clearInterval(blurRef.current);
@@ -1218,7 +1231,7 @@ export default function HomePage() {
         {workState === "sem_trabalho" && !modeSelected && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
-              <DailyLimitScreen countdown={countdown} onAssinar={() => router.push("/planos")} />
+              <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
             ) : (
               <ModeSelector
                 selected={creationMode}
@@ -1469,6 +1482,11 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Upsell PRO — aparece ACIMA do resultado para free */}
+        {workState === "terminado" && plan === "free" && !videoMode && (
+          <ProUpsell onAssinar={handleAssinarDireto} />
+        )}
+
         {/* Resultado */}
         {workState === "terminado" && job && !videoMode && (
           <div style={styles.card} className="result-wrap">
@@ -1489,14 +1507,23 @@ export default function HomePage() {
               </button>
               <button onClick={() => {
                 const url = editedImageUrl ?? job.output_image_url;
-                if (url) { sessionStorage.setItem("editor_image", url); router.push("/editor"); }
+                if (url) {
+                  sessionStorage.setItem("editor_image", url);
+                  if (job?.id) {
+                    try {
+                      const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+                      if (!dismissed.includes(job.id)) { dismissed.push(job.id); sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed)); }
+                    } catch { /* ignora */ }
+                  }
+                  router.push("/editor");
+                }
               }} style={{ ...styles.editBtn, width: "100%", textAlign: "center" as const }}>
                 {t("result_edit")}
               </button>
               <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                 {plan === "free" && rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.5, cursor: "not-allowed" }}>
-                    🔒 Limite diário atingido
+                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.5, cursor: "not-allowed", fontSize: 12 }}>
+                    🔒 Disponível em {formatMs(countdown)}
                   </button>
                 ) : (
                   <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
@@ -1505,49 +1532,46 @@ export default function HomePage() {
                   <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, flex: 1 }}>
                     {t("result_create_video")}
                   </button>
-                ) : (
-                  <button onClick={() => router.push("/planos")} style={{ ...styles.videoBtnLocked, flex: 1 }}>
-                    <div>{t("result_video_locked")}</div>
-                    <div style={{ fontSize: 11, opacity: 0.7, marginTop: 3 }}>{t("result_video_locked_sub")}</div>
-                  </button>
-                )}
+                ) : null}
               </div>
             </div>
-            {/* Mobile: ações abaixo da imagem */}
-            <div className="result-mobile-actions" style={{ display: "block", padding: "0 24px 24px" }}>
+            {/* Mobile: foto + ações básicas abaixo da imagem */}
+            <div className="result-mobile-actions" style={{ display: "block", padding: "0 20px 24px" }}>
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                 <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
                   {t("result_download")}
                 </button>
                 <button onClick={() => {
                   const url = editedImageUrl ?? job.output_image_url;
-                  if (url) { sessionStorage.setItem("editor_image", url); router.push("/editor"); }
+                  if (url) {
+                    sessionStorage.setItem("editor_image", url);
+                    if (job?.id) {
+                      try {
+                        const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+                        if (!dismissed.includes(job.id)) { dismissed.push(job.id); sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed)); }
+                      } catch { /* ignora */ }
+                    }
+                    router.push("/editor");
+                  }
                 }} style={styles.editBtn}>{t("result_edit")}</button>
               </div>
-              <div style={styles.resultActions}>
-                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, opacity: 0.5, cursor: "not-allowed" }}>
-                    🔒 Limite diário
+              {/* Criar nova foto — bloqueado para free com timer, liberado para pro */}
+              {plan === "free" ? (
+                rateLimitedUntil && countdown > 0 ? (
+                  <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.45, cursor: "not-allowed", fontSize: 13 }}>
+                    🔒 Nova foto disponível em {formatMs(countdown)}
                   </button>
                 ) : (
-                  <button onClick={resetJob} style={styles.newBtn}>{t("result_new")}</button>
-                )}
-                {plan === "pro" ? (
-                  <button onClick={() => setVideoMode(true)} style={styles.videoBtn}>{t("result_create_video")}</button>
-                ) : (
-                  <button onClick={() => router.push("/planos")} style={styles.videoBtnLocked}>
-                    <div>{t("result_video_locked")}</div>
-                    <div style={{ fontSize: 11, opacity: 0.7, marginTop: 3 }}>{t("result_video_locked_sub")}</div>
-                  </button>
-                )}
-              </div>
+                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
+                )
+              ) : (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
+                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, flex: 1 }}>{t("result_create_video")}</button>
+                </div>
+              )}
             </div>
           </div>
-        )}
-
-        {/* Upsell PRO — aparece abaixo do resultado só para free */}
-        {workState === "terminado" && plan === "free" && !videoMode && (
-          <ProUpsell onAssinar={handleAssinarDireto} />
         )}
 
         {/* Vídeo — form */}
