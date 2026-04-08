@@ -153,6 +153,181 @@ function CatalogModelPicker({
   );
 }
 
+function ProUpsell({ onAssinar }: { onAssinar: () => void }) {
+  const BENEFITS = [
+    { icon: "🎬", text: "Gera vídeo animado do produto" },
+    { icon: "♾️", text: "Fotos ilimitadas todo mês" },
+    { icon: "⚡", text: "Fila prioritária — processa mais rápido" },
+    { icon: "🎨", text: "Todos os estilos e fundos desbloqueados" },
+  ];
+
+  return (
+    <div style={pu.wrap}>
+      {/* Cabeçalho */}
+      <div style={pu.header}>
+        <div style={pu.badge}>PRO</div>
+        <div>
+          <div style={pu.title}>Sua foto ficou incrível.</div>
+          <div style={pu.subtitle}>Imagina com vídeo animado?</div>
+        </div>
+      </div>
+
+      {/* Benefícios */}
+      <div style={pu.benefits}>
+        {BENEFITS.map((b) => (
+          <div key={b.text} style={pu.benefit}>
+            <span style={pu.benefitIcon}>{b.icon}</span>
+            <span style={pu.benefitText}>{b.text}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Preço */}
+      <div style={pu.priceRow}>
+        <div style={pu.priceAnchor}>
+          <span style={pu.priceOld}>R$588/ano</span>
+          <span style={pu.priceSave}>economia de R$360</span>
+        </div>
+        <div style={pu.price}>
+          <span style={pu.priceAmount}>R$19</span>
+          <span style={pu.priceFreq}>/mês</span>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <button onClick={onAssinar} style={pu.btn}>
+        Assinar agora e criar vídeo
+      </button>
+      <div style={pu.guarantee}>
+        Cancela quando quiser · Sem fidelidade
+      </div>
+    </div>
+  );
+}
+
+const pu: Record<string, React.CSSProperties> = {
+  wrap: {
+    width: "100%",
+    maxWidth: 540,
+    background: "linear-gradient(160deg, #13102a 0%, #0f1520 60%, #0c1018 100%)",
+    border: "1px solid rgba(168,85,247,0.25)",
+    borderRadius: 22,
+    padding: "24px 20px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 18,
+    marginTop: 4,
+    boxShadow: "0 0 40px rgba(168,85,247,0.08)",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+  },
+  badge: {
+    background: "linear-gradient(135deg, #6366f1, #a855f7)",
+    borderRadius: 8,
+    padding: "4px 10px",
+    fontSize: 11,
+    fontWeight: 800,
+    color: "#fff",
+    letterSpacing: "0.08em",
+    flexShrink: 0,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: 800,
+    color: "#eef2f9",
+    lineHeight: 1.2,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: "#a78bfa",
+    fontWeight: 600,
+    marginTop: 2,
+  },
+  benefits: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+  benefit: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  },
+  benefitIcon: {
+    fontSize: 18,
+    flexShrink: 0,
+    width: 24,
+    textAlign: "center" as const,
+  },
+  benefitText: {
+    fontSize: 14,
+    color: "#c4b5fd",
+    fontWeight: 500,
+  },
+  priceRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    background: "rgba(168,85,247,0.08)",
+    border: "1px solid rgba(168,85,247,0.15)",
+    borderRadius: 14,
+    padding: "12px 16px",
+  },
+  priceAnchor: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+  },
+  priceOld: {
+    fontSize: 12,
+    color: "#4e5c72",
+    textDecoration: "line-through",
+  },
+  priceSave: {
+    fontSize: 11,
+    color: "#16c784",
+    fontWeight: 700,
+  },
+  price: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: 2,
+  },
+  priceAmount: {
+    fontSize: 32,
+    fontWeight: 900,
+    color: "#fff",
+    letterSpacing: "-0.03em",
+    lineHeight: 1,
+  },
+  priceFreq: {
+    fontSize: 13,
+    color: "#8394b0",
+    fontWeight: 500,
+  },
+  btn: {
+    background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
+    border: "none",
+    borderRadius: 16,
+    padding: "16px 0",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: 800,
+    cursor: "pointer",
+    width: "100%",
+    letterSpacing: "-0.01em",
+    boxShadow: "0 4px 20px rgba(168,85,247,0.35)",
+  },
+  guarantee: {
+    fontSize: 12,
+    color: "#4e5c72",
+    textAlign: "center" as const,
+  },
+};
+
 export default function HomePage() {
   const router = useRouter();
   const { t } = useI18n();
@@ -1254,6 +1429,10 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Upsell PRO — aparece abaixo do resultado só para free */}
+        {workState === "terminado" && plan === "free" && !videoMode && (
+          <ProUpsell onAssinar={() => router.push("/planos")} />
+        )}
 
         {/* Vídeo — form */}
         {videoMode && !videoJob && job?.status === "done" && job.output_image_url && (
