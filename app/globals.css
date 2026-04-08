@@ -51,3 +51,101 @@ input, textarea, select, button {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ─── Desktop layout (≥ 900px) ─────────────────────────────── */
+@media (min-width: 900px) {
+  /* Sidebar nav */
+  .bottom-nav {
+    left: 0 !important;
+    top: 0 !important;
+    bottom: auto !important;
+    width: 230px !important;
+    max-width: 230px !important;
+    height: 100vh !important;
+    flex-direction: column !important;
+    border-top: none !important;
+    border-right: 1px solid rgba(255,255,255,0.07) !important;
+    transform: none !important;
+    padding: 0 0 40px !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    overflow-y: auto;
+    gap: 0 !important;
+    background: #0c1018 !important;
+  }
+
+  .sidebar-brand {
+    display: flex !important;
+  }
+
+  .nav-tab {
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    padding: 13px 26px !important;
+    gap: 14px !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  .nav-tab:hover {
+    background: rgba(255,255,255,0.04) !important;
+  }
+
+  .nav-label {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+  }
+
+  /* App page wrapper — afasta do sidebar */
+  .app-layout {
+    padding-bottom: 0 !important;
+    padding-left: 230px !important;
+  }
+
+  /* Header */
+  .app-header {
+    padding-left: 48px !important;
+    padding-right: 48px !important;
+  }
+
+  /* Main content — melhor uso do espaço */
+  .app-main {
+    padding: 40px 60px !important;
+    align-items: flex-start !important;
+    max-width: 1100px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+  }
+
+  /* Cards — mais largos */
+  .app-main > div,
+  .app-card {
+    max-width: 840px !important;
+    width: 100% !important;
+  }
+
+  /* Grid de criações — 3 colunas */
+  .criacoes-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    max-width: 960px !important;
+    width: 100% !important;
+  }
+
+  /* Layout de 2 colunas: form à esq, preview à dir */
+  .desktop-two-col {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 32px !important;
+    align-items: flex-start !important;
+    max-width: 1000px !important;
+  }
+  .desktop-two-col > * {
+    max-width: none !important;
+  }
+
+  /* Editor: canvas full-height, sem padding extra do sidebar no preview */
+  .editor-preview {
+    height: calc(100vh - 60px) !important;
+  }
+}

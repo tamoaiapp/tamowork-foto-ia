@@ -749,18 +749,18 @@ export default function HomePage() {
   const workState: WorkState = submitting ? "trabalhando" : deriveWorkState(job);
 
   if (loading) return (
-    <div style={styles.page}>
+    <div style={styles.page} className="app-layout">
       <style>{`
         @keyframes skeletonShimmer {
           0% { background-position: -400px 0; }
           100% { background-position: 400px 0; }
         }
       `}</style>
-      <header style={styles.header}>
+      <header style={styles.header} className="app-header">
         <div style={skl.logoBlock} />
         <div style={skl.avatarBlock} />
       </header>
-      <main style={styles.main}>
+      <main style={styles.main} className="app-main">
         <div style={skl.labelBlock} />
         <div style={skl.grid}>
           {[0,1,2,3].map(i => (
@@ -792,7 +792,7 @@ export default function HomePage() {
   );
 
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="app-layout">
       <style>{`
         @keyframes shimmer {
           0% { background-position: -200% center; }
@@ -814,7 +814,7 @@ export default function HomePage() {
       `}</style>
 
       {/* Header */}
-      <header style={styles.header}>
+      <header style={styles.header} className="app-header">
         <div style={styles.logo}>TamoWork</div>
         <div style={styles.headerRight}>
           <LangSelector />
@@ -828,7 +828,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main style={styles.main}>
+      <main style={styles.main} className="app-main">
         {/* PASSO 1: Menu de escolha de modo */}
         {workState === "sem_trabalho" && !modeSelected && (
           <div style={styles.menuWrap}>

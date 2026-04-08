@@ -342,7 +342,7 @@ export default function PlanosPage() {
   }
 
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="app-layout">
       <div style={styles.inner}>
         <button
           style={styles.backBtn}

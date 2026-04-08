@@ -342,8 +342,8 @@ export default function EditorPage() {
 
   if (!photo) {
     return (
-      <div style={s.page}>
-        <header style={s.header}>
+      <div style={s.page} className="app-layout">
+        <header style={s.header} className="app-header">
           <button onClick={() => router.back()} style={s.back}>←</button>
           <span style={s.title}>{t("editor_title")}</span>
           <div style={{ width: 36 }} />
@@ -385,14 +385,14 @@ export default function EditorPage() {
   }
 
   return (
-    <div style={s.page}>
+    <div style={s.page} className="app-layout">
       <style>{`
         .layer-handle { cursor: grab; user-select: none; }
         .layer-handle:active { cursor: grabbing; }
       `}</style>
 
       {/* Header */}
-      <header style={s.header}>
+      <header style={s.header} className="app-header">
         <button onClick={() => { setPhoto(null); setLayers([]); }} style={s.back}>←</button>
         <span style={s.title}>{t("editor_title")}</span>
         <button onClick={exportImage} style={s.dlBtn}>{t("editor_save")}</button>

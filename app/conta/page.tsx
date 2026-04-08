@@ -201,14 +201,14 @@ export default function ContaPage() {
   if (loading) return <div style={styles.centered}>Carregando...</div>;
 
   return (
-    <div style={styles.page}>
-      <header style={styles.header}>
+    <div style={styles.page} className="app-layout">
+      <header style={styles.header} className="app-header">
         <button onClick={() => router.push("/")} style={styles.backBtn}>← Voltar</button>
         <div style={styles.logo}>TamoWork <span style={{ fontSize: 13, fontWeight: 400 }}>Foto IA</span></div>
         <div style={{ width: 60 }} />
       </header>
 
-      <main style={styles.main}>
+      <main style={styles.main} className="app-main">
 
         {/* Perfil */}
         <section style={styles.section}>

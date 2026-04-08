@@ -10,14 +10,12 @@ interface Props {
 function IconCriar({ active }: { active: boolean }) {
   const c = active ? "#a855f7" : "#4e5c72";
   return active ? (
-    // Filled: circle preenchido com plus branco
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" fill="#a855f7" />
       <line x1="12" y1="7" x2="12" y2="17" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
       <line x1="7" y1="12" x2="17" y2="12" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   ) : (
-    // Outline
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round">
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="7" x2="12" y2="17" />
@@ -47,7 +45,6 @@ function IconEditor({ active }: { active: boolean }) {
 function IconCriacoes({ active }: { active: boolean }) {
   const c = active ? "#a855f7" : "#4e5c72";
   return active ? (
-    // Filled: 4 quadrados preenchidos
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="3" width="7.5" height="7.5" rx="2" fill="#a855f7" />
       <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" fill="#a855f7" />
@@ -55,7 +52,6 @@ function IconCriacoes({ active }: { active: boolean }) {
       <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" fill="#a855f7" />
     </svg>
   ) : (
-    // Outline
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
       <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
@@ -82,18 +78,23 @@ export default function BottomNav({ hasActiveJob = false }: Props) {
   };
 
   return (
-    <nav style={s.nav}>
+    <nav style={s.nav} className="bottom-nav">
+      {/* Logo — visível apenas no desktop (sidebar) */}
+      <div style={s.brand} className="sidebar-brand">
+        <span style={s.brandText}>TamoWork</span>
+      </div>
+
       {tabs.map((tab) => {
         const active = isActive(tab.path);
         return (
-          <button key={tab.key} onClick={() => router.push(tab.path)} style={s.tab}>
-            <div style={{ position: "relative" }}>
+          <button key={tab.key} onClick={() => router.push(tab.path)} style={s.tab} className="nav-tab">
+            <div style={{ position: "relative", flexShrink: 0 }}>
               {tab.key === "criar" && <IconCriar active={active} />}
               {tab.key === "editor" && <IconEditor active={active} />}
               {tab.key === "criacoes" && <IconCriacoes active={active} />}
               {tab.key === "criar" && hasActiveJob && <span style={s.activeDot} />}
             </div>
-            <span style={{ ...s.label, color: active ? "#a855f7" : "#4e5c72" }}>
+            <span style={{ ...s.label, color: active ? "#a855f7" : "#4e5c72" }} className="nav-label">
               {tab.label}
             </span>
           </button>
@@ -116,6 +117,21 @@ const s: Record<string, React.CSSProperties> = {
     display: "flex",
     zIndex: 50,
     paddingBottom: "env(safe-area-inset-bottom, 0px)",
+  },
+  brand: {
+    display: "none",
+    padding: "28px 26px 20px",
+    borderBottom: "1px solid rgba(255,255,255,0.07)",
+    marginBottom: 8,
+    alignItems: "center",
+  },
+  brandText: {
+    fontSize: 20,
+    fontWeight: 800,
+    background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    letterSpacing: "-0.01em",
   },
   tab: {
     flex: 1,

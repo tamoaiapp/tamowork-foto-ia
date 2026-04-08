@@ -59,12 +59,12 @@ export default function CriacoesPage() {
   if (loading) return <div style={s.centered}>{t("loading")}</div>;
 
   return (
-    <div style={s.page}>
-      <header style={s.header}>
+    <div style={s.page} className="app-layout">
+      <header style={s.header} className="app-header">
         <div style={s.logo}>{t("criacoes_title")}</div>
       </header>
 
-      <main style={s.main}>
+      <main style={s.main} className="app-main">
         {jobs.length === 0 ? (
           <div style={s.empty}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🖼</div>
@@ -73,7 +73,7 @@ export default function CriacoesPage() {
             <button onClick={() => router.push("/")} style={s.createBtn}>{t("criacoes_create")}</button>
           </div>
         ) : (
-          <div style={s.grid}>
+          <div style={s.grid} className="criacoes-grid">
             {jobs.map((job) => (
               <div key={job.id} style={s.card} onClick={() => setSelected(job)}>
                 <img src={job.output_image_url!} alt="foto" style={s.img} />
