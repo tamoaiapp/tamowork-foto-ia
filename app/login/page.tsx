@@ -285,7 +285,7 @@ export default function LoginPage() {
             <h1 style={{ fontSize: 28, fontWeight: 800, color: "#eef2f9", lineHeight: 1.25, letterSpacing: "-0.02em", margin: 0 }}>
               Foto de celular vira{" "}
               <span style={{ background: "linear-gradient(135deg, #818cf8, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                foto de catálogo
+                foto e vídeo de catálogo
               </span>{" "}
               em 1 minuto
             </h1>
