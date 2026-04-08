@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 
@@ -76,13 +77,32 @@ function IconAccount() {
 
 const HIDDEN_PATHS = ["/login", "/onboarding", "/privacidade"];
 
+function isDesktop(): boolean {
+  if (typeof window === "undefined") return false;
+  // Exige largura ≥ 900px E ausência de touch
+  const wideEnough = window.innerWidth >= 900;
+  const hasTouch = navigator.maxTouchPoints > 0 || ("ontouchstart" in window);
+  const pointerFine = window.matchMedia("(pointer: fine)").matches;
+  return wideEnough && !hasTouch && pointerFine;
+}
+
 export default function DesktopSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useI18n();
+  const [show, setShow] = useState(false);
 
-  // Não mostra o sidebar em páginas públicas/auth
+  useEffect(() => {
+    const check = () => setShow(isDesktop());
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Não mostra em páginas públicas/auth
   if (HIDDEN_PATHS.some((p) => pathname.startsWith(p))) return null;
+  // Não mostra em mobile/touch/app
+  if (!show) return null;
 
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/";

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 
@@ -65,6 +66,22 @@ export default function BottomNav({ hasActiveJob = false }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useI18n();
+  const [isMobile, setIsMobile] = useState(true);
+
+  useEffect(() => {
+    const check = () => {
+      const wide = window.innerWidth >= 900;
+      const hasTouch = navigator.maxTouchPoints > 0 || ("ontouchstart" in window);
+      const pointerFine = window.matchMedia("(pointer: fine)").matches;
+      // É desktop se: largo + sem touch + pointer fino
+      setIsMobile(!(wide && !hasTouch && pointerFine));
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  if (!isMobile) return null;
 
   const tabs = [
     { key: "criar", label: t("nav_criar"), path: "/" },
