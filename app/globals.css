@@ -58,8 +58,8 @@ input, textarea, select, button {
   display: none;
 }
 
-/* ─── Desktop layout (≥ 900px) ─────────────────────────────── */
-@media (min-width: 900px) {
+/* ─── Desktop layout (≥ 900px, com mouse — exclui touch/mobile) ─── */
+@media (min-width: 900px) and (pointer: fine) {
   /* Mostra sidebar, esconde bottom nav */
   .desktop-sidebar {
     display: flex !important;
