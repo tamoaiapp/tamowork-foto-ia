@@ -4,7 +4,7 @@ import { getUserPlan } from "@/lib/plans";
 
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
 
-const FREE_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 horas
+const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 horas
 
 export class RateLimitError extends Error {
   nextAvailableAt: Date;

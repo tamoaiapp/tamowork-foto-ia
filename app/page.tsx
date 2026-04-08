@@ -153,22 +153,62 @@ function CatalogModelPicker({
   );
 }
 
+function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssinar: () => void }) {
+  return (
+    <div style={pu.wrap}>
+      <div style={{ textAlign: "center" as const }}>
+        <div style={{ fontSize: 48, marginBottom: 8 }}>⏳</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#8394b0", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: 6 }}>
+          Limite diário atingido
+        </div>
+        <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 600, marginBottom: 4 }}>
+          Sua próxima foto gratuita estará disponível em
+        </div>
+        <div style={{ fontSize: 52, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginBottom: 4 }}>
+          {formatMs(countdown)}
+        </div>
+        <div style={{ fontSize: 12, color: "#4e5c72", marginBottom: 20 }}>
+          O plano gratuito permite 1 foto por dia
+        </div>
+      </div>
+
+      <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: 14, padding: "14px 16px" }}>
+        <div style={{ fontSize: 13, color: "#c4b5fd", fontWeight: 700, marginBottom: 6 }}>
+          Com o PRO você não espera:
+        </div>
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {["🎬 Cria fotos e vídeos ilimitados", "⚡ Processa mais rápido na fila", "🎨 Todos os estilos desbloqueados"].map(t => (
+            <div key={t} style={{ fontSize: 13, color: "#8394b0" }}>{t}</div>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={onAssinar} style={pu.btn}>
+        Assinar e criar agora
+      </button>
+      <div style={pu.guarantee}>Cancela quando quiser · Sem fidelidade</div>
+    </div>
+  );
+}
+
 function ProUpsell({ onAssinar }: { onAssinar: () => void }) {
+  const [selected, setSelected] = useState<"annual" | "monthly">("annual");
+
   const BENEFITS = [
-    { icon: "🎬", text: "Gera vídeo animado do produto" },
+    { icon: "🎬", text: "Vídeo animado do produto" },
     { icon: "♾️", text: "Fotos ilimitadas todo mês" },
-    { icon: "⚡", text: "Fila prioritária — processa mais rápido" },
-    { icon: "🎨", text: "Todos os estilos e fundos desbloqueados" },
+    { icon: "⚡", text: "Fila prioritária" },
+    { icon: "🎨", text: "Todos os estilos desbloqueados" },
   ];
 
   return (
     <div style={pu.wrap}>
-      {/* Cabeçalho */}
+      {/* Header */}
       <div style={pu.header}>
         <div style={pu.badge}>PRO</div>
         <div>
           <div style={pu.title}>Sua foto ficou incrível.</div>
-          <div style={pu.subtitle}>Imagina com vídeo animado?</div>
+          <div style={pu.subtitle}>Agora imagina com vídeo animado?</div>
         </div>
       </div>
 
@@ -182,25 +222,45 @@ function ProUpsell({ onAssinar }: { onAssinar: () => void }) {
         ))}
       </div>
 
-      {/* Preço */}
-      <div style={pu.priceRow}>
-        <div style={pu.priceAnchor}>
-          <span style={pu.priceOld}>R$588/ano</span>
-          <span style={pu.priceSave}>economia de R$360</span>
-        </div>
-        <div style={pu.price}>
-          <span style={pu.priceAmount}>R$19</span>
-          <span style={pu.priceFreq}>/mês</span>
-        </div>
+      {/* Seletor de plano */}
+      <div style={pu.planGrid}>
+        {/* Anual — recomendado */}
+        <button
+          onClick={() => setSelected("annual")}
+          style={{ ...pu.planCard, ...(selected === "annual" ? pu.planCardActive : {}) }}
+        >
+          {selected === "annual" && (
+            <div style={pu.planBadge}>Recomendado</div>
+          )}
+          <div style={pu.planName}>Anual</div>
+          <div style={pu.planPrice}>
+            <span style={pu.planAmount}>R$19</span>
+            <span style={pu.planPer}>/mês</span>
+          </div>
+          <div style={pu.planBilled}>R$228 cobrado uma vez</div>
+          <div style={pu.planSave}>Economize R$360</div>
+        </button>
+
+        {/* Mensal */}
+        <button
+          onClick={() => setSelected("monthly")}
+          style={{ ...pu.planCard, ...(selected === "monthly" ? pu.planCardActive : {}) }}
+        >
+          <div style={pu.planName}>Mensal</div>
+          <div style={pu.planPrice}>
+            <span style={pu.planAmount}>R$49</span>
+            <span style={pu.planPer}>/mês</span>
+          </div>
+          <div style={pu.planBilled}>Cobrado todo mês</div>
+          <div style={{ ...pu.planSave, color: "#4e5c72" }}>R$360 a mais/ano</div>
+        </button>
       </div>
 
       {/* CTA */}
       <button onClick={onAssinar} style={pu.btn}>
-        Assinar agora e criar vídeo
+        {selected === "annual" ? "Assinar por R$228/ano" : "Assinar por R$49/mês"}
       </button>
-      <div style={pu.guarantee}>
-        Cancela quando quiser · Sem fidelidade
-      </div>
+      <div style={pu.guarantee}>Cancela quando quiser · Sem fidelidade</div>
     </div>
   );
 }
@@ -249,7 +309,7 @@ const pu: Record<string, React.CSSProperties> = {
   benefits: {
     display: "flex",
     flexDirection: "column",
-    gap: 10,
+    gap: 8,
   },
   benefit: {
     display: "flex",
@@ -257,57 +317,89 @@ const pu: Record<string, React.CSSProperties> = {
     gap: 10,
   },
   benefitIcon: {
-    fontSize: 18,
+    fontSize: 16,
     flexShrink: 0,
-    width: 24,
+    width: 22,
     textAlign: "center" as const,
   },
   benefitText: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#c4b5fd",
     fontWeight: 500,
   },
-  priceRow: {
+
+  /* Seletor de plano */
+  planGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
+  },
+  planCard: {
+    background: "rgba(255,255,255,0.03)",
+    border: "1.5px solid rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    padding: "14px 12px",
+    cursor: "pointer",
+    textAlign: "left" as const,
     display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: "column" as const,
+    gap: 3,
+    position: "relative" as const,
+    transition: "border-color 0.2s, background 0.2s",
+  },
+  planCardActive: {
+    border: "1.5px solid #a855f7",
     background: "rgba(168,85,247,0.08)",
-    border: "1px solid rgba(168,85,247,0.15)",
-    borderRadius: 14,
-    padding: "12px 16px",
   },
-  priceAnchor: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 2,
+  planBadge: {
+    position: "absolute" as const,
+    top: -10,
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "linear-gradient(135deg, #6366f1, #a855f7)",
+    borderRadius: 99,
+    padding: "2px 10px",
+    fontSize: 10,
+    fontWeight: 800,
+    color: "#fff",
+    whiteSpace: "nowrap" as const,
   },
-  priceOld: {
+  planName: {
     fontSize: 12,
-    color: "#4e5c72",
-    textDecoration: "line-through",
-  },
-  priceSave: {
-    fontSize: 11,
-    color: "#16c784",
     fontWeight: 700,
+    color: "#8394b0",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.06em",
+    marginTop: 6,
   },
-  price: {
+  planPrice: {
     display: "flex",
     alignItems: "baseline",
     gap: 2,
+    marginTop: 4,
   },
-  priceAmount: {
-    fontSize: 32,
+  planAmount: {
+    fontSize: 28,
     fontWeight: 900,
     color: "#fff",
     letterSpacing: "-0.03em",
     lineHeight: 1,
   },
-  priceFreq: {
-    fontSize: 13,
+  planPer: {
+    fontSize: 12,
     color: "#8394b0",
-    fontWeight: 500,
   },
+  planBilled: {
+    fontSize: 11,
+    color: "#4e5c72",
+    marginTop: 2,
+  },
+  planSave: {
+    fontSize: 11,
+    color: "#16c784",
+    fontWeight: 700,
+  },
+
   btn: {
     background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
     border: "none",
@@ -425,7 +517,7 @@ export default function HomePage() {
 
         // Detecta rate limit no carregamento: free user com job recente (<3h)
         if (userPlan === "free") {
-          const FREE_COOLDOWN_MS = 3 * 60 * 60 * 1000;
+          const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
           const lastJob = jobs
             .filter((j) => j.status !== "canceled")
             .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())[0];
@@ -1099,22 +1191,7 @@ export default function HomePage() {
         {workState === "sem_trabalho" && !modeSelected && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
-              <div style={{ ...styles.card, textAlign: "center", padding: "36px 32px" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#8394b0", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
-                  Plano gratuito · 1 foto a cada 3h
-                </div>
-                <div style={{ fontSize: 14, color: "#eef2f9", marginBottom: 6 }}>Próxima foto disponível em</div>
-                <div style={{ fontSize: 44, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 20, fontVariantNumeric: "tabular-nums" }}>
-                  {formatMs(countdown)}
-                </div>
-                <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 24, lineHeight: 1.6 }}>
-                  Por menos de <strong style={{ color: "#c4b5fd" }}>R$0,61/dia</strong> você gera fotos e vídeos sem limite
-                </div>
-                <button onClick={() => router.push("/planos")} style={styles.pulsingBtn}>
-                  🔓 Libere agora
-                </button>
-              </div>
+              <DailyLimitScreen countdown={countdown} onAssinar={() => router.push("/planos")} />
             ) : (
               <ModeSelector
                 selected={creationMode}
