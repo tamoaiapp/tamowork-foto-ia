@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { useI18n, LangSelector } from "@/lib/i18n";
 
+// Onboarding removido — redireciona direto para o app
+export default function OnboardingRedirect() {
+  const router = useRouter();
+  useEffect(() => { router.replace("/"); }, [router]);
+  return null;
+}
+
+function OnboardingPage() {
+
 const S3 = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object";
 const VID = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/video-jobs";
 
@@ -331,7 +340,7 @@ function RefCard({ r }: { r: typeof ROWS[0][0] }) {
   );
 }
 
-export default function OnboardingPage() {
+function OnboardingPage() {
   const router = useRouter();
   const { t } = useI18n();
   const [screen, setScreen] = useState<Screen>(1);

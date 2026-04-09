@@ -114,10 +114,9 @@ function AuthCard() {
   async function handleGoogle() {
     setGoogleLoading(true);
     setError("");
-    const done = typeof window !== "undefined" && localStorage.getItem("tw_onboarding_done");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${done ? "/" : "/onboarding"}` },
+      options: { redirectTo: `${window.location.origin}/` },
     });
     if (error) { setError(error.message); setGoogleLoading(false); }
   }
@@ -125,15 +124,14 @@ function AuthCard() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError(""); setMsg("");
-    const done = typeof window !== "undefined" && localStorage.getItem("tw_onboarding_done");
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
-      else router.push(done ? "/" : "/onboarding");
+      else router.push("/");
     } else {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) setError(error.message);
-      else if (data.session) router.push("/onboarding");
+      else if (data.session) router.push("/");
       else setMsg(t("login_verify_email"));
     }
     setLoading(false);
