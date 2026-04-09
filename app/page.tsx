@@ -1482,11 +1482,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Upsell PRO — aparece ACIMA do resultado para free */}
-        {workState === "terminado" && plan === "free" && !videoMode && (
-          <ProUpsell onAssinar={handleAssinarDireto} />
-        )}
-
         {/* Resultado */}
         {workState === "terminado" && job && !videoMode && (
           <div style={styles.card} className="result-wrap">
@@ -1498,46 +1493,14 @@ export default function HomePage() {
                 style={{ ...styles.resultImg, marginBottom: 0 }}
               />
             </div>
-            {/* Ações — coluna direita no desktop */}
+
+            {/* Ações — coluna direita no desktop / abaixo no mobile */}
             <div className="result-actions-col">
               <h2 style={{ ...styles.centerTitle, textAlign: "left" as const, marginBottom: 4 }}>{t("result_ready")}</h2>
-              <p style={{ fontSize: 13, color: "#8394b0", marginBottom: 8 }}>Sua foto foi gerada com sucesso</p>
-              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={styles.downloadBtn}>
-                {t("result_download")}
-              </button>
-              <button onClick={() => {
-                const url = editedImageUrl ?? job.output_image_url;
-                if (url) {
-                  sessionStorage.setItem("editor_image", url);
-                  if (job?.id) {
-                    try {
-                      const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
-                      if (!dismissed.includes(job.id)) { dismissed.push(job.id); sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed)); }
-                    } catch { /* ignora */ }
-                  }
-                  router.push("/editor");
-                }
-              }} style={{ ...styles.editBtn, width: "100%", textAlign: "center" as const }}>
-                {t("result_edit")}
-              </button>
-              <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.5, cursor: "not-allowed", fontSize: 12 }}>
-                    🔒 Disponível em {formatMs(countdown)}
-                  </button>
-                ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
-                )}
-                {plan === "pro" ? (
-                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, flex: 1 }}>
-                    {t("result_create_video")}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-            {/* Mobile: foto + ações básicas abaixo da imagem */}
-            <div className="result-mobile-actions" style={{ display: "block", padding: "0 20px 24px" }}>
-              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+              <p style={{ fontSize: 13, color: "#8394b0", marginBottom: 12 }}>Sua foto foi gerada com sucesso</p>
+
+              {/* Baixar + Editar lado a lado */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                 <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
                   {t("result_download")}
                 </button>
@@ -1553,22 +1516,84 @@ export default function HomePage() {
                     }
                     router.push("/editor");
                   }
-                }} style={styles.editBtn}>{t("result_edit")}</button>
+                }} style={{ ...styles.editBtn, flex: 1, textAlign: "center" as const }}>
+                  {t("result_edit")}
+                </button>
               </div>
-              {/* Criar nova foto — bloqueado para free com timer, liberado para pro */}
-              {plan === "free" ? (
-                rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.45, cursor: "not-allowed", fontSize: 13 }}>
-                    🔒 Nova foto disponível em {formatMs(countdown)}
+
+              {/* Gerar novamente + Criar vídeo lado a lado */}
+              <div style={{ display: "flex", gap: 8, marginBottom: plan === "free" ? 12 : 0 }}>
+                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
+                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.45, cursor: "not-allowed", fontSize: 12 }}>
+                    🔒 Nova foto em {formatMs(countdown)}
                   </button>
                 ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
-                )
-              ) : (
-                <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
+                )}
+                {plan === "pro" ? (
+                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, flex: 1 }}>
+                    {t("result_create_video")}
+                  </button>
+                ) : (
+                  <button disabled style={{ ...styles.videoBtnLocked, flex: 1, cursor: "not-allowed" }}>
+                    🔒 {t("result_create_video")}
+                  </button>
+                )}
+              </div>
+
+              {/* Liberar agora — só para free */}
+              {plan === "free" && (
+                <button onClick={() => handleAssinarDireto("annual")} style={styles.unlockBtn}>
+                  ⚡ Liberar agora · R$228/ano
+                </button>
+              )}
+            </div>
+
+            {/* Mobile: mesmo layout, só muda padding */}
+            <div className="result-mobile-actions" style={{ display: "block", padding: "0 20px 28px" }}>
+              {/* Baixar + Editar */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
+                  {t("result_download")}
+                </button>
+                <button onClick={() => {
+                  const url = editedImageUrl ?? job.output_image_url;
+                  if (url) {
+                    sessionStorage.setItem("editor_image", url);
+                    if (job?.id) {
+                      try {
+                        const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+                        if (!dismissed.includes(job.id)) { dismissed.push(job.id); sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed)); }
+                      } catch { /* ignora */ }
+                    }
+                    router.push("/editor");
+                  }
+                }} style={{ ...styles.editBtn, flex: 1, textAlign: "center" as const }}>{t("result_edit")}</button>
+              </div>
+
+              {/* Gerar novamente + Criar vídeo */}
+              <div style={{ display: "flex", gap: 8, marginBottom: plan === "free" ? 10 : 0 }}>
+                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
+                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.45, cursor: "not-allowed", fontSize: 12 }}>
+                    🔒 Nova foto em {formatMs(countdown)}
+                  </button>
+                ) : (
+                  <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
+                )}
+                {plan === "pro" ? (
                   <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, flex: 1 }}>{t("result_create_video")}</button>
-                </div>
+                ) : (
+                  <button disabled style={{ ...styles.videoBtnLocked, flex: 1, cursor: "not-allowed", fontSize: 12 }}>
+                    🔒 {t("result_create_video")}
+                  </button>
+                )}
+              </div>
+
+              {/* Liberar agora — só para free */}
+              {plan === "free" && (
+                <button onClick={() => handleAssinarDireto("annual")} style={styles.unlockBtn}>
+                  ⚡ Liberar agora · R$228/ano
+                </button>
               )}
             </div>
           </div>
@@ -1949,6 +1974,13 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 14, padding: "11px 8px", color: "#8b5cf6", fontSize: 14, fontWeight: 600, cursor: "pointer",
     lineHeight: 1.2,
   },
+  unlockBtn: {
+    width: "100%", background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
+    border: "none", borderRadius: 14, padding: "14px 0", color: "#fff",
+    fontSize: 15, fontWeight: 800, cursor: "pointer",
+    boxShadow: "0 4px 20px rgba(139,92,246,0.35)",
+    letterSpacing: "-0.01em",
+  },
   accountBtn: {
     background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: 10, padding: "6px 10px", color: "#8394b0", cursor: "pointer",
@@ -1957,11 +1989,6 @@ const styles: Record<string, React.CSSProperties> = {
   backBtn: {
     background: "transparent", border: "none", color: "#8394b0",
     fontSize: 14, cursor: "pointer", padding: "0 0 16px", display: "block",
-  },
-  unlockBtn: {
-    background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
-    border: "none", borderRadius: 10, padding: "10px 18px",
-    color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", width: "100%",
   },
   backToMenuBtn: {
     background: "transparent", border: "none", color: "#8394b0",

@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/app/components/BottomNav";
+import AppHeader from "@/app/components/AppHeader";
 import { useI18n } from "@/lib/i18n";
 
 type Tool = "none" | "text" | "addImage" | "logo" | "crop" | "adjust" | "upscale" | "stickers";
@@ -343,11 +344,7 @@ export default function EditorPage() {
   if (!photo) {
     return (
       <div style={s.page} className="app-layout">
-        <header style={s.header} className="app-header">
-          <button onClick={() => router.back()} style={s.back}>←</button>
-          <span style={s.title}>{t("editor_title")}</span>
-          <div style={{ width: 36 }} />
-        </header>
+        <AppHeader subtitle={t("editor_title")} back onBack={() => router.back()} />
 
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
           onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoFile(f); }} />
@@ -392,19 +389,14 @@ export default function EditorPage() {
       `}</style>
 
       {/* Header */}
-      <header style={s.header} className="app-header">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button onClick={() => { setPhoto(null); setLayers([]); }} style={s.back}>←</button>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #6366f1, #a855f7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-              <path d="M10 22l4-5.5 3 3.5 3.5-5L25 22H10z" fill="white" opacity="0.95"/>
-              <circle cx="13" cy="12" r="2.5" fill="white" opacity="0.95"/>
-            </svg>
-          </div>
-          <span style={s.title}>{t("editor_title")}</span>
-        </div>
-        <button onClick={exportImage} style={s.dlBtn}>{t("editor_save")}</button>
-      </header>
+      <AppHeader
+        subtitle={t("editor_title")}
+        back
+        onBack={() => { setPhoto(null); setLayers([]); }}
+        rightExtra={
+          <button onClick={exportImage} style={s.dlBtn}>{t("editor_save")}</button>
+        }
+      />
 
       {/* Preview area */}
       <div ref={previewRef} style={s.preview} onClick={() => setSelectedId(null)}>
@@ -642,9 +634,6 @@ export default function EditorPage() {
 
 const s: Record<string, React.CSSProperties> = {
   page: { minHeight: "100vh", display: "flex", flexDirection: "column", background: "#07080b", paddingBottom: 68 },
-  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "#0c1018", position: "sticky" as const, top: 0, zIndex: 10 },
-  back: { background: "none", border: "none", color: "#eef2f9", fontSize: 20, cursor: "pointer", padding: "4px 8px" },
-  title: { fontSize: 17, fontWeight: 700, color: "#eef2f9" },
   dlBtn: { background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", color: "#fff", borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer" },
   uploadWrap: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 },
   uploadBox: { background: "#111820", border: "2px dashed rgba(255,255,255,0.12)", borderRadius: 20, padding: "48px 32px", textAlign: "center", cursor: "pointer", width: "100%", maxWidth: 340 },

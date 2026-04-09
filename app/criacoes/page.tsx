@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/app/components/BottomNav";
+import AppHeader from "@/app/components/AppHeader";
 import { useI18n } from "@/lib/i18n";
 
 interface AccountJob {
@@ -60,20 +61,7 @@ export default function CriacoesPage() {
 
   return (
     <div style={s.page} className="app-layout">
-      <header style={s.header} className="app-header">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #6366f1, #a855f7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-              <path d="M10 22l4-5.5 3 3.5 3.5-5L25 22H10z" fill="white" opacity="0.95"/>
-              <circle cx="13" cy="12" r="2.5" fill="white" opacity="0.95"/>
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "-0.02em", lineHeight: 1.1 }}>TamoWork</div>
-            <div style={{ fontSize: 10, color: "#4e5c72", fontWeight: 600, letterSpacing: "0.04em" }}>{t("criacoes_title")}</div>
-          </div>
-        </div>
-      </header>
+      <AppHeader subtitle={t("criacoes_title")} />
 
       <main style={s.main} className="app-main">
         {jobs.length === 0 ? (
@@ -142,16 +130,6 @@ export default function CriacoesPage() {
 const s: Record<string, React.CSSProperties> = {
   page: { minHeight: "100vh", background: "#07080b", paddingBottom: 68 },
   centered: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#8394b0" },
-  header: {
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    padding: "14px 20px",
-    background: "#0c1018",
-    borderBottom: "1px solid rgba(255,255,255,0.07)",
-    position: "sticky" as const, top: 0, zIndex: 10,
-  },
-  logo: {
-    fontSize: 22, fontWeight: 800, color: "#eef2f9",
-  },
   main: { padding: "8px 12px" },
   empty: {
     display: "flex", flexDirection: "column", alignItems: "center",
