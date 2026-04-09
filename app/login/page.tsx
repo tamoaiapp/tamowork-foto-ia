@@ -65,12 +65,12 @@ function DemoCarousel() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
         <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
-          <img src={card.before} alt="antes" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
-          <span style={{ position: "absolute", bottom: 6, left: 6, background: "rgba(0,0,0,0.72)", color: "#aaa", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1 }}>ANTES</span>
-        </div>
-        <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
           <img src={card.after} alt="depois" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
           <span style={{ position: "absolute", bottom: 6, left: 6, background: ACCENT, color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1 }}>DEPOIS IA</span>
+        </div>
+        <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
+          <img src={card.before} alt="antes" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
+          <span style={{ position: "absolute", bottom: 6, left: 6, background: "rgba(0,0,0,0.72)", color: "#aaa", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1 }}>ANTES</span>
         </div>
       </div>
 
@@ -139,6 +139,20 @@ function AuthCard() {
 
   return (
     <div style={a.card}>
+      {/* Logo mobile — só aparece no mobile via CSS */}
+      <div className="login-logo-mobile" style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 4 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #6366f1, #a855f7)" }}>
+          <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+            <path d="M10 22l4-5.5 3 3.5 3.5-5L25 22H10z" fill="white" opacity="0.95"/>
+            <circle cx="13" cy="12" r="2.5" fill="white" opacity="0.95"/>
+          </svg>
+        </div>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 800, background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>TamoWork</div>
+          <div style={{ fontSize: 10, color: "#4e5c72", fontWeight: 600, letterSpacing: "0.04em" }}>Foto IA</div>
+        </div>
+      </div>
+
       {/* Título */}
       <div style={a.cardTitle}>Comece grátis agora</div>
       <div style={a.cardSub}>Sem cartão de crédito</div>
@@ -201,7 +215,7 @@ export default function LoginPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Mobile: coluna única, hero em cima, auth embaixo */
+        /* Mobile: auth no topo, exemplos abaixo */
         .login-root {
           min-height: 100vh;
           background: #07080b;
@@ -212,14 +226,28 @@ export default function LoginPage() {
         .login-hero {
           width: 100%;
           max-width: 480px;
-          padding: 52px 20px 24px;
+          padding: 0 20px 40px;
           display: flex;
           flex-direction: column;
           gap: 18px;
+          order: 2;
         }
         .login-auth {
           width: 100%;
           max-width: 480px;
+          order: 1;
+          padding-top: env(safe-area-inset-top, 0px);
+        }
+
+        /* No mobile, esconde logo/headline do hero (já está no auth) */
+        @media (max-width: 899px) {
+          .login-logo-hero { display: none !important; }
+          .login-headline-hero { display: none !important; }
+        }
+
+        /* Desktop: esconde logo mobile do auth card */
+        @media (min-width: 900px) and (pointer: fine) {
+          .login-logo-mobile { display: none !important; }
         }
 
         /* Desktop: duas colunas lado a lado */

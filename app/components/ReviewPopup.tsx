@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.tamowork.app";
 const STORAGE_KEY = "tw_review_asked";
@@ -13,8 +14,15 @@ export default function ReviewPopup() {
     const alreadyAsked = localStorage.getItem(STORAGE_KEY);
     if (!isAndroid || alreadyAsked) return;
 
-    const t = setTimeout(() => setVisible(true), 8000);
-    return () => clearTimeout(t);
+    let timer: ReturnType<typeof setTimeout>;
+
+    // Só mostra se o usuário estiver logado
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      timer = setTimeout(() => setVisible(true), 10000);
+    });
+
+    return () => clearTimeout(timer);
   }, []);
 
   function dismiss() {
