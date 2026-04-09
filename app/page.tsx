@@ -692,16 +692,48 @@ export default function HomePage() {
     return token;
   }
 
-  async function requestNotificationPermission() {
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission === "default") await Notification.requestPermission();
+  // Registra subscription de Web Push no Service Worker
+  async function registerPushSubscription(tok: string) {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const VAPID_PUBLIC = "BOFpGK6deSOtMczLOppZ8RXLb8XbAP0cs4hDHOZtJrDsnLhvzdPQXeojc5CohPhnj0PvNkPd7B7HKLtUva03cGk";
+      const padding = "=".repeat((4 - (VAPID_PUBLIC.length % 4)) % 4);
+      const base64 = (VAPID_PUBLIC + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = atob(base64);
+      const key = Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+      const json = sub.toJSON();
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+        body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+      });
+    } catch {}
   }
 
-  function sendNotification(title: string, body: string) {
+  // Pede permissão e registra — chamado após primeira foto pronta
+  async function requestAndRegisterPush() {
     if (typeof Notification === "undefined") return;
-    if (Notification.permission !== "granted") return;
-    const n = new Notification(title, { body, icon: "/favicon.ico" });
-    n.onclick = () => { window.focus(); n.close(); };
+    if (Notification.permission === "denied") return;
+    if (Notification.permission === "default") {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") return;
+    }
+    const tok = await getToken();
+    await registerPushSubscription(tok);
+  }
+
+  // Envia notificação via servidor (Web Push real — funciona com app fechado)
+  async function sendPushNotification(title: string, body: string) {
+    try {
+      const tok = await getToken();
+      await fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+        body: JSON.stringify({ title, body, url: "/" }),
+      });
+    } catch {}
   }
 
   async function fetchJobStatus(jobId: string) {
@@ -711,8 +743,12 @@ export default function HomePage() {
     });
     if (!res.ok) return;
     const data: Job = await res.json();
-    if (data.status === "done") sendNotification("Sua foto está pronta! 🎉", "Clique para ver a imagem gerada pela IA.");
-    else if (data.status === "failed") sendNotification("Erro na geração", "Não foi possível gerar a foto. Tente novamente.");
+    if (data.status === "done") {
+      await requestAndRegisterPush();
+      await sendPushNotification("Sua foto está pronta! 🎉", "Toque para ver a imagem gerada pela IA.");
+    } else if (data.status === "failed") {
+      sendPushNotification("Erro na geração", "Não foi possível gerar a foto. Tente novamente.");
+    }
     setJob(data);
   }
 
@@ -842,7 +878,6 @@ export default function HomePage() {
     setTimeoutError("");
     setSubmitting(true);
     setJob(null);
-    await requestNotificationPermission();
 
     try {
       const token = await getToken();
@@ -1021,7 +1056,7 @@ export default function HomePage() {
     if (["done", "failed", "canceled"].includes(videoJob.status ?? "")) {
       if (videoPollRef.current) clearInterval(videoPollRef.current);
       if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
-      if (videoJob.status === "done") sendNotification("Seu vídeo está pronto! 🎬", "Clique para ver o vídeo gerado.");
+      if (videoJob.status === "done") sendPushNotification("Seu vídeo está pronto! 🎬", "Toque para ver o vídeo gerado.");
       return;
     }
     // Timer de tempo decorrido para barra de progresso
@@ -1529,7 +1564,7 @@ export default function HomePage() {
                       }} />
                     </div>
                   )}
-                  <NotifyButton onRequest={requestNotificationPermission} />
+                  <NotifyButton onRequest={requestAndRegisterPush} />
                   {showCancel && (
                     <button onClick={async () => {
                       setCanceling(true);
