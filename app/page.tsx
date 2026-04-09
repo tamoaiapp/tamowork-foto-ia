@@ -1357,7 +1357,7 @@ export default function HomePage() {
         )}
 
         {/* PASSO 1: Menu de escolha de modo */}
-        {workState === "sem_trabalho" && !modeSelected && (
+        {workState === "sem_trabalho" && !modeSelected && !videoMode && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
               <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
@@ -1378,12 +1378,12 @@ export default function HomePage() {
         )}
 
         {/* PASSO 2: Modo Promo — componente próprio */}
-        {workState === "sem_trabalho" && modeSelected && creationMode === "promo" && (
+        {workState === "sem_trabalho" && modeSelected && creationMode === "promo" && !videoMode && (
           <PromoCreator onBack={() => setModeSelected(false)} />
         )}
 
         {/* PASSO 2: Formulário após escolher o modo */}
-        {workState === "sem_trabalho" && modeSelected && creationMode !== "promo" && (
+        {workState === "sem_trabalho" && modeSelected && creationMode !== "promo" && !videoMode && (
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
