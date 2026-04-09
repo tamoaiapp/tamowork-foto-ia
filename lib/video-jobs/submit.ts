@@ -21,8 +21,9 @@ export async function submitVideoJob(jobId: string) {
   let provider: string;
 
   if (USE_SERVERLESS) {
-    const workflow = buildVideoWorkflow(jobId, "product.jpg", job.prompt ?? "", 6, 16, job.prompt_neg ?? undefined);
-    const runpodJobId = await submitRunpodJob(RUNPOD_VIDEO_ENDPOINT, workflow, job.input_image_url);
+    const imgName = `product_${jobId.replace(/-/g, "").slice(0, 12)}.jpg`;
+    const workflow = buildVideoWorkflow(jobId, imgName, job.prompt ?? "", 6, 16, job.prompt_neg ?? undefined);
+    const runpodJobId = await submitRunpodJob(RUNPOD_VIDEO_ENDPOINT, workflow, job.input_image_url, imgName);
     externalJobId = `runpod:${runpodJobId}`;
     provider = "runpod-serverless";
   } else {
