@@ -63,6 +63,9 @@ export default function ConvitePage() {
 
   return (
     <div style={s.root}>
+      <style>{`
+        @keyframes tw-spin { to { transform: rotate(360deg); } }
+      `}</style>
       <div style={s.card}>
         <div style={s.logo}>TamoWork</div>
         <div style={s.logoSub}>Foto IA</div>
@@ -121,8 +124,13 @@ export default function ConvitePage() {
               style={s.input}
             />
             {error && <div style={s.error}>{error}</div>}
-            <button type="submit" disabled={loading} style={s.btn}>
-              {loading ? "Criando conta..." : "🚀 Acessar agora"}
+            <button type="submit" disabled={loading} style={{ ...s.btn, opacity: loading ? 0.85 : 1 }}>
+              {loading ? (
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                  <span style={s.spinner} />
+                  Criando sua conta...
+                </span>
+              ) : "🚀 Acessar agora"}
             </button>
             <p style={s.terms}>
               Já tem conta?{" "}
@@ -238,6 +246,16 @@ const s: Record<string, React.CSSProperties> = {
     fontFamily: "'Outfit', sans-serif",
   },
   terms: { fontSize: 13, color: "#8394b0", textAlign: "center", margin: "4px 0 0" },
+  spinner: {
+    width: 18,
+    height: 18,
+    borderRadius: "50%",
+    border: "2.5px solid rgba(255,255,255,0.25)",
+    borderTopColor: "#fff",
+    animation: "tw-spin 0.7s linear infinite",
+    display: "inline-block",
+    flexShrink: 0,
+  },
   successBox: {
     textAlign: "center",
     padding: "24px",

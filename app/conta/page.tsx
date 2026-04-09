@@ -197,6 +197,13 @@ export default function ContaPage() {
   const isProActive = isPro();
   const isMonthly = isProActive && !!planData?.stripe_subscription_id;
   const isAnnual = isProActive && !!planData?.mp_subscription_id;
+  const isTrial = isProActive && !planData?.stripe_subscription_id && !planData?.mp_subscription_id;
+
+  function daysLeft(isoDate?: string) {
+    if (!isoDate) return null;
+    const diff = new Date(isoDate).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
 
   if (loading) return <div style={styles.centered}>Carregando...</div>;
 
@@ -272,11 +279,31 @@ export default function ContaPage() {
                     </div>
                   </>
                 )}
+                {isTrial && (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#f59e0b", flexShrink: 0 }} />
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> Bônus — ativo</div>
+                    </div>
+                    <div style={styles.daysBox}>
+                      <span style={styles.daysNum}>{daysLeft(planData?.period_end)}</span>
+                      <span style={styles.daysSub}>dias restantes</span>
+                    </div>
+                    <div style={styles.subDesc}>Válido até {formatDate(planData?.period_end)}. Após esse prazo, você volta ao plano gratuito automaticamente.</div>
+                    <button onClick={() => router.push("/planos")} style={styles.upgradeBtn}>
+                      Continuar com Pro
+                    </button>
+                  </>
+                )}
                 {isMonthly && (
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16c784", flexShrink: 0 }} />
                       <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> Mensal — ativo</div>
+                    </div>
+                    <div style={styles.daysBox}>
+                      <span style={styles.daysNum}>{daysLeft(planData?.period_end)}</span>
+                      <span style={styles.daysSub}>dias restantes</span>
                     </div>
                     <div style={styles.subDesc}>Próxima renovação: {formatDate(planData?.period_end)}</div>
                     {cancelDone ? (
@@ -296,7 +323,10 @@ export default function ContaPage() {
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16c784", flexShrink: 0 }} />
                       <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> Anual — ativo</div>
                     </div>
-                    <div style={styles.subDesc}>Assinatura feita em {formatDate(planData?.created_at)}</div>
+                    <div style={styles.daysBox}>
+                      <span style={styles.daysNum}>{daysLeft(planData?.period_end)}</span>
+                      <span style={styles.daysSub}>dias restantes</span>
+                    </div>
                     <div style={styles.subDesc}>Válido até {formatDate(planData?.period_end)}</div>
                   </>
                 )}
@@ -412,6 +442,18 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 12, padding: "16px 20px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", width: "100%",
     boxShadow: "0 4px 16px rgba(139,92,246,0.4)",
   },
+  daysBox: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: 6,
+    marginBottom: 10,
+    background: "rgba(99,102,241,0.08)",
+    border: "1px solid rgba(99,102,241,0.2)",
+    borderRadius: 12,
+    padding: "10px 16px",
+  },
+  daysNum: { fontSize: 32, fontWeight: 800, color: "#c4b5fd", lineHeight: 1 },
+  daysSub: { fontSize: 13, color: "#8394b0", fontWeight: 500 },
   cancelBtn: {
     background: "transparent", border: "1px solid rgba(239,68,68,0.4)",
     borderRadius: 10, padding: "9px 18px", color: "#f87171", fontSize: 13, cursor: "pointer",
