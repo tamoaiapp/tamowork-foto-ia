@@ -28,6 +28,7 @@ export default function CriacoesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [token, setToken] = useState("");
   const [selected, setSelected] = useState<AccountJob | null>(null);
+  const [videoBlocked, setVideoBlocked] = useState(false);
   const { t } = useI18n();
 
   useEffect(() => {
@@ -97,7 +98,19 @@ export default function CriacoesPage() {
                 sessionStorage.setItem("editor_image", selected.output_image_url!);
                 router.push("/editor");
               }} style={s.editBtn}>{t("criacoes_edit")}</button>
-              <button onClick={() => {
+              <button onClick={async () => {
+                // Verificar se há job ativo antes de permitir vídeo
+                const res = await fetch("/api/image-jobs", { headers: { Authorization: `Bearer ${token}` } });
+                if (res.ok) {
+                  const data = await res.json();
+                  const allJobs: AccountJob[] = Array.isArray(data) ? data : (data.jobs ?? []);
+                  const hasActive = allJobs.some((j: AccountJob) => j.status !== "done" && j.status !== "failed" && j.status !== "canceled");
+                  if (hasActive) {
+                    setVideoBlocked(true);
+                    setTimeout(() => setVideoBlocked(false), 3000);
+                    return;
+                  }
+                }
                 sessionStorage.setItem("video_from_job", selected.id);
                 router.push("/");
               }} style={s.videoBtn}>{t("criacoes_video")}</button>
@@ -119,6 +132,13 @@ export default function CriacoesPage() {
             </div>
             <button onClick={() => setSelected(null)} style={s.closeBtn}>✕</button>
           </div>
+        </div>
+      )}
+
+      {/* Toast: vídeo bloqueado por job ativo */}
+      {videoBlocked && (
+        <div style={{ position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)", background: "#1e2330", border: "1px solid rgba(99,102,241,0.4)", borderRadius: 12, padding: "12px 20px", color: "#eef2f9", fontSize: 14, fontWeight: 600, zIndex: 999, whiteSpace: "nowrap", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+          ⏳ Aguarde a foto atual terminar antes de criar um vídeo
         </div>
       )}
 

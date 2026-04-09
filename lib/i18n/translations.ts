@@ -103,6 +103,7 @@ export const translations = {
     criacoes_video: "🎬 Vídeo",
     criacoes_delete: "🗑 Apagar",
     criacoes_confirm_delete: "Apagar esta foto?",
+    job_active_block: "Aguarde a foto atual terminar antes de criar um vídeo.",
 
     // Editor
     editor_title: "Editor",
@@ -256,6 +257,7 @@ export const translations = {
     criacoes_video: "🎬 Video",
     criacoes_delete: "🗑 Delete",
     criacoes_confirm_delete: "Delete this photo?",
+    job_active_block: "Wait for the current photo to finish before creating a video.",
 
     editor_title: "Editor",
     editor_save: "⬇ Save",
@@ -405,6 +407,7 @@ export const translations = {
     criacoes_video: "🎬 Video",
     criacoes_delete: "🗑 Eliminar",
     criacoes_confirm_delete: "¿Eliminar esta foto?",
+    job_active_block: "Espera a que termine la foto actual antes de crear un video.",
 
     editor_title: "Editor",
     editor_save: "⬇ Guardar",

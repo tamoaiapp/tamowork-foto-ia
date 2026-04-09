@@ -491,6 +491,9 @@ export default function HomePage() {
 
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token ?? "";
+      let resolvedPlan: Plan = "free";
+      let hasActivePhotoJob = false;
+
       const res = await fetch("/api/image-jobs", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -499,12 +502,14 @@ export default function HomePage() {
         // API retorna { jobs, plan }
         const jobs: Job[] = Array.isArray(data) ? data : (data.jobs ?? []);
         const userPlan: Plan = data.plan ?? "free";
+        resolvedPlan = userPlan;
         setPlan(userPlan);
 
         const active = jobs.find(
           (j) => j.status !== "done" && j.status !== "failed" && j.status !== "canceled"
         );
         if (active) {
+          hasActivePhotoJob = true;
           setJob(active);
           if (active.input_image_url) setPreview(active.input_image_url);
           setModeSelected(true);
@@ -562,7 +567,7 @@ export default function HomePage() {
 
       // Vindo de Criações: abrir modo vídeo para um job específico
       const videoFromJob = sessionStorage.getItem("video_from_job");
-      if (videoFromJob) {
+      if (videoFromJob && !hasActivePhotoJob) {
         sessionStorage.removeItem("video_from_job");
         const { data: session2 } = await supabase.auth.getSession();
         const t2 = session2.session?.access_token ?? "";
@@ -572,10 +577,13 @@ export default function HomePage() {
           if (j.status === "done" && j.output_image_url) {
             setJob(j);
             setModeSelected(true);
-            // Só abre vídeo se for PRO
-            if (plan === "pro") setVideoMode(true);
+            // Usa resolvedPlan (local) em vez de plan (React state ainda stale)
+            if (resolvedPlan === "pro") setVideoMode(true);
           }
         }
+      } else if (videoFromJob && hasActivePhotoJob) {
+        // Tem foto sendo gerada — ignora pedido de vídeo, limpa sessionStorage
+        sessionStorage.removeItem("video_from_job");
       }
 
       setLoading(false);
@@ -1334,6 +1342,20 @@ export default function HomePage() {
       </header>
 
       <main style={styles.main} className="app-main">
+        {/* Banner de vídeo em criação — aparece no topo quando usuário navega para outras telas */}
+        {videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "") && workState !== "trabalhando" && !videoMode && (
+          <div style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.18),rgba(168,85,247,0.12))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 14, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => setVideoMode(true)}>
+            <span style={{ fontSize: 22 }}>🎬</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Criando seu vídeo...</div>
+              <div style={{ color: "#8394b0", fontSize: 12 }}>Pode continuar usando o app — te avisamos quando ficar pronto</div>
+            </div>
+            <div style={{ width: 80, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${videoDisplayProgress}%`, background: "linear-gradient(90deg,#6366f1,#a855f7)", borderRadius: 99, transition: "width 1s ease" }} />
+            </div>
+          </div>
+        )}
+
         {/* PASSO 1: Menu de escolha de modo */}
         {workState === "sem_trabalho" && !modeSelected && (
           <div style={styles.menuWrap}>
@@ -1774,8 +1796,8 @@ export default function HomePage() {
           )
         )}
 
-        {/* Vídeo — gerando */}
-        {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && (
+        {/* Vídeo — gerando (card completo — só aparece quando videoMode está ativo) */}
+        {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && videoMode && (
           <div style={styles.card}>
             <div style={styles.generatingTitle}>
               <span style={styles.shimmerText}>Criando seu vídeo</span>
