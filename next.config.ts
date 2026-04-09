@@ -16,11 +16,6 @@ const nextConfig: NextConfig = {
       { source: "/ai/:path*", destination: `${LANDING_URL}/:path*` },
     ];
   },
-  webpack(config) {
-    // Permite carregar arquivos .wasm no browser (necessário para @imgly/background-removal)
-    config.experiments = { ...config.experiments, asyncWebAssembly: true };
-    return config;
-  },
 };
 
 export default nextConfig;
