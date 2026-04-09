@@ -1833,19 +1833,40 @@ export default function HomePage() {
 
         {/* Vídeo — pronto */}
         {videoJob?.status === "done" && videoJob.output_video_url && (
-          <div style={{ ...styles.card, animation: "fadeIn 0.5s ease" }}>
-            <h2 style={styles.centerTitle}>Seu vídeo está pronto! 🎬</h2>
+          <div style={{ ...styles.card, padding: 0, overflow: "hidden", animation: "fadeIn 0.5s ease" }}>
             <video
               src={videoJob.output_video_url}
               controls
               autoPlay
               loop
               playsInline
-              style={{ width: "100%", borderRadius: 16, display: "block", marginBottom: 16 }}
+              style={{ width: "100%", display: "block", maxHeight: "60vh", background: "#000", objectFit: "contain" }}
             />
-            <div style={styles.resultActions}>
-              <a href={videoJob.output_video_url} download="video-ia.mp4" style={styles.downloadBtn}>⬇ Baixar vídeo</a>
-              <button onClick={resetAll} style={styles.newBtn}>📷 Nova foto</button>
+            <div style={{ padding: "16px 16px 20px" }}>
+              <p style={{ margin: "0 0 14px", fontSize: 15, fontWeight: 700, color: "#eef2f9", textAlign: "center" }}>
+                🎬 Seu vídeo está pronto!
+              </p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <a
+                  href={videoJob.output_video_url}
+                  download="video-ia.mp4"
+                  style={{
+                    flex: 1, background: "linear-gradient(135deg, #6366f1, #a855f7)",
+                    border: "none", borderRadius: 14, padding: "14px 0",
+                    color: "#fff", fontSize: 15, fontWeight: 700, textAlign: "center",
+                    display: "block", cursor: "pointer", textDecoration: "none",
+                    boxShadow: "0 4px 16px rgba(139,92,246,0.35)",
+                  }}
+                >⬇ Baixar</a>
+                <button
+                  onClick={resetAll}
+                  style={{
+                    flex: 1, background: "#1a2535", border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 14, padding: "14px 0",
+                    color: "#8394b0", fontSize: 15, fontWeight: 600, cursor: "pointer",
+                  }}
+                >📷 Nova foto</button>
+              </div>
             </div>
           </div>
         )}
