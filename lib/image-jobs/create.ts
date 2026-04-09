@@ -25,13 +25,13 @@ export async function createImageJob(
   const plan = await getUserPlan(userId);
 
   if (plan === "free") {
-    // Buscar último job criado nas últimas 3h (excluindo cancelados)
+    // Só desconta se a foto ficou pronta (status "done") — falhas não consomem o crédito
     const since = new Date(Date.now() - FREE_COOLDOWN_MS).toISOString();
     const { data: recentJob } = await supabase
       .from("image_jobs")
       .select("created_at")
       .eq("user_id", userId)
-      .neq("status", "canceled")
+      .eq("status", "done")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(1)
