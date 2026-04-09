@@ -18,12 +18,19 @@ export default function ConvitePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Redireciona Android para Play Store
+  // Se já está logado → vai direto pro app
   useEffect(() => {
-    if (isAndroid()) {
-      window.location.href = PLAY_STORE_URL;
-    }
-  }, []);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.replace("/");
+        return;
+      }
+      // Redireciona Android para Play Store apenas se não logado
+      if (isAndroid()) {
+        window.location.href = PLAY_STORE_URL;
+      }
+    });
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
