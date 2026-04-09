@@ -100,6 +100,9 @@ export default function ConvitePage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={s.form}>
+            <div style={s.inputHint}>
+              Se você já tinha conta na versão antiga, use o mesmo e-mail
+            </div>
             <input
               type="email"
               placeholder="Seu e-mail"
@@ -196,6 +199,15 @@ const s: Record<string, React.CSSProperties> = {
   benefitIcon: { fontSize: 16, width: 22, textAlign: "center" },
   benefitText: { fontSize: 13, color: "#c4b5fd", fontWeight: 500 },
   form: { display: "flex", flexDirection: "column", gap: 12 },
+  inputHint: {
+    fontSize: 12,
+    color: "#a78bfa",
+    textAlign: "center" as const,
+    background: "rgba(167,139,250,0.08)",
+    border: "1px solid rgba(167,139,250,0.2)",
+    borderRadius: 8,
+    padding: "7px 12px",
+  },
   input: {
     background: "rgba(255,255,255,0.05)",
     border: "1.5px solid rgba(255,255,255,0.1)",
