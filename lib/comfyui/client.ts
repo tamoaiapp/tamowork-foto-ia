@@ -116,6 +116,19 @@ export async function uploadImageToComfy(imageUrl: string, comfyBase: string, jo
   return data.name as string;
 }
 
+// Negativo base aplicado em todos os jobs para evitar artefatos visuais comuns
+const BASE_NEGATIVE = [
+  "skin lines, skin scratches, skin cracks, skin artifacts",
+  "rough skin texture, exaggerated skin texture, overdetailed skin",
+  "skin veins, stretch marks, skin marks, skin wrinkles overdetailed",
+  "blurry, low quality, pixelated, jpeg artifacts, noise",
+  "watermark, text, logo, signature",
+].join(", ");
+
+function mergeNegative(promptNeg: string): string {
+  return promptNeg ? `${promptNeg}, ${BASE_NEGATIVE}` : BASE_NEGATIVE;
+}
+
 // Monta o workflow preenchido (sem submeter) — usado pelo RunPod Serverless
 export function buildFotoWorkflow(
   jobId: string,
@@ -126,7 +139,7 @@ export function buildFotoWorkflow(
   const workflow = JSON.parse(JSON.stringify(templateJson)) as Record<string, unknown>;
   (workflow["11"] as { inputs: { image: string } }).inputs.image = imageName;
   (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt = `${promptPos}\n#job:${jobId}\n`;
-  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = promptNeg;
+  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = mergeNegative(promptNeg);
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
   return workflow;
@@ -146,7 +159,7 @@ export async function submitWorkflow(
   // Preencher os campos dinâmicos
   (workflow["11"] as { inputs: { image: string } }).inputs.image = imageName;
   (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt = `${promptPos}\n#job:${jobId}\n`;
-  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = promptNeg;
+  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = mergeNegative(promptNeg);
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
 
@@ -177,7 +190,7 @@ export async function submitCatalogWorkflow(
   (workflow["11"] as { inputs: { image: string } }).inputs.image = productImageName;
   (workflow["200"] as { inputs: { image: string } }).inputs.image = modelImageName;
   (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt = `${promptPos}\n#job:${jobId}\n`;
-  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = promptNeg;
+  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = mergeNegative(promptNeg);
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
 
