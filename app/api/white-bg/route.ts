@@ -6,9 +6,12 @@ import { removeBackground } from "@imgly/background-removal-node";
 import path from "path";
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerClient();
   const token = req.headers.get("authorization")?.replace("Bearer ", "") ?? "";
+  if (!token) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
 
+  const supabase = createServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
