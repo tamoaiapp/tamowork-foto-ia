@@ -569,7 +569,7 @@ export default function HomePage() {
             setJob(j);
             setModeSelected(true);
             // Só abre vídeo se for PRO
-            if (userPlan === "pro") setVideoMode(true);
+            if (plan === "pro") setVideoMode(true);
           }
         }
       }
