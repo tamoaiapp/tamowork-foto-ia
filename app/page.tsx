@@ -520,14 +520,14 @@ export default function HomePage() {
           if (recentDone) setJob(recentDone);
         }
 
-        // Detecta rate limit no carregamento: free user com job recente (<24h)
+        // Detecta rate limit no carregamento: free user com job COMPLETO recente (<24h)
         if (userPlan === "free") {
           const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-          const lastJob = jobs
-            .filter((j) => j.status !== "canceled")
+          const lastDoneJob = jobs
+            .filter((j) => j.status === "done")
             .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())[0];
-          if (lastJob?.created_at) {
-            const nextAvailable = new Date(new Date(lastJob.created_at).getTime() + FREE_COOLDOWN_MS);
+          if (lastDoneJob?.created_at) {
+            const nextAvailable = new Date(new Date(lastDoneJob.created_at).getTime() + FREE_COOLDOWN_MS);
             if (nextAvailable > new Date()) {
               setRateLimitedUntil(nextAvailable);
             }
