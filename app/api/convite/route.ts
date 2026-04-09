@@ -19,18 +19,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Senha mínima de 6 caracteres" }, { status: 400 });
   }
 
-  // 1. Tenta criar conta (se já existe, faz login para pegar o userId)
+  // 1. Tenta criar conta (se já existe, busca o userId)
   let userId: string | null = null;
 
   const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
-    email_confirm: true, // confirma direto, sem email
+    email_confirm: true,
   });
 
   if (signUpError) {
     if (signUpError.message?.includes("already been registered") || signUpError.code === "email_exists") {
-      // Usuário já existe — busca o ID
       const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
       const existing = listData?.users?.find(u => u.email === email);
       if (existing) userId = existing.id;
@@ -46,22 +45,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro ao criar conta" }, { status: 500 });
   }
 
-  // 2. Verifica se é pagante do app antigo (Stripe legado)
-  const isPagante = await checkLegacyStripeSubscription(email);
+  // 2. Verifica assinatura ativa no Stripe legado
+  const legacy = await checkLegacyStripeSubscription(email);
 
-  if (isPagante) {
-    // PRO por 1 ano (assinatura ativa no app antigo)
-    await setUserPro(userId, { periodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) });
-  } else {
-    // 30 dias grátis
-    await setUserTrial(userId, 30);
+  if (legacy) {
+    // Pagante do app antigo: usa o period_end real do Stripe + salva o subscription_id
+    // Assim: aparece como "Mensal — ativo" com dias corretos, e cancela quando Stripe cancelar
+    await setUserPro(userId, {
+      periodEnd: legacy.periodEnd,
+      stripeSubscriptionId: legacy.subscriptionId,
+      stripeCustomerId: legacy.customerId,
+    });
+    return NextResponse.json({
+      ok: true,
+      plan: "pro",
+      message: "Bem-vindo! Sua conta PRO está ativa.",
+    });
   }
 
+  // 3. Usuário novo — 30 dias bônus
+  await setUserTrial(userId, 30);
   return NextResponse.json({
     ok: true,
-    plan: isPagante ? "pro" : "trial",
-    message: isPagante
-      ? "Bem-vindo! Sua conta PRO está ativa."
-      : "Bem-vindo! Você tem 30 dias grátis.",
+    plan: "trial",
+    message: "Bem-vindo! Você tem 30 dias de acesso PRO.",
   });
 }

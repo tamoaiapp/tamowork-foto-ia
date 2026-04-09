@@ -19,13 +19,23 @@ const LEGACY_PRODUCTS_ACCOUNT_1 = new Set([
   "prod_TuJkKNyyvhIzTT",
 ]);
 
-// Conta 2: TamoWork Dollar (sk_live_...dzXH ou outra)
+// Conta 2: TamoWork Dollar
 const LEGACY_PRODUCTS_ACCOUNT_2 = new Set([
   "prod_U3bhUjnn3V7W0s",
   "prod_TxywwsZ1RSeMfv",
 ]);
 
-async function hasActiveSubscription(email: string, apiKey: string, productIds: Set<string>): Promise<boolean> {
+export interface LegacySubscription {
+  subscriptionId: string;
+  periodEnd: Date;
+  customerId: string;
+}
+
+async function getActiveSubscription(
+  email: string,
+  apiKey: string,
+  productIds: Set<string>
+): Promise<LegacySubscription | null> {
   try {
     const searchRes = await fetch(
       `https://api.stripe.com/v1/customers/search?query=email:'${encodeURIComponent(email)}'&limit=5`,
@@ -40,28 +50,40 @@ async function hasActiveSubscription(email: string, apiKey: string, productIds: 
         { headers: { Authorization: `Bearer ${apiKey}` } }
       );
       const subData = await subRes.json();
-      const subs: { items: { data: { price: { product: string } }[] } }[] = subData.data ?? [];
+      const subs: {
+        id: string;
+        current_period_end: number;
+        items: { data: { price: { product: string } }[] };
+      }[] = subData.data ?? [];
 
       for (const sub of subs) {
         for (const item of sub.items.data) {
-          if (productIds.has(item.price.product)) return true;
+          if (productIds.has(item.price.product)) {
+            return {
+              subscriptionId: sub.id,
+              periodEnd: new Date(sub.current_period_end * 1000),
+              customerId: customer.id,
+            };
+          }
         }
       }
     }
-    return false;
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-export async function checkLegacyStripeSubscription(email: string): Promise<boolean> {
+export async function checkLegacyStripeSubscription(
+  email: string
+): Promise<LegacySubscription | null> {
   const key1 = process.env.STRIPE_LEGACY_SECRET_KEY;
   const key2 = process.env.STRIPE_LEGACY_SECRET_KEY_2;
 
-  const checks = await Promise.all([
-    key1 ? hasActiveSubscription(email, key1, LEGACY_PRODUCTS_ACCOUNT_1) : Promise.resolve(false),
-    key2 ? hasActiveSubscription(email, key2, LEGACY_PRODUCTS_ACCOUNT_2) : Promise.resolve(false),
+  const [result1, result2] = await Promise.all([
+    key1 ? getActiveSubscription(email, key1, LEGACY_PRODUCTS_ACCOUNT_1) : Promise.resolve(null),
+    key2 ? getActiveSubscription(email, key2, LEGACY_PRODUCTS_ACCOUNT_2) : Promise.resolve(null),
   ]);
 
-  return checks.some(Boolean);
+  return result1 ?? result2 ?? null;
 }
