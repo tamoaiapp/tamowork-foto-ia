@@ -831,6 +831,7 @@ export default function HomePage() {
         if (res.status === 429) {
           const err = await res.json();
           setRateLimitedUntil(new Date(err.nextAvailableAt));
+          setJob({ id: "rate_limited", status: "queued" }); // mantém tela "trabalhando" com timer
           setSubmitting(false);
           return;
         }
@@ -877,6 +878,7 @@ export default function HomePage() {
       if (jobRes.status === 429) {
         const err = await jobRes.json();
         setRateLimitedUntil(new Date(err.nextAvailableAt));
+        setJob({ id: "rate_limited", status: "queued" }); // mantém tela "trabalhando" com timer
         setSubmitting(false);
         return;
       }
@@ -1057,7 +1059,10 @@ export default function HomePage() {
 
   const isGenerating = (submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled")) && job?.status !== "done";
   // State machine: sem_trabalho | trabalhando | terminado
-  const workState: WorkState = submitting ? "trabalhando" : deriveWorkState(job);
+  // submitting=true OU job ativo = tela "Trabalhando..." — não volta para formulário até ter resultado
+  const workState: WorkState = (submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled" && job.status !== null))
+    ? "trabalhando"
+    : deriveWorkState(job);
 
   if (loading) return (
     <div style={styles.page} className="app-layout">
@@ -1438,58 +1443,65 @@ export default function HomePage() {
         {/* Gerando — blur animation estilo GPT */}
         {workState === "trabalhando" && (
           <div style={styles.card} className="generating-wrap">
-            {/* Painel esquerdo: status */}
-            <div className="generating-panel">
-              <div style={styles.generatingTitle}>
-                <span style={styles.shimmerText}>Transformando sua foto</span>
-                <span style={styles.dots}>
-                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
-                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-                </span>
-              </div>
-              {!submitting && (
-                <div style={styles.progressBarBg}>
-                  <div style={{
-                    ...styles.progressBarFill,
-                    width: `${displayProgress}%`,
-                    background: displayProgress > 80
-                      ? "linear-gradient(90deg, #6366f1, #22c55e)"
-                      : "linear-gradient(90deg, #6366f1, #a855f7)",
-                  }} />
+            {/* Rate limit detectado durante o envio — mostra timer em vez de spinner */}
+            {rateLimitedUntil && countdown > 0 ? (
+              <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
+            ) : (
+              <>
+                {/* Painel esquerdo: status */}
+                <div className="generating-panel">
+                  <div style={styles.generatingTitle}>
+                    <span style={styles.shimmerText}>Transformando sua foto</span>
+                    <span style={styles.dots}>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+                    </span>
+                  </div>
+                  {!submitting && (
+                    <div style={styles.progressBarBg}>
+                      <div style={{
+                        ...styles.progressBarFill,
+                        width: `${displayProgress}%`,
+                        background: displayProgress > 80
+                          ? "linear-gradient(90deg, #6366f1, #22c55e)"
+                          : "linear-gradient(90deg, #6366f1, #a855f7)",
+                      }} />
+                    </div>
+                  )}
+                  <NotifyButton onRequest={requestNotificationPermission} />
+                  {showCancel && (
+                    <button onClick={async () => {
+                      setCanceling(true);
+                      const token = await getToken();
+                      if (job?.id) await fetch(`/api/image-jobs/${job.id}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+                      setCanceling(false);
+                      resetJob();
+                    }} disabled={canceling} style={styles.cancelBtn}>
+                      {canceling ? "Cancelando..." : "Cancelar"}
+                    </button>
+                  )}
                 </div>
-              )}
-              <NotifyButton onRequest={requestNotificationPermission} />
-              {showCancel && (
-                <button onClick={async () => {
-                  setCanceling(true);
-                  const token = await getToken();
-                  if (job?.id) await fetch(`/api/image-jobs/${job.id}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
-                  setCanceling(false);
-                  resetJob();
-                }} disabled={canceling} style={styles.cancelBtn}>
-                  {canceling ? "Cancelando..." : "Cancelar"}
-                </button>
-              )}
-            </div>
-            {/* Preview (visível no mobile como bloco, no desktop como coluna direita) */}
-            {preview && (
-              <div style={{ ...styles.blurWrapper, marginBottom: 0 }} className="generating-preview">
-                <img
-                  src={preview}
-                  alt="produto"
-                  style={{
-                    ...styles.blurImg,
-                    filter: `blur(${blurPx}px) brightness(0.7)`,
-                    transform: `scale(${1 + blurPx * 0.002})`,
-                  }}
-                />
-                <div style={styles.blurOverlay} />
-                <div style={styles.blurBadge}>
-                  <span style={styles.blurDot} />
-                  {submitting ? "Enviando..." : statusLabel(job?.status ?? null, elapsedSec, job?.created_at)}
-                </div>
-              </div>
+                {/* Preview (visível no mobile como bloco, no desktop como coluna direita) */}
+                {preview && (
+                  <div style={{ ...styles.blurWrapper, marginBottom: 0 }} className="generating-preview">
+                    <img
+                      src={preview}
+                      alt="produto"
+                      style={{
+                        ...styles.blurImg,
+                        filter: `blur(${blurPx}px) brightness(0.7)`,
+                        transform: `scale(${1 + blurPx * 0.002})`,
+                      }}
+                    />
+                    <div style={styles.blurOverlay} />
+                    <div style={styles.blurBadge}>
+                      <span style={styles.blurDot} />
+                      {submitting ? "Enviando..." : statusLabel(job?.status ?? null, elapsedSec, job?.created_at)}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
