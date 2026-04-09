@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n";
 import DesktopSidebar from "@/app/components/DesktopSidebar";
+import ReviewPopup from "@/app/components/ReviewPopup";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"] });
@@ -42,6 +43,7 @@ export default function RootLayout({
           <div className="app-content">
             {children}
           </div>
+          <ReviewPopup />
         </I18nProvider>
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {

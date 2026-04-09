@@ -1,11 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.tamowork.app";
+
+function isAndroid() {
+  return typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
+}
+
 export default function ConvitePage() {
   const router = useRouter();
+
+  // Redireciona Android para Play Store
+  useEffect(() => {
+    if (isAndroid()) {
+      window.location.href = PLAY_STORE_URL;
+    }
+  }, []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
