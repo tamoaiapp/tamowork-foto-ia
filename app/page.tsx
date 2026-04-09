@@ -42,11 +42,13 @@ interface VideoJob {
 }
 
 function useCountdown(target: Date | null) {
-  const [remaining, setRemaining] = useState<number>(0);
+  const [remaining, setRemaining] = useState<number>(() =>
+    target ? Math.max(0, target.getTime() - Date.now()) : 0
+  );
   useEffect(() => {
-    if (!target) return;
+    if (!target) { setRemaining(0); return; }
     const tick = () => setRemaining(Math.max(0, target.getTime() - Date.now()));
-    tick();
+    tick(); // sincroniza imediatamente ao mudar o alvo
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [target]);
@@ -620,9 +622,9 @@ export default function HomePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job?.id, job?.status, user]);
 
-  // Countdown: quando chegar a 0, limpar rate limit
+  // Countdown: quando chegar a 0 E o prazo já passou de fato, limpar rate limit
   useEffect(() => {
-    if (rateLimitedUntil && countdown === 0) {
+    if (rateLimitedUntil && countdown === 0 && rateLimitedUntil.getTime() <= Date.now()) {
       setRateLimitedUntil(null);
     }
   }, [countdown, rateLimitedUntil]);
@@ -1623,18 +1625,16 @@ export default function HomePage() {
                 )}
               </div>
 
-              {/* Liberar agora — só para free */}
+              {/* Upsell PRO — só para free */}
               {plan === "free" && (
                 <>
                   {rateLimitedUntil && countdown > 0 && (
-                    <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 8px", lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 4px", lineHeight: 1.5 }}>
                       Plano gratuito · 1 criação a cada 24h<br/>
                       <span style={{ color: "#6366f1" }}>Próxima disponível em {formatMs(countdown)}</span>
                     </p>
                   )}
-                  <button onClick={() => handleAssinarDireto("annual")} style={styles.unlockBtn}>
-                    ⚡ Liberar agora · R$228/ano
-                  </button>
+                  <ProUpsell onAssinar={handleAssinarDireto} />
                 </>
               )}
             </div>
@@ -1679,18 +1679,16 @@ export default function HomePage() {
                 )}
               </div>
 
-              {/* Liberar agora — só para free */}
+              {/* Upsell PRO — só para free */}
               {plan === "free" && (
                 <>
                   {rateLimitedUntil && countdown > 0 && (
-                    <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 8px", lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 4px", lineHeight: 1.5 }}>
                       Plano gratuito · 1 criação a cada 24h<br/>
                       <span style={{ color: "#6366f1" }}>Próxima disponível em {formatMs(countdown)}</span>
                     </p>
                   )}
-                  <button onClick={() => handleAssinarDireto("annual")} style={styles.unlockBtn}>
-                    ⚡ Liberar agora · R$228/ano
-                  </button>
+                  <ProUpsell onAssinar={handleAssinarDireto} />
                 </>
               )}
             </div>
