@@ -141,12 +141,7 @@ function AuthCard() {
     <div style={a.card}>
       {/* Logo mobile — só aparece no mobile via CSS */}
       <div className="login-logo-mobile" style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 4 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #6366f1, #a855f7)" }}>
-          <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-            <path d="M10 22l4-5.5 3 3.5 3.5-5L25 22H10z" fill="white" opacity="0.95"/>
-            <circle cx="13" cy="12" r="2.5" fill="white" opacity="0.95"/>
-          </svg>
-        </div>
+        <img src="/icons/icon-512.png" alt="TamoWork" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} />
         <div>
           <div style={{ fontSize: 16, fontWeight: 800, background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>TamoWork</div>
           <div style={{ fontSize: 10, color: "#4e5c72", fontWeight: 600, letterSpacing: "0.04em" }}>Foto IA</div>
@@ -292,14 +287,9 @@ export default function LoginPage() {
           {/* Glow */}
           <div style={{ position: "absolute", top: 0, left: "30%", width: 400, height: 300, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(99,102,241,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-          {/* Logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
-            <div style={{ width: 40, height: 40, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #6366f1, #a855f7)" }}>
-              <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-                <path d="M10 22l4-5.5 3 3.5 3.5-5L25 22H10z" fill="white" opacity="0.95"/>
-                <circle cx="13" cy="12" r="2.5" fill="white" opacity="0.95"/>
-              </svg>
-            </div>
+          {/* Logo — só aparece no desktop */}
+          <div className="login-logo-hero" style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
+            <img src="/icons/icon-512.png" alt="TamoWork" style={{ width: 40, height: 40, borderRadius: 11, objectFit: "cover" }} />
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: "-0.03em", lineHeight: 1.1 }}>TamoWork</div>
               <div style={{ fontSize: 11, color: "#4e5c72", fontWeight: 600, letterSpacing: "0.04em" }}>Foto IA</div>

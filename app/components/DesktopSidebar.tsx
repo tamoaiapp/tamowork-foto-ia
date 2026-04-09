@@ -136,8 +136,13 @@ export default function DesktopSidebar() {
     <aside className="desktop-sidebar" style={s.sidebar}>
       {/* Logo */}
       <div style={s.logoArea}>
-        <div style={s.logoText}>TamoWork</div>
-        <div style={s.logoSub}>Foto IA</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="/icons/icon-512.png" alt="TamoWork" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+          <div>
+            <div style={s.logoText}>TamoWork</div>
+            <div style={s.logoSub}>Foto IA</div>
+          </div>
+        </div>
       </div>
 
       {/* Nav principal */}
