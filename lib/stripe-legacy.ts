@@ -3,7 +3,21 @@
  * Usado apenas para verificar se um email tem assinatura ativa do produto prod_TuJkKNyyvhIzTT
  */
 
-const LEGACY_PRODUCT_ID = "prod_TuJkKNyyvhIzTT";
+const LEGACY_PRODUCT_IDS = new Set([
+  "prod_TFRnT2OZsgZeOo",
+  "prod_TFRoCpiSQsiFCx",
+  "prod_TFh2aa3gPhsIKQ",
+  "prod_TFivRpr3KACBZT",
+  "prod_TFtP6GdvWUwxPM",
+  "prod_TFuBv9wQQDmSJV",
+  "prod_TFuCrFVQ0V6noa",
+  "prod_TR4YK3tmumlncc",
+  "prod_TRSACw3CiM63gs",
+  "prod_TXJYc3UOMyOEiU",
+  "prod_TaK0mhppcWAOsF",
+  "prod_TcwHQRN07JJSwO",
+  "prod_TuJkKNyyvhIzTT",
+]);
 
 export async function checkLegacyStripeSubscription(email: string): Promise<boolean> {
   const key = process.env.STRIPE_LEGACY_SECRET_KEY;
@@ -30,7 +44,7 @@ export async function checkLegacyStripeSubscription(email: string): Promise<bool
 
       for (const sub of subs) {
         for (const item of sub.items.data) {
-          if (item.price.product === LEGACY_PRODUCT_ID) return true;
+          if (LEGACY_PRODUCT_IDS.has(item.price.product)) return true;
         }
       }
     }
