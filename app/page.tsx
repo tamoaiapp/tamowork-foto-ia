@@ -1821,11 +1821,11 @@ export default function HomePage() {
             <p style={{ ...styles.centerDesc, marginBottom: 20 }}>
               Vídeos levam 3–5 minutos. Pode fechar — te avisamos quando ficar pronto. 🔔
             </p>
-            {job?.output_image_url && (
+            {(job?.output_image_url || videoJob?.input_image_url) && (
               <div style={styles.blurWrapper}>
-                <img src={job.output_image_url} alt="base" style={{ ...styles.blurImg, filter: "blur(20px) brightness(0.6)" }} />
+                <img src={job?.output_image_url || videoJob!.input_image_url!} alt="base" style={{ ...styles.blurImg, filter: "blur(20px) brightness(0.6)" }} />
                 <div style={styles.blurOverlay} />
-                <div style={styles.blurBadge}><span style={styles.blurDot} />Vou fazer seu vídeo agora...</div>
+                <div style={styles.blurBadge}><span style={styles.blurDot} />Criando seu vídeo...</div>
               </div>
             )}
           </div>
