@@ -344,7 +344,7 @@ export default function EditorPage() {
   if (!photo) {
     return (
       <div style={s.page} className="app-layout">
-        <AppHeader subtitle={t("editor_title")} back onBack={() => router.back()} />
+        <AppHeader subtitle={t("editor_title")} />
 
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
           onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoFile(f); }} />
@@ -391,7 +391,6 @@ export default function EditorPage() {
       {/* Header */}
       <AppHeader
         subtitle={t("editor_title")}
-        back
         onBack={() => { setPhoto(null); setLayers([]); }}
         rightExtra={
           <button onClick={exportImage} style={s.dlBtn}>{t("editor_save")}</button>
