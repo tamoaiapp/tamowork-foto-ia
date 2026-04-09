@@ -752,6 +752,34 @@ export default function HomePage() {
     else setPreview(null);
   }
 
+  // Processa fundo branco no browser via WebAssembly (sem servidor)
+  async function processWhiteBackground(file: File): Promise<File> {
+    const { removeBackground } = await import("@imgly/background-removal");
+    // Remove fundo → blob PNG transparente
+    const noBgBlob = await removeBackground(file, { output: { format: "image/png" } });
+    // Compõe sobre fundo branco usando Canvas
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(noBgBlob);
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(new File([blob], "whitebg.jpg", { type: "image/jpeg" }));
+          else reject(new Error("Canvas toBlob falhou"));
+        }, "image/jpeg", 0.92);
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
   async function convertToJpegIfNeeded(file: File): Promise<File> {
     const isHeic = file.type === "image/heic" || file.type === "image/heif" ||
       file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
@@ -828,19 +856,35 @@ export default function HomePage() {
       }
       const { url: imageUrl } = await uploadRes.json();
 
-      // Fundo branco: processa no servidor, sem fila GPU
+      // Fundo branco: processa no browser (WebAssembly), depois registra job
       if (creationMode === "fundo_branco") {
         const prompt = `${produto} | fundo branco`;
+
+        // 1. Processa no browser — remove fundo + adiciona branco
+        const processedFile = await processWhiteBackground(fileToUpload);
+
+        // 2. Faz upload da imagem já processada
+        const pfForm = new FormData();
+        pfForm.append("file", processedFile);
+        const pfRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: pfForm,
+        });
+        if (!pfRes.ok) throw new Error("Falha ao enviar imagem processada");
+        const { url: outputUrl } = await pfRes.json();
+
+        // 3. Registra job como "done" (rate limit + job creation no servidor)
         const res = await fetch("/api/white-bg", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ prompt, input_image_url: imageUrl }),
+          body: JSON.stringify({ prompt, input_image_url: imageUrl, output_image_url: outputUrl }),
         });
 
         if (res.status === 429) {
           const err = await res.json();
           setRateLimitedUntil(new Date(err.nextAvailableAt));
-          setJob({ id: "rate_limited", status: "queued" }); // mantém tela "trabalhando" com timer
+          setJob({ id: "rate_limited", status: "queued" });
           setSubmitting(false);
           return;
         }
