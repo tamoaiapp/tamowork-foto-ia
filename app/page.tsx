@@ -1853,9 +1853,9 @@ export default function HomePage() {
         {/* Vídeo — erro */}
         {videoJob?.status === "failed" && (
           <div style={styles.card}>
-            <div style={styles.bigIcon}>❌</div>
-            <h2 style={styles.centerTitle}>Erro ao gerar vídeo</h2>
-            <p style={styles.centerDesc}>{videoJob.error_message ?? "Não foi possível gerar o vídeo."}</p>
+            <div style={styles.bigIcon}>😔</div>
+            <h2 style={styles.centerTitle}>Ops, algo deu errado</h2>
+            <p style={styles.centerDesc}>Pedimos desculpas pelo transtorno. Houve um problema ao gerar seu vídeo, mas você pode tentar novamente agora — é gratuito.</p>
             <button onClick={resetVideo} style={styles.submitBtn}>Tentar novamente</button>
           </div>
         )}
@@ -1863,9 +1863,9 @@ export default function HomePage() {
         {/* Erro */}
         {job?.status === "failed" && (
           <div style={styles.card}>
-            <div style={styles.bigIcon}>❌</div>
-            <h2 style={styles.centerTitle}>Algo deu errado</h2>
-            <p style={styles.centerDesc}>Ocorreu um erro inesperado ao gerar sua foto. Tente novamente.</p>
+            <div style={styles.bigIcon}>😔</div>
+            <h2 style={styles.centerTitle}>Ops, algo deu errado</h2>
+            <p style={styles.centerDesc}>Pedimos desculpas pelo transtorno. Houve um problema ao gerar sua foto, mas você pode tentar novamente agora — é gratuito.</p>
             <button onClick={resetJob} style={styles.submitBtn}>Tentar novamente</button>
           </div>
         )}
