@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "TamoWork Fotos para Produtos",
   description: "Gere fotos profissionais dos seus produtos com IA",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
