@@ -542,9 +542,11 @@ export default function HomePage() {
         const activeVideo = vdata.find(
           (v) => v.status !== "done" && v.status !== "failed" && v.status !== "canceled"
         );
-        // Só restaura vídeo done se foi criado nas últimas 24h
+        // Só restaura vídeo done se foi criado nas últimas 24h e não foi descartado pelo usuário
+        const dismissedVideoIds: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
         const doneVideo = vdata.find(
           (v) => v.status === "done" &&
+          !dismissedVideoIds.includes(v.id) &&
           new Date(v.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
         );
         if (activeVideo) {
@@ -1009,6 +1011,16 @@ export default function HomePage() {
   }
 
   function resetVideo() {
+    // Marca o vídeo job atual como descartado para evitar restauração automática
+    if (videoJob?.id) {
+      try {
+        const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+        if (!dismissed.includes(videoJob.id)) {
+          dismissed.push(videoJob.id);
+          sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed));
+        }
+      } catch { /* ignora */ }
+    }
     if (videoPollRef.current) clearInterval(videoPollRef.current);
     if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
     setVideoMode(false);
