@@ -12,8 +12,6 @@ export default function OnboardingRedirect() {
   return null;
 }
 
-function OnboardingPage() {
-
 const S3 = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object";
 const VID = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/video-jobs";
 
