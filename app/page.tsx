@@ -1034,6 +1034,8 @@ export default function HomePage() {
     if (blurRef.current) clearInterval(blurRef.current);
     setShowCancel(false);
     setJob(null);
+    setTimeoutError("");
+    setFormError("");
     setProduto("");
     setCenario("");
     setImageFile(null);
