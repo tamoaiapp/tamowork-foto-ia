@@ -756,7 +756,11 @@ export default function HomePage() {
   async function processWhiteBackground(file: File): Promise<File> {
     const { removeBackground } = await import("@imgly/background-removal");
     // Remove fundo → blob PNG transparente
-    const noBgBlob = await removeBackground(file, { output: { format: "image/png" } });
+    // proxyToWorker:false evita problemas de URL de worker no Next.js
+    const noBgBlob = await removeBackground(file, {
+      proxyToWorker: false,
+      output: { format: "image/png" },
+    });
     // Compõe sobre fundo branco usando Canvas
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(noBgBlob);
