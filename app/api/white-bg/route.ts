@@ -3,6 +3,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { createImageJob, RateLimitError } from "@/lib/image-jobs/create";
 import sharp from "sharp";
 import { removeBackground } from "@imgly/background-removal-node";
+import path from "path";
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient();
@@ -25,7 +26,13 @@ export async function POST(req: NextRequest) {
     const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
 
     // 2. Remove o fundo
-    const noBgBlob = await removeBackground(new Blob([imgBuffer]));
+    // proxyToWorker:false — Web Workers não existem em serverless Node.js (Vercel)
+    // publicPath aponta para os arquivos ONNX locais para evitar download do CDN
+    const localDist = `file://${path.resolve(process.cwd(), "node_modules/@imgly/background-removal-node/dist")}/`;
+    const noBgBlob = await removeBackground(new Blob([imgBuffer]), {
+      proxyToWorker: false,
+      publicPath: localDist,
+    });
     const noBgBuffer = Buffer.from(await noBgBlob.arrayBuffer());
 
     // 3. Compõe sobre fundo branco com sharp

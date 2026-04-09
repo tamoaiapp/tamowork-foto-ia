@@ -31,8 +31,15 @@ export async function POST(req: NextRequest) {
   if (!produto)   return NextResponse.json({ ok: false, error: "produto obrigatório" }, { status: 400 });
 
   image_url = image_url.trim();
+  // Corrige URL duplicada: "https://https://..." → "https://..."
+  image_url = image_url.replace(/^https?:\/\/https?:\/\//i, "https://");
   if (image_url.startsWith("//")) image_url = "https:" + image_url;
   else if (!image_url.startsWith("http://") && !image_url.startsWith("https://")) image_url = "https://" + image_url;
+
+  // Valida que é uma URL mínima válida
+  if (!image_url.match(/^https?:\/\/.+\..+/)) {
+    return NextResponse.json({ ok: false, error: `image_url inválida: ${image_url}` }, { status: 400 });
+  }
 
   const supabase = createServerClient();
 

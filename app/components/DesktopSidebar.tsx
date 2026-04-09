@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
+import { supabase } from "@/lib/supabase/client";
 
 function IconCriar({ active }: { active: boolean }) {
   const c = active ? "#a855f7" : "#8394b0";
@@ -91,12 +92,25 @@ export default function DesktopSidebar() {
   const pathname = usePathname();
   const { t } = useI18n();
   const [show, setShow] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
     const check = () => setShow(isDesktop());
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+      const { data } = await supabase
+        .from("user_plans")
+        .select("plan")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      setIsPro(data?.plan === "pro");
+    });
   }, []);
 
   // Não mostra em páginas públicas/auth
@@ -149,10 +163,17 @@ export default function DesktopSidebar() {
 
       {/* Bottom */}
       <div style={s.bottom}>
-        <button onClick={() => router.push("/planos")} style={s.proBtn}>
-          <IconPlans />
-          <span>Assinar Pro</span>
-        </button>
+        {isPro ? (
+          <div style={s.proBadge}>
+            <span style={{ fontSize: 14 }}>⭐</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#c4b5fd" }}>Plano Pro ativo</span>
+          </div>
+        ) : (
+          <button onClick={() => router.push("/planos")} style={s.proBtn}>
+            <IconPlans />
+            <span>Assinar Pro</span>
+          </button>
+        )}
         <button onClick={() => router.push("/conta")} style={s.accountItem} className="sidebar-nav-item">
           <IconAccount />
           <span style={s.navLabel}>Minha conta</span>
@@ -261,6 +282,16 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 13,
     fontWeight: 700,
     cursor: "pointer",
+    width: "100%",
+  },
+  proBadge: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid rgba(99,102,241,0.25)",
+    background: "rgba(99,102,241,0.06)",
     width: "100%",
   },
   accountItem: {
