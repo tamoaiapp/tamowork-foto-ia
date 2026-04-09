@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { createImageJob, RateLimitError } from "@/lib/image-jobs/create";
-import sharp from "sharp";
-import { removeBackground } from "@imgly/background-removal-node";
 import path from "path";
 
 export async function POST(req: NextRequest) {
@@ -17,12 +15,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const { input_image_url, prompt } = await req.json();
+  const body = await req.json().catch(() => ({}));
+  const { input_image_url, prompt } = body;
   if (!input_image_url) {
     return NextResponse.json({ error: "input_image_url obrigatório" }, { status: 400 });
   }
 
   try {
+    // Dynamic imports — evita falha no carregamento do módulo ONNX em nível de módulo
+    const sharp = (await import("sharp")).default;
+    const { removeBackground } = await import("@imgly/background-removal-node");
+
     // 1. Baixa a imagem original
     const imgRes = await fetch(input_image_url);
     if (!imgRes.ok) throw new Error(`Falha ao baixar imagem: ${imgRes.status}`);
@@ -53,7 +56,6 @@ export async function POST(req: NextRequest) {
       .toBuffer();
 
     // 4. Sobe para o Supabase Storage como resultado
-    // Usa o mesmo bucket image-jobs com nome baseado em timestamp
     const fileName = `whitebg_${user.id}_${Date.now()}.jpg`;
     const { error: uploadError } = await supabase.storage
       .from("image-jobs")
