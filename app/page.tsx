@@ -1140,10 +1140,12 @@ export default function HomePage() {
           /* Estado gerando: 2 colunas */
           .generating-wrap {
             display: grid !important;
-            grid-template-columns: 340px 1fr !important;
+            grid-template-columns: 300px 1fr !important;
             gap: 0 !important;
-            max-width: 100% !important;
-            min-height: calc(100vh - 120px) !important;
+            max-width: 860px !important;
+            margin: 0 auto !important;
+            height: calc(100vh - 140px) !important;
+            max-height: 620px !important;
             background: #0d1117 !important;
             border-radius: 20px !important;
             overflow: hidden !important;
@@ -1151,7 +1153,7 @@ export default function HomePage() {
             padding: 0 !important;
           }
           .generating-panel {
-            padding: 48px 36px !important;
+            padding: 36px 28px !important;
             border-right: 1px solid rgba(255,255,255,0.06) !important;
             display: flex !important;
             flex-direction: column !important;
@@ -1160,9 +1162,14 @@ export default function HomePage() {
           }
           .generating-preview {
             height: 100% !important;
-            min-height: 500px !important;
             margin: 0 !important;
             border-radius: 0 !important;
+            overflow: hidden !important;
+          }
+          .generating-preview img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
           }
           /* Estado resultado: 2 colunas */
           .result-wrap {
