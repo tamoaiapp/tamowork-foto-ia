@@ -76,7 +76,7 @@ function IconAccount() {
   );
 }
 
-const HIDDEN_PATHS = ["/login", "/onboarding", "/privacidade"];
+const HIDDEN_PATHS = ["/login", "/onboarding", "/privacidade", "/convite"];
 
 function isDesktop(): boolean {
   if (typeof window === "undefined") return false;

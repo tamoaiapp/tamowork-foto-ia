@@ -12,6 +12,11 @@ function isAndroid() {
 
 export default function ConvitePage() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   // Redireciona Android para Play Store
   useEffect(() => {
@@ -19,11 +24,6 @@ export default function ConvitePage() {
       window.location.href = PLAY_STORE_URL;
     }
   }, []);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,7 +32,6 @@ export default function ConvitePage() {
     setSuccess("");
 
     try {
-      // Cria conta / ativa benefício via API
       const res = await fetch("/api/convite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,7 +45,7 @@ export default function ConvitePage() {
         return;
       }
 
-      // Faz login automaticamente
+      // Login automático
       const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
       if (loginErr) {
         setError("Conta criada! Faça login em tamowork.com");
@@ -65,16 +64,15 @@ export default function ConvitePage() {
   return (
     <div style={s.root}>
       <div style={s.card}>
-        {/* Header */}
         <div style={s.logo}>TamoWork</div>
         <div style={s.logoSub}>Foto IA</div>
 
-        <div style={s.badge}>🎁 Convite exclusivo</div>
-        <h1 style={s.title}>30 dias grátis para você</h1>
+        <div style={s.badge}>✨ Novidade exclusiva</div>
+        <h1 style={s.title}>Conheça a versão nova<br />do TamoWork</h1>
         <p style={s.sub}>
-          Crie sua conta e comece a transformar fotos de produto em fotos profissionais com IA.
+          Transforme fotos de produto em fotos profissionais com IA — em segundos.
           <br />
-          <span style={{ color: "#a78bfa" }}>Sem cartão de crédito.</span>
+          <span style={{ color: "#a78bfa" }}>Crie sua conta e acesse agora.</span>
         </p>
 
         {/* Benefícios */}
@@ -83,7 +81,7 @@ export default function ConvitePage() {
             { icon: "✨", text: "Fotos de produto profissionais com IA" },
             { icon: "🎬", text: "Vídeos animados do produto" },
             { icon: "⚡", text: "Fundo branco instantâneo" },
-            { icon: "📦", text: "Acesso completo por 30 dias" },
+            { icon: "🎨", text: "Estilos e cenários ilimitados" },
           ].map(b => (
             <div key={b.text} style={s.benefit}>
               <span style={s.benefitIcon}>{b.icon}</span>
@@ -92,7 +90,6 @@ export default function ConvitePage() {
           ))}
         </div>
 
-        {/* Form */}
         {success ? (
           <div style={s.successBox}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
@@ -122,7 +119,7 @@ export default function ConvitePage() {
             />
             {error && <div style={s.error}>{error}</div>}
             <button type="submit" disabled={loading} style={s.btn}>
-              {loading ? "Criando conta..." : "🚀 Garantir meus 30 dias grátis"}
+              {loading ? "Criando conta..." : "🚀 Acessar agora"}
             </button>
             <p style={s.terms}>
               Já tem conta?{" "}
@@ -157,18 +154,8 @@ const s: Record<string, React.CSSProperties> = {
     gap: 0,
     boxShadow: "0 0 60px rgba(168,85,247,0.10)",
   },
-  logo: {
-    fontSize: 20,
-    fontWeight: 800,
-    color: "#eef2f9",
-    textAlign: "center",
-  },
-  logoSub: {
-    fontSize: 12,
-    color: "#8394b0",
-    textAlign: "center",
-    marginBottom: 20,
-  },
+  logo: { fontSize: 20, fontWeight: 800, color: "#eef2f9", textAlign: "center" },
+  logoSub: { fontSize: 12, color: "#8394b0", textAlign: "center", marginBottom: 20 },
   badge: {
     display: "inline-block",
     background: "rgba(99,102,241,0.15)",
@@ -205,11 +192,7 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: 14,
     padding: "14px 16px",
   },
-  benefit: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  },
+  benefit: { display: "flex", alignItems: "center", gap: 10 },
   benefitIcon: { fontSize: 16, width: 22, textAlign: "center" },
   benefitText: { fontSize: 13, color: "#c4b5fd", fontWeight: 500 },
   form: { display: "flex", flexDirection: "column", gap: 12 },
@@ -242,12 +225,7 @@ const s: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     fontFamily: "'Outfit', sans-serif",
   },
-  terms: {
-    fontSize: 13,
-    color: "#8394b0",
-    textAlign: "center",
-    margin: "4px 0 0",
-  },
+  terms: { fontSize: 13, color: "#8394b0", textAlign: "center", margin: "4px 0 0" },
   successBox: {
     textAlign: "center",
     padding: "24px",

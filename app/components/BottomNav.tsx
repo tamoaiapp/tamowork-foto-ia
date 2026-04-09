@@ -82,6 +82,7 @@ export default function BottomNav({ hasActiveJob = false }: Props) {
   }, []);
 
   if (!isMobile) return null;
+  if (pathname.startsWith("/convite") || pathname.startsWith("/login")) return null;
 
   const tabs = [
     { key: "criar", label: t("nav_criar"), path: "/" },
