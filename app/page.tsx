@@ -627,6 +627,15 @@ export default function HomePage() {
     }
   }, [countdown, rateLimitedUntil]);
 
+  // Quando job termina (done) no plano free, ativa cooldown de 24h automaticamente
+  useEffect(() => {
+    if (plan === "free" && job?.status === "done" && job.id !== "rate_limited") {
+      const jobTime = job.created_at ? new Date(job.created_at).getTime() : Date.now();
+      const next = new Date(jobTime + 24 * 60 * 60 * 1000);
+      if (next > new Date()) setRateLimitedUntil(next);
+    }
+  }, [job?.status, plan]);
+
   // Timeout automático: usa created_at do job para não resetar ao reabrir o app
   useEffect(() => {
     if (!job || workState !== "trabalhando") return;
@@ -1547,9 +1556,9 @@ export default function HomePage() {
               </div>
 
               {/* Gerar novamente + Criar vídeo lado a lado */}
-              <div style={{ display: "flex", gap: 8, marginBottom: plan === "free" ? 12 : 0 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                 {plan === "free" && rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.45, cursor: "not-allowed", fontSize: 12 }}>
+                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
                 ) : (
@@ -1568,9 +1577,17 @@ export default function HomePage() {
 
               {/* Liberar agora — só para free */}
               {plan === "free" && (
-                <button onClick={() => handleAssinarDireto("annual")} style={styles.unlockBtn}>
-                  ⚡ Liberar agora · R$228/ano
-                </button>
+                <>
+                  {rateLimitedUntil && countdown > 0 && (
+                    <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 8px", lineHeight: 1.5 }}>
+                      Plano gratuito · 1 criação a cada 24h<br/>
+                      <span style={{ color: "#6366f1" }}>Próxima disponível em {formatMs(countdown)}</span>
+                    </p>
+                  )}
+                  <button onClick={() => handleAssinarDireto("annual")} style={styles.unlockBtn}>
+                    ⚡ Liberar agora · R$228/ano
+                  </button>
+                </>
               )}
             </div>
 
@@ -1597,9 +1614,9 @@ export default function HomePage() {
               </div>
 
               {/* Gerar novamente + Criar vídeo */}
-              <div style={{ display: "flex", gap: 8, marginBottom: plan === "free" ? 10 : 0 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                 {plan === "free" && rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.45, cursor: "not-allowed", fontSize: 12 }}>
+                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
                 ) : (
@@ -1616,9 +1633,17 @@ export default function HomePage() {
 
               {/* Liberar agora — só para free */}
               {plan === "free" && (
-                <button onClick={() => handleAssinarDireto("annual")} style={styles.unlockBtn}>
-                  ⚡ Liberar agora · R$228/ano
-                </button>
+                <>
+                  {rateLimitedUntil && countdown > 0 && (
+                    <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 8px", lineHeight: 1.5 }}>
+                      Plano gratuito · 1 criação a cada 24h<br/>
+                      <span style={{ color: "#6366f1" }}>Próxima disponível em {formatMs(countdown)}</span>
+                    </p>
+                  )}
+                  <button onClick={() => handleAssinarDireto("annual")} style={styles.unlockBtn}>
+                    ⚡ Liberar agora · R$228/ano
+                  </button>
+                </>
               )}
             </div>
           </div>
