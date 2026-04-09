@@ -106,10 +106,13 @@ export default function DesktopSidebar() {
       if (!session) return;
       const { data } = await supabase
         .from("user_plans")
-        .select("plan")
+        .select("plan, period_end")
         .eq("user_id", session.user.id)
         .maybeSingle();
-      setIsPro(data?.plan === "pro");
+      const active =
+        data?.plan === "pro" &&
+        (!data.period_end || new Date(data.period_end) > new Date());
+      setIsPro(active);
     });
   }, []);
 
