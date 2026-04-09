@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Troque pela URL real do Play Store quando publicar
 const ANDROID_APP_URL = "https://play.google.com/store/apps/details?id=com.tamowork.app";
-// Para abrir direto o PWA no Android (fallback se não tiver Play Store)
 const ANDROID_FALLBACK = "https://tamowork.com/login";
 
 function detectPlatform(): "android" | "ios" | "desktop" {
