@@ -514,6 +514,8 @@ export default function HomePage() {
           setJob(active);
           if (active.input_image_url) setPreview(active.input_image_url);
           setModeSelected(true);
+          // Job ativo encontrado — limpa pending_job_id do sessionStorage
+          try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
         } else {
           // Restaura o job done mais recente (criado nas últimas 24h) para mostrar resultado
           // Ignora jobs que o usuário descartou explicitamente (clicou em "criar nova foto")
@@ -523,7 +525,35 @@ export default function HomePage() {
             !dismissedIds.includes(j.id) &&
             new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
           );
-          if (recentDone) setJob(recentDone);
+          if (recentDone) {
+            setJob(recentDone);
+            try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
+          } else {
+            // Nenhum job ativo nem done recente — verifica se há um job pendente salvo no sessionStorage
+            // (ocorre quando o usuário navega para outra página enquanto o job ainda estava sendo criado)
+            try {
+              const pendingJobId = sessionStorage.getItem("pending_job_id");
+              if (pendingJobId && !dismissedIds.includes(pendingJobId)) {
+                // Busca esse job específico na API
+                const pres = await fetch(`/api/image-jobs/${pendingJobId}`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                if (pres.ok) {
+                  const pjob = await pres.json();
+                  if (pjob?.id && pjob.status !== "canceled") {
+                    hasActivePhotoJob = pjob.status !== "done" && pjob.status !== "failed";
+                    setJob(pjob);
+                    if (pjob.input_image_url) setPreview(pjob.input_image_url);
+                    if (hasActivePhotoJob) setModeSelected(true);
+                  } else {
+                    sessionStorage.removeItem("pending_job_id");
+                  }
+                } else {
+                  sessionStorage.removeItem("pending_job_id");
+                }
+              }
+            } catch { /* ignora */ }
+          }
         }
 
         // Detecta rate limit no carregamento: free user com job COMPLETO recente (<24h)
@@ -992,6 +1022,9 @@ export default function HomePage() {
       }
       const { jobId } = await jobRes.json();
 
+      // Persiste o ID do job no sessionStorage para restaurar caso o usuário navegue para outra página
+      try { sessionStorage.setItem("pending_job_id", jobId); } catch { /* ignora */ }
+
       setJob({ id: jobId, status: "queued" });
       setTimeout(() => fetchJobStatus(jobId), 10_000);
     } catch (err: unknown) {
@@ -1030,6 +1063,8 @@ export default function HomePage() {
         }
       } catch { /* ignora */ }
     }
+    // Limpa job pendente salvo no sessionStorage
+    try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
     if (pollRef.current) clearInterval(pollRef.current);
     if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
     if (blurRef.current) clearInterval(blurRef.current);
