@@ -11,6 +11,7 @@ import { useI18n, LangSelector } from "@/lib/i18n";
 import { useProductVision, warmupVision } from "@/lib/vision/useProductVision";
 const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
+const UpsellPopup = dynamic(() => import("@/app/components/UpsellPopup"), { ssr: false });
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type Plan = "free" | "pro";
@@ -492,6 +493,9 @@ export default function HomePage() {
   const vision = useProductVision();
   const [visionSuggestion, setVisionSuggestion] = useState<string | null>(null);
 
+  // Upsell popup A/B
+  const [showUpsell, setShowUpsell] = useState(false);
+
   // Pré-carrega o modelo de visão silenciosamente assim que o app abre
   useEffect(() => { warmupVision(); }, []);
 
@@ -515,6 +519,14 @@ export default function HomePage() {
         const userPlan: Plan = data.plan ?? "free";
         resolvedPlan = userPlan;
         setPlan(userPlan);
+
+        // Exibe upsell popup 3s após login para usuários free
+        if (userPlan === "free") {
+          setTimeout(async () => {
+            const { shouldShowUpsell } = await import("@/app/components/UpsellPopup");
+            if (shouldShowUpsell()) setShowUpsell(true);
+          }, 3000);
+        }
 
         const active = jobs.find(
           (j) => j.status !== "done" && j.status !== "failed" && j.status !== "canceled"
@@ -2152,6 +2164,16 @@ export default function HomePage() {
             setEditedImageUrl(dataUrl);
             setEditorOpen(false);
           }}
+        />
+      )}
+
+      {showUpsell && (
+        <UpsellPopup
+          onAssinar={(planType) => {
+            setShowUpsell(false);
+            handleAssinarDireto(planType);
+          }}
+          onClose={() => setShowUpsell(false)}
         />
       )}
     </div>
