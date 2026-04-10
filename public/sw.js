@@ -1,5 +1,5 @@
 // Service Worker — TamoWork Fotos IA
-const CACHE = "tamowork-v2";
+const CACHE = "tamowork-v3";
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -26,33 +26,61 @@ self.addEventListener("fetch", (e) => {
   );
 });
 
-// Push notification real (Web Push API)
+// Push notification
 self.addEventListener("push", (e) => {
-  let data = { title: "Sua foto ficou pronta! ✨", body: "Toque para ver o resultado.", url: "/conta" };
-  try { data = { ...data, ...e.data.json() }; } catch {}
+  let data = {
+    title: "Sua foto ficou pronta! ✨",
+    body: "Toque para ver o resultado.",
+    url: "/",
+  };
+  try {
+    data = { ...data, ...e.data.json() };
+  } catch {}
 
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      // Ícone da notificação — aparece no drawer de notificações
+      icon: "/icons/icon-512.png",
+      // Badge — ícone pequeno na barra de status do Android
+      badge: "/icons/badge-96.svg",
       tag: "job-done",
       renotify: true,
+      // Vibração: padrão nativo Android
+      vibrate: [200, 100, 200],
+      // Mantém a notificação até o usuário interagir
+      requireInteraction: false,
       data: { url: data.url },
+      // Ações rápidas na notificação
+      actions: [
+        { action: "open", title: "Ver resultado" },
+        { action: "close", title: "Fechar" },
+      ],
     })
   );
 });
 
-// Clique abre o app na página certa
+// Clique na notificação — abre o app na página certa
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const url = e.notification.data?.url ?? "/conta";
+
+  if (e.action === "close") return;
+
+  const url = e.notification.data?.url ?? "/";
+
   e.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
-      for (const client of list) {
-        if (client.url.includes(url)) return client.focus();
-      }
-      return clients.openWindow(url);
-    })
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((list) => {
+        // Se o app já está aberto, foca nele
+        for (const client of list) {
+          if ("focus" in client) {
+            client.navigate(url);
+            return client.focus();
+          }
+        }
+        // Senão, abre uma nova janela
+        return clients.openWindow(url);
+      })
   );
 });
