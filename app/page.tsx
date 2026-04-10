@@ -1396,6 +1396,8 @@ export default function HomePage() {
           .result-image-col { padding: 0 !important; background: transparent !important; }
           .result-image-col img { border-radius: 16px !important; width: 100% !important; max-height: none !important; }
           .generating-panel { padding: 0 !important; border: none !important; }
+          /* Remove padding do card de resultado no mobile — a largura é controlada pelo result-mobile-actions */
+          .result-wrap { padding: 0 !important; overflow: hidden; }
         }
       `}</style>
 
@@ -1830,7 +1832,7 @@ export default function HomePage() {
             </div>
 
             {/* Mobile: mesmo layout, só muda padding */}
-            <div className="result-mobile-actions" style={{ display: "block", padding: "0 20px 28px" }}>
+            <div className="result-mobile-actions" style={{ display: "block", padding: "16px 16px 28px" }}>
               {/* Baixar + Editar */}
               <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                 <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
