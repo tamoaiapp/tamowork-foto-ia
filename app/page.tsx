@@ -857,20 +857,9 @@ export default function HomePage() {
     if (file) {
       setPreview(URL.createObjectURL(file));
       setVisionSuggestion(null);
-      // Analisa automaticamente o produto na imagem — sem API externa
-      vision.analyzeImage(file).then((caption) => {
-        if (caption) {
-          setProduto((prev) => {
-            if (prev.trim() === "") {
-              // Campo vazio: preenche direto (sem sugestão separada)
-              return caption;
-            } else {
-              // Campo já tem texto: guarda como sugestão para o usuário comparar
-              setVisionSuggestion(caption);
-              return prev;
-            }
-          });
-        }
+      // Analisa a imagem em background — sempre mostra como sugestão para o usuário comparar
+      vision.analyzeImage(file).then((product) => {
+        if (product) setVisionSuggestion(product);
       });
     } else {
       setPreview(null);
@@ -1696,37 +1685,43 @@ export default function HomePage() {
                   required
                   style={{ ...styles.input, ...(vision.isAnalyzing ? { opacity: 0.6 } : {}) }}
                 />
-                {/* Sugestão da IA — aparece quando campo já tinha texto */}
+                {/* Sugestão da IA — aparece após analisar a imagem */}
                 {visionSuggestion && (
                   <div style={{
                     background: "rgba(99,102,241,0.08)",
-                    border: "1px solid rgba(99,102,241,0.25)",
+                    border: "1px solid rgba(99,102,241,0.3)",
                     borderRadius: 10,
-                    padding: "9px 12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    marginTop: 4,
+                    padding: "10px 12px",
+                    marginTop: 6,
                   }}>
-                    <span style={{ fontSize: 14, flexShrink: 0 }}>🔍</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 2 }}>IA identificou:</div>
-                      <div style={{ fontSize: 13, color: "#c4b5fd", fontWeight: 500, wordBreak: "break-word" as const }}>{visionSuggestion}</div>
+                    <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
+                      🔍 <span>IA identificou o produto como:</span>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column" as const, gap: 4, flexShrink: 0 }}>
+                    <div style={{ fontSize: 14, color: "#c4b5fd", fontWeight: 600, marginBottom: 8 }}>
+                      &ldquo;{visionSuggestion}&rdquo;
+                    </div>
+                    {produto.trim() && (
+                      <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 8 }}>
+                        Você escreveu: <span style={{ color: "#eef2f9" }}>&ldquo;{produto}&rdquo;</span>
+                        {produto.trim().toLowerCase() === visionSuggestion.toLowerCase()
+                          ? <span style={{ color: "#16c784", marginLeft: 6 }}>✓ Acertou!</span>
+                          : null}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 8 }}>
                       <button
                         type="button"
                         onClick={() => { setProduto(visionSuggestion); setVisionSuggestion(null); }}
-                        style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 7, padding: "4px 10px", cursor: "pointer", whiteSpace: "nowrap" as const }}
+                        style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}
                       >
                         Usar este
                       </button>
                       <button
                         type="button"
                         onClick={() => setVisionSuggestion(null)}
-                        style={{ fontSize: 11, color: "#4e5c72", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}
+                        style={{ fontSize: 12, color: "#4e5c72", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}
                       >
-                        Ignorar
+                        Manter o meu
                       </button>
                     </div>
                   </div>

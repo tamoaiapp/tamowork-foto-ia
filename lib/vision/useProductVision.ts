@@ -9,28 +9,62 @@ let pipelinePromise: Promise<(input: string) => Promise<{ generated_text: string
 
 async function getPipeline() {
   if (!pipelinePromise) {
-    // Import dinâmico para não quebrar o SSR do Next.js
     const { pipeline, env } = await import("@huggingface/transformers");
     env.allowLocalModels = false;
     env.useBrowserCache = true;
     pipelinePromise = pipeline(
       "image-to-text",
-      // Modelo pequeno (~150MB) — ViT encoder + GPT-2 decoder, ótimo para fotos de produto
       "Xenova/vit-gpt2-image-captioning",
-      { dtype: "q8" } // quantizado 8-bit — menor e mais rápido no browser
+      { dtype: "q8" }
     ) as Promise<(input: string) => Promise<{ generated_text: string }[]>>;
   }
   return pipelinePromise;
 }
 
+/**
+ * Remove descrições de pessoa e cena — mantém apenas o produto.
+ * Ex: "a woman wearing red floral shorts in a store" → "red floral shorts"
+ */
+function extractProduct(raw: string): string {
+  let s = raw.trim();
+
+  // Remove "a/an/the [person] [verb] " no início
+  s = s.replace(
+    /^(a |an |the )?(woman|man|person|model|girl|boy|lady|gentleman|figure|mannequin|display)\s+(is\s+)?(wearing|holding|carrying|using|with|in|dressed in|showing|featuring|displaying)\s+/i,
+    ""
+  );
+
+  // Remove cena no final: "standing in a store", "in front of a wall", etc.
+  s = s.replace(
+    /\s+(standing|sitting|posing|walking|leaning|lying)\s+(in|on|at|near|by|next to|in front of|inside|outside|against)\s+.+$/i,
+    ""
+  );
+  s = s.replace(
+    /,?\s+(in|on|at|near|inside|outside|in front of)\s+(a |an |the )?(store|shop|mall|market|showroom|studio|room|street|background|display|window|shelf|rack).+$/i,
+    ""
+  );
+  s = s.replace(/,?\s+with\s+(a |an |the )?(background|wall|shelf|rack|store|display).+$/i, "");
+
+  // Remove partícula inicial solta
+  s = s.replace(/^(a |an |the )/i, "");
+
+  s = s.trim();
+
+  // Fallback: se ficou curto demais ou vazio, usa o original sem o prefixo de pessoa
+  if (s.length < 4) {
+    const fallback = raw.replace(/^(a |an |the )?(woman|man|person|model|girl|boy|mannequin)\s+/i, "").trim();
+    return fallback || raw;
+  }
+
+  return s;
+}
+
 export function useProductVision() {
   const [state, setState] = useState<VisionState>("idle");
-  const [progress, setProgress] = useState(0); // 0-100 durante download do modelo
   const objectUrlRef = useRef<string | null>(null);
 
   async function analyzeImage(file: File): Promise<string | null> {
     try {
-      // Limpa URL anterior
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = null;
@@ -39,35 +73,22 @@ export function useProductVision() {
       const isFirstLoad = !pipelinePromise;
       setState(isFirstLoad ? "loading_model" : "analyzing");
 
-      // Configura callback de progresso apenas no primeiro carregamento
-      if (isFirstLoad) {
-        const { env } = await import("@huggingface/transformers");
-        // @ts-expect-error - API de progresso pode variar por versão
-        env.progressCallback = (p: { status: string; progress?: number }) => {
-          if (p.status === "progress" && p.progress != null) {
-            setProgress(Math.round(p.progress));
-          }
-        };
-      }
-
       const captioner = await getPipeline();
-
       setState("analyzing");
-      setProgress(0);
 
-      // Cria URL de objeto para o arquivo — a biblioteca aceita URL de imagem
       const objectUrl = URL.createObjectURL(file);
       objectUrlRef.current = objectUrl;
 
       const result = await captioner(objectUrl);
-      const caption = result?.[0]?.generated_text ?? "";
+      const raw = result?.[0]?.generated_text ?? "";
+      const product = raw ? extractProduct(raw) : null;
 
       setState("done");
-      return caption || null;
+      return product || null;
     } catch (err) {
       console.error("[vision] erro:", err);
       setState("error");
-      pipelinePromise = null; // reseta para tentar novamente
+      pipelinePromise = null;
       return null;
     } finally {
       if (objectUrlRef.current) {
@@ -79,10 +100,9 @@ export function useProductVision() {
 
   function reset() {
     setState("idle");
-    setProgress(0);
   }
 
   const isAnalyzing = state === "loading_model" || state === "analyzing";
 
-  return { analyzeImage, state, progress, isAnalyzing, reset };
+  return { analyzeImage, state, isAnalyzing, reset };
 }
