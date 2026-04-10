@@ -430,6 +430,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<Plan>("free");
 
+  // Banner de app (Android / iOS)
+  const [appBannerPlatform, setAppBannerPlatform] = useState<"android" | "ios" | null>(null);
+  const [appBannerDismissed, setAppBannerDismissed] = useState(false);
+
   // Form
   const [produto, setProduto] = useState("");
   const [cenario, setCenario] = useState("");
@@ -620,6 +624,28 @@ export default function HomePage() {
       setLoading(false);
     });
   }, [router]);
+
+  // Banner de app: detecta plataforma e decide se exibe
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const ua = navigator.userAgent.toLowerCase();
+    const isAndroid = /android/.test(ua);
+    const isIOS = /iphone|ipad|ipod/.test(ua);
+    const isStandalone =
+      (window.navigator as { standalone?: boolean }).standalone === true ||
+      window.matchMedia("(display-mode: standalone)").matches;
+
+    if (isStandalone) return; // já está como PWA instalado — não mostra banner
+
+    if (isAndroid) {
+      const dismissed = localStorage.getItem("app_banner_dismissed_android");
+      if (!dismissed) setAppBannerPlatform("android");
+    } else if (isIOS) {
+      // Mostra se o usuário nunca visitou /app (nunca viu as instruções de instalação)
+      const visited = localStorage.getItem("ios_app_visited");
+      if (!visited) setAppBannerPlatform("ios");
+    }
+  }, []);
 
   // Polling a cada 10s enquanto job estiver ativo
   useEffect(() => {
@@ -1392,6 +1418,68 @@ export default function HomePage() {
       </header>
 
       <main style={styles.main} className="app-main">
+
+        {/* Banner de app — Android (Play Store) / iOS (tela inicial) */}
+        {appBannerPlatform && !appBannerDismissed && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12,
+            background: appBannerPlatform === "android"
+              ? "linear-gradient(135deg,rgba(34,197,94,0.12),rgba(16,185,129,0.08))"
+              : "linear-gradient(135deg,rgba(99,102,241,0.14),rgba(168,85,247,0.09))",
+            border: `1px solid ${appBannerPlatform === "android" ? "rgba(34,197,94,0.3)" : "rgba(168,85,247,0.3)"}`,
+            borderRadius: 14, padding: "12px 14px", marginBottom: 14,
+          }}>
+            <span style={{ fontSize: 22, flexShrink: 0 }}>
+              {appBannerPlatform === "android" ? "📲" : "📱"}
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#eef2f9", marginBottom: 2 }}>
+                {appBannerPlatform === "android"
+                  ? "Baixe o app TamoWork"
+                  : "Adicione à tela inicial"}
+              </div>
+              <div style={{ fontSize: 12, color: "#8394b0" }}>
+                {appBannerPlatform === "android"
+                  ? "Acesse mais rápido pela Play Store"
+                  : "Use como app no seu iPhone — é mais rápido"}
+              </div>
+            </div>
+            <a
+              href="/app"
+              onClick={() => {
+                if (appBannerPlatform === "ios") {
+                  localStorage.setItem("ios_app_visited", "1");
+                }
+              }}
+              style={{
+                flexShrink: 0, fontSize: 12, fontWeight: 700, color: "#fff",
+                background: appBannerPlatform === "android"
+                  ? "linear-gradient(135deg,#16c784,#10b981)"
+                  : "linear-gradient(135deg,#6366f1,#a855f7)",
+                borderRadius: 10, padding: "7px 12px", textDecoration: "none", whiteSpace: "nowrap",
+              }}
+            >
+              {appBannerPlatform === "android" ? "Baixar" : "Ver como"}
+            </a>
+            <button
+              onClick={() => {
+                setAppBannerDismissed(true);
+                if (appBannerPlatform === "android") {
+                  localStorage.setItem("app_banner_dismissed_android", "1");
+                } else {
+                  // iOS: guardar que já foi visitado para não mostrar novamente
+                  localStorage.setItem("ios_app_visited", "1");
+                }
+              }}
+              style={{
+                flexShrink: 0, background: "none", border: "none", color: "#4e5c72",
+                fontSize: 18, cursor: "pointer", padding: "0 2px", lineHeight: 1,
+              }}
+              aria-label="Fechar"
+            >×</button>
+          </div>
+        )}
+
         {/* Banner de vídeo em criação — aparece no topo quando usuário navega para outras telas */}
         {videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "") && workState !== "trabalhando" && !videoMode && (
           <div style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.18),rgba(168,85,247,0.12))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 14, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => setVideoMode(true)}>

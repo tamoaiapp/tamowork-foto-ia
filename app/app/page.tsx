@@ -33,6 +33,11 @@ export default function AppRedirectPage() {
     setPlatform(p);
     setStandalone(sa);
 
+    // Marca que o usuário iOS visitou esta página (viu as instruções de instalação)
+    if (p === "ios") {
+      try { localStorage.setItem("ios_app_visited", "1"); } catch { /* ignora */ }
+    }
+
     if (p === "android") {
       setRedirecting(true);
       const timer = setTimeout(() => {
