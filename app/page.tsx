@@ -882,10 +882,20 @@ export default function HomePage() {
     const { removeBackground } = await import("@imgly/background-removal");
     // Remove fundo → blob PNG transparente
     // proxyToWorker:false evita problemas de URL de worker no Next.js
-    const noBgBlob = await removeBackground(file, {
-      proxyToWorker: false,
-      output: { format: "image/png" },
-    });
+    // Timeout de 90s: modelo WASM pesado, mobile lento pode demorar
+    const noBgBlob = await Promise.race([
+      removeBackground(file, {
+        proxyToWorker: false,
+        output: { format: "image/png" },
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(
+          lang === "en" ? "Background removal timed out. Please try a smaller photo or try again."
+          : lang === "es" ? "Tiempo de espera agotado. Intente con una foto más pequeña o vuelva a intentarlo."
+          : "Tempo esgotado ao remover fundo. Tente com uma foto menor ou tente novamente."
+        )), 90_000)
+      ),
+    ]);
     // Compõe sobre fundo branco usando Canvas
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(noBgBlob);
