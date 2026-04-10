@@ -25,8 +25,8 @@ async function getPipeline() {
 
     const p = await pipeline(
       "image-to-text",
-      "Xenova/vit-gpt2-image-captioning"
-      // sem dtype — usa o padrão fp32 que funciona em todos os browsers
+      "Xenova/vit-gpt2-image-captioning",
+      { dtype: "fp32" }
     ) as (input: string) => Promise<{ generated_text: string }[]>;
 
     pipelineInstance = p;
@@ -90,13 +90,20 @@ export function useProductVision() {
       setState(isFirstLoad ? "loading_model" : "analyzing");
       setRawCaption(null);
 
-      const captioner = await getPipeline();
+      // Timeout de 20s — se o modelo demorar demais, cancela silenciosamente
+      const captioner = await Promise.race([
+        getPipeline(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 20000)),
+      ]);
       setState("analyzing");
 
       const objectUrl = URL.createObjectURL(file);
       objectUrlRef.current = objectUrl;
 
-      const result = await captioner(objectUrl);
+      const result = await Promise.race([
+        (captioner as (input: string) => Promise<{ generated_text: string }[]>)(objectUrl),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 15000)),
+      ]);
       const raw = result?.[0]?.generated_text ?? "";
 
       console.log("[vision] caption bruto:", raw);
@@ -109,9 +116,11 @@ export function useProductVision() {
       // Retorna produto extraído, ou o caption bruto se a extração falhar
       return product || raw || null;
     } catch (err) {
-      console.error("[vision] erro:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[vision] erro:", msg);
       setState("error");
-      pipelineInstance = null;
+      // Só reseta o pipeline se não for timeout (timeout é esperado em devices lentos)
+      if (msg !== "timeout") pipelineInstance = null;
       return null;
     } finally {
       if (objectUrlRef.current) {

@@ -1675,15 +1675,17 @@ export default function HomePage() {
 
               <div style={styles.fieldGroup}>
                 <label style={{ ...styles.label, display: "flex", alignItems: "center", gap: 8 }}>
-                  O que é o produto?
+                  {t("field_product")}
                   {vision.isAnalyzing && (
                     <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
                       <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", border: "1.5px solid rgba(167,139,250,0.3)", borderTopColor: "#a78bfa", animation: "spin 0.7s linear infinite" }} />
-                      {vision.state === "loading_model" ? "Baixando IA de visão (1x)…" : "Analisando foto…"}
+                      {vision.state === "loading_model"
+                        ? (lang === "en" ? "Downloading vision AI (1x)…" : lang === "es" ? "Descargando IA de visión (1x)…" : "Baixando IA de visão (1x)…")
+                        : (lang === "en" ? "Analyzing photo…" : lang === "es" ? "Analizando foto…" : "Analisando foto…")}
                     </span>
                   )}
                   {vision.state === "error" && (
-                    <span style={{ fontSize: 11, color: "#f87171" }}>⚠ IA de visão indisponível</span>
+                    <span style={{ fontSize: 11, color: "#f87171" }}>⚠ {lang === "en" ? "Vision AI unavailable" : lang === "es" ? "IA de visión no disponible" : "IA de visão indisponível"}</span>
                   )}
                 </label>
                 <input
