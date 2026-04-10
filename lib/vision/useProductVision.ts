@@ -74,6 +74,15 @@ function extractProduct(raw: string): string {
   return s;
 }
 
+/** Pré-carrega o modelo em background — chame assim que o app montar */
+export function warmupVision() {
+  if (pipelineInstance || loading) return;
+  // Delay de 3s para não competir com o carregamento inicial da página
+  setTimeout(() => {
+    getPipeline().catch(() => { /* silencioso */ });
+  }, 3000);
+}
+
 export function useProductVision() {
   const [state, setState] = useState<VisionState>("idle");
   const [rawCaption, setRawCaption] = useState<string | null>(null);
@@ -86,11 +95,10 @@ export function useProductVision() {
         objectUrlRef.current = null;
       }
 
-      const isFirstLoad = !pipelineInstance;
-      setState(isFirstLoad ? "loading_model" : "analyzing");
+      setState(pipelineInstance ? "analyzing" : "loading_model");
       setRawCaption(null);
 
-      // Timeout de 20s — se o modelo demorar demais, cancela silenciosamente
+      // Timeout de 20s — se o modelo demorar demais (warmup ainda não terminou), cancela
       const captioner = await Promise.race([
         getPipeline(),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 20000)),

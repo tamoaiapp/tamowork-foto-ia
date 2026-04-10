@@ -8,7 +8,7 @@ import BottomNav from "@/app/components/BottomNav";
 import ModeSelector, { type CreationMode } from "@/app/components/ModeSelector";
 import dynamic from "next/dynamic";
 import { useI18n, LangSelector } from "@/lib/i18n";
-import { useProductVision } from "@/lib/vision/useProductVision";
+import { useProductVision, warmupVision } from "@/lib/vision/useProductVision";
 const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 
@@ -491,6 +491,9 @@ export default function HomePage() {
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
   const [visionSuggestion, setVisionSuggestion] = useState<string | null>(null);
+
+  // Pré-carrega o modelo de visão silenciosamente assim que o app abre
+  useEffect(() => { warmupVision(); }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
