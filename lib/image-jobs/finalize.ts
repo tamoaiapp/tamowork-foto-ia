@@ -55,7 +55,7 @@ export async function finalizeImageJob(jobId: string, imageData: Buffer | string
     if (subs && subs.length > 0) {
       const product = (job.prompt ?? "").split(" | cenário:")[0]?.trim();
       const title = product ? `Foto de ${product} pronta! ✨` : "Sua foto ficou pronta! ✨";
-      await sendPushToUser(subs, title, "Toque para ver o resultado.");
+      await sendPushToUser(job.user_id, title, "Toque para ver o resultado.");
     }
   }
 }

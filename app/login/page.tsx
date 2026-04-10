@@ -116,7 +116,7 @@ function AuthCard() {
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [showEmail, setShowEmail] = useState(false);
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   async function handleGoogle() {
     setGoogleLoading(true);
@@ -215,7 +215,7 @@ function AuthCard() {
 }
 
 export default function LoginPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const [checking, setChecking] = useState(true);
 
