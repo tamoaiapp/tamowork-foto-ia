@@ -247,6 +247,17 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
   pos.push("Realistic commercial photo.");
   pos.push(`Product: ${productLabel}.`);
 
+  // Ignora bordas, espaços vazios e artefatos de screenshot presentes na imagem de entrada
+  pos.push(
+    "IGNORE INPUT ARTIFACTS: The input image may contain black borders, white padding, gray borders, screenshot UI elements, watermarks, app interface elements, or empty space around the product. Ignore all of these completely.",
+    "Focus exclusively on the actual physical product. Treat any black, white, or gray space surrounding the product as irrelevant background to be replaced.",
+    "Do not reproduce black borders, white padding, or any screenshot-style framing in the output image.",
+  );
+  neg.push(
+    "No black borders. No white padding. No gray borders. No screenshot framing. No app interface elements. No empty canvas borders. No letterbox bars. No pillarbox bars.",
+    "Do not replicate the background color or framing style of the input image.",
+  );
+
   if (cenario) {
     pos.push(`Scene/context: ${cenario}.`, "Use the scenario only as realistic environment support.", "The product must remain the main focus of the image.", "The background must not dominate the composition.", "Keep the scenario coherent with normal product usage.");
     neg.push("Do not let the background overpower the product.", "Do not make the scenario more important than the product.");
