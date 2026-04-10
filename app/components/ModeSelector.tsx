@@ -19,28 +19,22 @@ type ModeData = { id: CreationMode; name: string; title: string; desc: string; i
 
 function getModes(lang: string): ModeData[] {
   if (lang === "en") return [
-    { id: "fundo_branco", name: "White background", title: "Clean product photo", desc: "Clean and professional background. Perfect for online stores.", img: `${BASE}/fundo_branco_split.jpg` },
-    { id: "simulacao", name: "Lifestyle scene", title: "Product in real setting", desc: "Place your product in a beautiful, real-world scene.", img: `${BASE}/simulacao.jpg` },
-    { id: "catalogo", name: "With model", title: "AI-dressed model", desc: "Virtual model wears your item — no photographer needed.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video", name: "Animated video", title: "Photo that moves", desc: "Turn your photo into a video ready for Reels.", img: "", badge: "PRO" },
-    { id: "promo", name: "Promo post", title: "Ready-to-post art", desc: "Create a post with price and text to share on Instagram.", img: `${BASE}/promo_thumb.jpg` },
-    { id: "personalizado", name: "Custom", title: "You choose the scene", desc: "Describe what you want and the AI creates it your way.", img: `${BASE}/produto.jpg` },
+    { id: "simulacao",   name: "Lifestyle scene",  title: "Product in real setting", desc: "Place your product in a beautiful, real-world scene.", img: `${BASE}/simulacao.jpg`, badge: "Most used" },
+    { id: "catalogo",    name: "With model",        title: "AI-dressed model",        desc: "Virtual model wears your item — no photographer needed.", img: `${BASE}/modelo_opt1.jpg` },
+    { id: "video",       name: "Animated video",    title: "Photo that moves",        desc: "Turn your photo into a video ready for Reels.", img: "", badge: "PRO" },
+    { id: "personalizado", name: "Custom",          title: "You choose the scene",    desc: "Describe what you want and the AI creates it your way.", img: `${BASE}/produto.jpg` },
   ];
   if (lang === "es") return [
-    { id: "fundo_branco", name: "Fondo blanco", title: "Foto como Mercado Libre", desc: "Fondo limpio y profesional. Ideal para tiendas online.", img: `${BASE}/fundo_branco_split.jpg` },
-    { id: "simulacao", name: "Foto en escena", title: "Producto en ambiente real", desc: "Pon tu producto en una escena bonita y real.", img: `${BASE}/simulacao.jpg` },
-    { id: "catalogo", name: "Con modelo", title: "Ropa vestida por IA", desc: "Modelo virtual usa tu prenda sin necesitar fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video", name: "Video animado", title: "Foto que se mueve", desc: "Transforma tu foto en un video listo para Reels.", img: "", badge: "PRO" },
-    { id: "promo", name: "Post de promoción", title: "Arte lista para publicar", desc: "Crea un post con precio y texto para Instagram.", img: `${BASE}/promo_thumb.jpg` },
-    { id: "personalizado", name: "A mi manera", title: "Tú eliges la escena", desc: "Describe lo que quieres y la IA lo crea a tu manera.", img: `${BASE}/produto.jpg` },
+    { id: "simulacao",   name: "Foto en escena",    title: "Producto en ambiente real", desc: "Pon tu producto en una escena bonita y real.", img: `${BASE}/simulacao.jpg`, badge: "Más usado" },
+    { id: "catalogo",    name: "Con modelo",         title: "Ropa vestida por IA",      desc: "Modelo virtual usa tu prenda sin necesitar fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
+    { id: "video",       name: "Video animado",      title: "Foto que se mueve",        desc: "Transforma tu foto en un video listo para Reels.", img: "", badge: "PRO" },
+    { id: "personalizado", name: "A mi manera",      title: "Tú eliges la escena",      desc: "Describe lo que quieres y la IA lo crea a tu manera.", img: `${BASE}/produto.jpg` },
   ];
   return [
-    { id: "fundo_branco", name: "Fundo branco", title: "Foto igual Mercado Livre", desc: "Fundo limpo e profissional. Ideal para lojas online.", img: `${BASE}/fundo_branco_split.jpg` },
-    { id: "simulacao", name: "Foto em cena", title: "Produto em ambiente real", desc: "Coloca seu produto numa cena bonita e real.", img: `${BASE}/simulacao.jpg` },
-    { id: "catalogo", name: "Com modelo", title: "Roupa vestida por IA", desc: "Modelo virtual usa sua peça sem precisar de fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video", name: "Vídeo animado", title: "Foto que se mexe", desc: "Transforma sua foto num vídeo pronto para Reels.", img: "", badge: "PRO" },
-    { id: "promo", name: "Post de promoção", title: "Arte pronta para postar", desc: "Cria post com preço e texto para divulgar no Instagram.", img: `${BASE}/promo_thumb.jpg` },
-    { id: "personalizado", name: "Do meu jeito", title: "Você escolhe a cena", desc: "Descreva o que quer e a IA cria do seu jeito.", img: `${BASE}/produto.jpg` },
+    { id: "simulacao",   name: "Foto em cena",      title: "Produto em ambiente real", desc: "Coloca seu produto numa cena bonita e real.", img: `${BASE}/simulacao.jpg`, badge: "Mais usado" },
+    { id: "catalogo",    name: "Com modelo",         title: "Roupa vestida por IA",    desc: "Modelo virtual usa sua peça sem precisar de fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
+    { id: "video",       name: "Vídeo animado",      title: "Foto que se mexe",        desc: "Transforma sua foto num vídeo pronto para Reels.", img: "", badge: "PRO" },
+    { id: "personalizado", name: "Do meu jeito",     title: "Você escolhe a cena",     desc: "Descreva o que quer e a IA cria do seu jeito.", img: `${BASE}/produto.jpg` },
   ];
 }
 

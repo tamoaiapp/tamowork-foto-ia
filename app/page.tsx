@@ -477,6 +477,8 @@ export default function HomePage() {
   // Photo editor
   const [editorOpen, setEditorOpen] = useState(false);
   const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [removingResultBg, setRemovingResultBg] = useState(false);
 
   // Video state
   const [videoMode, setVideoMode] = useState(false);
@@ -1122,6 +1124,23 @@ export default function HomePage() {
     }
   }
 
+  async function handleRemoveResultBg() {
+    const url = editedImageUrl ?? job?.output_image_url;
+    if (!url) return;
+    setRemovingResultBg(true);
+    try {
+      const { removeBackground } = await import("@imgly/background-removal");
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const noBgBlob = await removeBackground(blob, { proxyToWorker: false, output: { format: "image/png" } });
+      setEditedImageUrl(URL.createObjectURL(noBgBlob));
+    } catch {
+      alert(lang === "en" ? "Could not remove background. Try again." : "Não foi possível remover o fundo. Tente novamente.");
+    } finally {
+      setRemovingResultBg(false);
+    }
+  }
+
   function resetJob() {
     // Marca o job atual como descartado para evitar restauração automática
     if (job?.id) {
@@ -1564,13 +1583,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* PASSO 2: Modo Promo — componente próprio */}
-        {workState === "sem_trabalho" && modeSelected && creationMode === "promo" && !videoMode && (
-          <PromoCreator onBack={() => setModeSelected(false)} />
-        )}
-
         {/* PASSO 2: Formulário após escolher o modo */}
-        {workState === "sem_trabalho" && modeSelected && creationMode !== "promo" && !videoMode && (
+        {workState === "sem_trabalho" && modeSelected && !videoMode && (
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
@@ -1887,25 +1901,24 @@ export default function HomePage() {
               <h2 style={{ ...styles.centerTitle, textAlign: "left" as const, marginBottom: 4 }}>{t("result_ready")}</h2>
               <p style={{ fontSize: 13, color: "#8394b0", marginBottom: 12 }}>Sua foto foi gerada com sucesso</p>
 
-              {/* Baixar + Editar lado a lado */}
-              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
-                  {t("result_download")}
+              {/* Baixar */}
+              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
+                {t("result_download")}
+              </button>
+
+              {/* 3 botões de edição empilhados */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+                <button onClick={() => setPromoOpen(true)} style={styles.editActionBtn}>
+                  🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
+                </button>
+                <button onClick={handleRemoveResultBg} disabled={removingResultBg} style={styles.editActionBtn}>
+                  {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
                 </button>
                 <button onClick={() => {
                   const url = editedImageUrl ?? job.output_image_url;
-                  if (url) {
-                    sessionStorage.setItem("editor_image", url);
-                    if (job?.id) {
-                      try {
-                        const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
-                        if (!dismissed.includes(job.id)) { dismissed.push(job.id); sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed)); }
-                      } catch { /* ignora */ }
-                    }
-                    router.push("/editor");
-                  }
-                }} style={{ ...styles.editBtn, flex: 1, textAlign: "center" as const }}>
-                  {t("result_edit")}
+                  if (url) { sessionStorage.setItem("editor_image", url); router.push("/editor"); }
+                }} style={styles.editActionBtn}>
+                  ✏️ {lang === "en" ? "Customize" : "Personalizar"}
                 </button>
               </div>
 
@@ -1945,24 +1958,25 @@ export default function HomePage() {
 
             {/* Mobile: mesmo layout, só muda padding */}
             <div className="result-mobile-actions" style={{ display: "block", padding: "16px 16px 28px" }}>
-              {/* Baixar + Editar */}
-              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>
-                  {t("result_download")}
+              {/* Baixar */}
+              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
+                {t("result_download")}
+              </button>
+
+              {/* 3 botões de edição empilhados */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+                <button onClick={() => setPromoOpen(true)} style={styles.editActionBtn}>
+                  🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
+                </button>
+                <button onClick={handleRemoveResultBg} disabled={removingResultBg} style={styles.editActionBtn}>
+                  {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
                 </button>
                 <button onClick={() => {
                   const url = editedImageUrl ?? job.output_image_url;
-                  if (url) {
-                    sessionStorage.setItem("editor_image", url);
-                    if (job?.id) {
-                      try {
-                        const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
-                        if (!dismissed.includes(job.id)) { dismissed.push(job.id); sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed)); }
-                      } catch { /* ignora */ }
-                    }
-                    router.push("/editor");
-                  }
-                }} style={{ ...styles.editBtn, flex: 1, textAlign: "center" as const }}>{t("result_edit")}</button>
+                  if (url) { sessionStorage.setItem("editor_image", url); router.push("/editor"); }
+                }} style={styles.editActionBtn}>
+                  ✏️ {lang === "en" ? "Customize" : "Personalizar"}
+                </button>
               </div>
 
               {/* Gerar novamente + Criar vídeo */}
@@ -2176,6 +2190,12 @@ export default function HomePage() {
           onClose={() => setShowUpsell(false)}
         />
       )}
+
+      {promoOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "#07080b", overflowY: "auto" }}>
+          <PromoCreator onBack={() => setPromoOpen(false)} />
+        </div>
+      )}
     </div>
   );
 }
@@ -2375,6 +2395,14 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#111820", border: "1px solid rgba(168,85,247,0.4)",
     borderRadius: 12, padding: "12px 18px", color: "#a855f7",
     fontSize: 14, fontWeight: 700, cursor: "pointer", flexShrink: 0,
+  },
+  editActionBtn: {
+    width: "100%", background: "#111820",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 12, padding: "13px 16px",
+    color: "#eef2f9", fontSize: 14, fontWeight: 600,
+    cursor: "pointer", textAlign: "left" as const,
+    display: "flex", alignItems: "center", gap: 8,
   },
   progressBarBg: {
     width: "100%", height: 5, background: "rgba(255,255,255,0.08)",
