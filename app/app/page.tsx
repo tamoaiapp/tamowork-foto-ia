@@ -14,34 +14,41 @@ function detectPlatform(): "android" | "ios" | "desktop" {
   return "desktop";
 }
 
+function isInStandaloneMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return (window.navigator as { standalone?: boolean }).standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches;
+}
+
 export default function AppRedirectPage() {
   const router = useRouter();
   const [platform, setPlatform] = useState<"android" | "ios" | "desktop" | null>(null);
   const [dots, setDots] = useState(".");
   const [redirecting, setRedirecting] = useState(false);
+  const [standalone, setStandalone] = useState(false);
 
   useEffect(() => {
     const p = detectPlatform();
+    const sa = isInStandaloneMode();
     setPlatform(p);
+    setStandalone(sa);
 
     if (p === "android") {
       setRedirecting(true);
       const timer = setTimeout(() => {
-        // Tenta abrir o app nativo; se não tiver instalado vai para Play Store
         window.location.href = ANDROID_APP_URL;
-        // Fallback: se não abriu em 2s, vai para web
-        setTimeout(() => {
-          window.location.href = ANDROID_FALLBACK;
-        }, 2000);
+        setTimeout(() => { window.location.href = ANDROID_FALLBACK; }, 2000);
       }, 1800);
       return () => clearTimeout(timer);
-    } else {
-      // iOS ou desktop → vai para login após 1.4s
-      const timer = setTimeout(() => {
-        router.replace("/login");
-      }, 1400);
+    } else if (p === "ios" && sa) {
+      // Já está rodando como PWA — vai direto pro app
+      const timer = setTimeout(() => { router.replace("/"); }, 1000);
+      return () => clearTimeout(timer);
+    } else if (p === "desktop") {
+      const timer = setTimeout(() => { router.replace("/login"); }, 1400);
       return () => clearTimeout(timer);
     }
+    // iOS sem standalone: não redireciona automaticamente — mostra instruções
   }, [router]);
 
   // Animação dos pontinhos
@@ -53,6 +60,8 @@ export default function AppRedirectPage() {
   }, []);
 
   const isAndroid = platform === "android";
+  const isIOS = platform === "ios";
+  const showIOSInstructions = isIOS && !standalone;
 
   return (
     <>
@@ -72,6 +81,15 @@ export default function AppRedirectPage() {
           0%, 100% { box-shadow: 0 0 30px rgba(139,92,246,0.4), 0 0 60px rgba(99,102,241,0.15); }
           50%       { box-shadow: 0 0 50px rgba(139,92,246,0.7), 0 0 100px rgba(99,102,241,0.3); }
         }
+        @keyframes arrowBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(5px); }
+        }
+        @keyframes shimmer {
+          0% { opacity: 0.6; }
+          50% { opacity: 1; }
+          100% { opacity: 0.6; }
+        }
       `}</style>
 
       <div style={{
@@ -80,14 +98,13 @@ export default function AppRedirectPage() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: showIOSInstructions ? "flex-start" : "center",
         gap: 0,
-        padding: 24,
+        padding: showIOSInstructions ? "48px 24px 120px" : 24,
       }}>
 
         {/* Logo com anel giratório */}
-        <div style={{ position: "relative", marginBottom: 36, animation: "fadeUp 0.5s ease both" }}>
-          {/* Anel giratório */}
+        <div style={{ position: "relative", marginBottom: 28, animation: "fadeUp 0.5s ease both" }}>
           <div style={{
             position: "absolute",
             inset: -10,
@@ -97,102 +114,224 @@ export default function AppRedirectPage() {
             borderRight: "2px solid #a855f7",
             animation: "spinRing 1.2s linear infinite",
           }} />
-          {/* Ícone */}
           <div style={{
-            width: 90,
-            height: 90,
-            borderRadius: 24,
+            width: 80,
+            height: 80,
+            borderRadius: 22,
             background: "linear-gradient(135deg, #6366f1, #a855f7)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             animation: "pulse 2s ease-in-out infinite, glow 2s ease-in-out infinite",
           }}>
-            <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
+            <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
               <path d="M8 22l5-7 4 4.5 4.5-6.5L25 22H8z" fill="white" opacity="0.95" />
               <circle cx="12.5" cy="11" r="3" fill="white" opacity="0.95" />
             </svg>
           </div>
         </div>
 
-        {/* Textos */}
-        <div style={{ textAlign: "center", animation: "fadeUp 0.5s 0.15s ease both", opacity: 0 }}>
+        {/* Nome */}
+        <div style={{ textAlign: "center", animation: "fadeUp 0.5s 0.1s ease both", opacity: 0, marginBottom: showIOSInstructions ? 32 : 0 }}>
           <div style={{
-            fontSize: 28,
+            fontSize: 26,
             fontWeight: 900,
             background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             letterSpacing: "-0.03em",
-            marginBottom: 6,
+            marginBottom: 4,
           }}>
             TamoWork
           </div>
-          <div style={{ fontSize: 14, color: "#4e5c72", fontWeight: 600, letterSpacing: "0.06em", marginBottom: 32 }}>
+          <div style={{ fontSize: 13, color: "#4e5c72", fontWeight: 600, letterSpacing: "0.06em" }}>
             FOTO IA
           </div>
         </div>
 
-        {/* Status */}
-        <div style={{ textAlign: "center", animation: "fadeUp 0.5s 0.3s ease both", opacity: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#eef2f9", marginBottom: 8 }}>
-            {isAndroid && redirecting
-              ? `Abrindo o app${dots}`
-              : platform === "ios"
-              ? `Abrindo${dots}`
-              : platform === "desktop"
-              ? `Redirecionando${dots}`
-              : `Carregando${dots}`}
-          </div>
-          <div style={{ fontSize: 13, color: "#4e5c72" }}>
-            {isAndroid
-              ? "Você será redirecionado em instantes"
-              : "Preparando sua conta grátis"}
-          </div>
-        </div>
+        {/* ── iOS: instruções para adicionar à tela inicial ── */}
+        {showIOSInstructions && (
+          <div style={{ width: "100%", maxWidth: 380, animation: "fadeUp 0.5s 0.25s ease both", opacity: 0 }}>
 
-        {/* Barra de progresso */}
-        <div style={{
-          marginTop: 40,
-          width: 180,
-          height: 3,
-          background: "rgba(255,255,255,0.07)",
-          borderRadius: 99,
-          overflow: "hidden",
-          animation: "fadeUp 0.5s 0.4s ease both",
-          opacity: 0,
-        }}>
-          <div style={{
-            height: "100%",
-            background: "linear-gradient(90deg, #6366f1, #a855f7)",
-            borderRadius: 99,
-            animation: "spinRing 1.4s ease-in-out infinite alternate",
-            width: "60%",
-            transition: "width 0.3s ease",
-          }} />
-        </div>
+            {/* Card principal */}
+            <div style={{
+              background: "linear-gradient(160deg, #13102a 0%, #0f1520 60%, #0c1018 100%)",
+              border: "1px solid rgba(168,85,247,0.3)",
+              borderRadius: 20,
+              padding: "24px 20px",
+              marginBottom: 16,
+              boxShadow: "0 0 40px rgba(168,85,247,0.08)",
+            }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", marginBottom: 6, textAlign: "center" }}>
+                Adicione à Tela Inicial 📲
+              </div>
+              <div style={{ fontSize: 13, color: "#8394b0", textAlign: "center", marginBottom: 20, lineHeight: 1.5 }}>
+                Acesse o TamoWork como um app direto da tela do seu iPhone — sem abrir o Safari toda vez.
+              </div>
 
-        {/* Link manual caso não redirecione */}
-        {platform !== null && (
-          <div style={{ marginTop: 48, animation: "fadeUp 0.5s 0.6s ease both", opacity: 0, textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#4e5c72", marginBottom: 8 }}>
-              Não redirecionou?
+              {/* Passo 1 */}
+              <div style={stepStyle}>
+                <div style={stepNum}>1</div>
+                <div style={{ flex: 1 }}>
+                  <div style={stepTitle}>
+                    Toque em{" "}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, verticalAlign: "middle" }}>
+                      {/* Ícone de compartilhar do Safari */}
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ display: "inline-block", verticalAlign: "middle" }}>
+                        <rect x="3" y="11" width="18" height="11" rx="2" stroke="#a78bfa" strokeWidth="1.8" fill="none"/>
+                        <path d="M12 3v10M9 6l3-3 3 3" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span style={{ color: "#a78bfa", fontWeight: 700 }}>Compartilhar</span>
+                    </span>
+                  </div>
+                  <div style={stepSub}>Na barra inferior do Safari</div>
+                </div>
+              </div>
+
+              {/* Passo 2 */}
+              <div style={stepStyle}>
+                <div style={stepNum}>2</div>
+                <div style={{ flex: 1 }}>
+                  <div style={stepTitle}>
+                    Selecione{" "}
+                    <span style={{ color: "#a78bfa", fontWeight: 700 }}>"Adicionar à Tela de Início"</span>
+                  </div>
+                  <div style={stepSub}>Role a lista de opções para baixo</div>
+                </div>
+              </div>
+
+              {/* Passo 3 */}
+              <div style={{ ...stepStyle, marginBottom: 0 }}>
+                <div style={stepNum}>3</div>
+                <div style={{ flex: 1 }}>
+                  <div style={stepTitle}>Toque em <span style={{ color: "#a78bfa", fontWeight: 700 }}>"Adicionar"</span></div>
+                  <div style={stepSub}>O ícone aparece na sua tela inicial</div>
+                </div>
+              </div>
             </div>
+
+            {/* Seta apontando para baixo (Safari share button fica na parte de baixo) */}
+            <div style={{ textAlign: "center", marginBottom: 16, animation: "arrowBounce 1.5s ease-in-out infinite" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14M5 12l7 7 7-7" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+
+            {/* Separador */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+              <span style={{ fontSize: 12, color: "#4e5c72" }}>ou</span>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+            </div>
+
+            {/* Botão entrar pelo browser */}
             <a
-              href={isAndroid ? ANDROID_APP_URL : "/login"}
+              href="/login"
               style={{
-                fontSize: 13,
-                color: "#8b5cf6",
+                display: "block",
+                textAlign: "center",
+                background: "rgba(99,102,241,0.12)",
+                border: "1px solid rgba(99,102,241,0.3)",
+                borderRadius: 14,
+                padding: "13px",
+                fontSize: 14,
                 fontWeight: 600,
-                textDecoration: "underline",
-                cursor: "pointer",
+                color: "#a78bfa",
+                textDecoration: "none",
               }}
             >
-              {isAndroid ? "Abrir na Play Store" : "Acessar agora"}
+              Continuar pelo Safari mesmo
             </a>
           </div>
+        )}
+
+        {/* ── Android / Desktop: status de redirecionamento ── */}
+        {!showIOSInstructions && platform !== null && (
+          <>
+            <div style={{ textAlign: "center", animation: "fadeUp 0.5s 0.3s ease both", opacity: 0, marginTop: 24 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#eef2f9", marginBottom: 8 }}>
+                {isAndroid && redirecting
+                  ? `Abrindo o app${dots}`
+                  : platform === "desktop"
+                  ? `Redirecionando${dots}`
+                  : `Carregando${dots}`}
+              </div>
+              <div style={{ fontSize: 13, color: "#4e5c72" }}>
+                {isAndroid
+                  ? "Você será redirecionado em instantes"
+                  : "Preparando sua conta grátis"}
+              </div>
+            </div>
+
+            {/* Barra de progresso */}
+            <div style={{
+              marginTop: 32,
+              width: 160,
+              height: 3,
+              background: "rgba(255,255,255,0.07)",
+              borderRadius: 99,
+              overflow: "hidden",
+              animation: "fadeUp 0.5s 0.4s ease both",
+              opacity: 0,
+            }}>
+              <div style={{
+                height: "100%",
+                background: "linear-gradient(90deg, #6366f1, #a855f7)",
+                borderRadius: 99,
+                animation: "spinRing 1.4s ease-in-out infinite alternate",
+                width: "60%",
+              }} />
+            </div>
+
+            {/* Link manual */}
+            <div style={{ marginTop: 40, animation: "fadeUp 0.5s 0.6s ease both", opacity: 0, textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "#4e5c72", marginBottom: 8 }}>Não redirecionou?</div>
+              <a
+                href={isAndroid ? ANDROID_APP_URL : "/login"}
+                style={{ fontSize: 13, color: "#8b5cf6", fontWeight: 600, textDecoration: "underline" }}
+              >
+                {isAndroid ? "Abrir na Play Store" : "Acessar agora"}
+              </a>
+            </div>
+          </>
         )}
       </div>
     </>
   );
 }
+
+const stepStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 12,
+  marginBottom: 16,
+};
+
+const stepNum: React.CSSProperties = {
+  width: 26,
+  height: 26,
+  borderRadius: "50%",
+  background: "rgba(99,102,241,0.2)",
+  border: "1px solid rgba(99,102,241,0.4)",
+  color: "#a78bfa",
+  fontSize: 13,
+  fontWeight: 700,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+  marginTop: 1,
+};
+
+const stepTitle: React.CSSProperties = {
+  fontSize: 14,
+  fontWeight: 600,
+  color: "#eef2f9",
+  marginBottom: 2,
+  lineHeight: 1.4,
+};
+
+const stepSub: React.CSSProperties = {
+  fontSize: 12,
+  color: "#4e5c72",
+};
