@@ -62,9 +62,14 @@ export async function POST(req: NextRequest) {
       const userId: string = payment.external_reference ?? "";
       if (userId) {
         const periodEnd = new Date();
-        // Detecta plano pelo título ou valor
-        const isWeekly = payment.additional_info?.items?.[0]?.id === "weekly";
-        periodEnd.setDate(periodEnd.getDate() + (isWeekly ? 7 : 365));
+        // Detecta plano pelo item id ou valor do pagamento
+        const itemId = payment.additional_info?.items?.[0]?.id ?? "";
+        const amount = payment.transaction_amount ?? 0;
+        const isMonthly = itemId === "weekly" || itemId === "monthly" || (amount >= 40 && amount < 100);
+        const isAnnual = itemId === "annual" || amount >= 200;
+        if (isMonthly) periodEnd.setMonth(periodEnd.getMonth() + 1);
+        else if (isAnnual) periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+        else periodEnd.setMonth(periodEnd.getMonth() + 1); // fallback seguro: 1 mês
 
         await setUserPro(userId, { periodEnd, mpSubscriptionId: String(event.data.id) });
         console.log(`[MP] payment approved: user ${userId} → PRO até ${periodEnd.toISOString()}`);
