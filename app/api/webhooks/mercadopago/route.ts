@@ -108,13 +108,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Payment processed for a subscription cycle
+  // Payment processed for a subscription cycle (renovação mensal automática)
   if (event.type === "subscription_authorized_payment") {
     const payment = await mpGet(`/authorized_payments/${event.data.id}`);
     if (payment.status === "processed") {
-      // Extend subscription by 12 months from now
+      // Extende 1 mês (cobrança mensal recorrente)
       const periodEnd = new Date();
-      periodEnd.setMonth(periodEnd.getMonth() + 12);
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
 
       const { data: plan } = await supabase
         .from("user_plans")
