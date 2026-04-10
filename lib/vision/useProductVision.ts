@@ -55,7 +55,7 @@ function extractProduct(raw: string): string {
     ""
   );
   s = s.replace(
-    /[,.]?\s+(in|on|at|near|inside|outside|in front of)\s+(a |an |the )?(store|shop|mall|market|showroom|studio|room|street|background|display|window|shelf|rack|wall).+$/i,
+    /[,.]?\s+(in|on|at|near|inside|outside|in front of)\s+(a |an |the )?(store|shop|mall|market|showroom|studio|room|street|background|display|window|shelf|rack|wall).*$/i,
     ""
   );
   s = s.replace(/[,.]?\s+with\s+(a |an |the )?(background|wall|shelf|rack|store|display).+$/i, "");
