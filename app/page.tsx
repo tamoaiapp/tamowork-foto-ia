@@ -8,6 +8,7 @@ import BottomNav from "@/app/components/BottomNav";
 import ModeSelector, { type CreationMode } from "@/app/components/ModeSelector";
 import dynamic from "next/dynamic";
 import { useI18n, LangSelector } from "@/lib/i18n";
+import { useProductVision } from "@/lib/vision/useProductVision";
 const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 
@@ -488,6 +489,7 @@ export default function HomePage() {
   const videoElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const countdown = useCountdown(rateLimitedUntil);
+  const vision = useProductVision();
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -851,8 +853,19 @@ export default function HomePage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
     setImageFile(file);
-    if (file) setPreview(URL.createObjectURL(file));
-    else setPreview(null);
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+      // Analisa automaticamente o produto na imagem — sem API externa
+      vision.analyzeImage(file).then((caption) => {
+        if (caption) {
+          // Preenche o nome do produto apenas se o campo estiver vazio ou com texto padrão
+          setProduto((prev) => (prev.trim() === "" ? caption : prev));
+        }
+      });
+    } else {
+      setPreview(null);
+      vision.reset();
+    }
   }
 
   // Processa fundo branco no browser via WebAssembly (sem servidor)
@@ -1286,6 +1299,7 @@ export default function HomePage() {
           0% { background-position: -200% center; }
           100% { background-position: 200% center; }
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.5; transform: scale(0.85); }
@@ -1652,8 +1666,26 @@ export default function HomePage() {
               )}
 
               <div style={styles.fieldGroup}>
-                <label style={styles.label}>O que é o produto?</label>
-                <input type="text" placeholder="Ex: bolo de chocolate artesanal com morango" value={produto} onChange={(e) => setProduto(e.target.value)} required style={styles.input} />
+                <label style={{ ...styles.label, display: "flex", alignItems: "center", gap: 8 }}>
+                  O que é o produto?
+                  {vision.isAnalyzing && (
+                    <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                      <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", border: "1.5px solid rgba(167,139,250,0.3)", borderTopColor: "#a78bfa", animation: "spin 0.7s linear infinite" }} />
+                      {vision.state === "loading_model" ? "Carregando IA de visão…" : "Analisando foto…"}
+                    </span>
+                  )}
+                  {vision.state === "done" && produto && (
+                    <span style={{ fontSize: 11, color: "#16c784", fontWeight: 600 }}>✓ Detectado automaticamente</span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  placeholder={vision.isAnalyzing ? "Detectando produto…" : "Ex: bolo de chocolate artesanal com morango"}
+                  value={produto}
+                  onChange={(e) => { setProduto(e.target.value); vision.reset(); }}
+                  required
+                  style={{ ...styles.input, ...(vision.isAnalyzing ? { opacity: 0.6 } : {}) }}
+                />
               </div>
 
               {creationMode !== "fundo_branco" && (
