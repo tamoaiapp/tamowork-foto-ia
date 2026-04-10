@@ -286,9 +286,6 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
           <div
             ref={stageRef}
             style={s.stage}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerLeave={onPointerUp}
             onClick={e => e.stopPropagation()}
           >
             <img
@@ -323,6 +320,9 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
                       touchAction: "none",
                     }}
                     onPointerDown={e => onPointerDown(e, l.id, l.x, l.y)}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerUp}
                   />
                 );
               } else {
@@ -349,6 +349,9 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
                       touchAction: "none",
                     }}
                     onPointerDown={e => onPointerDown(e, t.id, t.x, t.y)}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerUp}
                   >
                     {t.text}
                   </div>
