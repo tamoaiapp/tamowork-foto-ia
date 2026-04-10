@@ -1,6 +1,54 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow } from "@/lib/comfyui/client";
 
+/**
+ * Prompt imperativo para o Qwen Image Edit (modo catálogo).
+ * O Qwen responde melhor a instruções diretas do que prompts descritivos.
+ */
+function buildCatalogPrompt(produto: string, cenario: string): string {
+  const parts: string[] = [];
+
+  // Instrução principal: vestir a roupa do produto na pessoa do modelo
+  parts.push(
+    `Dress the person from the second reference image with the clothing shown in the first product image.`,
+    `Keep the person's face, skin tone, hair, and body exactly as in the reference photo — do not change them.`,
+    `The clothing must look exactly like in the product photo: same colors, same patterns, same style.`,
+  );
+
+  // Fundo/cenário
+  if (cenario.trim()) {
+    parts.push(`Place the person in this setting: ${cenario}.`);
+  } else {
+    parts.push(`Replace the entire background with a clean, elegant studio environment or a simple lifestyle setting.`);
+  }
+
+  // Limpeza do fundo — instrução mais direta para Qwen
+  parts.push(
+    `Remove ALL elements from the background that are not part of the final scene: remove every mannequin, remove every clothing rack, remove every store shelf, remove every display stand, remove every price tag, and remove every other person or figure.`,
+    `The final image must show exactly ONE person wearing the product, with a clean background.`,
+    `Do not include any part of the original store, showroom, or display environment in the output.`,
+  );
+
+  // Qualidade
+  parts.push(`Professional commercial photo, sharp focus, realistic lighting.`);
+
+  if (produto.trim()) {
+    parts.push(`Product being shown: ${produto}.`);
+  }
+
+  return parts.join(" ");
+}
+
+function buildCatalogNegative(): string {
+  return [
+    "mannequin, mannequins, dummy, bust form, clothing rack, store shelf, display stand, store background, showroom, retail environment",
+    "multiple people, crowd, other figures in background, second person, third person",
+    "changed face, different face, altered skin tone, different hair",
+    "blurry, low quality, watermark, text overlay, logo",
+    "black border, white padding, screenshot frame, UI element",
+  ].join(", ");
+}
+
 const MODEL_IMG_PREFIX = "model_img:";
 
 export async function submitImageJob(jobId: string) {
@@ -28,8 +76,6 @@ export async function submitImageJob(jobId: string) {
   const [produto_frase, cenarioPart] = rawPrompt.split(" | cenário: ");
   const cenario = cenarioPart ?? "";
 
-  const promptResult = await criarPrompt(produto_frase.trim(), cenario.trim());
-
   const comfyIndex = 0;
   const comfyBase = COMFY_BASES[0];
 
@@ -37,9 +83,13 @@ export async function submitImageJob(jobId: string) {
 
   let promptId: string;
   if (modelImageUrl) {
+    // Modo catálogo: usa Qwen Image Edit — precisa de instruções diretas e imperativas
     const modelImageName = await uploadImageToComfy(modelImageUrl, comfyBase, `model_${jobId}`);
-    promptId = await submitCatalogWorkflow(jobId, productImageName, modelImageName, promptResult.positive, promptResult.negative, comfyBase);
+    const catalogPos = buildCatalogPrompt(produto_frase.trim(), cenario.trim());
+    const catalogNeg = buildCatalogNegative();
+    promptId = await submitCatalogWorkflow(jobId, productImageName, modelImageName, catalogPos, catalogNeg, comfyBase);
   } else {
+    const promptResult = await criarPrompt(produto_frase.trim(), cenario.trim());
     promptId = await submitWorkflow(jobId, productImageName, promptResult.positive, promptResult.negative, comfyBase);
   }
 
