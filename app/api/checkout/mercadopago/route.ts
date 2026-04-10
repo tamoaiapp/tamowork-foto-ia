@@ -4,8 +4,6 @@ import { createServerClient } from "@/lib/supabase/server";
 const MP_TOKEN   = (process.env.MP_ACCESS_TOKEN ?? "").trim();
 const APP_URL    = (process.env.APP_URL ?? "https://www.tamowork.com").trim();
 const IS_TEST    = !!process.env.MP_TEST_PLAN_ID;
-// Plano mensal recorrente já criado no MercadoPago
-const MP_MONTHLY_PLAN_ID = (process.env.MP_MONTHLY_PLAN_ID ?? "7377c586896b417fb482425c657028fc").trim();
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient();
@@ -18,25 +16,30 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const isMonthly = body.plan === "monthly";
 
-  // ── Plano MENSAL → preapproval (assinatura recorrente) ──────────────────
+  // ── Plano MENSAL → preference (pagamento único mensal via checkout) ──────
   if (isMonthly) {
+    const price = IS_TEST ? 1 : 49;
     const payload = {
-      preapproval_plan_id: MP_MONTHLY_PLAN_ID,
-      reason: "TamoWork Pro — Mensal",
-      payer_email: user.email ?? "",
-      external_reference: user.id,
-      back_url: `${APP_URL}/obrigado?source=mp`,
-      notification_url: `${APP_URL}/api/webhooks/mercadopago`,
-      auto_recurring: {
-        frequency: 1,
-        frequency_type: "months",
-        transaction_amount: IS_TEST ? 1 : 49,
+      items: [{
+        id: "monthly",
+        title: IS_TEST ? "TamoWork Pro — Teste R$1" : "TamoWork Pro — Mensal",
+        quantity: 1,
+        unit_price: price,
         currency_id: "BRL",
+      }],
+      payer: { email: user.email ?? "" },
+      back_urls: {
+        success: `${APP_URL}/obrigado?source=mp`,
+        failure: `${APP_URL}/onboarding?erro=pagamento`,
+        pending: `${APP_URL}/obrigado?source=mp`,
       },
-      status: "pending",
+      notification_url: `${APP_URL}/api/webhooks/mercadopago`,
+      external_reference: user.id,
+      statement_descriptor: "TAMOWORK",
+      auto_return: "approved",
     };
 
-    const res = await fetch("https://api.mercadopago.com/preapproval", {
+    const res = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${MP_TOKEN}`,
