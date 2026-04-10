@@ -267,6 +267,9 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
       "If the input image shows the product laid flat (flat lay on a bed, floor, or table), reconstruct it being actively worn by a real person instead.",
       "If the input image shows the product inside a plastic bag or garment bag, remove the bag completely and show the product worn by a real person.",
       "If the input image shows the product hanging on a wall hook, door handle, or chair back, remove it from there and show a real person wearing or holding it instead.",
+      "CLEAN BACKGROUND REQUIRED: Remove ALL other objects from the background. Remove all other mannequins, clothing racks, store shelves, display stands, and store elements. Show only the person wearing the product against a clean, neutral, or lifestyle-appropriate background.",
+      "If the original image was taken inside a store, showroom, or display window, completely replace the background with a clean studio or elegant lifestyle environment.",
+      "Only one person must appear in the final image. Remove any other people, mannequins, or figures visible in the background.",
     );
   }
 
@@ -296,7 +299,11 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
   neg.push("Do not change, redesign, stylize, resize, warp, or distort the product.", "Do not move the product to the wrong body location or wrong usage position.", "No text, logos, watermarks.", "No duplicate product.", "No extra objects distracting from the product.");
 
   if (forceHum) {
-    neg.push("No mannequin. No bust. No head form. No dummy. No display stand. No product on mannequin. No hanger. No clothing rail. No product hanging. No flat lay. No plastic bag. No garment bag. No product on hook. No product alone without person.");
+    neg.push(
+      "No mannequin. No bust. No head form. No dummy. No display stand. No product on mannequin. No hanger. No clothing rail. No product hanging. No flat lay. No plastic bag. No garment bag. No product on hook. No product alone without person.",
+      "No other mannequins in the background. No store display in background. No clothing rack in background. No store shelving in background. No shop window background. No retail environment. No other clothing items visible in background.",
+      "No other people in the image. No crowd. No other figures. Only one person wearing the product.",
+    );
   }
 
   neg.push("Do not invent decorations, fantasy elements, costumes, props, or themed add-ons.", "Do not reinterpret the product as a costume or novelty item.", "No floating product.", "No unrealistic glamour effects.");
