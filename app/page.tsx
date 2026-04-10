@@ -1095,7 +1095,13 @@ export default function HomePage() {
     setVideoJob(await res.json());
   }
 
-  async function handleVideoSubmit(imageUrl: string) {
+  async function handleVideoSubmit(rawImageUrl: string) {
+    // Sanitiza URL malformada (ex: "https://htpps::https://storage...")
+    let imageUrl = String(rawImageUrl).trim();
+    imageUrl = imageUrl.replace(/^https?:\/\/[^/]{1,30}::https?:\/\//i, "https://");
+    imageUrl = imageUrl.replace(/^https?:\/\/https?:\/\//i, "https://");
+    if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) imageUrl = "https://" + imageUrl;
+
     setVideoError("");
     setVideoSubmitting(true);
     try {
