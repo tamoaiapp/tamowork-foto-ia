@@ -40,6 +40,7 @@ const ACCENT = "#a855f7";
 function DemoCarousel() {
   const [idx, setIdx] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const { lang } = useI18n();
 
   function goTo(next: number) {
     setIdx((next + DEMO_CARDS.length) % DEMO_CARDS.length);
@@ -66,11 +67,15 @@ function DemoCarousel() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
         <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
           <img src={card.after} alt="depois" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
-          <span style={{ position: "absolute", bottom: 6, left: 6, background: ACCENT, color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1 }}>DEPOIS IA</span>
+          <span style={{ position: "absolute", bottom: 6, left: 6, background: ACCENT, color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1 }}>
+            {lang === "en" ? "AI AFTER" : lang === "es" ? "IA DESPUÉS" : "DEPOIS IA"}
+          </span>
         </div>
         <div style={{ position: "relative", borderRadius: 14, overflow: "hidden" }}>
           <img src={card.before} alt="antes" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
-          <span style={{ position: "absolute", bottom: 6, left: 6, background: "rgba(0,0,0,0.72)", color: "#aaa", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1 }}>ANTES</span>
+          <span style={{ position: "absolute", bottom: 6, left: 6, background: "rgba(0,0,0,0.72)", color: "#aaa", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1 }}>
+            {lang === "en" ? "BEFORE" : lang === "es" ? "ANTES" : "ANTES"}
+          </span>
         </div>
       </div>
 
@@ -87,7 +92,9 @@ function DemoCarousel() {
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />
           {card.label}
         </div>
-        <span style={{ position: "absolute", bottom: 8, left: 8, background: `${ACCENT}dd`, color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1 }}>VÍDEO IA</span>
+        <span style={{ position: "absolute", bottom: 8, left: 8, background: `${ACCENT}dd`, color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, letterSpacing: 1 }}>
+          {lang === "en" ? "AI VIDEO" : lang === "es" ? "VIDEO IA" : "VÍDEO IA"}
+        </span>
       </div>
 
       <div style={{ display: "flex", justifyContent: "center", gap: 5 }}>
@@ -149,8 +156,8 @@ function AuthCard() {
       </div>
 
       {/* Título */}
-      <div style={a.cardTitle}>Comece grátis agora</div>
-      <div style={a.cardSub}>Sem cartão de crédito</div>
+      <div style={a.cardTitle}>{lang === "en" ? "Start for free" : lang === "es" ? "Empieza gratis ahora" : "Comece grátis agora"}</div>
+      <div style={a.cardSub}>{lang === "en" ? "No credit card required" : lang === "es" ? "Sin tarjeta de crédito" : "Sem cartão de crédito"}</div>
 
       {/* Google */}
       <button onClick={handleGoogle} disabled={googleLoading} style={a.googleBtn}>
@@ -162,41 +169,46 @@ function AuthCard() {
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
         )}
-        <span>{googleLoading ? "Entrando..." : "Entrar com Google"}</span>
+        <span>{googleLoading ? t("login_logging") : t("login_google")}</span>
       </button>
 
       {/* Divider */}
       <div style={a.divider}>
         <div style={a.divLine} />
-        <span style={a.divText}>ou e-mail</span>
+        <span style={a.divText}>{lang === "en" ? "or email" : lang === "es" ? "o correo" : "ou e-mail"}</span>
         <div style={a.divLine} />
       </div>
 
       {!showEmail ? (
         <button onClick={() => setShowEmail(true)} style={a.emailToggle}>
-          Usar e-mail e senha
+          {lang === "en" ? "Use email & password" : lang === "es" ? "Usar correo y contraseña" : "Usar e-mail e senha"}
         </button>
       ) : (
         <>
           <div style={a.tabs}>
-            <button style={{ ...a.tab, ...(mode === "login" ? a.tabActive : {}) }} onClick={() => { setMode("login"); setError(""); }}>Entrar</button>
-            <button style={{ ...a.tab, ...(mode === "signup" ? a.tabActive : {}) }} onClick={() => { setMode("signup"); setError(""); }}>Criar conta</button>
+            <button style={{ ...a.tab, ...(mode === "login" ? a.tabActive : {}) }} onClick={() => { setMode("login"); setError(""); }}>{t("login_enter")}</button>
+            <button style={{ ...a.tab, ...(mode === "signup" ? a.tabActive : {}) }} onClick={() => { setMode("signup"); setError(""); }}>{t("login_create_account")}</button>
           </div>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <input type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} required style={a.input} />
-            <input type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} required style={a.input} />
+            <input type="email" placeholder={t("login_email")} value={email} onChange={e => setEmail(e.target.value)} required style={a.input} />
+            <input type="password" placeholder={t("login_password")} value={password} onChange={e => setPassword(e.target.value)} required style={a.input} />
             {error && <div style={a.errorBox}>{error}</div>}
             {msg && <div style={a.successBox}>{msg}</div>}
             <button type="submit" disabled={loading} style={a.submitBtn}>
-              {loading ? (mode === "login" ? "Entrando..." : "Criando conta...") : (mode === "login" ? "Entrar" : "Criar conta grátis")}
+              {loading ? (mode === "login" ? t("login_logging") : t("login_creating")) : (mode === "login" ? t("login_enter") : t("login_signup"))}
             </button>
           </form>
         </>
       )}
 
       <p style={a.terms}>
-        Ao entrar você concorda com nossos{" "}
-        <a href="/privacidade" style={{ color: "#8394b0", textDecoration: "underline" }}>termos de uso</a>.
+        {lang === "en" ? (
+          <>By signing in you agree to our{" "}<a href="/privacidade" style={{ color: "#8394b0", textDecoration: "underline" }}>terms of use</a>.</>
+        ) : lang === "es" ? (
+          <>Al entrar aceptas nuestros{" "}<a href="/privacidade" style={{ color: "#8394b0", textDecoration: "underline" }}>términos de uso</a>.</>
+        ) : (
+          <>Ao entrar você concorda com nossos{" "}<a href="/privacidade" style={{ color: "#8394b0", textDecoration: "underline" }}>termos de uso</a>.</>
+        )}
       </p>
     </div>
   );
@@ -319,15 +331,37 @@ export default function LoginPage() {
 
           {/* Headline */}
           <div style={{ position: "relative" }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: "#eef2f9", lineHeight: 1.25, letterSpacing: "-0.02em", margin: 0 }}>
-              Foto de celular vira{" "}
-              <span style={{ background: "linear-gradient(135deg, #818cf8, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                foto e vídeo de catálogo
-              </span>{" "}
-              em 1 minuto
-            </h1>
+            {lang === "en" ? (
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: "#eef2f9", lineHeight: 1.25, letterSpacing: "-0.02em", margin: 0 }}>
+                Phone photo becomes{" "}
+                <span style={{ background: "linear-gradient(135deg, #818cf8, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  catalog photo & video
+                </span>{" "}
+                in 1 minute
+              </h1>
+            ) : lang === "es" ? (
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: "#eef2f9", lineHeight: 1.25, letterSpacing: "-0.02em", margin: 0 }}>
+                Foto de celular se convierte en{" "}
+                <span style={{ background: "linear-gradient(135deg, #818cf8, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  foto y video de catálogo
+                </span>{" "}
+                en 1 minuto
+              </h1>
+            ) : (
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: "#eef2f9", lineHeight: 1.25, letterSpacing: "-0.02em", margin: 0 }}>
+                Foto de celular vira{" "}
+                <span style={{ background: "linear-gradient(135deg, #818cf8, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  foto e vídeo de catálogo
+                </span>{" "}
+                em 1 minuto
+              </h1>
+            )}
             <p style={{ fontSize: 15, color: "#8394b0", margin: "10px 0 0", lineHeight: 1.5 }}>
-              Para quem vende no Instagram, Shopee ou WhatsApp — sem fotógrafo, sem estúdio.
+              {lang === "en"
+                ? "For sellers on Instagram, Etsy or WhatsApp — no photographer, no studio."
+                : lang === "es"
+                ? "Para quienes venden en Instagram, Shopee o WhatsApp — sin fotógrafo, sin estudio."
+                : "Para quem vende no Instagram, Shopee ou WhatsApp — sem fotógrafo, sem estúdio."}
             </p>
           </div>
 

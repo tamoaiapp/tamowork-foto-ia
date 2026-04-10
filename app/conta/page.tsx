@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import JobProgress from "./JobProgress";
 import BottomNav from "@/app/components/BottomNav";
+import { useI18n } from "@/lib/i18n";
 
 const VAPID_PUBLIC_KEY = "BOFpGK6deSOtMczLOppZ8RXLb8XbAP0cs4hDHOZtJrDsnLhvzdPQXeojc5CohPhnj0PvNkPd7B7HKLtUva03cGk";
 
@@ -54,6 +55,7 @@ interface PlanData {
 
 export default function ContaPage() {
   const router = useRouter();
+  const { lang } = useI18n();
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<AccountJob[]>([]);
   const [planData, setPlanData] = useState<PlanData | null>(null);
@@ -136,7 +138,12 @@ export default function ContaPage() {
   }
 
   async function handleCancelStripe() {
-    if (!confirm("Cancelar assinatura? Você continuará com acesso até o fim do período pago.")) return;
+    const confirmMsg = lang === "en"
+      ? "Cancel subscription? You'll keep access until the end of the paid period."
+      : lang === "es"
+      ? "¿Cancelar suscripción? Mantendrás el acceso hasta el fin del período pagado."
+      : "Cancelar assinatura? Você continuará com acesso até o fim do período pago.";
+    if (!confirm(confirmMsg)) return;
     setCanceling(true);
     try {
       const { data } = await supabase.auth.getSession();
@@ -146,7 +153,7 @@ export default function ContaPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setCancelDone(true);
-      else alert("Erro ao cancelar. Tente novamente ou entre em contato.");
+      else alert(lang === "en" ? "Error canceling. Please try again or contact us." : lang === "es" ? "Error al cancelar. Inténtalo de nuevo o contáctanos." : "Erro ao cancelar. Tente novamente ou entre em contato.");
     } finally {
       setCanceling(false);
     }
@@ -158,9 +165,13 @@ export default function ContaPage() {
     setEmailLoading(true);
     setEmailMsg("");
     const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
-    if (error) setEmailMsg("Erro: " + error.message);
+    if (error) setEmailMsg((lang === "en" ? "Error: " : lang === "es" ? "Error: " : "Erro: ") + error.message);
     else {
-      setEmailMsg("Confirmação enviada para " + newEmail + ". Verifique sua caixa de entrada.");
+      setEmailMsg(
+        lang === "en" ? `Confirmation sent to ${newEmail}. Check your inbox.`
+        : lang === "es" ? `Confirmación enviada a ${newEmail}. Revisa tu bandeja de entrada.`
+        : `Confirmação enviada para ${newEmail}. Verifique sua caixa de entrada.`
+      );
       setNewEmail("");
     }
     setEmailLoading(false);
@@ -169,14 +180,20 @@ export default function ContaPage() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     if (!newPassword || !confirmPassword) return;
-    if (newPassword !== confirmPassword) { setPassMsg("As senhas não coincidem."); return; }
-    if (newPassword.length < 6) { setPassMsg("Senha deve ter ao menos 6 caracteres."); return; }
+    if (newPassword !== confirmPassword) {
+      setPassMsg(lang === "en" ? "Passwords don't match." : lang === "es" ? "Las contraseñas no coinciden." : "As senhas não coincidem.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPassMsg(lang === "en" ? "Password must be at least 6 characters." : lang === "es" ? "La contraseña debe tener al menos 6 caracteres." : "Senha deve ter ao menos 6 caracteres.");
+      return;
+    }
     setPassLoading(true);
     setPassMsg("");
     const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) setPassMsg("Erro: " + error.message);
+    if (error) setPassMsg((lang === "en" ? "Error: " : lang === "es" ? "Error: " : "Erro: ") + error.message);
     else {
-      setPassMsg("Senha alterada com sucesso!");
+      setPassMsg(lang === "en" ? "Password changed successfully!" : lang === "es" ? "¡Contraseña cambiada con éxito!" : "Senha alterada com sucesso!");
       setNewPassword("");
       setConfirmPassword("");
     }
@@ -185,7 +202,8 @@ export default function ContaPage() {
 
   function formatDate(iso?: string) {
     if (!iso) return "";
-    return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+    const locale = lang === "en" ? "en-US" : lang === "es" ? "es-ES" : "pt-BR";
+    return new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "long", year: "numeric" });
   }
 
   function isPro() {
@@ -205,7 +223,7 @@ export default function ContaPage() {
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }
 
-  if (loading) return <div style={styles.centered}>Carregando...</div>;
+  if (loading) return <div style={styles.centered}>{lang === "en" ? "Loading..." : lang === "es" ? "Cargando..." : "Carregando..."}</div>;
 
   return (
     <div style={styles.page} className="app-layout">
@@ -220,7 +238,7 @@ export default function ContaPage() {
       `}</style>
 
       <header style={styles.header} className="app-header">
-        <button onClick={() => router.push("/")} style={styles.backBtn}>← Voltar</button>
+        <button onClick={() => router.push("/")} style={styles.backBtn}>{lang === "en" ? "← Back" : lang === "es" ? "← Volver" : "← Voltar"}</button>
         <div style={styles.logo} className="conta-header-logo">
           TamoWork <span style={{ fontSize: 13, fontWeight: 400 }}>Foto IA</span>
         </div>
@@ -235,47 +253,51 @@ export default function ContaPage() {
 
             {/* Perfil */}
             <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Meu perfil</h2>
+              <h2 style={styles.sectionTitle}>{lang === "en" ? "My profile" : lang === "es" ? "Mi perfil" : "Meu perfil"}</h2>
               <div style={styles.profileCard}>
                 <div style={styles.avatar}>{email.charAt(0).toUpperCase()}</div>
                 <div style={styles.profileInfo}>
                   <div style={styles.profileEmail}>{email}</div>
                   <div style={styles.profileSub}>
-                    {isProActive ? <span style={styles.proBadge}>✦ Pro</span> : <span style={styles.freeBadge}>Gratuito</span>}
+                    {isProActive ? <span style={styles.proBadge}>✦ Pro</span> : <span style={styles.freeBadge}>{lang === "en" ? "Free" : lang === "es" ? "Gratis" : "Gratuito"}</span>}
                   </div>
                 </div>
-                <button onClick={handleLogout} style={styles.logoutBtn}>Sair</button>
+                <button onClick={handleLogout} style={styles.logoutBtn}>{lang === "en" ? "Sign out" : lang === "es" ? "Salir" : "Sair"}</button>
               </div>
             </section>
 
             {/* Assinatura */}
             <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Minha assinatura</h2>
+              <h2 style={styles.sectionTitle}>{lang === "en" ? "My subscription" : lang === "es" ? "Mi suscripción" : "Minha assinatura"}</h2>
               <div style={styles.subCard}>
                 {!isProActive && (
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#4e5c72", flexShrink: 0 }} />
-                      <div style={{ ...styles.subStatus, marginBottom: 0 }}>Plano Gratuito</div>
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}>
+                        {lang === "en" ? "Free Plan" : lang === "es" ? "Plan Gratuito" : "Plano Gratuito"}
+                      </div>
                     </div>
-                    <div style={styles.subDesc}>1 foto por dia. Sem acesso a vídeos.</div>
+                    <div style={styles.subDesc}>
+                      {lang === "en" ? "1 photo per day. No video access." : lang === "es" ? "1 foto por día. Sin acceso a videos." : "1 foto por dia. Sem acesso a vídeos."}
+                    </div>
                     <div style={{
                       background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12))",
                       border: "1px solid rgba(168,85,247,0.25)",
                       borderRadius: 14, padding: "16px", marginBottom: 14,
                     }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#eef2f9", marginBottom: 4 }}>
-                        Fotos ilimitadas por R$0,63/dia
+                        {lang === "en" ? "Unlimited photos for less than $0.28/day" : lang === "es" ? "Fotos ilimitadas por menos de $0.28/día" : "Fotos ilimitadas por R$0,63/dia"}
                       </div>
                       <div style={{ fontSize: 13, color: "#8394b0", lineHeight: 1.5 }}>
-                        Sem limite de uso, sem fila de espera, sem fotógrafo.
+                        {lang === "en" ? "No usage limit, no queue, no photographer." : lang === "es" ? "Sin límite de uso, sin cola de espera, sin fotógrafo." : "Sem limite de uso, sem fila de espera, sem fotógrafo."}
                       </div>
                     </div>
                     <button onClick={() => router.push("/planos")} style={styles.upgradeBtn}>
-                      Quero assinar agora
+                      {lang === "en" ? "Subscribe now" : lang === "es" ? "Suscribirse ahora" : "Quero assinar agora"}
                     </button>
                     <div style={{ fontSize: 12, color: "#4e5c72", textAlign: "center", marginTop: 8 }}>
-                      Cancele quando quiser — sem fidelidade
+                      {lang === "en" ? "Cancel anytime — no commitment" : lang === "es" ? "Cancela cuando quieras — sin fidelidad" : "Cancele quando quiser — sem fidelidade"}
                     </div>
                   </>
                 )}
@@ -283,15 +305,19 @@ export default function ContaPage() {
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#f59e0b", flexShrink: 0 }} />
-                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> Bônus — ativo</div>
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> {lang === "en" ? "Bonus — active" : lang === "es" ? "Bono — activo" : "Bônus — ativo"}</div>
                     </div>
                     <div style={styles.daysBox}>
                       <span style={styles.daysNum}>{daysLeft(planData?.period_end)}</span>
-                      <span style={styles.daysSub}>dias restantes</span>
+                      <span style={styles.daysSub}>{lang === "en" ? "days left" : lang === "es" ? "días restantes" : "dias restantes"}</span>
                     </div>
-                    <div style={styles.subDesc}>Válido até {formatDate(planData?.period_end)}. Após esse prazo, você volta ao plano gratuito automaticamente.</div>
+                    <div style={styles.subDesc}>
+                      {lang === "en" ? `Valid until ${formatDate(planData?.period_end)}. After this date, you'll automatically return to the free plan.`
+                      : lang === "es" ? `Válido hasta ${formatDate(planData?.period_end)}. Después de esta fecha, volverás al plan gratuito automáticamente.`
+                      : `Válido até ${formatDate(planData?.period_end)}. Após esse prazo, você volta ao plano gratuito automaticamente.`}
+                    </div>
                     <button onClick={() => router.push("/planos")} style={styles.upgradeBtn}>
-                      Continuar com Pro
+                      {lang === "en" ? "Continue with Pro" : lang === "es" ? "Continuar con Pro" : "Continuar com Pro"}
                     </button>
                   </>
                 )}
@@ -299,20 +325,24 @@ export default function ContaPage() {
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16c784", flexShrink: 0 }} />
-                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> Mensal — ativo</div>
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> {lang === "en" ? "Monthly — active" : lang === "es" ? "Mensual — activo" : "Mensal — ativo"}</div>
                     </div>
                     <div style={styles.daysBox}>
                       <span style={styles.daysNum}>{daysLeft(planData?.period_end)}</span>
-                      <span style={styles.daysSub}>dias restantes</span>
+                      <span style={styles.daysSub}>{lang === "en" ? "days left" : lang === "es" ? "días restantes" : "dias restantes"}</span>
                     </div>
-                    <div style={styles.subDesc}>Próxima renovação: {formatDate(planData?.period_end)}</div>
+                    <div style={styles.subDesc}>{lang === "en" ? `Next renewal: ${formatDate(planData?.period_end)}` : lang === "es" ? `Próxima renovación: ${formatDate(planData?.period_end)}` : `Próxima renovação: ${formatDate(planData?.period_end)}`}</div>
                     {cancelDone ? (
                       <div style={styles.canceledMsg}>
-                        Cancelamento agendado — acesso mantido até {formatDate(planData?.period_end)}
+                        {lang === "en" ? `Cancellation scheduled — access kept until ${formatDate(planData?.period_end)}`
+                        : lang === "es" ? `Cancelación programada — acceso mantenido hasta ${formatDate(planData?.period_end)}`
+                        : `Cancelamento agendado — acesso mantido até ${formatDate(planData?.period_end)}`}
                       </div>
                     ) : (
                       <button onClick={handleCancelStripe} disabled={canceling} style={styles.cancelBtn}>
-                        {canceling ? "Cancelando..." : "Cancelar assinatura"}
+                        {canceling
+                          ? (lang === "en" ? "Canceling..." : lang === "es" ? "Cancelando..." : "Cancelando...")
+                          : (lang === "en" ? "Cancel subscription" : lang === "es" ? "Cancelar suscripción" : "Cancelar assinatura")}
                       </button>
                     )}
                   </>
@@ -321,13 +351,13 @@ export default function ContaPage() {
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16c784", flexShrink: 0 }} />
-                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> Anual — ativo</div>
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> {lang === "en" ? "Annual — active" : lang === "es" ? "Anual — activo" : "Anual — ativo"}</div>
                     </div>
                     <div style={styles.daysBox}>
                       <span style={styles.daysNum}>{daysLeft(planData?.period_end)}</span>
-                      <span style={styles.daysSub}>dias restantes</span>
+                      <span style={styles.daysSub}>{lang === "en" ? "days left" : lang === "es" ? "días restantes" : "dias restantes"}</span>
                     </div>
-                    <div style={styles.subDesc}>Válido até {formatDate(planData?.period_end)}</div>
+                    <div style={styles.subDesc}>{lang === "en" ? `Valid until ${formatDate(planData?.period_end)}` : lang === "es" ? `Válido hasta ${formatDate(planData?.period_end)}` : `Válido até ${formatDate(planData?.period_end)}`}</div>
                   </>
                 )}
               </div>
@@ -340,44 +370,44 @@ export default function ContaPage() {
 
             {/* Alterar email */}
             <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Mudar e-mail</h2>
+              <h2 style={styles.sectionTitle}>{lang === "en" ? "Change email" : lang === "es" ? "Cambiar correo" : "Mudar e-mail"}</h2>
               <div style={styles.subCard}>
-                <div style={styles.currentLabel}>E-mail atual: <strong style={{ color: "#eef2f9" }}>{email}</strong></div>
+                <div style={styles.currentLabel}>{lang === "en" ? "Current email: " : lang === "es" ? "Correo actual: " : "E-mail atual: "}<strong style={{ color: "#eef2f9" }}>{email}</strong></div>
                 <form onSubmit={handleChangeEmail} style={styles.credForm}>
                   <input
-                    type="email" placeholder="Novo e-mail" value={newEmail}
+                    type="email" placeholder={lang === "en" ? "New email" : lang === "es" ? "Nuevo correo" : "Novo e-mail"} value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)} required style={styles.input}
                   />
                   <button type="submit" disabled={emailLoading} style={styles.credBtn}>
-                    {emailLoading ? "Enviando..." : "Confirmar"}
+                    {emailLoading ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : (lang === "en" ? "Confirm" : lang === "es" ? "Confirmar" : "Confirmar")}
                   </button>
                 </form>
                 {emailMsg && (
-                  <div style={emailMsg.startsWith("Erro") ? styles.msgError : styles.msgSuccess}>{emailMsg}</div>
+                  <div style={emailMsg.startsWith("Erro") || emailMsg.startsWith("Error") ? styles.msgError : styles.msgSuccess}>{emailMsg}</div>
                 )}
               </div>
             </section>
 
             {/* Alterar senha */}
             <section style={styles.section}>
-              <h2 style={styles.sectionTitle}>Mudar senha</h2>
+              <h2 style={styles.sectionTitle}>{lang === "en" ? "Change password" : lang === "es" ? "Cambiar contraseña" : "Mudar senha"}</h2>
               <div style={styles.subCard}>
                 <form onSubmit={handleChangePassword} style={{ ...styles.credForm, flexDirection: "column" }}>
                   <input
-                    type="password" placeholder="Nova senha" value={newPassword}
+                    type="password" placeholder={lang === "en" ? "New password" : lang === "es" ? "Nueva contraseña" : "Nova senha"} value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)} required style={styles.input}
                   />
                   <input
-                    type="password" placeholder="Confirmar nova senha" value={confirmPassword}
+                    type="password" placeholder={lang === "en" ? "Confirm new password" : lang === "es" ? "Confirmar nueva contraseña" : "Confirmar nova senha"} value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)} required
                     style={{ ...styles.input, marginTop: 10 }}
                   />
                   <button type="submit" disabled={passLoading} style={{ ...styles.credBtn, marginTop: 10 }}>
-                    {passLoading ? "Salvando..." : "Alterar senha"}
+                    {passLoading ? (lang === "en" ? "Saving..." : lang === "es" ? "Guardando..." : "Salvando...") : (lang === "en" ? "Change password" : lang === "es" ? "Cambiar contraseña" : "Alterar senha")}
                   </button>
                 </form>
                 {passMsg && (
-                  <div style={passMsg.startsWith("Erro") || passMsg.includes("não coincidem") || passMsg.includes("ao menos") ? styles.msgError : styles.msgSuccess}>
+                  <div style={passMsg.startsWith("Erro") || passMsg.startsWith("Error") || passMsg.includes("não coincidem") || passMsg.includes("don't match") || passMsg.includes("no coinciden") || passMsg.includes("ao menos") || passMsg.includes("least") || passMsg.includes("menos") ? styles.msgError : styles.msgSuccess}>
                     {passMsg}
                   </div>
                 )}

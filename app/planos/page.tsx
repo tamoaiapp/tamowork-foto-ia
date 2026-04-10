@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { useI18n } from "@/lib/i18n";
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -236,29 +237,59 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-const annualFeatures = [
+const annualFeaturesPT = [
   "Fotos ilimitadas — sem limite",
   "Vídeos ilimitados para Reels e TikTok",
   "Foto pronta na hora, sem fila",
   "Alta qualidade, sem marca d'água",
   "Novidades antes de todo mundo",
 ];
+const annualFeaturesEN = [
+  "Unlimited photos — no cap",
+  "Unlimited videos for Reels & TikTok",
+  "Photo ready instantly, no queue",
+  "High quality, no watermark",
+  "Early access to new features",
+];
+const annualFeaturesES = [
+  "Fotos ilimitadas — sin límite",
+  "Videos ilimitados para Reels y TikTok",
+  "Foto lista al instante, sin cola",
+  "Alta calidad, sin marca de agua",
+  "Novedades antes que nadie",
+];
 
-const monthlyFeatures = [
+const monthlyFeaturesPT = [
   "Fotos ilimitadas — sem limite",
   "Vídeos ilimitados para Reels e TikTok",
   "Foto pronta na hora, sem fila",
   "Alta qualidade, sem marca d'água",
 ];
+const monthlyFeaturesEN = [
+  "Unlimited photos — no cap",
+  "Unlimited videos for Reels & TikTok",
+  "Photo ready instantly, no queue",
+  "High quality, no watermark",
+];
+const monthlyFeaturesES = [
+  "Fotos ilimitadas — sin límite",
+  "Videos ilimitados para Reels y TikTok",
+  "Foto lista al instante, sin cola",
+  "Alta calidad, sin marca de agua",
+];
 
 export default function PlanosPage() {
   const router = useRouter();
+  const { lang } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMP, setLoadingMP] = useState(false);
   const [loadingMPMonthly, setLoadingMPMonthly] = useState(false);
   const [loadingStripe, setLoadingStripe] = useState(false);
   const [isBR, setIsBR] = useState(true);
+
+  const annualFeatures = lang === "es" ? annualFeaturesES : lang === "pt" ? annualFeaturesPT : annualFeaturesEN;
+  const monthlyFeatures = lang === "es" ? monthlyFeaturesES : lang === "pt" ? monthlyFeaturesPT : monthlyFeaturesEN;
 
   useEffect(() => {
     const lang = (typeof navigator !== "undefined" ? navigator.language : "pt-BR") || "pt-BR";
@@ -349,7 +380,9 @@ export default function PlanosPage() {
   if (loading) {
     return (
       <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: "#4e5c72", fontSize: 15 }}>Carregando...</span>
+        <span style={{ color: "#4e5c72", fontSize: 15 }}>
+          {lang === "en" ? "Loading..." : lang === "es" ? "Cargando..." : "Carregando..."}
+        </span>
       </div>
     );
   }
@@ -363,21 +396,29 @@ export default function PlanosPage() {
           onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#eef2f9")}
           onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#8394b0")}
         >
-          ← Voltar
+          {lang === "en" ? "← Back" : lang === "es" ? "← Volver" : "← Voltar"}
         </button>
 
         {/* Hero */}
         <div style={styles.hero}>
           <h1 style={styles.heroHeadline}>
-            Fotos profissionais para seus produtos por menos de R$0,63 por dia
+            {lang === "en"
+              ? "Professional product photos for less than $0.28 a day"
+              : lang === "es"
+              ? "Fotos profesionales de productos por menos de $0.28 al día"
+              : "Fotos profissionais para seus produtos por menos de R$0,63 por dia"}
           </h1>
           <p style={styles.heroSub}>
-            Tire foto com o celular, a IA transforma em foto de loja profissional. Sem fotógrafo, sem estúdio.
+            {lang === "en"
+              ? "Take a photo with your phone, AI transforms it into a professional store photo. No photographer, no studio."
+              : lang === "es"
+              ? "Toma una foto con el celular, la IA la transforma en foto profesional de tienda. Sin fotógrafo, sin estudio."
+              : "Tire foto com o celular, a IA transforma em foto de loja profissional. Sem fotógrafo, sem estúdio."}
           </p>
           <div style={styles.heroTrust}>
-            <span>Cancele quando quiser</span>
+            <span>{lang === "en" ? "Cancel anytime" : lang === "es" ? "Cancela cuando quieras" : "Cancele quando quiser"}</span>
             <span style={{ opacity: 0.4 }}>|</span>
-            <span>Sem fidelidade</span>
+            <span>{lang === "en" ? "No commitment" : lang === "es" ? "Sin fidelidad" : "Sem fidelidade"}</span>
           </div>
         </div>
 
@@ -444,7 +485,7 @@ export default function PlanosPage() {
             </div>
             <div style={styles.priceBilled}>
               <span style={styles.strikethrough}>R$588/ano</span>
-              {" "}→ anual sai R$360 mais barato
+              {" "}→ {lang === "en" ? "annual saves R$360" : lang === "es" ? "el anual ahorra R$360" : "anual sai R$360 mais barato"}
             </div>
             <div style={{ marginBottom: 24 }} />
             <div style={styles.divider} />
@@ -485,23 +526,41 @@ export default function PlanosPage() {
         <div style={styles.valueSection}>
           <div style={styles.valueCard}>
             <span style={styles.valueIcon}>⚡</span>
-            <div style={styles.valueTitle}>Foto pronta na hora</div>
+            <div style={styles.valueTitle}>
+              {lang === "en" ? "Instant photos" : lang === "es" ? "Fotos al instante" : "Foto pronta na hora"}
+            </div>
             <div style={styles.valueDesc}>
-              Sem esperar na fila. Gere quantas fotos quiser, a qualquer hora do dia.
+              {lang === "en"
+                ? "No queue. Generate as many photos as you want, any time of day."
+                : lang === "es"
+                ? "Sin cola. Genera las fotos que quieras, a cualquier hora del día."
+                : "Sem esperar na fila. Gere quantas fotos quiser, a qualquer hora do dia."}
             </div>
           </div>
           <div style={styles.valueCard}>
             <span style={styles.valueIcon}>🎬</span>
-            <div style={styles.valueTitle}>Foto e vídeo com IA</div>
+            <div style={styles.valueTitle}>
+              {lang === "en" ? "Photo & video with AI" : lang === "es" ? "Foto y video con IA" : "Foto e vídeo com IA"}
+            </div>
             <div style={styles.valueDesc}>
-              Crie vídeos animados dos seus produtos para postar no Reels e TikTok.
+              {lang === "en"
+                ? "Create animated videos of your products to post on Reels and TikTok."
+                : lang === "es"
+                ? "Crea videos animados de tus productos para publicar en Reels y TikTok."
+                : "Crie vídeos animados dos seus produtos para postar no Reels e TikTok."}
             </div>
           </div>
           <div style={styles.valueCard}>
             <span style={styles.valueIcon}>☕</span>
-            <div style={styles.valueTitle}>Menos que um café</div>
+            <div style={styles.valueTitle}>
+              {lang === "en" ? "Less than a coffee" : lang === "es" ? "Menos que un café" : "Menos que um café"}
+            </div>
             <div style={styles.valueDesc}>
-              R$0,63 por dia. Menos do que um cafezinho para transformar seu negócio.
+              {lang === "en"
+                ? "$0.28 per day. Less than a coffee to transform your business."
+                : lang === "es"
+                ? "$0.28 por día. Menos que un café para transformar tu negocio."
+                : "R$0,63 por dia. Menos do que um cafezinho para transformar seu negócio."}
             </div>
           </div>
         </div>
