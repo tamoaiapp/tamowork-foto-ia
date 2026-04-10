@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   imageUrl: string;
@@ -40,6 +41,7 @@ const PRESETS = [
 const LOGO_KEY = "tamowork_saved_logo";
 
 export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
+  const { lang } = useI18n();
   const stageRef = useRef<HTMLDivElement>(null);
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -136,7 +138,7 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
       const blob = await removeBackground(imageUrl);
       setBgRemovedUrl(URL.createObjectURL(blob));
     } catch {
-      alert("Não foi possível remover o fundo. Tente novamente.");
+      alert(lang === "en" ? "Could not remove background. Please try again." : lang === "es" ? "No se pudo quitar el fondo. Inténtalo de nuevo." : "Não foi possível remover o fundo. Tente novamente.");
     } finally {
       setRemovingBg(null);
     }
@@ -160,7 +162,7 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
         reader.readAsDataURL(blob);
       }
     } catch {
-      alert("Não foi possível remover o fundo.");
+      alert(lang === "en" ? "Could not remove background." : lang === "es" ? "No se pudo quitar el fondo." : "Não foi possível remover o fundo.");
     } finally {
       setRemovingBg(null);
     }
@@ -185,7 +187,7 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
       });
       onSave(canvas.toDataURL("image/png"));
     } catch {
-      alert("Erro ao exportar. Tente novamente.");
+      alert(lang === "en" ? "Export error. Please try again." : lang === "es" ? "Error al exportar. Inténtalo de nuevo." : "Erro ao exportar. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -210,9 +212,9 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
         {/* Header */}
         <div style={s.header}>
           <button onClick={onClose} style={s.closeBtn}>✕</button>
-          <span style={s.headerTitle}>Editar foto</span>
+          <span style={s.headerTitle}>{lang === "en" ? "Edit photo" : lang === "es" ? "Editar foto" : "Editar foto"}</span>
           <button onClick={handleSaveClick} disabled={saving} style={s.saveBtn}>
-            {saving ? "⏳" : "⬇ Salvar"}
+            {saving ? "⏳" : (lang === "en" ? "⬇ Save" : lang === "es" ? "⬇ Guardar" : "⬇ Salvar")}
           </button>
         </div>
 
@@ -330,10 +332,10 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
                   disabled={!!removingBg}
                   style={s.removeBgBtn}
                 >
-                  {removingBg === selectedImg.id ? "⏳ removendo..." : "✂️ remover fundo"}
+                  {removingBg === selectedImg.id ? "⏳..." : (lang === "en" ? "✂️ remove bg" : lang === "es" ? "✂️ quitar fondo" : "✂️ remover fundo")}
                 </button>
               ) : (
-                <span style={s.bgOkBadge}>✓ sem fundo</span>
+                <span style={s.bgOkBadge}>{lang === "en" ? "✓ no bg" : lang === "es" ? "✓ sin fondo" : "✓ sem fundo"}</span>
               )}
               <button onClick={deleteSelected} style={s.deleteBtn}>🗑</button>
             </div>
@@ -344,7 +346,7 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
         <div style={s.toolbar}>
           <button style={{ ...s.toolBtn, ...(tool === "text" ? s.toolActive : {}) }} onClick={() => setTool(tool === "text" ? null : "text")}>
             <span style={s.toolIcon}>T</span>
-            <span style={s.toolLabel}>Texto</span>
+            <span style={s.toolLabel}>{lang === "en" ? "Text" : lang === "es" ? "Texto" : "Texto"}</span>
           </button>
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, flexShrink: 0 }}>
@@ -354,7 +356,7 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
             </button>
             {savedLogo && (
               <button style={s.useSavedBtn} onClick={() => addImageLayer(savedLogo, "logo")}>
-                usar salva
+                {lang === "en" ? "use saved" : lang === "es" ? "usar guardado" : "usar salva"}
               </button>
             )}
           </div>
@@ -362,7 +364,7 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
 
           <button style={s.toolBtn} onClick={() => photoFileRef.current?.click()}>
             <span style={s.toolIcon}>📷</span>
-            <span style={s.toolLabel}>Foto</span>
+            <span style={s.toolLabel}>{lang === "en" ? "Photo" : lang === "es" ? "Foto" : "Foto"}</span>
           </button>
           <input ref={photoFileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} />
 
@@ -372,7 +374,7 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
             disabled={removingBg === "main"}
           >
             <span style={s.toolIcon}>{removingBg === "main" ? "⏳" : "✂️"}</span>
-            <span style={s.toolLabel}>{removingBg === "main" ? "..." : "Fundo"}</span>
+            <span style={s.toolLabel}>{removingBg === "main" ? "..." : (lang === "en" ? "BG" : lang === "es" ? "Fondo" : "Fundo")}</span>
           </button>
         </div>
 
@@ -391,8 +393,8 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
         <div style={s.confirmOverlay} onClick={() => setShowSaveConfirm(false)}>
           <div style={s.confirmBox} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 24, marginBottom: 8 }}>🖼️</div>
-            <div style={s.confirmTitle}>A logo tem fundo</div>
-            <div style={s.confirmDesc}>Quer remover o fundo da logo antes de salvar?</div>
+            <div style={s.confirmTitle}>{lang === "en" ? "Logo has background" : lang === "es" ? "El logo tiene fondo" : "A logo tem fundo"}</div>
+            <div style={s.confirmDesc}>{lang === "en" ? "Remove the logo background before saving?" : lang === "es" ? "¿Quitar el fondo del logo antes de guardar?" : "Quer remover o fundo da logo antes de salvar?"}</div>
             <div style={s.confirmBtns}>
               <button
                 style={s.confirmYes}
@@ -406,9 +408,9 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
                   doSave();
                 }}
               >
-                {removingBg ? "⏳ removendo..." : "✂️ Remover e salvar"}
+                {removingBg ? "⏳..." : (lang === "en" ? "✂️ Remove & save" : lang === "es" ? "✂️ Quitar y guardar" : "✂️ Remover e salvar")}
               </button>
-              <button style={s.confirmNo} onClick={doSave}>Salvar assim mesmo</button>
+              <button style={s.confirmNo} onClick={doSave}>{lang === "en" ? "Save anyway" : lang === "es" ? "Guardar igual" : "Salvar assim mesmo"}</button>
             </div>
           </div>
         </div>

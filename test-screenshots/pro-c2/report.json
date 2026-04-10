@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-04-09T02:11:11.076Z",
+  "email": "pro-c2@tamowork.test",
+  "iteracoes": [],
+  "checks_mobile_pro": [
+    {
+      "check": "Setup PRO via Supabase",
+      "passed": true,
+      "detail": "31cd13b3-cfe4-41e1-982a-01a733442238"
+    }
+  ],
+  "errors": [],
+  "setup": {
+    "userId": "31cd13b3-cfe4-41e1-982a-01a733442238",
+    "email": "pro-c2@tamowork.test",
+    "plan": "pro",
+    "period_end": "2027-12-31"
+  }
+}

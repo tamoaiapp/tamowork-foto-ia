@@ -1,0 +1,55 @@
+{
+  "test_started": "2026-04-09T02:09:06.792Z",
+  "conta": "free-b1@tamowork.test",
+  "plano": "free",
+  "url_base": "https://tamowork.com",
+  "produto": "Tênis Nike vermelho",
+  "modo": "fundo_branco",
+  "iteracao_1": {
+    "started_at": "2026-04-09T02:09:07.809Z",
+    "status_foto": null,
+    "tempo_geracao_seg": null,
+    "foto_apareceu": false,
+    "download_funcionou": false,
+    "pro_upsell_visivel": false,
+    "bloqueio_funcionou": false,
+    "texto_botao_bloqueado": null,
+    "redirect_liberar_agora": null,
+    "erros": [
+      "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"], input[name=\"email\"]').first() to be visible\u001b[22m\n"
+    ]
+  },
+  "iteracao_2": {
+    "started_at": "2026-04-09T02:09:22.596Z",
+    "status_foto": null,
+    "tempo_geracao_seg": null,
+    "foto_apareceu": false,
+    "download_funcionou": false,
+    "pro_upsell_visivel": false,
+    "bloqueio_funcionou": false,
+    "texto_botao_bloqueado": null,
+    "redirect_liberar_agora": null,
+    "erros": [
+      "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"], input[name=\"email\"]').first() to be visible\u001b[22m\n"
+    ]
+  },
+  "test_finished": "2026-04-09T02:09:34.188Z",
+  "resumo": {
+    "iter1_foto_apareceu": false,
+    "iter1_download_ok": false,
+    "iter1_tempo_geracao_seg": null,
+    "iter1_pro_upsell": false,
+    "iter1_bloqueio": false,
+    "iter1_texto_bloqueio": null,
+    "iter1_redirect": null,
+    "iter2_bloqueio": false,
+    "iter2_texto_bloqueio": null,
+    "iter2_redirect": null,
+    "erros_iter1": [
+      "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"], input[name=\"email\"]').first() to be visible\u001b[22m\n"
+    ],
+    "erros_iter2": [
+      "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[type=\"email\"], input[name=\"email\"]').first() to be visible\u001b[22m\n"
+    ]
+  }
+}

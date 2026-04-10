@@ -1,0 +1,149 @@
+{
+  "timestamp": "2026-04-09T01:15:50.251Z",
+  "jobs": [
+    {
+      "job": 1,
+      "tipo": "foto",
+      "tempo_seg": 16,
+      "status": "ok",
+      "erro": ""
+    },
+    {
+      "job": 2,
+      "tipo": "foto",
+      "tempo_seg": 15,
+      "status": "ok",
+      "erro": ""
+    },
+    {
+      "job": 3,
+      "tipo": "foto",
+      "tempo_seg": 15,
+      "status": "ok",
+      "erro": ""
+    },
+    {
+      "job": 4,
+      "tipo": "foto",
+      "tempo_seg": 15,
+      "status": "ok",
+      "erro": ""
+    },
+    {
+      "job": 5,
+      "tipo": "foto",
+      "tempo_seg": 15,
+      "status": "ok",
+      "erro": ""
+    },
+    {
+      "job": 1,
+      "tipo": "video",
+      "tempo_seg": 10,
+      "status": "skip",
+      "erro": "Botão criar vídeo não encontrado — pode não haver foto pronta"
+    },
+    {
+      "job": 2,
+      "tipo": "video",
+      "tempo_seg": 9,
+      "status": "skip",
+      "erro": "Botão criar vídeo não encontrado — pode não haver foto pronta"
+    }
+  ],
+  "checks": [
+    {
+      "check": "Login inicial mobile",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "BottomNav visível [home inicial]",
+      "passed": true,
+      "detail": "por seletor CSS"
+    },
+    {
+      "check": "Sidebar desktop OCULTA [home inicial]",
+      "passed": true,
+      "detail": "ok — sidebar não visível"
+    },
+    {
+      "check": "Botão PRO OCULTO (usuário já é PRO) [home inicial]",
+      "passed": true,
+      "detail": "ok — sem botão de upgrade"
+    },
+    {
+      "check": "Header fixo no scroll",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "BottomNav visível [após job foto #1]",
+      "passed": true,
+      "detail": "por seletor CSS"
+    },
+    {
+      "check": "Sidebar desktop OCULTA [após job foto #1]",
+      "passed": true,
+      "detail": "ok — sidebar não visível"
+    },
+    {
+      "check": "Botão PRO OCULTO (usuário já é PRO) [após job foto #1]",
+      "passed": true,
+      "detail": "ok — sem botão de upgrade"
+    },
+    {
+      "check": "BottomNav \"Criar\" navega",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/"
+    },
+    {
+      "check": "BottomNav \"Editor\" navega",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/editor"
+    },
+    {
+      "check": "BottomNav \"Cria[çc]\" navega",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/criacoes"
+    },
+    {
+      "check": "Página /conta tem botão logout",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "Logout redireciona corretamente",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/login"
+    },
+    {
+      "check": "Re-login após logout",
+      "passed": true,
+      "detail": "ok"
+    },
+    {
+      "check": "BottomNav visível [final]",
+      "passed": true,
+      "detail": "por seletor CSS"
+    },
+    {
+      "check": "Sidebar desktop OCULTA [final]",
+      "passed": true,
+      "detail": "ok — sidebar não visível"
+    },
+    {
+      "check": "Botão PRO OCULTO (usuário já é PRO) [final]",
+      "passed": true,
+      "detail": "ok — sem botão de upgrade"
+    }
+  ],
+  "errors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()"
+  ]
+}

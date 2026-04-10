@@ -1,0 +1,40 @@
+{
+  "date": "2026-04-09T00:25:38.643Z",
+  "device": "iPhone 14 (390x844, isMobile, hasTouch)",
+  "passCount": 17,
+  "failCount": 8,
+  "results": [
+    "✅ Página de login carregou — title: \"TamoWork Fotos para Produtos\"",
+    "✅ Login/Cadastro bem-sucedido — URL: https://tamowork.com/",
+    "✅ BottomNav (barra inferior) presente e fixa no mobile",
+    "✅ Sidebar NÃO visível no mobile — correto",
+    "✅ Sessão é do usuário test-mobile-qa — userId=946a8b9c-f9e1-4a12-ad5c-793367728b2e",
+    "✅ Seletor de modo presente",
+    "✅ Modo \"Fundo branco\" selecionado",
+    "✅ Upload de foto realizado",
+    "✅ Job de geração submetido — ✨ Gerar foto com IA",
+    "❌ Timeout: job não concluiu em 3 min — 197s",
+    "❌ Segunda foto bloqueada (rate limit) — disabled=false dailyLimit=false",
+    "❌ Timer de countdown visível — sem timer no botão",
+    "❌ Jobs da sessão atual (usuário QA) — 0 criados nos últimos 30 min",
+    "❌ Nenhum job criado para o usuário QA — Possível bug: upload/submit não funcionou",
+    "❌ Sem jobs failed nas últimas 2h (sistema geral) — 1 jobs failed: fetch failed",
+    "✅ Usuário encontrado via auth admin (email exato) — userId=946a8b9c-f9e1-4a12-ad5c-793367728b2e",
+    "✅ Conta promovida para PRO (PATCH) — HTTP 200",
+    "✅ Verificação: plan=pro no Supabase — plan=pro period_end=2027-04-09",
+    "✅ Badge PRO visível no header após promoção",
+    "✅ Botão de criar foto DESBLOQUEADO para PRO — disabled=false timer=false texto=\"Criar\"",
+    "✅ Tela /criacoes acessível — URL: https://tamowork.com/criacoes",
+    "❌ Fotos/imagens exibidas na tela de Criações — 0 imagens",
+    "✅ Card de modo \"Vídeo animado\" presente no ModeSelector",
+    "✅ Interface de vídeo acessível para PRO (sem bloqueio) — ok",
+    "❌ Campo de upload de foto para vídeo presente"
+  ],
+  "timings": {
+    "jobStart": 1775694113373,
+    "processingTime": 197
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 422 ()"
+  ]
+}

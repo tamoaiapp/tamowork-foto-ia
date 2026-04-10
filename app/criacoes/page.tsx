@@ -16,9 +16,10 @@ interface AccountJob {
   prompt?: string;
 }
 
-function formatDate(iso?: string) {
+function formatDate(iso?: string, lang?: string) {
   if (!iso) return "";
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  const locale = lang === "en" ? "en-US" : lang === "es" ? "es-ES" : "pt-BR";
+  return new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short" });
 }
 
 export default function CriacoesPage() {
@@ -29,7 +30,7 @@ export default function CriacoesPage() {
   const [token, setToken] = useState("");
   const [selected, setSelected] = useState<AccountJob | null>(null);
   const [videoBlocked, setVideoBlocked] = useState<"photo" | "video" | null>(null);
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -68,14 +69,18 @@ export default function CriacoesPage() {
         {jobs.length === 0 ? (
           <div style={s.empty}>
             <div style={{ fontSize: 52, marginBottom: 16 }}>📸</div>
-            <div style={{ fontSize: 18, color: "#eef2f9", fontWeight: 700, marginBottom: 8 }}>Suas fotos aparecem aqui</div>
+            <div style={{ fontSize: 18, color: "#eef2f9", fontWeight: 700, marginBottom: 8 }}>
+              {lang === "en" ? "Your photos appear here" : lang === "es" ? "Tus fotos aparecen aquí" : "Suas fotos aparecem aqui"}
+            </div>
             <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 8, lineHeight: 1.6, maxWidth: 260, textAlign: "center" }}>
-              Você ainda não criou nenhuma foto. Comece agora — é fácil e rápido!
+              {lang === "en" ? "You haven't created any photos yet. Start now — it's easy and fast!" : lang === "es" ? "Aún no creaste ninguna foto. ¡Empieza ahora — es fácil y rápido!" : "Você ainda não criou nenhuma foto. Comece agora — é fácil e rápido!"}
             </div>
             <div style={{ fontSize: 13, color: "#4e5c72", marginBottom: 24 }}>
-              Tire uma foto do seu produto e veja a mágica acontecer.
+              {lang === "en" ? "Take a photo of your product and watch the magic happen." : lang === "es" ? "Toma una foto de tu producto y mira cómo ocurre la magia." : "Tire uma foto do seu produto e veja a mágica acontecer."}
             </div>
-            <button onClick={() => router.push("/")} style={s.createBtn}>Criar minha primeira foto</button>
+            <button onClick={() => router.push("/")} style={s.createBtn}>
+              {lang === "en" ? "Create my first photo" : lang === "es" ? "Crear mi primera foto" : "Criar minha primeira foto"}
+            </button>
           </div>
         ) : (
           <div style={s.grid} className="criacoes-grid">
@@ -152,8 +157,8 @@ export default function CriacoesPage() {
       {videoBlocked && (
         <div style={{ position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)", background: "#1e2330", border: "1px solid rgba(99,102,241,0.4)", borderRadius: 12, padding: "12px 20px", color: "#eef2f9", fontSize: 14, fontWeight: 600, zIndex: 999, whiteSpace: "nowrap", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
           {videoBlocked === "video"
-            ? "⏳ Aguarde o vídeo atual terminar antes de criar outro"
-            : "⏳ Aguarde a foto atual terminar antes de criar um vídeo"}
+            ? (lang === "en" ? "⏳ Wait for the current video to finish before creating another" : lang === "es" ? "⏳ Espera que termine el video actual antes de crear otro" : "⏳ Aguarde o vídeo atual terminar antes de criar outro")
+            : (lang === "en" ? "⏳ Wait for the current photo to finish before creating a video" : lang === "es" ? "⏳ Espera que termine la foto actual antes de crear un video" : "⏳ Aguarde a foto atual terminar antes de criar um vídeo")}
         </div>
       )}
 

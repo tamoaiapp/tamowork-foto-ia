@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface ProgressData {
   status: string;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function JobProgress({ jobId, token, onDone }: Props) {
+  const { lang } = useI18n();
   const [data, setData] = useState<ProgressData | null>(null);
   const [displayProgress, setDisplayProgress] = useState(0);
 
@@ -63,7 +65,7 @@ export default function JobProgress({ jobId, token, onDone }: Props) {
   if (!data || data.status === "done") return null;
 
   if (data.status === "failed" || data.status === "canceled") {
-    return <div style={s.error}>Erro ao processar. Tente novamente.</div>;
+    return <div style={s.error}>{lang === "en" ? "Processing error. Please try again." : lang === "es" ? "Error al procesar. Inténtalo de nuevo." : "Erro ao processar. Tente novamente."}</div>;
   }
 
   return (
@@ -81,8 +83,8 @@ export default function JobProgress({ jobId, token, onDone }: Props) {
 
       <div style={s.closeMsg}>
         {typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted"
-          ? "Pode fechar o app — te avisamos quando estiver pronto 🔔"
-          : "Processando sua foto..."}
+          ? (lang === "en" ? "You can close the app — we'll notify you when it's ready 🔔" : lang === "es" ? "Puedes cerrar la app — te avisamos cuando esté lista 🔔" : "Pode fechar o app — te avisamos quando estiver pronto 🔔")
+          : (lang === "en" ? "Processing your photo..." : lang === "es" ? "Procesando tu foto..." : "Processando sua foto...")}
       </div>
     </div>
   );

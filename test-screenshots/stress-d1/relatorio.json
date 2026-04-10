@@ -1,0 +1,96 @@
+{
+  "results": [
+    {
+      "job": "foto-1",
+      "modo": "fundo_branco",
+      "inicio": "2026-04-09 01:18:10",
+      "fim": "2026-04-09 01:23:43",
+      "tempo_segundos": 323,
+      "status": "erro",
+      "erro": "timeout",
+      "extras": "download:false editor:false video_form:false"
+    },
+    {
+      "job": "foto-2",
+      "modo": "fundo_branco",
+      "inicio": "2026-04-09 01:23:43",
+      "fim": "2026-04-09 01:29:20",
+      "tempo_segundos": 325,
+      "status": "erro",
+      "erro": "timeout",
+      "extras": "download:false editor:false video_form:false"
+    },
+    {
+      "job": "foto-3",
+      "modo": "fundo_branco",
+      "inicio": "2026-04-09 01:29:20",
+      "fim": "2026-04-09 01:34:30",
+      "tempo_segundos": 300,
+      "status": "erro",
+      "erro": "timeout",
+      "extras": "download:false editor:false video_form:false"
+    },
+    {
+      "job": "foto-4",
+      "modo": "fundo_branco",
+      "inicio": "2026-04-09 01:34:30",
+      "fim": "2026-04-09 01:40:03",
+      "tempo_segundos": 323,
+      "status": "erro",
+      "erro": "timeout",
+      "extras": "download:false editor:false video_form:false"
+    },
+    {
+      "job": "foto-5",
+      "modo": "fundo_branco",
+      "inicio": "2026-04-09 01:40:03",
+      "fim": "2026-04-09 01:45:37",
+      "tempo_segundos": 323,
+      "status": "erro",
+      "erro": "timeout",
+      "extras": "download:false editor:false video_form:false"
+    },
+    {
+      "job": "video-1",
+      "modo": "video",
+      "inicio": "2026-04-09 01:45:37",
+      "fim": "2026-04-09 01:45:49",
+      "tempo_segundos": 12,
+      "status": "erro",
+      "erro": "Botão Criar Vídeo não encontrado",
+      "extras": ""
+    },
+    {
+      "job": "video-2",
+      "modo": "video",
+      "inicio": "2026-04-09 01:45:49",
+      "fim": "2026-04-09 01:45:58",
+      "tempo_segundos": 9,
+      "status": "erro",
+      "erro": "Botão Criar Vídeo não encontrado",
+      "extras": ""
+    },
+    {
+      "job": "ui-adicional",
+      "modo": "ui",
+      "inicio": "2026-04-09 01:46:29",
+      "fim": "2026-04-09 01:46:29",
+      "tempo_segundos": 0,
+      "status": "ok",
+      "erro": "",
+      "extras": "{\"contaBtn\":true,\"langBtn\":true,\"criacoes\":false,\"editor\":false,\"logout\":true,\"relogin\":true}"
+    }
+  ],
+  "metrics": {
+    "avgFoto": "N/A",
+    "avgVideo": "N/A",
+    "totalErros": 7
+  },
+  "supabase": {
+    "total": 0,
+    "done": 0,
+    "failed": 0,
+    "stuck": 0,
+    "jobs": []
+  }
+}

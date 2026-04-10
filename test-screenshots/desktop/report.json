@@ -1,0 +1,429 @@
+{
+  "timestamp": "2026-04-09T00:19:03.844Z",
+  "tests": [
+    {
+      "name": "Página de login carrega",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/login"
+    },
+    {
+      "name": "Login com conta de teste",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/onboarding"
+    },
+    {
+      "name": "Onboarding exibido",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Home carrega após login",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/"
+    },
+    {
+      "name": "Modos de geração visíveis",
+      "passed": true,
+      "detail": "Cards de modos encontrados"
+    },
+    {
+      "name": "Modo selecionado (Fundo branco)",
+      "passed": true,
+      "detail": "Clicou em \"Usar agora\""
+    },
+    {
+      "name": "Upload de foto do produto",
+      "passed": true,
+      "detail": "Arquivo: produto-teste.jpg"
+    },
+    {
+      "name": "Submissão para geração",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Geração de foto IA",
+      "passed": false,
+      "detail": "Erro durante processamento"
+    },
+    {
+      "name": "Botão Editar",
+      "passed": false,
+      "detail": "Não visível no resultado"
+    },
+    {
+      "name": "Download de foto",
+      "passed": false,
+      "detail": "Botão não visível"
+    },
+    {
+      "name": "\"Criar vídeo\" botão no resultado",
+      "passed": false,
+      "detail": "Botão não encontrado"
+    },
+    {
+      "name": "Limite diário (sem upload disponível)",
+      "passed": true,
+      "detail": "Upload não disponível — correto"
+    },
+    {
+      "name": "Promoção para PRO via Supabase",
+      "passed": true,
+      "detail": "Plano: pro"
+    },
+    {
+      "name": "Relogin como PRO",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/onboarding"
+    },
+    {
+      "name": "Badge/indicador PRO na home",
+      "passed": true,
+      "detail": "PRO visível"
+    },
+    {
+      "name": "Modo vídeo (PRO) visível",
+      "passed": true,
+      "detail": "Vídeo animado disponível"
+    },
+    {
+      "name": "Tela de Criações carrega",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/criacoes"
+    },
+    {
+      "name": "Tela de Criações (estado vazio)",
+      "passed": true,
+      "detail": "Sem fotos ainda — estado correto para conta nova"
+    },
+    {
+      "name": "Modo \"Foto que se mexe\" (vídeo PRO) acessível",
+      "passed": true,
+      "detail": "URL: https://tamowork.com/"
+    },
+    {
+      "name": "Tela de vídeo PRO carregada",
+      "passed": true,
+      "detail": "Interface de vídeo presente"
+    },
+    {
+      "name": "Jobs visíveis no Supabase",
+      "passed": true,
+      "detail": "20 jobs"
+    },
+    {
+      "name": "Sem jobs com falha crítica",
+      "passed": false,
+      "detail": "1 jobs com status=failed"
+    }
+  ],
+  "errors": [
+    "Erro durante geração de foto",
+    "Job failed: 664585af — fetch failed"
+  ],
+  "jobs": [
+    {
+      "id": "f86b8796-3ca4-4537-9a3a-bb7e011ada5a",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Frio | cenário: Mulher em casa no sos",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775693782972x980846162855328900/IMG_2810.jpeg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:50471f10-1659-4925-b799-9a7e2d016e47",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/f86b8796-3ca4-4537-9a3a-bb7e011ada5a.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-09T00:16:57.041247+00:00",
+      "updated_at": "2026-04-09T00:19:48.606709+00:00"
+    },
+    {
+      "id": "68bdc0a3-4cf7-45ee-b8e4-e1f1f7c8e56c",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Escolar | cenário: Criança",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775693677752x660094641929059600/94BD83EF-E3F4-40E6-B741-71B38D2B4475.jpeg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:88ab42b8-c200-4053-9999-57ccd876ea7d",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/68bdc0a3-4cf7-45ee-b8e4-e1f1f7c8e56c.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-09T00:14:52.154882+00:00",
+      "updated_at": "2026-04-09T00:17:49.776833+00:00"
+    },
+    {
+      "id": "afafce93-dfb9-41e6-b9e5-bd694d041d6e",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Colar | cenário: Modelo usando está peça aparecendo bem o colo",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775693591078x886104776942946400/1000826160.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:cc542070-f683-4512-a096-cc8f647955c9",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/afafce93-dfb9-41e6-b9e5-bd694d041d6e.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-09T00:13:54.189903+00:00",
+      "updated_at": "2026-04-09T00:15:49.283057+00:00"
+    },
+    {
+      "id": "e9282e2e-419e-4235-86a9-8ce467fbe1ac",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "fantasia de minino roupa | cenário: menino de 10 anos na festa",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775692366254x756073238348340300/IMG-20260224-WA0000.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:18199741-3248-448e-8a66-229685826e55",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/e9282e2e-419e-4235-86a9-8ce467fbe1ac.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T23:52:52.45919+00:00",
+      "updated_at": "2026-04-08T23:54:49.070991+00:00"
+    },
+    {
+      "id": "664585af-d09c-4c53-bca0-cd1c2c755b55",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "fantasia de minino roupa | cenário: menino de 10 anos na festa",
+      "input_image_url": "https://https:",
+      "status": "failed",
+      "provider": "comfyui",
+      "external_job_id": null,
+      "output_image_url": null,
+      "error_message": "fetch failed",
+      "attempts": 2,
+      "created_at": "2026-04-08T23:46:18.769096+00:00",
+      "updated_at": "2026-04-08T23:49:48.126859+00:00"
+    },
+    {
+      "id": "31045edd-3497-4129-946c-40940167fa63",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Pulseira Corda de Violão | cenário: Mulher trabalhando",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775691784159x989823680358497000/Screenshot_20260408_133906_Instagram.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:8098ebf9-14eb-4b73-bc9c-3891a9489306",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/31045edd-3497-4129-946c-40940167fa63.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T23:44:28.509554+00:00",
+      "updated_at": "2026-04-08T23:46:49.271576+00:00"
+    },
+    {
+      "id": "24107d9f-0575-4d54-8589-7b445ea50e47",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Saia karl | cenário: Loja kar lagerfeld",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775691845717x429048435632726660/1000113199.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:fc6d8f7c-210b-4996-b9b6-2866ee9fa99e",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/24107d9f-0575-4d54-8589-7b445ea50e47.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T23:44:23.054567+00:00",
+      "updated_at": "2026-04-08T23:51:48.510537+00:00"
+    },
+    {
+      "id": "c4c15f9c-bca3-49e3-b313-d2876e2874a3",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Saia karl lagerfeld | cenário: Loja manequim karl lagerfeld",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775691551984x833782060532992300/1000113199.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:e8df587c-ed3d-42cc-b63a-5e1a0658f3e4",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/c4c15f9c-bca3-49e3-b313-d2876e2874a3.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T23:40:25.617631+00:00",
+      "updated_at": "2026-04-08T23:42:49.067716+00:00"
+    },
+    {
+      "id": "643521df-b6cd-4b9c-aea1-69544538cbce",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Saia karl lagerfeld | cenário: Loja karl lagerfeld",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775691551984x833782060532992300/1000113199.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:3e63ad93-1c62-4151-860b-da85f181a48b",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/643521df-b6cd-4b9c-aea1-69544538cbce.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T23:40:03.404362+00:00",
+      "updated_at": "2026-04-08T23:44:49.387038+00:00"
+    },
+    {
+      "id": "a1a5b629-9089-43ff-a22f-56048d635400",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Saia karl lagerfeld | cenário: Loja karl lagerfeld",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775691551984x833782060532992300/1000113199.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:c32a4f24-8067-48e5-8dd2-58d46ed2b5fd",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/a1a5b629-9089-43ff-a22f-56048d635400.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T23:39:16.340423+00:00",
+      "updated_at": "2026-04-08T23:40:49.220839+00:00"
+    },
+    {
+      "id": "8dd0ceb4-0544-4989-bfbf-cbfe8264aed6",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Vestido adulto moschino | cenário: Manequim na loja da moschino",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775689930587x677597295218640900/1000113062.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:8cadcddd-0710-4eb5-b023-45888c9a8a7e",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/8dd0ceb4-0544-4989-bfbf-cbfe8264aed6.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T23:12:40.383257+00:00",
+      "updated_at": "2026-04-08T23:13:48.641523+00:00"
+    },
+    {
+      "id": "b63fa20a-57a0-486d-9842-37623e9e7f8b",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Sapato bebe Michael kors | cenário: Loja Michael kors",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775689600392x647295884719257900/1000112401.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:bfb2100a-56f4-4e37-a9be-add0515ebf8c",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/b63fa20a-57a0-486d-9842-37623e9e7f8b.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T23:07:00.083775+00:00",
+      "updated_at": "2026-04-08T23:08:48.279045+00:00"
+    },
+    {
+      "id": "05645b54-33d5-4d3c-8f1a-cfb5bfb4b967",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Moschino | cenário: Moschino",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775689160905x971953237751705500/1000113062.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:901eeaa7-54ca-4ecb-943b-1236fdca9156",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/05645b54-33d5-4d3c-8f1a-cfb5bfb4b967.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T22:59:35.640074+00:00",
+      "updated_at": "2026-04-08T23:00:49.22291+00:00"
+    },
+    {
+      "id": "82ea10e7-98b5-49a0-83af-6cc426d13e28",
+      "user_id": "347d745b-fd52-4bf9-8850-b196548e201e",
+      "tool": "photo_ai",
+      "prompt": "Bolsa feminina  | cenário: Na loja ",
+      "input_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/347d745b-fd52-4bf9-8850-b196548e201e/1775687766136.jpeg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:0c59c7a5-a3f6-4b99-bd3a-dc818a284820",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/82ea10e7-98b5-49a0-83af-6cc426d13e28.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T22:36:08.689386+00:00",
+      "updated_at": "2026-04-08T22:37:44.126559+00:00"
+    },
+    {
+      "id": "984e7d12-edfb-44f3-a4d0-e57385b59f0c",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "fantasia de minino roupa | cenário: Mulher na praia",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775686325348x511937322600039230/1001002318.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:0a9c3608-b9d2-4c95-bfe6-cff2383ec16f",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/984e7d12-edfb-44f3-a4d0-e57385b59f0c.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T22:13:04.19337+00:00",
+      "updated_at": "2026-04-08T22:14:32.043924+00:00"
+    },
+    {
+      "id": "0e278168-318b-401b-9db3-8f42669557af",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Saia Longa Feminina | cenário: Mulher loira",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775685903939x370095740196275200/1000013635.png",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:b74bd4b7-28d2-4834-9d2c-5027c1feca99",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/0e278168-318b-401b-9db3-8f42669557af.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T22:05:17.96354+00:00",
+      "updated_at": "2026-04-08T22:06:40.477533+00:00"
+    },
+    {
+      "id": "0f3607c0-2513-4ba6-8b92-cedb4c31e45e",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Que combine | cenário: Parque",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775685205813x236723733189235100/7DE86EF2-F2A2-435B-8E6E-C327A423665D.jpeg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:4507bcf7-c93f-4192-b720-1ee8b33d73ca",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/0f3607c0-2513-4ba6-8b92-cedb4c31e45e.jpg",
+      "error_message": null,
+      "attempts": 4,
+      "created_at": "2026-04-08T21:53:53.854772+00:00",
+      "updated_at": "2026-04-08T21:58:28.474228+00:00"
+    },
+    {
+      "id": "610844ed-d601-419c-b8c3-5d5a7e7adf6c",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Blusa com detalhe em tule | cenário: Mulher loira com scarpin no shopping",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775681787867x394831454839180700/IMG_0644.png",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:2788f837-4f62-43b0-9261-59a2b18cddbd",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/610844ed-d601-419c-b8c3-5d5a7e7adf6c.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T20:57:17.500446+00:00",
+      "updated_at": "2026-04-08T20:58:46.764501+00:00"
+    },
+    {
+      "id": "2eaba212-4969-4777-b51c-86ccd39f133d",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Michael kors baby | cenário: Loja Michael kors",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775681453080x952132441957411700/1000112397.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:96ea51db-5a8b-4060-85bd-3e85af74db53",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/2eaba212-4969-4777-b51c-86ccd39f133d.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T20:51:22.97948+00:00",
+      "updated_at": "2026-04-08T20:52:46.072179+00:00"
+    },
+    {
+      "id": "bbd46703-04be-47b8-b2fa-31c0689d61e9",
+      "user_id": "f6795193-6b31-4120-821e-ae4b65765e56",
+      "tool": "photo_ai",
+      "prompt": "Sapato Michael kors bebe | cenário: menino de 10 anos na festa",
+      "input_image_url": "https://1fec56978c6d7da18b6eae078e97428f.cdn.bubble.io/f1775681200461x920830752772864100/1000112401.jpg",
+      "status": "done",
+      "provider": "comfyui-direct",
+      "external_job_id": "0:287cffff-f3ec-4070-94d8-c2c30b9ba002",
+      "output_image_url": "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/bbd46703-04be-47b8-b2fa-31c0689d61e9.jpg",
+      "error_message": null,
+      "attempts": 1,
+      "created_at": "2026-04-08T20:46:55.956132+00:00",
+      "updated_at": "2026-04-08T20:48:46.401441+00:00"
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 500 ()"
+  ]
+}

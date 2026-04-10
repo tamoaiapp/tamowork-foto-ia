@@ -1,0 +1,107 @@
+{
+  "generated_at": "2026-04-09T02:09:19.292Z",
+  "account": "ui-a3@tamowork.test",
+  "base_url": "https://tamowork.com",
+  "tests": [
+    {
+      "group": "setup",
+      "name": "conta_pro_supabase",
+      "status": "pass",
+      "detail": "User ID: 33c9bb7f-58fe-4954-8f20-5c3d4eb5a214"
+    },
+    {
+      "group": "setup",
+      "name": "login_ui",
+      "status": "pass",
+      "detail": "Logado. URL: https://ddpyvdtgxemyxltgtxsh.supabase.co/auth/v1/authorize?provider=google&redirect_to=https%3A%2F%2Ftamowork.com%2Fonboarding"
+    },
+    {
+      "group": "editor",
+      "name": "01_sem_imagem_mostra_upload",
+      "status": "pass",
+      "detail": "Tela de upload exibida ao abrir /editor sem imagem",
+      "screenshot": "editor-01-sem-imagem.png"
+    },
+    {
+      "group": "editor",
+      "name": "02_upload_imagem",
+      "status": "pass",
+      "detail": "Imagem carregada (canvas: 1, imgs: 1)",
+      "screenshot": "editor-02-upload-feito.png"
+    },
+    {
+      "group": "editor",
+      "name": "03a_ferramenta_texto",
+      "status": "fail",
+      "detail": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[class*=\"preview\"], [class*=\"canvas\"], canvas').first()\u001b[22m\n\u001b[2m    - locator resolved to <canvas></canvas>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    54 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+    },
+    {
+      "group": "editor",
+      "name": "03b_crop_ratios",
+      "status": "pass",
+      "detail": "Ratios testados: 1:1, 4:5, 9:16",
+      "screenshot": "editor-03b-crop-ratios.png"
+    },
+    {
+      "group": "editor",
+      "name": "03c_ajustes_brilho_contraste",
+      "status": "warn",
+      "detail": "Botão ajustes não encontrado"
+    },
+    {
+      "group": "editor",
+      "name": "03d_sticker_logo",
+      "status": "warn",
+      "detail": "Painel stickers aberto mas itens não clicáveis",
+      "screenshot": "editor-03d-stickers.png"
+    },
+    {
+      "group": "editor",
+      "name": "03e_remover_elemento",
+      "status": "warn",
+      "detail": "Botão remover não encontrado (pode ser via tecla Delete)"
+    },
+    {
+      "group": "editor",
+      "name": "04_salvar_imagem",
+      "status": "pass",
+      "detail": "Download iniciado: foto-editada.jpg",
+      "screenshot": "editor-04-salvar.png"
+    },
+    {
+      "group": "editor",
+      "name": "05_botao_voltar",
+      "status": "warn",
+      "detail": "URL não mudou: https://tamowork.com/editor",
+      "screenshot": "editor-05-voltar.png"
+    },
+    {
+      "group": "criacoes",
+      "name": "01_carrega_sem_erro",
+      "status": "fail",
+      "detail": "Redirecionou para login — sessão inválida",
+      "screenshot": "criacoes-01-carregou.png"
+    },
+    {
+      "group": "conta",
+      "name": "01_plano_pro_aparece",
+      "status": "fail",
+      "detail": "Redirecionou para login",
+      "screenshot": "conta-01-carregou.png"
+    },
+    {
+      "group": "planos",
+      "name": "01_pagina_carrega",
+      "status": "fail",
+      "detail": "Redirecionou para login",
+      "screenshot": "planos-01-carregou.png"
+    }
+  ],
+  "summary": {
+    "total": 14,
+    "passed": 6,
+    "failed": 4,
+    "warned": 4
+  },
+  "finished_at": "2026-04-09T02:10:21.832Z"
+}

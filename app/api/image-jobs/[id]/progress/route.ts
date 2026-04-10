@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { sendPushToUser } from "@/lib/push/send";
 
 // Tempo médio em segundos por etapa (ajustado com dados reais)
 const AVG_QUEUE_WAIT_PER_JOB = 45;  // ~45s por job na frente
@@ -31,8 +32,10 @@ export async function GET(
     return NextResponse.json({ error: "Job não encontrado" }, { status: 404 });
   }
 
-  // Se já terminou
+  // Se já terminou — dispara push server-side (funciona com app fechado)
   if (job.status === "done") {
+    // Dispara em background, não bloqueia a resposta
+    sendPushToUser(user.id, "Sua foto está pronta! ✨", "Toque para ver o resultado.", "/").catch(() => {});
     return NextResponse.json({
       status: "done",
       position: 0,

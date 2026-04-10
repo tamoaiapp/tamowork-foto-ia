@@ -90,7 +90,7 @@ function isDesktop(): boolean {
 export default function DesktopSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [show, setShow] = useState(false);
   const [isPro, setIsPro] = useState(false);
 
@@ -147,7 +147,7 @@ export default function DesktopSidebar() {
 
       {/* Nav principal */}
       <nav style={s.nav}>
-        <div style={s.navSection}>Ferramentas</div>
+        <div style={s.navSection}>{lang === "en" ? "Tools" : lang === "es" ? "Herramientas" : "Ferramentas"}</div>
         {navItems.map((item) => {
           const active = isActive(item.path);
           return (
@@ -174,17 +174,17 @@ export default function DesktopSidebar() {
         {isPro ? (
           <div style={s.proBadge}>
             <span style={{ fontSize: 14 }}>⭐</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#c4b5fd" }}>Plano Pro ativo</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#c4b5fd" }}>{lang === "en" ? "Pro plan active" : lang === "es" ? "Plan Pro activo" : "Plano Pro ativo"}</span>
           </div>
         ) : (
           <button onClick={() => router.push("/planos")} style={s.proBtn}>
             <IconPlans />
-            <span>Assinar Pro</span>
+            <span>{lang === "en" ? "Subscribe Pro" : lang === "es" ? "Suscribirse Pro" : "Assinar Pro"}</span>
           </button>
         )}
         <button onClick={() => router.push("/conta")} style={s.accountItem} className="sidebar-nav-item">
           <IconAccount />
-          <span style={s.navLabel}>Minha conta</span>
+          <span style={s.navLabel}>{lang === "en" ? "My account" : lang === "es" ? "Mi cuenta" : "Minha conta"}</span>
         </button>
       </div>
     </aside>

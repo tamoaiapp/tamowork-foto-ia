@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { useI18n } from "@/lib/i18n";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.tamowork.app";
 const STORAGE_KEY = "tw_review_asked";
 
 export default function ReviewPopup() {
+  const { lang } = useI18n();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -26,11 +28,12 @@ export default function ReviewPopup() {
   }, []);
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, "1");
+    // "Agora não" — esconde mas volta a perguntar na próxima sessão
     setVisible(false);
   }
 
   function openPlayStore() {
+    // "Avaliar" — marca como feito, nunca mais pergunta
     localStorage.setItem(STORAGE_KEY, "1");
     window.open(PLAY_STORE_URL, "_blank");
     setVisible(false);
@@ -42,14 +45,22 @@ export default function ReviewPopup() {
     <div style={s.overlay} onClick={dismiss}>
       <div style={s.card} onClick={e => e.stopPropagation()}>
         <div style={s.stars}>⭐⭐⭐⭐⭐</div>
-        <div style={s.title}>Está gostando do TamoWork?</div>
+        <div style={s.title}>
+          {lang === "en" ? "Enjoying TamoWork?" : lang === "es" ? "¿Te está gustando TamoWork?" : "Está gostando do TamoWork?"}
+        </div>
         <div style={s.sub}>
-          Sua avaliação na Play Store ajuda mais lojistas a nos encontrar e nos motiva a melhorar cada vez mais!
+          {lang === "en"
+            ? "Your Play Store review helps more sellers find us and motivates us to keep improving!"
+            : lang === "es"
+            ? "¡Tu reseña en Play Store ayuda a más vendedores a encontrarnos y nos motiva a seguir mejorando!"
+            : "Sua avaliação na Play Store ajuda mais lojistas a nos encontrar e nos motiva a melhorar cada vez mais!"}
         </div>
         <button onClick={openPlayStore} style={s.btn}>
-          Avaliar na Play Store
+          {lang === "en" ? "Rate on Play Store" : lang === "es" ? "Calificar en Play Store" : "Avaliar na Play Store"}
         </button>
-        <button onClick={dismiss} style={s.dismiss}>Agora não</button>
+        <button onClick={dismiss} style={s.dismiss}>
+          {lang === "en" ? "Not now" : lang === "es" ? "Ahora no" : "Agora não"}
+        </button>
       </div>
     </div>
   );

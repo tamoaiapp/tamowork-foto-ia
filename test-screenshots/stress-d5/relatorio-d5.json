@@ -1,0 +1,157 @@
+{
+  "timestamp": "2026-04-09T01:19:48.799Z",
+  "account": "test-stress-d5@tamowork.test",
+  "plan": "PRO",
+  "viewport": "1440x900",
+  "jobs": [
+    {
+      "job#": 1,
+      "modo": "custom",
+      "tempo_seg": "10",
+      "status": "done",
+      "erro": ""
+    },
+    {
+      "job#": 2,
+      "modo": "custom",
+      "tempo_seg": "10",
+      "status": "done",
+      "erro": ""
+    },
+    {
+      "job#": 3,
+      "modo": "custom",
+      "tempo_seg": "10",
+      "status": "done",
+      "erro": ""
+    },
+    {
+      "job#": 4,
+      "modo": "custom",
+      "tempo_seg": "10",
+      "status": "done",
+      "erro": ""
+    },
+    {
+      "job#": 5,
+      "modo": "custom",
+      "tempo_seg": "12",
+      "status": "done",
+      "erro": ""
+    },
+    {
+      "job#": "V1",
+      "modo": "video",
+      "tempo_seg": 0,
+      "status": "skip",
+      "erro": "Botão Criar vídeo não encontrado"
+    },
+    {
+      "job#": "V2",
+      "modo": "video",
+      "tempo_seg": 0,
+      "status": "skip",
+      "erro": "Botão Criar vídeo não encontrado"
+    }
+  ],
+  "uitests": [
+    {
+      "teste": "Login inicial (PRO)",
+      "passed": true,
+      "detalhe": "URL: https://tamowork.com/"
+    },
+    {
+      "teste": "Campo prompt aceita texto longo (300 chars)",
+      "passed": false,
+      "detalhe": "Campo não encontrado"
+    },
+    {
+      "teste": "Erro de validação ao submeter sem campos",
+      "passed": false,
+      "detalhe": "Sem validação visível"
+    },
+    {
+      "teste": "Submit desabilitado: foto sem produto/cenário",
+      "passed": false,
+      "detalhe": "Botão habilitado (possível bug)"
+    },
+    {
+      "teste": "Botão Cancelar aparece durante geração",
+      "passed": false,
+      "detalhe": "Não encontrado em 45s (aparece em 30s)"
+    },
+    {
+      "teste": "/criacoes carrega durante geração ativa",
+      "passed": true,
+      "detalhe": "URL: https://tamowork.com/criacoes"
+    },
+    {
+      "teste": "Polling continua após navegar e voltar",
+      "passed": true,
+      "detalhe": "Estado mantido"
+    },
+    {
+      "teste": "Logout funciona",
+      "passed": true,
+      "detalhe": "URL: https://tamowork.com/login"
+    },
+    {
+      "teste": "Re-login após logout",
+      "passed": true,
+      "detalhe": "URL: https://tamowork.com/"
+    },
+    {
+      "teste": "Sessão funcional após relogin",
+      "passed": true,
+      "detalhe": "Conteúdo carregado"
+    },
+    {
+      "teste": "Editor abre em /editor",
+      "passed": true,
+      "detalhe": "URL: https://tamowork.com/editor"
+    },
+    {
+      "teste": "Ferramentas do editor visíveis",
+      "passed": true,
+      "detalhe": "Ferramentas encontradas"
+    },
+    {
+      "teste": "Crop: opções de proporção visíveis",
+      "passed": true,
+      "detalhe": "Proporções encontradas"
+    },
+    {
+      "teste": "Crop: selecionar 1:1",
+      "passed": false,
+      "detalhe": "Botão 1:1 não encontrado"
+    },
+    {
+      "teste": "Texto: ferramenta ativa",
+      "passed": false,
+      "detalhe": "Interface de texto não detectada"
+    },
+    {
+      "teste": "Texto: input para texto",
+      "passed": false,
+      "detalhe": "Sem input/canvas disponível"
+    },
+    {
+      "teste": "Ajustes: botão encontrado",
+      "passed": false,
+      "detalhe": "Botão Ajustes/Brilho não encontrado"
+    }
+  ],
+  "errors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()",
+    "Failed to load resource: the server responded with a status of 500 ()"
+  ]
+}

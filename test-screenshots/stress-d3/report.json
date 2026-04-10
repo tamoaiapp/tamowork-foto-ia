@@ -1,0 +1,161 @@
+{
+  "report": {
+    "timestamp": "2026-04-09T01:16:21.591Z",
+    "tests": [
+      {
+        "name": "Setup usuário PRO via Supabase",
+        "passed": true,
+        "detail": "userId: f6d88a03-1877-4870-82f7-eeb1a8843556"
+      },
+      {
+        "name": "Login inicial",
+        "passed": true,
+        "detail": "URL: https://tamowork.com/onboarding"
+      },
+      {
+        "name": "Home carrega após login",
+        "passed": true,
+        "detail": "URL: https://tamowork.com/"
+      },
+      {
+        "name": "Job foto #1 — submetido",
+        "passed": true,
+        "detail": "Botão: \"✨ Gerar foto com IA\""
+      },
+      {
+        "name": "Job foto #1 — geração",
+        "passed": false,
+        "detail": "Erro detectado na UI"
+      },
+      {
+        "name": "Job foto #2 — submetido",
+        "passed": true,
+        "detail": "Botão: \"✨ Gerar foto com IA\""
+      },
+      {
+        "name": "Job foto #2 — geração",
+        "passed": false,
+        "detail": "Erro detectado na UI"
+      },
+      {
+        "name": "Job foto #3 — submetido",
+        "passed": true,
+        "detail": "Botão: \"✨ Gerar foto com IA\""
+      },
+      {
+        "name": "Job foto #3 — geração",
+        "passed": false,
+        "detail": "Erro detectado na UI"
+      },
+      {
+        "name": "Job foto #4 — submetido",
+        "passed": true,
+        "detail": "Botão: \"✨ Gerar foto com IA\""
+      },
+      {
+        "name": "Job foto #4 — geração",
+        "passed": false,
+        "detail": "Erro detectado na UI"
+      },
+      {
+        "name": "Job foto #5 — submetido",
+        "passed": true,
+        "detail": "Botão: \"✨ Gerar foto com IA\""
+      },
+      {
+        "name": "Job foto #5 — geração",
+        "passed": false,
+        "detail": "Erro detectado na UI"
+      },
+      {
+        "name": "Job vídeo #1 — submetido",
+        "passed": true,
+        "detail": "Botão: \"✨ Gerar foto com IA\""
+      },
+      {
+        "name": "Job vídeo #1 — geração",
+        "passed": false,
+        "detail": "Timeout após 360s"
+      },
+      {
+        "name": "Job vídeo #2 — submetido",
+        "passed": true,
+        "detail": "Botão: \"✨ Gerar foto com IA\""
+      },
+      {
+        "name": "Job vídeo #2 — geração",
+        "passed": false,
+        "detail": "Timeout após 360s"
+      }
+    ],
+    "errors": [
+      "Job foto #1: Erro detectado na UI",
+      "Job foto #2: Erro detectado na UI",
+      "Job foto #3: Erro detectado na UI",
+      "Job foto #4: Erro detectado na UI",
+      "Job foto #5: Erro detectado na UI",
+      "Job vídeo #1: Timeout após 360s",
+      "Job vídeo #2: Timeout após 360s",
+      "Erro crítico geral: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Usar agora').first()\u001b[22m\n\u001b[2m    - locator resolved to <button>Usar agora</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n"
+    ],
+    "jobs": [],
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 500 ()",
+      "Failed to load resource: the server responded with a status of 500 ()",
+      "Failed to load resource: the server responded with a status of 500 ()",
+      "Failed to load resource: the server responded with a status of 500 ()",
+      "Failed to load resource: the server responded with a status of 500 ()"
+    ]
+  },
+  "jobResults": [
+    {
+      "job": 1,
+      "modo": "catalogo",
+      "tempo_seg": 16,
+      "status": "failed",
+      "erro": "Erro detectado na UI"
+    },
+    {
+      "job": 2,
+      "modo": "catalogo",
+      "tempo_seg": 16,
+      "status": "failed",
+      "erro": "Erro detectado na UI"
+    },
+    {
+      "job": 3,
+      "modo": "catalogo",
+      "tempo_seg": 16,
+      "status": "failed",
+      "erro": "Erro detectado na UI"
+    },
+    {
+      "job": 4,
+      "modo": "catalogo",
+      "tempo_seg": 16,
+      "status": "failed",
+      "erro": "Erro detectado na UI"
+    },
+    {
+      "job": 5,
+      "modo": "catalogo",
+      "tempo_seg": 17,
+      "status": "failed",
+      "erro": "Erro detectado na UI"
+    },
+    {
+      "job": "V1",
+      "modo": "video",
+      "tempo_seg": 371,
+      "status": "failed",
+      "erro": "Timeout após 360s"
+    },
+    {
+      "job": "V2",
+      "modo": "video",
+      "tempo_seg": 386,
+      "status": "failed",
+      "erro": "Timeout após 360s"
+    }
+  ]
+}

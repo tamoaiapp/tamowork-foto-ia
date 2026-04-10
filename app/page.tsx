@@ -426,7 +426,7 @@ const pu: Record<string, React.CSSProperties> = {
 
 export default function HomePage() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<Plan>("free");
@@ -813,9 +813,15 @@ export default function HomePage() {
     const data: Job = await res.json();
     if (data.status === "done") {
       await requestAndRegisterPush();
-      await sendPushNotification("Sua foto está pronta! 🎉", "Toque para ver a imagem gerada pela IA.");
+      await sendPushNotification(
+        lang === "en" ? "Your photo is ready! 🎉" : lang === "es" ? "¡Tu foto está lista! 🎉" : "Sua foto está pronta! 🎉",
+        lang === "en" ? "Tap to see the AI-generated image." : lang === "es" ? "Toca para ver la imagen generada por IA." : "Toque para ver a imagem gerada pela IA."
+      );
     } else if (data.status === "failed") {
-      sendPushNotification("Erro na geração", "Não foi possível gerar a foto. Tente novamente.");
+      sendPushNotification(
+        lang === "en" ? "Generation error" : lang === "es" ? "Error en la generación" : "Erro na geração",
+        lang === "en" ? "Could not generate the photo. Please try again." : lang === "es" ? "No se pudo generar la foto. Inténtalo de nuevo." : "Não foi possível gerar a foto. Tente novamente."
+      );
     }
     setJob(data);
   }
@@ -947,10 +953,10 @@ export default function HomePage() {
       return;
     }
 
-    if (creationMode === "catalogo" && !modelFile && !modelPreview) { setFormError("Escolha um modelo"); return; }
-    if (!imageFile) { setFormError("Envie a foto do produto"); return; }
-    if (!produto.trim()) { setFormError("Descreva o produto"); return; }
-    if (creationMode !== "fundo_branco" && !cenario.trim()) { setFormError("Descreva o cenário da foto"); return; }
+    if (creationMode === "catalogo" && !modelFile && !modelPreview) { setFormError(lang === "en" ? "Choose a model" : lang === "es" ? "Elige un modelo" : "Escolha um modelo"); return; }
+    if (!imageFile) { setFormError(lang === "en" ? "Upload the product photo" : lang === "es" ? "Sube la foto del producto" : "Envie a foto do produto"); return; }
+    if (!produto.trim()) { setFormError(lang === "en" ? "Describe the product" : lang === "es" ? "Describe el producto" : "Descreva o produto"); return; }
+    if (creationMode !== "fundo_branco" && !cenario.trim()) { setFormError(lang === "en" ? "Describe the photo scene" : lang === "es" ? "Describe la escena de la foto" : "Descreva o cenário da foto"); return; }
 
     setFormError("");
     setTimeoutError("");
@@ -1543,7 +1549,7 @@ export default function HomePage() {
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
-              ← Voltar
+              {t("back")}
             </button>
 
             <div style={styles.modeHeader}>
@@ -1605,7 +1611,7 @@ export default function HomePage() {
                     disabled={videoSubmitting || !imageFile || plan !== "pro"}
                     style={{ ...styles.submitBtn, opacity: (videoSubmitting || !imageFile || plan !== "pro") ? 0.5 : 1 }}
                   >
-                    {videoSubmitting ? "Enviando..." : "🎬 Gerar vídeo"}
+                    {videoSubmitting ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : t("btn_generate_video")}
                   </button>
                 </>
               ) : (
@@ -1734,14 +1740,18 @@ export default function HomePage() {
               {creationMode !== "fundo_branco" && (
                 <div style={styles.fieldGroup}>
                   <label style={styles.label}>
-                    {creationMode === "personalizado" ? "Descreva o resultado que quer" : "Cenário"}
+                    {creationMode === "personalizado"
+                      ? (lang === "en" ? "Describe the result you want" : lang === "es" ? "Describe el resultado que quieres" : "Descreva o resultado que quer")
+                      : t("field_scene")}
                   </label>
                   <input
                     type="text"
                     placeholder={
-                      creationMode === "simulacao" ? "Ex: mulher estilosa em lugar elegante, estúdio moderno com luz suave" :
-                      creationMode === "catalogo" ? "Ex: rua de Paris, café sofisticado, ambiente urbano moderno" :
-                      "Descreva livremente o que a IA deve criar"
+                      creationMode === "simulacao"
+                        ? (lang === "en" ? "Ex: stylish woman in elegant place, modern studio with soft light" : lang === "es" ? "Ej: mujer elegante en lugar sofisticado, estudio moderno con luz suave" : "Ex: mulher estilosa em lugar elegante, estúdio moderno com luz suave")
+                        : creationMode === "catalogo"
+                        ? (lang === "en" ? "Ex: streets of Paris, upscale café, modern urban setting" : lang === "es" ? "Ej: calle de París, café sofisticado, ambiente urbano moderno" : "Ex: rua de Paris, café sofisticado, ambiente urbano moderno")
+                        : (lang === "en" ? "Freely describe what the AI should create" : lang === "es" ? "Describe libremente lo que la IA debe crear" : "Descreva livremente o que a IA deve criar")
                     }
                     value={cenario}
                     onChange={(e) => setCenario(e.target.value)}
@@ -1824,7 +1834,7 @@ export default function HomePage() {
                     <div style={styles.blurOverlay} />
                     <div style={styles.blurBadge}>
                       <span style={styles.blurDot} />
-                      {submitting ? "Enviando..." : statusLabel(job?.status ?? null, elapsedSec, job?.created_at)}
+                      {submitting ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : statusLabel(job?.status ?? null, elapsedSec, job?.created_at, lang)}
                     </div>
                   </div>
                 )}
@@ -1968,32 +1978,42 @@ export default function HomePage() {
             /* Free tentou abrir vídeo — redireciona para planos */
             <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>🎬</div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#eef2f9", marginBottom: 8 }}>Vídeo animado é exclusivo do PRO</div>
-              <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 24, lineHeight: 1.5 }}>Assine e gere vídeos incríveis dos seus produtos com IA.</div>
-              <button onClick={() => router.push("/planos")} style={{ ...styles.submitBtn, marginBottom: 12 }}>✨ Assinar PRO</button>
-              <button onClick={() => { setVideoMode(false); }} style={styles.backBtn}>← Voltar</button>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#eef2f9", marginBottom: 8 }}>
+                {lang === "en" ? "Animated video is PRO exclusive" : lang === "es" ? "El video animado es exclusivo PRO" : "Vídeo animado é exclusivo do PRO"}
+              </div>
+              <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 24, lineHeight: 1.5 }}>
+                {lang === "en" ? "Subscribe and generate amazing AI product videos." : lang === "es" ? "Suscríbete y genera videos increíbles de tus productos con IA." : "Assine e gere vídeos incríveis dos seus produtos com IA."}
+              </div>
+              <button onClick={() => router.push("/planos")} style={{ ...styles.submitBtn, marginBottom: 12 }}>
+                {lang === "en" ? "✨ Subscribe PRO" : lang === "es" ? "✨ Suscribirse PRO" : "✨ Assinar PRO"}
+              </button>
+              <button onClick={() => { setVideoMode(false); }} style={styles.backBtn}>{t("back")}</button>
             </div>
           ) : isGenerating ? (
             /* Tem foto sendo gerada — não pode criar vídeo agora */
             <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#eef2f9", marginBottom: 8 }}>Aguarde sua foto ficar pronta</div>
-              <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 24 }}>Não é possível criar um vídeo enquanto uma foto está sendo gerada.</div>
-              <button onClick={() => { setVideoMode(false); }} style={styles.backBtn}>← Voltar</button>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#eef2f9", marginBottom: 8 }}>
+                {lang === "en" ? "Wait for your photo to finish" : lang === "es" ? "Espera que tu foto esté lista" : "Aguarde sua foto ficar pronta"}
+              </div>
+              <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 24 }}>
+                {lang === "en" ? "You can't create a video while a photo is being generated." : lang === "es" ? "No puedes crear un video mientras se genera una foto." : "Não é possível criar um vídeo enquanto uma foto está sendo gerada."}
+              </div>
+              <button onClick={() => { setVideoMode(false); }} style={styles.backBtn}>{t("back")}</button>
             </div>
           ) : (
             <div style={styles.card}>
-              <button onClick={resetVideo} style={styles.backBtn}>← Voltar</button>
-              <h2 style={styles.centerTitle}>🎬 Criar vídeo da foto</h2>
+              <button onClick={resetVideo} style={styles.backBtn}>{t("back")}</button>
+              <h2 style={styles.centerTitle}>{lang === "en" ? "🎬 Create video from photo" : lang === "es" ? "🎬 Crear video de la foto" : "🎬 Criar vídeo da foto"}</h2>
               <p style={{ ...styles.centerDesc, marginBottom: 16 }}>
-                Descreva como a câmera vai se mover ou o que vai acontecer na cena.
+                {lang === "en" ? "Describe how the camera will move or what will happen in the scene." : lang === "es" ? "Describe cómo se moverá la cámara o qué ocurrirá en la escena." : "Descreva como a câmera vai se mover ou o que vai acontecer na cena."}
               </p>
               <img src={job.output_image_url} alt="base" style={{ ...styles.resultImg, marginBottom: 16 }} />
               <div style={styles.fieldGroup}>
-                <label style={styles.label}>Movimento <span style={{ color: "#4e5c72" }}>(opcional)</span></label>
+                <label style={styles.label}>{lang === "en" ? "Movement" : lang === "es" ? "Movimiento" : "Movimento"} <span style={{ color: "#4e5c72" }}>{t("field_scene_optional")}</span></label>
                 <input
                   type="text"
-                  placeholder="Ex: câmera girando suavemente para a esquerda"
+                  placeholder={lang === "en" ? "Ex: camera slowly rotating to the left" : lang === "es" ? "Ej: cámara girando suavemente hacia la izquierda" : "Ex: câmera girando suavemente para a esquerda"}
                   value={videoPrompt}
                   onChange={(e) => setVideoPrompt(e.target.value)}
                   style={styles.input}
@@ -2005,7 +2025,7 @@ export default function HomePage() {
                 disabled={videoSubmitting}
                 style={{ ...styles.submitBtn, marginTop: 16, opacity: videoSubmitting ? 0.6 : 1 }}
               >
-                {videoSubmitting ? "Enviando..." : "🎬 Gerar vídeo"}
+                {videoSubmitting ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : t("btn_generate_video")}
               </button>
             </div>
           )
@@ -2015,7 +2035,7 @@ export default function HomePage() {
         {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && videoMode && (
           <div style={styles.card}>
             <div style={styles.generatingTitle}>
-              <span style={styles.shimmerText}>Criando seu vídeo</span>
+              <span style={styles.shimmerText}>{lang === "en" ? "Creating your video" : lang === "es" ? "Creando tu video" : "Criando seu vídeo"}</span>
               <span style={styles.dots}>
                 <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
                 <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
@@ -2034,7 +2054,7 @@ export default function HomePage() {
             </div>
 
             <p style={{ ...styles.centerDesc, marginBottom: 20 }}>
-              Vídeos levam 3–5 minutos. Pode fechar — te avisamos quando ficar pronto. 🔔
+              {lang === "en" ? "Videos take 3–5 minutes. You can close — we'll notify you when it's ready. 🔔" : lang === "es" ? "Los videos tardan 3–5 minutos. Puedes cerrar — te avisamos cuando esté listo. 🔔" : "Vídeos levam 3–5 minutos. Pode fechar — te avisamos quando ficar pronto. 🔔"}
             </p>
             {(job?.output_image_url || videoJob?.input_image_url) && (
               <div style={styles.blurWrapper}>
@@ -2174,18 +2194,20 @@ const notifyStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-function statusLabel(status: JobStatus, elapsedSec: number, createdAt?: string): string {
+function statusLabel(status: JobStatus, elapsedSec: number, createdAt?: string, lang?: string): string {
   const realElapsed = createdAt
     ? Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
     : elapsedSec;
-  if (status === "processing") return "Gerando sua foto...";
-  if (status === "submitted") return realElapsed < 20 ? "Enviando para a IA..." : "Processando...";
+  if (status === "processing") return lang === "en" ? "Generating your photo..." : lang === "es" ? "Generando tu foto..." : "Gerando sua foto...";
+  if (status === "submitted") return realElapsed < 20
+    ? (lang === "en" ? "Sending to AI..." : lang === "es" ? "Enviando a la IA..." : "Enviando para a IA...")
+    : (lang === "en" ? "Processing..." : lang === "es" ? "Procesando..." : "Processando...");
   if (status === "queued") {
-    if (realElapsed < 10) return "Preparando...";
-    if (realElapsed < 120) return "Na fila...";
-    return "Aguardando na fila...";
+    if (realElapsed < 10) return lang === "en" ? "Preparing..." : lang === "es" ? "Preparando..." : "Preparando...";
+    if (realElapsed < 120) return lang === "en" ? "In queue..." : lang === "es" ? "En cola..." : "Na fila...";
+    return lang === "en" ? "Waiting in queue..." : lang === "es" ? "Esperando en cola..." : "Aguardando na fila...";
   }
-  return "Processando...";
+  return lang === "en" ? "Processing..." : lang === "es" ? "Procesando..." : "Processando...";
 }
 
 const styles: Record<string, React.CSSProperties> = {

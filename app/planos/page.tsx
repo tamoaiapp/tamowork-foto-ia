@@ -324,10 +324,10 @@ export default function PlanosPage() {
       if (json.init_point) {
         window.location.href = json.init_point;
       } else {
-        alert("Erro ao iniciar pagamento. Tente novamente.");
+        alert(lang === "en" ? "Payment error. Please try again." : lang === "es" ? "Error al iniciar el pago. Inténtalo de nuevo." : "Erro ao iniciar pagamento. Tente novamente.");
       }
     } catch {
-      alert("Erro ao iniciar pagamento. Tente novamente.");
+      alert(lang === "en" ? "Payment error. Please try again." : lang === "es" ? "Error al iniciar el pago. Inténtalo de nuevo." : "Erro ao iniciar pagamento. Tente novamente.");
     } finally {
       setLoadingMPMonthly(false);
     }
@@ -368,10 +368,10 @@ export default function PlanosPage() {
       if (json.init_point) {
         window.location.href = json.init_point;
       } else {
-        alert("Erro ao iniciar pagamento. Tente novamente.");
+        alert(lang === "en" ? "Payment error. Please try again." : lang === "es" ? "Error al iniciar el pago. Inténtalo de nuevo." : "Erro ao iniciar pagamento. Tente novamente.");
       }
     } catch {
-      alert("Erro ao iniciar pagamento. Tente novamente.");
+      alert(lang === "en" ? "Payment error. Please try again." : lang === "es" ? "Error al iniciar el pago. Inténtalo de nuevo." : "Erro ao iniciar pagamento. Tente novamente.");
     } finally {
       setLoadingMP(false);
     }

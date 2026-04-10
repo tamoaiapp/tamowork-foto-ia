@@ -1,0 +1,213 @@
+{
+  "timestamp": "2026-04-09T01:26:33.383Z",
+  "viewport": "768x1024 iPad mini touch",
+  "setup": {
+    "login": true,
+    "modes_available": 6
+  },
+  "photo_runs": [
+    {
+      "run": 1,
+      "mode_idx": 4,
+      "success": false,
+      "duration": 0,
+      "api_status": null,
+      "error": "Botao de geracao nao encontrado",
+      "steps": {
+        "mode": true,
+        "upload": true
+      },
+      "mode_name": "POST DE PROMOÇÃO Arte pronta para postar Usar agora"
+    },
+    {
+      "run": 2,
+      "mode_idx": 4,
+      "success": false,
+      "duration": 0,
+      "api_status": null,
+      "error": "Botao de geracao nao encontrado",
+      "steps": {
+        "mode": true,
+        "upload": true
+      },
+      "mode_name": "POST DE PROMOÇÃO Arte pronta para postar Usar agora"
+    },
+    {
+      "run": 3,
+      "mode_idx": 4,
+      "success": false,
+      "duration": 0,
+      "api_status": null,
+      "error": "Botao de geracao nao encontrado",
+      "steps": {
+        "mode": true,
+        "upload": true
+      },
+      "mode_name": "POST DE PROMOÇÃO Arte pronta para postar Usar agora"
+    },
+    {
+      "run": 4,
+      "mode_idx": 4,
+      "success": false,
+      "duration": 0,
+      "api_status": null,
+      "error": "Botao de geracao nao encontrado",
+      "steps": {
+        "mode": true,
+        "upload": true
+      },
+      "mode_name": "POST DE PROMOÇÃO Arte pronta para postar Usar agora"
+    },
+    {
+      "run": 5,
+      "mode_idx": 4,
+      "success": false,
+      "duration": 0,
+      "api_status": null,
+      "error": "Botao de geracao nao encontrado",
+      "steps": {
+        "mode": true,
+        "upload": true
+      },
+      "mode_name": "POST DE PROMOÇÃO Arte pronta para postar Usar agora"
+    }
+  ],
+  "video_runs": [
+    {
+      "run": 1,
+      "success": true,
+      "duration": 17,
+      "error": null,
+      "steps": {
+        "video_mode_exists": true,
+        "mode": true,
+        "upload": true,
+        "submit": true
+      },
+      "mode_name": "PRO VÍDEO ANIMADO Foto que se mexe Usar agora",
+      "signal": "Pronto"
+    },
+    {
+      "run": 2,
+      "success": true,
+      "duration": 14,
+      "error": null,
+      "steps": {
+        "video_mode_exists": true,
+        "mode": true,
+        "upload": true,
+        "submit": true
+      },
+      "mode_name": "PRO VÍDEO ANIMADO Foto que se mexe Usar agora",
+      "signal": "Pronto"
+    }
+  ],
+  "layout_checks": {
+    "nav_info": {
+      "bottomFixed": [
+        {
+          "tag": "NAV",
+          "classes": "bottom-nav",
+          "h": 78,
+          "w": 560,
+          "top": 946
+        }
+      ],
+      "topFixed": [],
+      "asideInfo": null,
+      "vw": 768,
+      "vh": 1024
+    },
+    "bottomNav_visible": true,
+    "sidebar_visible": false,
+    "nav_mode": "BottomNav (mobile - CORRETO) — 1 elem fixed no fundo",
+    "card_count": 24,
+    "card_columns": 4,
+    "card_expected": "2 colunas (mobile) ou 3 colunas (tablet)",
+    "form_width": {
+      "w": 454,
+      "h": 331,
+      "vw": 768
+    },
+    "form_width_ratio": "59.1%",
+    "form_width_ok": true,
+    "button_sizes": [
+      {
+        "text": "🇧🇷 PT",
+        "h": 27,
+        "w": 44
+      },
+      {
+        "text": "",
+        "h": 32,
+        "w": 40
+      },
+      {
+        "text": "← Voltar",
+        "h": 37,
+        "w": 56
+      },
+      {
+        "text": "✨ Gerar foto com IA",
+        "h": 52,
+        "w": 454
+      },
+      {
+        "text": "Criar",
+        "h": 77,
+        "w": 187
+      },
+      {
+        "text": "Editor",
+        "h": 77,
+        "w": 187
+      },
+      {
+        "text": "Criações",
+        "h": 77,
+        "w": 187
+      }
+    ],
+    "tiny_buttons_count": 3,
+    "tiny_buttons": [
+      {
+        "text": "🇧🇷 PT",
+        "h": 27,
+        "w": 44
+      },
+      {
+        "text": "",
+        "h": 32,
+        "w": 40
+      },
+      {
+        "text": "← Voltar",
+        "h": 37,
+        "w": 56
+      }
+    ]
+  },
+  "api_errors": [],
+  "summary": {
+    "photo": {
+      "total": 5,
+      "success": 0,
+      "failed": 5,
+      "avg_s": null,
+      "min_s": null,
+      "max_s": null
+    },
+    "video": {
+      "total": 2,
+      "success": 2,
+      "failed": 0,
+      "avg_s": 16,
+      "min_s": 14,
+      "max_s": 17
+    },
+    "api_errors_count": 0,
+    "console_errors_count": 0
+  },
+  "errors": [],
+  "console_errors": []
+}

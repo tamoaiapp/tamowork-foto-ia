@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export type CreationMode = "simulacao" | "fundo_branco" | "catalogo" | "personalizado" | "video" | "promo";
 
@@ -14,61 +15,37 @@ interface Props {
   isPro?: boolean;
 }
 
-const MODES: {
-  id: CreationMode;
-  name: string;
-  title: string;
-  desc: string;
-  img: string;
-  badge?: string;
-}[] = [
-  {
-    id: "fundo_branco",
-    name: "Fundo branco",
-    title: "Foto igual Mercado Livre",
-    desc: "Fundo limpo e profissional. Ideal para lojas online.",
-    img: `${BASE}/fundo_branco_split.jpg`,
-  },
-  {
-    id: "simulacao",
-    name: "Foto em cena",
-    title: "Produto em ambiente real",
-    desc: "Coloca seu produto numa cena bonita e real.",
-    img: `${BASE}/simulacao.jpg`,
-  },
-  {
-    id: "catalogo",
-    name: "Com modelo",
-    title: "Roupa vestida por IA",
-    desc: "Modelo virtual usa sua peça sem precisar de fotógrafo.",
-    img: `${BASE}/modelo_opt1.jpg`,
-  },
-  {
-    id: "video",
-    name: "Vídeo animado",
-    title: "Foto que se mexe",
-    desc: "Transforma sua foto num vídeo pronto para Reels.",
-    img: "",
-    badge: "PRO",
-  },
-  {
-    id: "promo",
-    name: "Post de promoção",
-    title: "Arte pronta para postar",
-    desc: "Cria post com preço e texto para divulgar no Instagram.",
-    img: `${BASE}/promo_thumb.jpg`,
-  },
-  {
-    id: "personalizado",
-    name: "Do meu jeito",
-    title: "Você escolhe a cena",
-    desc: "Descreva o que quer e a IA cria do seu jeito.",
-    img: `${BASE}/produto.jpg`,
-  },
-];
+type ModeData = { id: CreationMode; name: string; title: string; desc: string; img: string; badge?: string; };
 
-function VideoCard({ name, title, desc, badge, onClick }: {
-  name: string; title: string; desc: string; badge?: string; onClick: () => void;
+function getModes(lang: string): ModeData[] {
+  if (lang === "en") return [
+    { id: "fundo_branco", name: "White background", title: "Clean product photo", desc: "Clean and professional background. Perfect for online stores.", img: `${BASE}/fundo_branco_split.jpg` },
+    { id: "simulacao", name: "Lifestyle scene", title: "Product in real setting", desc: "Place your product in a beautiful, real-world scene.", img: `${BASE}/simulacao.jpg` },
+    { id: "catalogo", name: "With model", title: "AI-dressed model", desc: "Virtual model wears your item — no photographer needed.", img: `${BASE}/modelo_opt1.jpg` },
+    { id: "video", name: "Animated video", title: "Photo that moves", desc: "Turn your photo into a video ready for Reels.", img: "", badge: "PRO" },
+    { id: "promo", name: "Promo post", title: "Ready-to-post art", desc: "Create a post with price and text to share on Instagram.", img: `${BASE}/promo_thumb.jpg` },
+    { id: "personalizado", name: "Custom", title: "You choose the scene", desc: "Describe what you want and the AI creates it your way.", img: `${BASE}/produto.jpg` },
+  ];
+  if (lang === "es") return [
+    { id: "fundo_branco", name: "Fondo blanco", title: "Foto como Mercado Libre", desc: "Fondo limpio y profesional. Ideal para tiendas online.", img: `${BASE}/fundo_branco_split.jpg` },
+    { id: "simulacao", name: "Foto en escena", title: "Producto en ambiente real", desc: "Pon tu producto en una escena bonita y real.", img: `${BASE}/simulacao.jpg` },
+    { id: "catalogo", name: "Con modelo", title: "Ropa vestida por IA", desc: "Modelo virtual usa tu prenda sin necesitar fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
+    { id: "video", name: "Video animado", title: "Foto que se mueve", desc: "Transforma tu foto en un video listo para Reels.", img: "", badge: "PRO" },
+    { id: "promo", name: "Post de promoción", title: "Arte lista para publicar", desc: "Crea un post con precio y texto para Instagram.", img: `${BASE}/promo_thumb.jpg` },
+    { id: "personalizado", name: "A mi manera", title: "Tú eliges la escena", desc: "Describe lo que quieres y la IA lo crea a tu manera.", img: `${BASE}/produto.jpg` },
+  ];
+  return [
+    { id: "fundo_branco", name: "Fundo branco", title: "Foto igual Mercado Livre", desc: "Fundo limpo e profissional. Ideal para lojas online.", img: `${BASE}/fundo_branco_split.jpg` },
+    { id: "simulacao", name: "Foto em cena", title: "Produto em ambiente real", desc: "Coloca seu produto numa cena bonita e real.", img: `${BASE}/simulacao.jpg` },
+    { id: "catalogo", name: "Com modelo", title: "Roupa vestida por IA", desc: "Modelo virtual usa sua peça sem precisar de fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
+    { id: "video", name: "Vídeo animado", title: "Foto que se mexe", desc: "Transforma sua foto num vídeo pronto para Reels.", img: "", badge: "PRO" },
+    { id: "promo", name: "Post de promoção", title: "Arte pronta para postar", desc: "Cria post com preço e texto para divulgar no Instagram.", img: `${BASE}/promo_thumb.jpg` },
+    { id: "personalizado", name: "Do meu jeito", title: "Você escolhe a cena", desc: "Descreva o que quer e a IA cria do seu jeito.", img: `${BASE}/produto.jpg` },
+  ];
+}
+
+function VideoCard({ name, title, desc, badge, onClick, btnLabel }: {
+  name: string; title: string; desc: string; badge?: string; onClick: () => void; btnLabel?: string;
 }) {
   const [activeSlot, setActiveSlot] = useState<"A" | "B">("A");
   const [idxA, setIdxA] = useState(8);
@@ -101,7 +78,7 @@ function VideoCard({ name, title, desc, badge, onClick }: {
   return (
     <ModeCard
       name={name} title={title} desc={desc} badge={badge}
-      onClick={onClick}
+      onClick={onClick} btnLabel={btnLabel}
       media={
         <>
           <video ref={refA} src={VIDEO_URLS[idxA]}
@@ -116,9 +93,9 @@ function VideoCard({ name, title, desc, badge, onClick }: {
   );
 }
 
-function ModeCard({ name, title, desc, badge, onClick, media, img }: {
+function ModeCard({ name, title, desc, badge, onClick, media, img, btnLabel }: {
   name: string; title: string; desc: string; badge?: string;
-  onClick: () => void; media?: React.ReactNode; img?: string;
+  onClick: () => void; media?: React.ReactNode; img?: string; btnLabel?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -184,7 +161,7 @@ function ModeCard({ name, title, desc, badge, onClick, media, img }: {
             transition: "background 0.15s",
           }}
         >
-          Usar agora
+          {btnLabel ?? "Usar agora"}
         </button>
       </div>
     </div>
@@ -192,6 +169,10 @@ function ModeCard({ name, title, desc, badge, onClick, media, img }: {
 }
 
 export default function ModeSelector({ onChange }: Props) {
+  const { lang } = useI18n();
+  const MODES = getModes(lang);
+  const title = lang === "en" ? "What do you want to create?" : lang === "es" ? "¿Qué quieres crear?" : "O que você quer criar?";
+  const subtitle = lang === "en" ? "Choose a mode to get started" : lang === "es" ? "Elige un modo para empezar" : "Escolha um modo para começar";
   return (
     <div className="mode-selector">
       <style>{`
@@ -238,17 +219,18 @@ export default function ModeSelector({ onChange }: Props) {
         }
       `}</style>
 
-      <div className="mode-title">O que você quer criar?</div>
+      <div className="mode-title">{title}</div>
       <div
         style={{ fontSize: 14, color: "#8394b0", marginBottom: 24, display: "none" }}
         className="mode-subtitle"
       >
-        Escolha um modo para começar
+        {subtitle}
       </div>
 
       <div style={{ display: "grid", gap: 12 }} className="mode-grid">
-        {MODES.map((mode) =>
-          mode.id === "video" ? (
+        {MODES.map((mode) => {
+          const btnLabel = lang === "en" ? "Use now" : lang === "es" ? "Usar ahora" : "Usar agora";
+          return mode.id === "video" ? (
             <VideoCard
               key="video"
               name={mode.name}
@@ -256,6 +238,7 @@ export default function ModeSelector({ onChange }: Props) {
               desc={mode.desc}
               badge={mode.badge}
               onClick={() => onChange("video")}
+              btnLabel={btnLabel}
             />
           ) : (
             <ModeCard
@@ -266,9 +249,10 @@ export default function ModeSelector({ onChange }: Props) {
               badge={mode.badge}
               img={mode.img}
               onClick={() => onChange(mode.id)}
+              btnLabel={btnLabel}
             />
-          )
-        )}
+          );
+        })}
       </div>
     </div>
   );
