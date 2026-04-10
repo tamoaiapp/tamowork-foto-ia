@@ -2,23 +2,38 @@
 
 import { useState, useRef } from "react";
 
-type VisionState = "idle" | "loading_model" | "analyzing" | "done" | "error";
+export type VisionState = "idle" | "loading_model" | "analyzing" | "done" | "error";
 
-// Singleton do pipeline — carregado uma vez e reutilizado
-let pipelinePromise: Promise<(input: string) => Promise<{ generated_text: string }[]>> | null = null;
+let pipelineInstance: ((input: string) => Promise<{ generated_text: string }[]>) | null = null;
+let loading = false;
 
 async function getPipeline() {
-  if (!pipelinePromise) {
+  if (pipelineInstance) return pipelineInstance;
+  if (loading) {
+    // Aguarda se já está carregando
+    await new Promise<void>((res) => {
+      const iv = setInterval(() => { if (!loading) { clearInterval(iv); res(); } }, 200);
+    });
+    return pipelineInstance!;
+  }
+
+  loading = true;
+  try {
     const { pipeline, env } = await import("@huggingface/transformers");
     env.allowLocalModels = false;
     env.useBrowserCache = true;
-    pipelinePromise = pipeline(
+
+    const p = await pipeline(
       "image-to-text",
-      "Xenova/vit-gpt2-image-captioning",
-      { dtype: "q8" }
-    ) as Promise<(input: string) => Promise<{ generated_text: string }[]>>;
+      "Xenova/vit-gpt2-image-captioning"
+      // sem dtype — usa o padrão fp32 que funciona em todos os browsers
+    ) as (input: string) => Promise<{ generated_text: string }[]>;
+
+    pipelineInstance = p;
+    return p;
+  } finally {
+    loading = false;
   }
-  return pipelinePromise;
 }
 
 /**
@@ -34,26 +49,26 @@ function extractProduct(raw: string): string {
     ""
   );
 
-  // Remove cena no final: "standing in a store", "in front of a wall", etc.
+  // Remove cena no final
   s = s.replace(
-    /\s+(standing|sitting|posing|walking|leaning|lying)\s+(in|on|at|near|by|next to|in front of|inside|outside|against)\s+.+$/i,
+    /[,.]?\s+(standing|sitting|posing|walking|leaning|lying)\s+(in|on|at|near|by|next to|in front of|inside|outside|against)\s+.+$/i,
     ""
   );
   s = s.replace(
-    /,?\s+(in|on|at|near|inside|outside|in front of)\s+(a |an |the )?(store|shop|mall|market|showroom|studio|room|street|background|display|window|shelf|rack).+$/i,
+    /[,.]?\s+(in|on|at|near|inside|outside|in front of)\s+(a |an |the )?(store|shop|mall|market|showroom|studio|room|street|background|display|window|shelf|rack|wall).+$/i,
     ""
   );
-  s = s.replace(/,?\s+with\s+(a |an |the )?(background|wall|shelf|rack|store|display).+$/i, "");
+  s = s.replace(/[,.]?\s+with\s+(a |an |the )?(background|wall|shelf|rack|store|display).+$/i, "");
 
-  // Remove partícula inicial solta
-  s = s.replace(/^(a |an |the )/i, "");
+  // Remove artigo inicial
+  s = s.replace(/^(a |an |the )/i, "").trim();
 
-  s = s.trim();
-
-  // Fallback: se ficou curto demais ou vazio, usa o original sem o prefixo de pessoa
+  // Se ficou curto demais, retorna o original sem o sujeito
   if (s.length < 4) {
-    const fallback = raw.replace(/^(a |an |the )?(woman|man|person|model|girl|boy|mannequin)\s+/i, "").trim();
-    return fallback || raw;
+    return raw
+      .replace(/^(a |an |the )?(woman|man|person|model|girl|boy|mannequin)\s+/i, "")
+      .replace(/^(a |an |the )/i, "")
+      .trim() || raw;
   }
 
   return s;
@@ -61,6 +76,7 @@ function extractProduct(raw: string): string {
 
 export function useProductVision() {
   const [state, setState] = useState<VisionState>("idle");
+  const [rawCaption, setRawCaption] = useState<string | null>(null);
   const objectUrlRef = useRef<string | null>(null);
 
   async function analyzeImage(file: File): Promise<string | null> {
@@ -70,8 +86,9 @@ export function useProductVision() {
         objectUrlRef.current = null;
       }
 
-      const isFirstLoad = !pipelinePromise;
+      const isFirstLoad = !pipelineInstance;
       setState(isFirstLoad ? "loading_model" : "analyzing");
+      setRawCaption(null);
 
       const captioner = await getPipeline();
       setState("analyzing");
@@ -81,14 +98,20 @@ export function useProductVision() {
 
       const result = await captioner(objectUrl);
       const raw = result?.[0]?.generated_text ?? "";
+
+      console.log("[vision] caption bruto:", raw);
+      setRawCaption(raw);
+
       const product = raw ? extractProduct(raw) : null;
+      console.log("[vision] produto extraído:", product);
 
       setState("done");
-      return product || null;
+      // Retorna produto extraído, ou o caption bruto se a extração falhar
+      return product || raw || null;
     } catch (err) {
       console.error("[vision] erro:", err);
       setState("error");
-      pipelinePromise = null;
+      pipelineInstance = null;
       return null;
     } finally {
       if (objectUrlRef.current) {
@@ -100,9 +123,10 @@ export function useProductVision() {
 
   function reset() {
     setState("idle");
+    setRawCaption(null);
   }
 
   const isAnalyzing = state === "loading_model" || state === "analyzing";
 
-  return { analyzeImage, state, isAnalyzing, reset };
+  return { analyzeImage, state, isAnalyzing, rawCaption, reset };
 }

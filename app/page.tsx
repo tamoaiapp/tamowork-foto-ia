@@ -1673,13 +1673,16 @@ export default function HomePage() {
                   {vision.isAnalyzing && (
                     <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
                       <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", border: "1.5px solid rgba(167,139,250,0.3)", borderTopColor: "#a78bfa", animation: "spin 0.7s linear infinite" }} />
-                      {vision.state === "loading_model" ? "Carregando IA…" : "Analisando foto…"}
+                      {vision.state === "loading_model" ? "Baixando IA de visão (1x)…" : "Analisando foto…"}
                     </span>
+                  )}
+                  {vision.state === "error" && (
+                    <span style={{ fontSize: 11, color: "#f87171" }}>⚠ IA de visão indisponível</span>
                   )}
                 </label>
                 <input
                   type="text"
-                  placeholder={vision.isAnalyzing ? "Analisando imagem…" : "Ex: bolo de chocolate artesanal com morango"}
+                  placeholder={vision.isAnalyzing ? "Analisando imagem…" : "Ex: conjunto feminino floral, blusa cropped azul, tênis branco…"}
                   value={produto}
                   onChange={(e) => { setProduto(e.target.value); setVisionSuggestion(null); vision.reset(); }}
                   required
@@ -1736,8 +1739,8 @@ export default function HomePage() {
                   <input
                     type="text"
                     placeholder={
-                      creationMode === "simulacao" ? "Ex: mesa rústica, estúdio com luz suave" :
-                      creationMode === "catalogo" ? "Ex: ambiente urbano, loja moderna" :
+                      creationMode === "simulacao" ? "Ex: mulher estilosa em lugar elegante, estúdio moderno com luz suave" :
+                      creationMode === "catalogo" ? "Ex: rua de Paris, café sofisticado, ambiente urbano moderno" :
                       "Descreva livremente o que a IA deve criar"
                     }
                     value={cenario}
