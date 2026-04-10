@@ -490,6 +490,7 @@ export default function HomePage() {
 
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
+  const [visionSuggestion, setVisionSuggestion] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -855,15 +856,25 @@ export default function HomePage() {
     setImageFile(file);
     if (file) {
       setPreview(URL.createObjectURL(file));
+      setVisionSuggestion(null);
       // Analisa automaticamente o produto na imagem — sem API externa
       vision.analyzeImage(file).then((caption) => {
         if (caption) {
-          // Preenche o nome do produto apenas se o campo estiver vazio ou com texto padrão
-          setProduto((prev) => (prev.trim() === "" ? caption : prev));
+          setProduto((prev) => {
+            if (prev.trim() === "") {
+              // Campo vazio: preenche direto (sem sugestão separada)
+              return caption;
+            } else {
+              // Campo já tem texto: guarda como sugestão para o usuário comparar
+              setVisionSuggestion(caption);
+              return prev;
+            }
+          });
         }
       });
     } else {
       setPreview(null);
+      setVisionSuggestion(null);
       vision.reset();
     }
   }
@@ -1104,6 +1115,8 @@ export default function HomePage() {
     }
     // Limpa job pendente salvo no sessionStorage
     try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
+    setVisionSuggestion(null);
+    vision.reset();
     if (pollRef.current) clearInterval(pollRef.current);
     if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
     if (blurRef.current) clearInterval(blurRef.current);
@@ -1671,21 +1684,53 @@ export default function HomePage() {
                   {vision.isAnalyzing && (
                     <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
                       <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", border: "1.5px solid rgba(167,139,250,0.3)", borderTopColor: "#a78bfa", animation: "spin 0.7s linear infinite" }} />
-                      {vision.state === "loading_model" ? "Carregando IA de visão…" : "Analisando foto…"}
+                      {vision.state === "loading_model" ? "Carregando IA…" : "Analisando foto…"}
                     </span>
-                  )}
-                  {vision.state === "done" && produto && (
-                    <span style={{ fontSize: 11, color: "#16c784", fontWeight: 600 }}>✓ Detectado automaticamente</span>
                   )}
                 </label>
                 <input
                   type="text"
-                  placeholder={vision.isAnalyzing ? "Detectando produto…" : "Ex: bolo de chocolate artesanal com morango"}
+                  placeholder={vision.isAnalyzing ? "Analisando imagem…" : "Ex: bolo de chocolate artesanal com morango"}
                   value={produto}
-                  onChange={(e) => { setProduto(e.target.value); vision.reset(); }}
+                  onChange={(e) => { setProduto(e.target.value); setVisionSuggestion(null); vision.reset(); }}
                   required
                   style={{ ...styles.input, ...(vision.isAnalyzing ? { opacity: 0.6 } : {}) }}
                 />
+                {/* Sugestão da IA — aparece quando campo já tinha texto */}
+                {visionSuggestion && (
+                  <div style={{
+                    background: "rgba(99,102,241,0.08)",
+                    border: "1px solid rgba(99,102,241,0.25)",
+                    borderRadius: 10,
+                    padding: "9px 12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginTop: 4,
+                  }}>
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>🔍</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 2 }}>IA identificou:</div>
+                      <div style={{ fontSize: 13, color: "#c4b5fd", fontWeight: 500, wordBreak: "break-word" as const }}>{visionSuggestion}</div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column" as const, gap: 4, flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={() => { setProduto(visionSuggestion); setVisionSuggestion(null); }}
+                        style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 7, padding: "4px 10px", cursor: "pointer", whiteSpace: "nowrap" as const }}
+                      >
+                        Usar este
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setVisionSuggestion(null)}
+                        style={{ fontSize: 11, color: "#4e5c72", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}
+                      >
+                        Ignorar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {creationMode !== "fundo_branco" && (
