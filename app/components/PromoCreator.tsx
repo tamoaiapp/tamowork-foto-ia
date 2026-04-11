@@ -13,13 +13,14 @@ const TAGS = [
 
 interface Props {
   onBack: () => void;
+  initialPhoto?: string;
 }
 
-export default function PromoCreator({ onBack }: Props) {
+export default function PromoCreator({ onBack, initialPhoto }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const [photo, setPhoto]         = useState<string | null>(null);
+  const [photo, setPhoto]         = useState<string | null>(initialPhoto ?? null);
   const [nome, setNome]           = useState("");
   const [preco, setPreco]         = useState("");
   const [precoAnte, setPrecoAnte] = useState("");

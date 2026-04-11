@@ -479,6 +479,7 @@ export default function HomePage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null);
   const [promoOpen, setPromoOpen] = useState(false);
+  const [editExpanded, setEditExpanded] = useState(false);
   const [removingResultBg, setRemovingResultBg] = useState(false);
 
   // Video state
@@ -1175,6 +1176,7 @@ export default function HomePage() {
     setModelFile(null);
     setModelPreview(null);
     setModeSelected(false); // volta para o menu
+    setEditExpanded(false);
   }
 
   async function handleCancel() {
@@ -1904,21 +1906,30 @@ export default function HomePage() {
                 {t("result_download")}
               </button>
 
-              {/* 3 botões de edição empilhados */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-                <button onClick={() => setPromoOpen(true)} style={styles.editActionBtn}>
-                  🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
+              {/* Botão único de edição → expande opções */}
+              {!editExpanded ? (
+                <button onClick={() => setEditExpanded(true)} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
+                  ✏️ {lang === "en" ? "Edit photo" : "Editar foto"}
                 </button>
-                <button onClick={handleRemoveResultBg} disabled={removingResultBg} style={styles.editActionBtn}>
-                  {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
-                </button>
-                <button onClick={() => {
-                  const url = editedImageUrl ?? job.output_image_url;
-                  if (url) { sessionStorage.setItem("editor_image", url); router.push("/editor"); }
-                }} style={styles.editActionBtn}>
-                  ✏️ {lang === "en" ? "Customize" : "Personalizar"}
-                </button>
-              </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+                  <button onClick={() => {
+                    const url = editedImageUrl ?? job.output_image_url;
+                    if (url) { sessionStorage.setItem("editor_image", url); setEditExpanded(false); router.push("/editor"); }
+                  }} style={styles.editActionBtn}>
+                    ✏️ {lang === "en" ? "Customize" : "Personalizar foto"}
+                  </button>
+                  <button onClick={() => { setEditExpanded(false); setPromoOpen(true); }} style={styles.editActionBtn}>
+                    🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
+                  </button>
+                  <button onClick={() => { setEditExpanded(false); handleRemoveResultBg(); }} disabled={removingResultBg} style={styles.editActionBtn}>
+                    {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
+                  </button>
+                  <button onClick={() => setEditExpanded(false)} style={{ ...styles.editActionBtn, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#4e5c72" }}>
+                    ✕ {lang === "en" ? "Cancel" : "Cancelar"}
+                  </button>
+                </div>
+              )}
 
               {/* Gerar novamente + Criar vídeo lado a lado */}
               <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
@@ -1961,21 +1972,30 @@ export default function HomePage() {
                 {t("result_download")}
               </button>
 
-              {/* 3 botões de edição empilhados */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-                <button onClick={() => setPromoOpen(true)} style={styles.editActionBtn}>
-                  🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
+              {/* Botão único de edição → expande opções */}
+              {!editExpanded ? (
+                <button onClick={() => setEditExpanded(true)} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
+                  ✏️ {lang === "en" ? "Edit photo" : "Editar foto"}
                 </button>
-                <button onClick={handleRemoveResultBg} disabled={removingResultBg} style={styles.editActionBtn}>
-                  {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
-                </button>
-                <button onClick={() => {
-                  const url = editedImageUrl ?? job.output_image_url;
-                  if (url) { sessionStorage.setItem("editor_image", url); router.push("/editor"); }
-                }} style={styles.editActionBtn}>
-                  ✏️ {lang === "en" ? "Customize" : "Personalizar"}
-                </button>
-              </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+                  <button onClick={() => {
+                    const url = editedImageUrl ?? job.output_image_url;
+                    if (url) { sessionStorage.setItem("editor_image", url); setEditExpanded(false); router.push("/editor"); }
+                  }} style={styles.editActionBtn}>
+                    ✏️ {lang === "en" ? "Customize" : "Personalizar foto"}
+                  </button>
+                  <button onClick={() => { setEditExpanded(false); setPromoOpen(true); }} style={styles.editActionBtn}>
+                    🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
+                  </button>
+                  <button onClick={() => { setEditExpanded(false); handleRemoveResultBg(); }} disabled={removingResultBg} style={styles.editActionBtn}>
+                    {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
+                  </button>
+                  <button onClick={() => setEditExpanded(false)} style={{ ...styles.editActionBtn, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#4e5c72" }}>
+                    ✕ {lang === "en" ? "Cancel" : "Cancelar"}
+                  </button>
+                </div>
+              )}
 
               {/* Gerar novamente + Criar vídeo */}
               <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
@@ -2240,7 +2260,10 @@ export default function HomePage() {
 
       {promoOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "#07080b", overflowY: "auto" }}>
-          <PromoCreator onBack={() => setPromoOpen(false)} />
+          <PromoCreator
+            onBack={() => setPromoOpen(false)}
+            initialPhoto={editedImageUrl ?? job?.output_image_url}
+          />
         </div>
       )}
     </div>
@@ -2340,7 +2363,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "transparent", border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: 10, padding: "6px 14px", color: "#8394b0", fontSize: 13, cursor: "pointer",
   },
-  main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "20px 16px" },
+  main: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "12px 16px 20px" },
   menuWrap: { width: "100%", maxWidth: 960 },
   card: {
     background: "#111820", border: "1px solid rgba(255,255,255,0.07)",

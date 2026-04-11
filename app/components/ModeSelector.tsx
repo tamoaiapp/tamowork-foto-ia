@@ -171,17 +171,18 @@ export default function ModeSelector({ onChange }: Props) {
     <div className="mode-selector">
       <style>{`
         .mode-selector .mode-title {
-          font-size: 12px;
-          font-weight: 700;
-          color: #8394b0;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
+          font-size: 16px;
+          font-weight: 800;
+          color: #eef2f9;
+          letter-spacing: -0.01em;
+          margin-top: 0;
           margin-bottom: 14px;
         }
         .mode-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 12px;
+          padding-bottom: 88px;
         }
         .mode-card-img-wrap {
           aspect-ratio: 3 / 4;
@@ -197,7 +198,6 @@ export default function ModeSelector({ onChange }: Props) {
             color: #eef2f9;
             letter-spacing: -0.01em;
             margin-bottom: 6px;
-            text-transform: none;
           }
           .mode-selector .mode-subtitle {
             display: block !important;
@@ -205,6 +205,7 @@ export default function ModeSelector({ onChange }: Props) {
           .mode-grid {
             grid-template-columns: repeat(3, 1fr);
             gap: 16px;
+            padding-bottom: 0;
           }
           .mode-card-img-wrap {
             aspect-ratio: 4 / 3;

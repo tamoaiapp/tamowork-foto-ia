@@ -19,6 +19,7 @@ html {
   overflow-x: hidden;
   max-width: 100vw;
   touch-action: pan-y;
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -29,6 +30,7 @@ body {
   overflow-x: hidden;
   max-width: 100vw;
   -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
 }
 
 input, textarea, select, button {
