@@ -13,6 +13,9 @@ const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr:
 const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 const UpsellPopup = dynamic(() => import("@/app/components/UpsellPopup"), { ssr: false });
 const BotChat = dynamic(() => import("@/app/components/BotChat"), { ssr: false });
+const OnboardingScreen = dynamic(() => import("@/app/components/OnboardingScreen"), { ssr: false });
+const ConversionScreen = dynamic(() => import("@/app/components/ConversionScreen"), { ssr: false });
+const OnboardingChat = dynamic(() => import("@/app/components/OnboardingChat"), { ssr: false });
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type Plan = "free" | "pro";
@@ -499,6 +502,10 @@ export default function HomePage() {
 
   // Upsell popup A/B
   const [showUpsell, setShowUpsell] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingMode, setOnboardingMode] = useState(false); // veio do onboarding → funil ativo
+  const [showConversion, setShowConversion] = useState(false); // tela de conversão pós-foto
+  const onboardingDataRef = useRef<{ file: File; produto: string; cenario: string } | null>(null);
 
   // TamoBot
   const [botActive, setBotActive] = useState(false);
@@ -728,6 +735,13 @@ export default function HomePage() {
       if (next > new Date()) setRateLimitedUntil(next);
     }
   }, [job?.status, plan]);
+
+  // Funil onboarding: quando foto fica pronta, mostra tela de conversão
+  useEffect(() => {
+    if (onboardingMode && job?.status === "done" && job.output_image_url) {
+      setShowConversion(true);
+    }
+  }, [onboardingMode, job?.status, job?.output_image_url]);
 
   // Timeout automático: usa created_at do job para não resetar ao reabrir o app
   useEffect(() => {
@@ -962,17 +976,25 @@ export default function HomePage() {
     });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(
+    e: React.FormEvent,
+    overrides?: { file?: File; produto?: string; cenario?: string; mode?: CreationMode }
+  ) {
     e.preventDefault();
 
+    const _mode    = overrides?.mode    ?? creationMode;
+    const _file    = overrides?.file    ?? imageFile;
+    const _produto = overrides?.produto ?? produto;
+    const _cenario = overrides?.cenario ?? cenario;
+
     // Modo vídeo: rota separada
-    if (creationMode === "video") {
-      if (!imageFile) { setFormError("Envie uma foto"); return; }
+    if (_mode === "video") {
+      if (!_file) { setFormError("Envie uma foto"); return; }
       setFormError("");
       setVideoError("");
       try {
         const token = await getToken();
-        const fileToUpload = await convertToJpegIfNeeded(imageFile);
+        const fileToUpload = await convertToJpegIfNeeded(_file);
         const form = new FormData();
         form.append("file", fileToUpload);
         const uploadRes = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
@@ -986,10 +1008,10 @@ export default function HomePage() {
       return;
     }
 
-    if (creationMode === "catalogo" && !modelFile && !modelPreview) { setFormError(lang === "en" ? "Choose a model" : lang === "es" ? "Elige un modelo" : "Escolha um modelo"); return; }
-    if (!imageFile) { setFormError(lang === "en" ? "Upload the product photo" : lang === "es" ? "Sube la foto del producto" : "Envie a foto do produto"); return; }
-    if (!produto.trim()) { setFormError(lang === "en" ? "Describe the product" : lang === "es" ? "Describe el producto" : "Descreva o produto"); return; }
-    if (creationMode !== "fundo_branco" && !cenario.trim()) { setFormError(lang === "en" ? "Describe the photo scene" : lang === "es" ? "Describe la escena de la foto" : "Descreva o cenário da foto"); return; }
+    if (_mode === "catalogo" && !modelFile && !modelPreview) { setFormError(lang === "en" ? "Choose a model" : lang === "es" ? "Elige un modelo" : "Escolha um modelo"); return; }
+    if (!_file) { setFormError(lang === "en" ? "Upload the product photo" : lang === "es" ? "Sube la foto del producto" : "Envie a foto do produto"); return; }
+    if (!_produto.trim()) { setFormError(lang === "en" ? "Describe the product" : lang === "es" ? "Describe el produto" : "Descreva o produto"); return; }
+    if (_mode !== "fundo_branco" && !_cenario.trim()) { setFormError(lang === "en" ? "Describe the photo scene" : lang === "es" ? "Describe la escena de la foto" : "Descreva o cenário da foto"); return; }
 
     setFormError("");
     setTimeoutError("");
@@ -1000,7 +1022,7 @@ export default function HomePage() {
       const token = await getToken();
 
       // Upload da imagem do produto (converte HEIC/HEIF para JPEG)
-      const fileToUpload = await convertToJpegIfNeeded(imageFile);
+      const fileToUpload = await convertToJpegIfNeeded(_file!);
       const form = new FormData();
       form.append("file", fileToUpload);
       const uploadRes = await fetch("/api/upload", {
@@ -1015,8 +1037,8 @@ export default function HomePage() {
       const { url: imageUrl } = await uploadRes.json();
 
       // Fundo branco: processa no browser (WebAssembly), depois registra job
-      if (creationMode === "fundo_branco") {
-        const prompt = `${produto} | fundo branco`;
+      if (_mode === "fundo_branco") {
+        const prompt = `${_produto} | fundo branco`;
 
         // 1. Processa no browser — remove fundo + adiciona branco
         const processedFile = await processWhiteBackground(fileToUpload);
@@ -1058,10 +1080,10 @@ export default function HomePage() {
 
       // Catálogo: modelo pode ser do catálogo (URL pública) ou upload manual
       let modelImageUrl: string | null = null;
-      if (creationMode === "catalogo" && !modelFile && modelPreview?.startsWith("http")) {
+      if (_mode === "catalogo" && !modelFile && modelPreview?.startsWith("http")) {
         // Modelo do catálogo — usa URL diretamente
         modelImageUrl = modelPreview;
-      } else if (creationMode === "catalogo" && modelFile) {
+      } else if (_mode === "catalogo" && modelFile) {
         const mform = new FormData();
         mform.append("file", modelFile);
         const mres = await fetch("/api/upload", {
@@ -1075,7 +1097,7 @@ export default function HomePage() {
       }
 
       // Monta prompt (catálogo codifica model_img no prefixo)
-      const basePrompt = cenario.trim() ? `${produto} | cenário: ${cenario}` : produto;
+      const basePrompt = _cenario.trim() ? `${_produto} | cenário: ${_cenario}` : _produto;
       const prompt = modelImageUrl
         ? `model_img:${modelImageUrl} | ${basePrompt}`
         : basePrompt;
@@ -1083,7 +1105,7 @@ export default function HomePage() {
       const jobRes = await fetch("/api/image-jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt, input_image_url: imageUrl, mode: creationMode }),
+        body: JSON.stringify({ prompt, input_image_url: imageUrl, mode: _mode }),
       });
 
       if (jobRes.status === 429) {
@@ -1873,15 +1895,19 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* TamoBot — aparece durante geração (substitui preview borrado) */}
+        {/* Chat durante geração: modo onboarding mostra benefícios Pro, modo normal mostra BotChat */}
         {workState === "trabalhando" && (
-          <BotChat
-            workState={workState}
-            resultReady={false}
-            botActive={botActive}
-            visible={true}
-            onActivate24h={() => setBotActive(true)}
-          />
+          onboardingMode ? (
+            <OnboardingChat />
+          ) : (
+            <BotChat
+              workState={workState}
+              resultReady={false}
+              botActive={botActive}
+              visible={true}
+              onActivate24h={() => setBotActive(true)}
+            />
+          )
         )}
 
         {/* Resultado */}
@@ -2220,7 +2246,47 @@ export default function HomePage() {
             setShowUpsell(false);
             handleAssinarDireto(planType);
           }}
-          onClose={() => setShowUpsell(false)}
+          onClose={() => {
+            setShowUpsell(false);
+            // Só mostra onboarding se usuário ainda não tem nenhum job
+            if (workState === "sem_trabalho" && !modeSelected) {
+              setShowOnboarding(true);
+            }
+          }}
+        />
+      )}
+
+      {showOnboarding && (
+        <OnboardingScreen
+          onSubmit={(file, produtoVal, cenarioVal) => {
+            setShowOnboarding(false);
+            setOnboardingMode(true);
+            setCreationMode("simulacao");
+            setModeSelected(true);
+            // Chama handleSubmit direto com os valores, sem depender do state
+            handleSubmit({ preventDefault: () => {} } as React.FormEvent, {
+              file,
+              produto: produtoVal,
+              cenario: cenarioVal,
+              mode: "simulacao",
+            });
+          }}
+          onSkip={() => setShowOnboarding(false)}
+        />
+      )}
+
+      {showConversion && job?.output_image_url && (
+        <ConversionScreen
+          photoUrl={editedImageUrl ?? job.output_image_url}
+          onAssinar={() => {
+            setShowConversion(false);
+            setOnboardingMode(false);
+            handleAssinarDireto("annual");
+          }}
+          onContinuar={() => {
+            setShowConversion(false);
+            setOnboardingMode(false);
+          }}
         />
       )}
 
