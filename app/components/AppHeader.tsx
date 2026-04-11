@@ -45,10 +45,7 @@ export default function AppHeader({ subtitle, back, onBack, rightExtra }: AppHea
           </button>
         )}
         <div style={s.logoIcon}>
-          <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-            <path d="M10 22l4-5.5 3 3.5 3.5-5L25 22H10z" fill="white" opacity="0.95" />
-            <circle cx="13" cy="12" r="2.5" fill="white" opacity="0.95" />
-          </svg>
+          <img src="/icons/icon-192.png" alt="TamoWork" style={{ width: 34, height: 34, borderRadius: 9, display: "block", objectFit: "cover" }} />
         </div>
         <div>
           <div style={s.logoText}>TamoWork</div>
@@ -103,13 +100,6 @@ const s: Record<string, React.CSSProperties> = {
     marginRight: 2,
   },
   logoIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 9,
-    background: "linear-gradient(135deg, #6366f1, #a855f7)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
     flexShrink: 0,
   },
   logoText: {
