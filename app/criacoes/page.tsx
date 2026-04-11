@@ -119,6 +119,7 @@ export default function CriacoesPage() {
                 style={s.modalImg}
                 controls
                 autoPlay
+                muted
                 loop
                 playsInline
               />

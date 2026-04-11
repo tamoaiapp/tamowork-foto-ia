@@ -697,18 +697,22 @@ export default function HomePage() {
       return;
     }
 
-    pollRef.current = setInterval(() => fetchJobStatus(job.id), 10_000);
+    pollRef.current = setInterval(() => {
+      if (document.visibilityState !== "hidden") fetchJobStatus(job.id);
+    }, 10_000);
     setShowCancel(false);
     cancelTimerRef.current = setTimeout(() => setShowCancel(true), 30_000);
 
-    // Tempo decorrido
+    // Tempo decorrido — só atualiza quando tab está visível (evita crash iOS em background)
     setElapsedSec(0);
-    elapsedRef.current = setInterval(() => setElapsedSec((s) => s + 1), 1000);
+    elapsedRef.current = setInterval(() => {
+      if (document.visibilityState !== "hidden") setElapsedSec((s) => s + 1);
+    }, 1000);
 
     // Animação de blur: começa em 40px, reduz ~0.35px/s → chega ~8px em ~90s
     setBlurPx(40);
     blurRef.current = setInterval(() => {
-      setBlurPx((prev) => Math.max(8, prev - 0.35));
+      if (document.visibilityState !== "hidden") setBlurPx((prev) => Math.max(8, prev - 0.35));
     }, 1000);
 
     return () => {
@@ -743,18 +747,18 @@ export default function HomePage() {
     }
   }, [onboardingMode, job?.status, job?.output_image_url]);
 
-  // Timeout automático: usa created_at do job para não resetar ao reabrir o app
+  // Timeout automático: usa setTimeout único em vez de checar a cada 1s (elapsedSec)
   useEffect(() => {
     if (!job || workState !== "trabalhando") return;
     const status = job.status;
+    if (status === "done" || status === "failed" || status === "canceled") return;
     // queued/submitted: até 90 min (fila pode ter muitos jobs)
     // processing: 15 min (já está rodando, não deve demorar tanto)
     const limitSec = (status === "queued" || status === "submitted") ? 5400 : 900;
-    // Se temos created_at, calcula elapsed real; senão usa o contador local
-    const realElapsed = job.created_at
-      ? Math.floor((Date.now() - new Date(job.created_at).getTime()) / 1000)
-      : elapsedSec;
-    if (realElapsed >= limitSec) {
+    const startTime = job.created_at ? new Date(job.created_at).getTime() : Date.now();
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const remaining = limitSec - elapsed;
+    if (remaining <= 0) {
       const msg = (status === "queued" || status === "submitted")
         ? "Algo deu errado — o servidor não conseguiu processar. Tenta novamente."
         : "Algo deu errado — a geração demorou demais. Tenta novamente.";
@@ -765,9 +769,23 @@ export default function HomePage() {
         }).catch(() => {});
       });
       resetJob();
+      return;
     }
+    const t = setTimeout(() => {
+      const msg = (status === "queued" || status === "submitted")
+        ? "Algo deu errado — o servidor não conseguiu processar. Tenta novamente."
+        : "Algo deu errado — a geração demorou demais. Tenta novamente.";
+      setTimeoutError(msg);
+      getToken().then(token => {
+        if (job.id) fetch(`/api/image-jobs/${job.id}/cancel`, {
+          method: "POST", headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      });
+      resetJob();
+    }, remaining * 1000);
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elapsedSec, job?.id]);
+  }, [job?.id, job?.status, job?.created_at]);
 
   // Fallback: refresh ao voltar do background
   useEffect(() => {

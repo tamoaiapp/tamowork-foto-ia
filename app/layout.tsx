@@ -55,6 +55,20 @@ export default function RootLayout({
               navigator.serviceWorker.register('/sw.js');
             });
           }
+          // Bloqueia pull-to-refresh no iOS Safari (overscroll-behavior não funciona no iOS)
+          (function() {
+            var startY = 0;
+            document.addEventListener('touchstart', function(e) {
+              startY = e.touches[0].clientY;
+            }, { passive: true });
+            document.addEventListener('touchmove', function(e) {
+              var dy = e.touches[0].clientY - startY;
+              var el = document.scrollingElement || document.documentElement;
+              if (dy > 0 && el.scrollTop <= 0) {
+                e.preventDefault();
+              }
+            }, { passive: false });
+          })();
         `}} />
       </body>
     </html>
