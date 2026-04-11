@@ -498,6 +498,7 @@ export default function HomePage() {
 
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
+  const [pendingResult, setPendingResult] = useState(false);
 
   // Upsell popup A/B
   const [showUpsell, setShowUpsell] = useState(false);
@@ -737,6 +738,13 @@ export default function HomePage() {
       if (next > new Date()) setRateLimitedUntil(next);
     }
   }, [job?.status, plan]);
+
+  // Quando foto fica pronta: segura na tela de carregamento — usuário vê botão "Ver Resultado"
+  useEffect(() => {
+    if (job?.status === "done" && job.output_image_url && job.id !== "rate_limited") {
+      setPendingResult(true);
+    }
+  }, [job?.status, job?.output_image_url]);
 
   // Funil onboarding: quando foto fica pronta, mostra tela de conversão
   useEffect(() => {
@@ -1206,6 +1214,7 @@ export default function HomePage() {
     if (blurRef.current) clearInterval(blurRef.current);
     setShowCancel(false);
     setJob(null);
+    setPendingResult(false);
     setTimeoutError("");
     setFormError("");
     setProduto("");
@@ -1343,7 +1352,7 @@ export default function HomePage() {
   const isGenerating = (submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled")) && job?.status !== "done";
   // State machine: sem_trabalho | trabalhando | terminado
   // submitting=true OU job ativo = tela "Trabalhando..." — não volta para formulário até ter resultado
-  const workState: WorkState = (submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled" && job.status !== null))
+  const workState: WorkState = (submitting || pendingResult || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled" && job.status !== null))
     ? "trabalhando"
     : deriveWorkState(job);
 
@@ -1823,36 +1832,67 @@ export default function HomePage() {
               <>
                 {/* Painel esquerdo: status */}
                 <div className="generating-panel">
-                  <div style={styles.generatingTitle}>
-                    <span style={styles.shimmerText}>Transformando sua foto</span>
-                    <span style={styles.dots}>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-                    </span>
-                  </div>
-                  {!submitting && (
-                    <div style={styles.progressBarBg}>
-                      <div style={{
-                        ...styles.progressBarFill,
-                        width: `${displayProgress}%`,
-                        background: displayProgress > 80
-                          ? "linear-gradient(90deg, #6366f1, #22c55e)"
-                          : "linear-gradient(90deg, #6366f1, #a855f7)",
-                      }} />
+                  {pendingResult ? (
+                    /* Foto pronta — mostra botão "Ver Resultado" no lugar da barra */
+                    <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
+                      <div style={{ fontSize: 13, color: "#16c784", fontWeight: 700, marginBottom: 14, letterSpacing: "0.01em" }}>
+                        🎉 Sua foto ficou pronta!
+                      </div>
+                      <button
+                        onClick={() => setPendingResult(false)}
+                        className="result-btn"
+                        style={{
+                          width: "100%",
+                          background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
+                          border: "none",
+                          borderRadius: 14,
+                          padding: "16px 0",
+                          color: "#fff",
+                          fontSize: 16,
+                          fontWeight: 800,
+                          cursor: "pointer",
+                          letterSpacing: "-0.01em",
+                          boxShadow: "0 4px 24px rgba(139,92,246,0.5)",
+                        }}
+                      >
+                        ✨ Ver Resultado
+                      </button>
                     </div>
-                  )}
-                  <NotifyButton onRequest={requestAndRegisterPush} />
-                  {showCancel && (
-                    <button onClick={async () => {
-                      setCanceling(true);
-                      const token = await getToken();
-                      if (job?.id) await fetch(`/api/image-jobs/${job.id}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
-                      setCanceling(false);
-                      resetJob();
-                    }} disabled={canceling} style={styles.cancelBtn}>
-                      {canceling ? "Cancelando..." : "Cancelar"}
-                    </button>
+                  ) : (
+                    /* Foto ainda processando */
+                    <>
+                      <div style={styles.generatingTitle}>
+                        <span style={styles.shimmerText}>Transformando sua foto</span>
+                        <span style={styles.dots}>
+                          <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
+                          <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                          <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+                        </span>
+                      </div>
+                      {!submitting && (
+                        <div style={styles.progressBarBg}>
+                          <div style={{
+                            ...styles.progressBarFill,
+                            width: `${displayProgress}%`,
+                            background: displayProgress > 80
+                              ? "linear-gradient(90deg, #6366f1, #22c55e)"
+                              : "linear-gradient(90deg, #6366f1, #a855f7)",
+                          }} />
+                        </div>
+                      )}
+                      <NotifyButton onRequest={requestAndRegisterPush} />
+                      {showCancel && (
+                        <button onClick={async () => {
+                          setCanceling(true);
+                          const token = await getToken();
+                          if (job?.id) await fetch(`/api/image-jobs/${job.id}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+                          setCanceling(false);
+                          resetJob();
+                        }} disabled={canceling} style={styles.cancelBtn}>
+                          {canceling ? "Cancelando..." : "Cancelar"}
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </>
@@ -1867,7 +1907,8 @@ export default function HomePage() {
           ) : (
             <BotChat
               workState={workState}
-              resultReady={false}
+              resultReady={pendingResult}
+              onViewResult={() => setPendingResult(false)}
               botActive={botActive}
               visible={true}
               onActivate24h={() => setBotActive(true)}

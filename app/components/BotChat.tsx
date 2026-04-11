@@ -255,15 +255,17 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
         </div>
       </div>
 
-      {/* Botão de resultado pulsante (aparece quando foto fica pronta) */}
-      {resultReady && onViewResult && (
+      {/* Botões quando foto fica pronta */}
+      {resultReady && (
         <div style={s.resultNotif}>
-          <button onClick={onViewResult} className="result-btn" style={s.resultBtn}>
-            ✨ Ver resultado
-          </button>
           {!localBotActive && (
             <button onClick={handleActivate} className="bot-activate" style={s.activateSmallBtn}>
               🤖 Ativar IA 24h
+            </button>
+          )}
+          {onViewResult && (
+            <button onClick={onViewResult} className="result-btn" style={s.resultBtn}>
+              ✨ Ver resultado
             </button>
           )}
         </div>
