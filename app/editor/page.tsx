@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import BottomNav from "@/app/components/BottomNav";
 import AppHeader from "@/app/components/AppHeader";
 import { useI18n } from "@/lib/i18n";
+import { downloadDataUrl } from "@/lib/downloadBlob";
 const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 
 type EditorAction = "promo" | "remove_bg" | "personalizar" | null;
@@ -327,10 +328,7 @@ export default function EditorPage() {
             ctx.textBaseline = "alphabetic";
           }
         });
-        const a = document.createElement("a");
-        a.href = canvas.toDataURL("image/jpeg", 0.96);
-        a.download = "foto-editada.jpg";
-        a.click();
+        downloadDataUrl(canvas.toDataURL("image/jpeg", 0.96), "foto-editada.jpg");
       };
       // Pre-load image layers
       const imgLayers = layers.filter((l): l is ImgLayer => l.kind === "img");
@@ -357,7 +355,7 @@ export default function EditorPage() {
     return (
       <div style={s.page} className="app-layout">
         <AppHeader subtitle={lang === "en" ? "Edit photo" : "Editar foto"} onBack={() => router.back()} />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "24px 20px", gap: 14 }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", padding: "24px 20px", gap: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#8394b0", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
             {lang === "en" ? "What do you want to do?" : "O que você quer fazer?"}
           </div>

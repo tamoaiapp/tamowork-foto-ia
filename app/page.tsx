@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { downloadBlob } from "@/lib/downloadBlob";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
@@ -1341,11 +1342,7 @@ export default function HomePage() {
     try {
       const res = await fetch(url);
       const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "foto-ia.jpg";
-      a.click();
-      URL.revokeObjectURL(a.href);
+      await downloadBlob(blob, "foto-ia.jpg");
     } catch {
       window.open(url, "_blank");
     }

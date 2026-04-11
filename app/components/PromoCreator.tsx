@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { downloadBlob } from "@/lib/downloadBlob";
 
 const TAGS = [
   { label: "🔥 PROMOÇÃO",    bg: "#ef4444" },
@@ -193,14 +194,9 @@ export default function PromoCreator({ onBack, initialPhoto }: Props) {
       }
 
       // Exporta
-      canvas.toBlob(blob => {
+      canvas.toBlob(async blob => {
         if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "promocao.jpg";
-        a.click();
-        URL.revokeObjectURL(url);
+        await downloadBlob(blob, "promocao.jpg");
         setExporting(false);
       }, "image/jpeg", 0.95);
     } catch {
