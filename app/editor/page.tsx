@@ -2,9 +2,13 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import BottomNav from "@/app/components/BottomNav";
 import AppHeader from "@/app/components/AppHeader";
 import { useI18n } from "@/lib/i18n";
+const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
+
+type EditorAction = "promo" | "remove_bg" | "personalizar" | null;
 
 type Tool = "none" | "text" | "addImage" | "logo" | "crop" | "adjust" | "upscale" | "stickers";
 type CropRatio = "livre" | "1:1" | "4:5" | "9:16" | "16:9";
@@ -51,13 +55,15 @@ const RATIOS: Record<CropRatio, number | null> = {
 
 export default function EditorPage() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
   const addImgRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
+  const [action, setAction] = useState<EditorAction>(null); // qual das 3 opções o user escolheu
+  const [removingBg, setRemovingBg] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoNatural, setPhotoNatural] = useState({ w: 0, h: 0 });
   const [tool, setTool] = useState<Tool>("none");
@@ -341,40 +347,103 @@ export default function EditorPage() {
 
   const filterStyle = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
 
-  if (!photo) {
+  // ── Tela de escolha: qual ação o usuário quer fazer ───────────────────────
+  if (!action) {
+    const ACTIONS = [
+      { id: "promo"      as EditorAction, icon: "🏷️", label: lang === "en" ? "Create promo"       : "Criar promoção",  desc: lang === "en" ? "Post with price and text for Instagram" : "Post com preço e texto para Instagram" },
+      { id: "remove_bg"  as EditorAction, icon: "✂️", label: lang === "en" ? "Remove background"  : "Remover fundo",   desc: lang === "en" ? "Clean background, transparent or white"  : "Fundo limpo, transparente ou branco" },
+      { id: "personalizar" as EditorAction, icon: "✏️", label: lang === "en" ? "Customize"         : "Personalizar",    desc: lang === "en" ? "Add text, stickers and more"             : "Adicione texto, stickers e mais" },
+    ];
     return (
       <div style={s.page} className="app-layout">
-        <AppHeader subtitle={t("editor_title")} />
-
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
-          onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoFile(f); }} />
-
-        {/* Empty canvas placeholder — upload button centered */}
-        <div style={s.previewEmpty} onClick={() => fileRef.current?.click()}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 52, marginBottom: 14, opacity: 0.3 }}>🖼️</div>
-            <div style={s.uploadCenterBtn}>{t("editor_upload")}</div>
-            <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 8 }}>{t("editor_upload_sub")}</div>
+        <AppHeader subtitle={lang === "en" ? "Edit photo" : "Editar foto"} onBack={() => router.back()} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "24px 20px", gap: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#8394b0", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+            {lang === "en" ? "What do you want to do?" : "O que você quer fazer?"}
           </div>
-        </div>
-
-        {/* Toolbar already visible */}
-        <div style={s.toolbar}>
-          {([
-            { icon: "✂️", label: t("editor_crop") },
-            { icon: "T",  label: t("editor_text") },
-            { icon: "🖼️", label: t("editor_photo") },
-            { icon: "🏷️", label: t("editor_logo") },
-            { icon: "🎨", label: t("editor_adjust") },
-            { icon: "⬆",  label: t("editor_upscale") },
-            { icon: "🏷",  label: t("editor_stickers") },
-          ]).map(({ icon, label }) => (
-            <button key={label} onClick={() => fileRef.current?.click()}
-              style={{ ...s.toolBtn, opacity: 0.4 }}>
-              <span style={{ fontSize: label === "Texto" ? 18 : 20, fontWeight: label === "Texto" ? 900 : 400 }}>{icon}</span>
-              <span style={s.toolLabel}>{label}</span>
+          {ACTIONS.map(a => (
+            <button
+              key={a.id}
+              onClick={() => setAction(a.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: 16,
+                background: "#111820", border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 16, padding: "18px 20px", cursor: "pointer",
+                textAlign: "left", width: "100%",
+              }}
+            >
+              <span style={{ fontSize: 32, flexShrink: 0 }}>{a.icon}</span>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#eef2f9", marginBottom: 3 }}>{a.label}</div>
+                <div style={{ fontSize: 13, color: "#8394b0" }}>{a.desc}</div>
+              </div>
+              <span style={{ marginLeft: "auto", color: "#4e5c72", fontSize: 18 }}>›</span>
             </button>
           ))}
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  // ── Modo Promo: abre PromoCreator diretamente ──────────────────────────────
+  if (action === "promo") {
+    return <PromoCreator onBack={() => setAction(null)} />;
+  }
+
+  // ── Modo Remove BG ou Personalizar: pede foto primeiro ───────────────────
+  if (!photo) {
+    async function handleFileForAction(file: File) {
+      if (action === "remove_bg") {
+        setRemovingBg(true);
+        handlePhotoFile(file); // carrega a foto para exibição
+        try {
+          const { removeBackground } = await import("@imgly/background-removal");
+          const blob = await removeBackground(file, { proxyToWorker: false, output: { format: "image/png" } });
+          const url = URL.createObjectURL(blob);
+          const img = new window.Image();
+          img.onload = () => { setPhotoNatural({ w: img.naturalWidth, h: img.naturalHeight }); setPhoto(url); };
+          img.src = url;
+        } catch {
+          alert(lang === "en" ? "Could not remove background." : "Não foi possível remover o fundo.");
+        } finally {
+          setRemovingBg(false);
+        }
+      } else {
+        handlePhotoFile(file);
+      }
+    }
+
+    return (
+      <div style={s.page} className="app-layout">
+        <AppHeader
+          subtitle={action === "remove_bg" ? (lang === "en" ? "Remove background" : "Remover fundo") : (lang === "en" ? "Customize" : "Personalizar")}
+          onBack={() => setAction(null)}
+        />
+
+        <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleFileForAction(f); e.target.value = ""; }} />
+
+        <div style={s.previewEmpty} onClick={() => !removingBg && fileRef.current?.click()}>
+          <div style={{ textAlign: "center" }}>
+            {removingBg ? (
+              <>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
+                <div style={{ fontSize: 15, color: "#a855f7", fontWeight: 600 }}>
+                  {lang === "en" ? "Removing background..." : "Removendo fundo..."}
+                </div>
+                <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 6 }}>
+                  {lang === "en" ? "This may take a few seconds" : "Pode levar alguns segundos"}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 52, marginBottom: 14, opacity: 0.3 }}>🖼️</div>
+                <div style={s.uploadCenterBtn}>{t("editor_upload")}</div>
+                <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 8 }}>{t("editor_upload_sub")}</div>
+              </>
+            )}
+          </div>
         </div>
         <BottomNav />
       </div>
@@ -391,7 +460,7 @@ export default function EditorPage() {
       {/* Header */}
       <AppHeader
         subtitle={t("editor_title")}
-        onBack={() => { setPhoto(null); setLayers([]); }}
+        onBack={() => { setPhoto(null); setLayers([]); setAction(null); }}
         rightExtra={
           <button onClick={exportImage} style={s.dlBtn}>{t("editor_save")}</button>
         }
