@@ -21,6 +21,7 @@ export default function PromoCreator({ onBack, initialPhoto }: Props) {
   const previewRef = useRef<HTMLDivElement>(null);
 
   const [photo, setPhoto]         = useState<string | null>(initialPhoto ?? null);
+  const [photoRatio, setPhotoRatio] = useState<number>(1); // width/height natural
   const [nome, setNome]           = useState("");
   const [preco, setPreco]         = useState("");
   const [precoAnte, setPrecoAnte] = useState("");
@@ -32,29 +33,177 @@ export default function PromoCreator({ onBack, initialPhoto }: Props) {
     ? Math.round((1 - Number(preco.replace(",", ".")) / Number(precoAnte.replace(",", "."))) * 100)
     : null;
 
+  // Dimensões do card: largura fixa 300, altura proporcional à foto (máx 500, mín 220)
+  const CARD_W = 300;
+  const CARD_H = Math.min(500, Math.max(220, Math.round(CARD_W / photoRatio)));
+
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     const reader = new FileReader();
-    reader.onload = (ev) => setPhoto(ev.target?.result as string);
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string;
+      // Mede ratio natural antes de setar
+      const img = new Image();
+      img.onload = () => {
+        setPhotoRatio(img.naturalWidth / img.naturalHeight);
+        setPhoto(src);
+      };
+      img.src = src;
+    };
     reader.readAsDataURL(f);
   }
+
+  // Também detecta ratio do initialPhoto ao montar
+  useState(() => {
+    if (initialPhoto) {
+      const img = new Image();
+      img.onload = () => setPhotoRatio(img.naturalWidth / img.naturalHeight);
+      img.src = initialPhoto;
+    }
+  });
 
   async function handleDownload() {
     if (!previewRef.current) return;
     setExporting(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(previewRef.current, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: null,
-      });
-      const a = document.createElement("a");
-      a.href = canvas.toDataURL("image/jpeg", 0.95);
-      a.download = "promocao.jpg";
-      a.click();
-    } finally {
+      // Canvas 2D nativo — preserva proporções da foto original
+      const OUTPUT_W = 1080;
+      const OUTPUT_H = Math.round(OUTPUT_W / photoRatio);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = OUTPUT_W;
+      canvas.height = OUTPUT_H;
+      const ctx = canvas.getContext("2d")!;
+
+      const scaleX = OUTPUT_W / CARD_W;
+      const scaleY = OUTPUT_H / CARD_H;
+
+      // Fundo
+      ctx.fillStyle = "#1a1a2e";
+      ctx.fillRect(0, 0, OUTPUT_W, OUTPUT_H);
+
+      // Foto de fundo
+      if (photo) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = photo;
+        await new Promise<void>(r => { img.onload = () => r(); img.onerror = () => r(); });
+        ctx.drawImage(img, 0, 0, OUTPUT_W, OUTPUT_H);
+        // Gradiente inferior
+        const grad = ctx.createLinearGradient(0, OUTPUT_H * 0.4, 0, OUTPUT_H);
+        grad.addColorStop(0, "rgba(0,0,0,0.05)");
+        grad.addColorStop(1, "rgba(0,0,0,0.85)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, OUTPUT_W, OUTPUT_H);
+      }
+
+      // Badge tag
+      const TAG_X = 14 * scaleX;
+      const TAG_Y = 14 * scaleY;
+      const TAG_PAD_X = 12 * scaleX;
+      const TAG_PAD_Y = 5 * scaleY;
+      const TAG_FONT = Math.round(12 * scaleY);
+      ctx.font = `800 ${TAG_FONT}px Outfit, sans-serif`;
+      const tagW = ctx.measureText(tag.label).width + TAG_PAD_X * 2;
+      const tagH = TAG_FONT + TAG_PAD_Y * 2;
+      const tagR = 10 * Math.min(scaleX, scaleY);
+      ctx.fillStyle = tag.bg;
+      roundRect(ctx, TAG_X, TAG_Y, tagW, tagH, tagR);
+      ctx.fillStyle = "#fff";
+      ctx.textBaseline = "middle";
+      ctx.textAlign = "left";
+      ctx.fillText(tag.label, TAG_X + TAG_PAD_X, TAG_Y + tagH / 2);
+
+      // Badge desconto
+      if (desconto && desconto > 0 && desconto < 100) {
+        const discText = `-${desconto}%`;
+        ctx.font = `900 ${Math.round(13 * scaleY)}px Outfit, sans-serif`;
+        const discW = ctx.measureText(discText).width + TAG_PAD_X * 2;
+        const discH = Math.round(13 * scaleY) + TAG_PAD_Y * 2;
+        const discX = OUTPUT_W - 14 * scaleX - discW;
+        const discY = TAG_Y;
+        ctx.fillStyle = "#fff";
+        roundRect(ctx, discX, discY, discW, discH, tagR);
+        ctx.fillStyle = "#ef4444";
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "left";
+        ctx.fillText(discText, discX + TAG_PAD_X, discY + discH / 2);
+      }
+
+      // Texto inferior
+      const BOT_LEFT = 16 * scaleX;
+      const BOT_RIGHT = OUTPUT_W - 16 * scaleX;
+      let curY = OUTPUT_H - 16 * scaleY;
+
+      // Preço novo
+      if (preco) {
+        const precoText = `R$ ${preco}`;
+        ctx.font = `900 ${Math.round(24 * scaleY)}px Outfit, sans-serif`;
+        ctx.fillStyle = "#fff";
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = "left";
+        ctx.fillText(precoText, BOT_LEFT, curY);
+        curY -= Math.round(24 * scaleY) * 1.2;
+      }
+
+      // Preço antes (riscado)
+      if (precoAnte) {
+        const precoAnteText = `R$ ${precoAnte}`;
+        ctx.font = `400 ${Math.round(13 * scaleY)}px Outfit, sans-serif`;
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.textAlign = "left";
+        ctx.fillText(precoAnteText, BOT_LEFT, curY);
+        // Linha riscada
+        const tw = ctx.measureText(precoAnteText).width;
+        const lineY = curY - Math.round(13 * scaleY) * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(BOT_LEFT, lineY);
+        ctx.lineTo(BOT_LEFT + tw, lineY);
+        ctx.strokeStyle = "rgba(255,255,255,0.55)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        curY -= Math.round(13 * scaleY) * 1.5;
+      }
+
+      // Nome do produto
+      if (nome) {
+        ctx.font = `700 ${Math.round(16 * scaleY)}px Outfit, sans-serif`;
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        // Quebra linha se necessário
+        const words = nome.split(" ");
+        let line = "";
+        const lines: string[] = [];
+        for (const w of words) {
+          const test = line ? `${line} ${w}` : w;
+          if (ctx.measureText(test).width > BOT_RIGHT - BOT_LEFT) {
+            if (line) lines.push(line);
+            line = w;
+          } else {
+            line = test;
+          }
+        }
+        if (line) lines.push(line);
+        for (let i = lines.length - 1; i >= 0; i--) {
+          ctx.fillText(lines[i], BOT_LEFT, curY);
+          curY -= Math.round(16 * scaleY) * 1.3;
+        }
+      }
+
+      // Exporta
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "promocao.jpg";
+        a.click();
+        URL.revokeObjectURL(url);
+        setExporting(false);
+      }, "image/jpeg", 0.95);
+    } catch {
       setExporting(false);
     }
   }
@@ -140,7 +289,7 @@ export default function PromoCreator({ onBack, initialPhoto }: Props) {
         <div style={s.previewSection}>
           <div style={s.previewLabel}>Prévia</div>
           <div style={s.previewOuter}>
-            <div ref={previewRef} style={s.card}>
+            <div ref={previewRef} style={{ ...s.card, width: CARD_W, height: CARD_H }}>
               {/* Foto */}
               {photo && (
                 <div style={s.cardImgWrap}>
@@ -186,6 +335,22 @@ export default function PromoCreator({ onBack, initialPhoto }: Props) {
   );
 }
 
+// Helper: retângulo com bordas arredondadas para Canvas 2D
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
 const s: Record<string, React.CSSProperties> = {
   wrap: { display: "flex", flexDirection: "column", gap: 16 },
   backBtn: {
@@ -203,7 +368,6 @@ const s: Record<string, React.CSSProperties> = {
     cursor: "pointer", overflow: "hidden",
     background: "#111820",
   },
-  uploadImg: { width: "100%", height: "100%", objectFit: "cover" },
 
   fields: { display: "flex", flexDirection: "column", gap: 14 },
   fieldGroup: { display: "flex", flexDirection: "column", gap: 6 },
@@ -227,7 +391,6 @@ const s: Record<string, React.CSSProperties> = {
   previewOuter: { display: "flex", justifyContent: "center" },
 
   card: {
-    width: 300, height: 300,
     borderRadius: 20, overflow: "hidden",
     position: "relative" as const,
     background: "#1a1a2e",

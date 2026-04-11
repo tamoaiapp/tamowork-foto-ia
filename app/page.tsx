@@ -507,9 +507,16 @@ export default function HomePage() {
   const [showConversion, setShowConversion] = useState(false); // tela de conversão pós-foto
   const onboardingDataRef = useRef<{ file: File; produto: string; cenario: string } | null>(null);
 
-  // TamoBot
-  const [botActive, setBotActive] = useState(false);
+  // TamoBot — persiste em localStorage para sobreviver ao reload
+  const [botActive, setBotActive] = useState(() => {
+    try { return localStorage.getItem("bot_active_24h") === "1"; } catch { return false; }
+  });
   const [botNavOpen, setBotNavOpen] = useState(false);
+
+  function activateBot() {
+    setBotActive(true);
+    try { localStorage.setItem("bot_active_24h", "1"); } catch { /* ignora */ }
+  }
 
   // warmupVision desabilitado — carrega sob demanda ao subir foto
 
@@ -1901,7 +1908,7 @@ export default function HomePage() {
         )}
 
         {/* Chat durante geração: modo onboarding mostra benefícios Pro, modo normal mostra BotChat */}
-        {workState === "trabalhando" && (
+        {workState === "trabalhando" && !(rateLimitedUntil && countdown > 0) && (
           onboardingMode ? (
             <OnboardingChat />
           ) : (
@@ -1911,7 +1918,7 @@ export default function HomePage() {
               onViewResult={() => setPendingResult(false)}
               botActive={botActive}
               visible={true}
-              onActivate24h={() => setBotActive(true)}
+              onActivate24h={activateBot}
             />
           )
         )}
@@ -2306,7 +2313,7 @@ export default function HomePage() {
             botActive={botActive}
             visible={true}
             navMode={true}
-            onActivate24h={() => setBotActive(true)}
+            onActivate24h={activateBot}
           />
         </div>
       )}
