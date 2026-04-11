@@ -39,7 +39,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={outfit.className} style={{ background: "#07080b", color: "#eef2f9", margin: 0, minHeight: "100vh" }}>
+      <body className={outfit.className} style={{ background: "#07080b", color: "#eef2f9", margin: 0 }}>
         <I18nProvider>
           {/* Sidebar — visível só no desktop via CSS */}
           <DesktopSidebar />

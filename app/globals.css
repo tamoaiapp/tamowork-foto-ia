@@ -16,21 +16,28 @@
 }
 
 html {
-  overflow-x: hidden;
-  max-width: 100vw;
+  height: 100%;
+  overflow: hidden;
   touch-action: manipulation;
-  overscroll-behavior-y: none;
 }
 
 body {
+  height: 100%;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   font-family: 'Outfit', sans-serif;
   margin: 0;
-  overflow-x: hidden;
-  max-width: 100vw;
   -webkit-text-size-adjust: 100%;
+}
+
+/* Container principal de scroll — body fixo impede pull-to-refresh no iOS */
+.app-content {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 input, textarea, select, button {
