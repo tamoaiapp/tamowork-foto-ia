@@ -511,11 +511,7 @@ export default function HomePage() {
   const [botActive, setBotActive] = useState(false);
   const [botNavOpen, setBotNavOpen] = useState(false);
 
-  // Pré-carrega o modelo de visão apenas em desktop (mobile não tem RAM suficiente)
-  useEffect(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (!isMobile) warmupVision();
-  }, []);
+  // warmupVision desabilitado — carrega sob demanda ao subir foto
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
