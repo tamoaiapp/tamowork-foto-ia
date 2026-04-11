@@ -24,25 +24,24 @@ export async function createImageJob(
   // Verificar plano do usuário
   const plan = await getUserPlan(userId);
 
+  // Bloqueia para TODOS os planos se já há job ativo — previne jobs simultâneos
+  const { data: activeJob } = await supabase
+    .from("image_jobs")
+    .select("id, created_at")
+    .eq("user_id", userId)
+    .in("status", ["queued", "submitted", "processing"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (activeJob) {
+    const jobCreatedAt = activeJob.created_at ? new Date(activeJob.created_at).getTime() : Date.now();
+    const nextAvailableAt = new Date(Math.max(Date.now() + 60_000, jobCreatedAt + 15 * 60_000));
+    throw new RateLimitError(nextAvailableAt);
+  }
+
   if (plan === "free") {
-    // 1. Bloqueia se já tem job ativo (em fila ou processando) — previne jobs simultâneos
-    const { data: activeJob } = await supabase
-      .from("image_jobs")
-      .select("id, created_at")
-      .eq("user_id", userId)
-      .in("status", ["queued", "submitted", "processing"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
-
-    if (activeJob) {
-      // Já tem um job rodando — estimativa conservadora: job criado + 15 min
-      const jobCreatedAt = activeJob.created_at ? new Date(activeJob.created_at).getTime() : Date.now();
-      const nextAvailableAt = new Date(Math.max(Date.now() + 60_000, jobCreatedAt + 15 * 60_000));
-      throw new RateLimitError(nextAvailableAt);
-    }
-
-    // 2. Só desconta se a foto ficou pronta (status "done") — falhas não consomem o crédito
+    // Só desconta se a foto ficou pronta (status "done") — falhas não consomem o crédito
     const since = new Date(Date.now() - FREE_COOLDOWN_MS).toISOString();
     const { data: recentJob } = await supabase
       .from("image_jobs")
