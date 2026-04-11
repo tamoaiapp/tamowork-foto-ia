@@ -511,8 +511,11 @@ export default function HomePage() {
   const [botActive, setBotActive] = useState(false);
   const [botNavOpen, setBotNavOpen] = useState(false);
 
-  // Pré-carrega o modelo de visão silenciosamente assim que o app abre
-  useEffect(() => { warmupVision(); }, []);
+  // Pré-carrega o modelo de visão apenas em desktop (mobile não tem RAM suficiente)
+  useEffect(() => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) warmupVision();
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -535,12 +538,12 @@ export default function HomePage() {
         resolvedPlan = userPlan;
         setPlan(userPlan);
 
-        // Exibe upsell popup 3s após login para usuários free
+        // Exibe upsell popup 1s após login para usuários free
         if (userPlan === "free") {
           setTimeout(async () => {
             const { shouldShowUpsell } = await import("@/app/components/UpsellPopup");
             if (shouldShowUpsell()) setShowUpsell(true);
-          }, 3000);
+          }, 1000);
         }
 
         const active = jobs.find(
