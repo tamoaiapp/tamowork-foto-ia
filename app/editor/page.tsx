@@ -386,9 +386,17 @@ export default function EditorPage() {
     );
   }
 
-  // ── Modo Promo: abre PromoCreator diretamente ──────────────────────────────
+  // ── Modo Promo: abre PromoCreator com layout + BottomNav ──────────────────
   if (action === "promo") {
-    return <PromoCreator onBack={() => setAction(null)} />;
+    return (
+      <div style={s.page} className="app-layout">
+        <AppHeader subtitle={lang === "en" ? "Create promo" : "Criar promoção"} onBack={() => setAction(null)} />
+        <div style={{ flex: 1, overflowY: "auto", paddingBottom: 8 }}>
+          <PromoCreator onBack={() => setAction(null)} initialPhoto={photo ?? undefined} />
+        </div>
+        <BottomNav />
+      </div>
+    );
   }
 
   // ── Modo Remove BG ou Personalizar: pede foto primeiro ───────────────────

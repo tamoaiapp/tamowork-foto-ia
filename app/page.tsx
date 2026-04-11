@@ -2325,7 +2325,7 @@ export default function HomePage() {
       )}
 
       {promoOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "#07080b", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 45, background: "#07080b", overflowY: "auto", paddingBottom: 68 }}>
           <PromoCreator
             onBack={() => setPromoOpen(false)}
             initialPhoto={editedImageUrl ?? job?.output_image_url}
