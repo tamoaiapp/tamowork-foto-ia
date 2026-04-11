@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
     content: message.trim(),
   });
 
-  // Chama Claude
-  const reply = await callClaude(systemPrompt, recentMessages, message.trim());
+  // Chama Ollama (RunPod A40)
+  const reply = await callOllama(systemPrompt, recentMessages, message.trim());
 
   // Salva resposta do assistente
   await supabaseAdmin.from("bot_messages").insert({
@@ -75,37 +75,35 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ reply, needsOnboarding: !businessContext });
 }
 
-async function callClaude(
+async function callOllama(
   systemPrompt: string,
   history: { role: string; content: string }[],
   newMessage: string
 ) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return "Configure a ANTHROPIC_API_KEY para ativar o assistente.";
+  const ollamaBase = process.env.OLLAMA_BASE;
+  if (!ollamaBase) return "Assistente temporariamente indisponível. Tente novamente em instantes.";
 
   const messages = [
+    { role: "system", content: systemPrompt },
     ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     { role: "user" as const, content: newMessage },
   ];
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch(`${ollamaBase}/api/chat`, {
       method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 600,
-        system: systemPrompt,
+        model: "llama3.2:3b",
         messages,
+        stream: false,
+        options: { num_predict: 600, temperature: 0.7 },
       }),
     });
+    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
     const json = await res.json();
-    return json.content?.[0]?.text ?? "Não consegui responder agora. Tente novamente.";
+    return json.message?.content ?? "Não consegui responder agora. Tente novamente.";
   } catch {
-    return "Erro de conexão. Tente novamente em instantes.";
+    return "Erro de conexão com o assistente. Tente novamente em instantes.";
   }
 }

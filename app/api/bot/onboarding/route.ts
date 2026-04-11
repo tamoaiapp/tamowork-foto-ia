@@ -58,8 +58,8 @@ async function generateBusinessContext(data: {
   products: string;
   tone: string;
 }) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
+  const ollamaBase = process.env.OLLAMA_BASE;
+  if (!ollamaBase) {
     return `Empresa: ${data.business_name}. Tipo: ${data.business_type}. Produtos: ${data.products}. Tom: ${data.tone || "profissional e amigável"}.`;
   }
 
@@ -73,21 +73,19 @@ Tom preferido: ${data.tone || "profissional e amigável"}
 Responda APENAS com o contexto em parágrafo, sem títulos.`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch(`${ollamaBase}/api/chat`, {
       method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 300,
+        model: "llama3.2:3b",
         messages: [{ role: "user", content: prompt }],
+        stream: false,
+        options: { num_predict: 300, temperature: 0.5 },
       }),
     });
+    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
     const json = await res.json();
-    return json.content?.[0]?.text ?? `Empresa: ${data.business_name}. Produtos: ${data.products}.`;
+    return json.message?.content ?? `Empresa: ${data.business_name}. Produtos: ${data.products}.`;
   } catch {
     return `Empresa: ${data.business_name}. Produtos: ${data.products}. Tom: ${data.tone || "profissional"}.`;
   }
