@@ -29,10 +29,15 @@ export async function POST(req: NextRequest) {
 
   if (!image_url) return NextResponse.json({ ok: false, error: "image_url obrigatório" }, { status: 400 });
 
-  // Normaliza URL — aceita com ou sem https://
+  // Normaliza URL — remove prefixos malformados do Bubble (ex: "htpps::https://..." → "https://...")
   image_url = image_url.trim();
+  image_url = image_url.replace(/^[a-z]+::https?:\/\//i, "https://");
+  image_url = image_url.replace(/^https?:\/\/https?:\/\//i, "https://");
   if (image_url.startsWith("//")) image_url = "https:" + image_url;
   else if (!image_url.startsWith("http://") && !image_url.startsWith("https://")) image_url = "https://" + image_url;
+  if (!image_url.match(/^https?:\/\/.+\..+/)) {
+    return NextResponse.json({ ok: false, error: `image_url inválida: ${image_url}` }, { status: 400 });
+  }
 
   const supabase = createServerClient();
 
