@@ -90,15 +90,13 @@ export default function CriacoesPage() {
           <div style={s.grid} className="criacoes-grid">
             {jobs.map((job) => (
               <div key={job.id} style={s.card} onClick={() => setSelected(job)}>
-                {job.type === "video" && job.output_video_url ? (
+                {job.type === "video" ? (
                   <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                    <video
-                      src={job.output_video_url}
+                    {/* Thumbnail estático no grid — usa input_image_url para não crashar iOS */}
+                    <img
+                      src={job.input_image_url ?? job.output_video_url ?? ""}
+                      alt="vídeo"
                       style={s.img}
-                      muted
-                      loop
-                      playsInline
-                      autoPlay
                     />
                     <div style={s.videoBadge}>▶</div>
                   </div>

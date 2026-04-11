@@ -65,9 +65,11 @@ function VideoCard({ name, title, desc, badge, onClick, btnLabel }: {
   useEffect(() => {
     const el = activeSlot === "A" ? refA.current : refB.current;
     if (!el) return;
-    el.addEventListener("ended", advance);
-    return () => el.removeEventListener("ended", advance);
-  });
+    const handler = () => advance();
+    el.addEventListener("ended", handler);
+    return () => el.removeEventListener("ended", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSlot]);
 
   return (
     <ModeCard
@@ -77,10 +79,10 @@ function VideoCard({ name, title, desc, badge, onClick, btnLabel }: {
         <>
           <video ref={refA} src={VIDEO_URLS[idxA]}
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: activeSlot === "A" ? 1 : 0, transition: "opacity 0.7s ease" }}
-            autoPlay muted playsInline preload="auto" />
+            autoPlay muted playsInline preload="metadata" />
           <video ref={refB} src={VIDEO_URLS[idxB]}
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: activeSlot === "B" ? 1 : 0, transition: "opacity 0.7s ease" }}
-            muted playsInline preload="auto" />
+            muted playsInline preload="none" />
         </>
       }
     />
