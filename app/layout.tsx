@@ -58,13 +58,35 @@ export default function RootLayout({
           // Bloqueia pull-to-refresh no iOS Safari (overscroll-behavior não funciona no iOS)
           (function() {
             var startY = 0;
+            var pickerOpen = false;
+
+            // Detecta quando input[type=file] é ativado (galeria nativa abre)
+            document.addEventListener('click', function(e) {
+              var el = e.target;
+              while (el) {
+                if (el.tagName === 'INPUT' && el.type === 'file') {
+                  pickerOpen = true;
+                  // Quando a galeria fechar (foco volta para a janela), desbloqueia
+                  function onFocus() {
+                    pickerOpen = false;
+                    window.removeEventListener('focus', onFocus);
+                  }
+                  window.addEventListener('focus', onFocus);
+                  break;
+                }
+                el = el.parentElement;
+              }
+            }, true);
+
             document.addEventListener('touchstart', function(e) {
               startY = e.touches[0].clientY;
             }, { passive: true });
+
             document.addEventListener('touchmove', function(e) {
               var dy = e.touches[0].clientY - startY;
               var el = document.scrollingElement || document.documentElement;
-              if (dy > 0 && el.scrollTop <= 0) {
+              // Bloqueia pull-to-refresh: quando galeria está aberta OU quando está no topo da página puxando pra baixo
+              if (pickerOpen || (dy > 0 && el.scrollTop <= 0)) {
                 e.preventDefault();
               }
             }, { passive: false });
