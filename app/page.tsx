@@ -8,7 +8,7 @@ import BottomNav from "@/app/components/BottomNav";
 import ModeSelector, { type CreationMode } from "@/app/components/ModeSelector";
 import dynamic from "next/dynamic";
 import { useI18n, LangSelector } from "@/lib/i18n";
-import { useProductVision, warmupVision } from "@/lib/vision/useProductVision";
+import { useProductVision } from "@/lib/vision/useProductVision";
 const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 const UpsellPopup = dynamic(() => import("@/app/components/UpsellPopup"), { ssr: false });
@@ -498,7 +498,6 @@ export default function HomePage() {
 
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
-  const [visionSuggestion, setVisionSuggestion] = useState<string | null>(null);
 
   // Upsell popup A/B
   const [showUpsell, setShowUpsell] = useState(false);
@@ -920,14 +919,8 @@ export default function HomePage() {
     setImageFile(file);
     if (file) {
       setPreview(URL.createObjectURL(file));
-      setVisionSuggestion(null);
-      // Analisa a imagem em background — sempre mostra como sugestão para o usuário comparar
-      vision.analyzeImage(file).then((product) => {
-        if (product) setVisionSuggestion(product);
-      });
     } else {
       setPreview(null);
-      setVisionSuggestion(null);
       vision.reset();
     }
   }
@@ -1207,7 +1200,6 @@ export default function HomePage() {
     }
     // Limpa job pendente salvo no sessionStorage
     try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
-    setVisionSuggestion(null);
     vision.reset();
     if (pollRef.current) clearInterval(pollRef.current);
     if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
@@ -1768,69 +1760,17 @@ export default function HomePage() {
               )}
 
               <div style={styles.fieldGroup}>
-                <label style={{ ...styles.label, display: "flex", alignItems: "center", gap: 8 }}>
+                <label style={styles.label}>
                   {t("field_product")}
-                  {vision.isAnalyzing && (
-                    <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                      <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", border: "1.5px solid rgba(167,139,250,0.3)", borderTopColor: "#a78bfa", animation: "spin 0.7s linear infinite" }} />
-                      {vision.state === "loading_model"
-                        ? (lang === "en" ? "Downloading vision AI (1x)…" : lang === "es" ? "Descargando IA de visión (1x)…" : "Baixando IA de visão (1x)…")
-                        : (lang === "en" ? "Analyzing photo…" : lang === "es" ? "Analizando foto…" : "Analisando foto…")}
-                    </span>
-                  )}
-                  {vision.state === "error" && (
-                    <span style={{ fontSize: 11, color: "#f87171" }}>⚠ {lang === "en" ? "Vision AI unavailable" : lang === "es" ? "IA de visión no disponible" : "IA de visão indisponível"}</span>
-                  )}
                 </label>
                 <input
                   type="text"
-                  placeholder={vision.isAnalyzing ? "Analisando imagem…" : "Ex: conjunto feminino floral, blusa cropped azul, tênis branco…"}
+                  placeholder="Ex: conjunto feminino floral, blusa cropped azul, tênis branco…"
                   value={produto}
-                  onChange={(e) => { setProduto(e.target.value); setVisionSuggestion(null); vision.reset(); }}
+                  onChange={(e) => setProduto(e.target.value)}
                   required
-                  style={{ ...styles.input, ...(vision.isAnalyzing ? { opacity: 0.6 } : {}) }}
+                  style={styles.input}
                 />
-                {/* Sugestão da IA — aparece após analisar a imagem */}
-                {visionSuggestion && (
-                  <div style={{
-                    background: "rgba(99,102,241,0.08)",
-                    border: "1px solid rgba(99,102,241,0.3)",
-                    borderRadius: 10,
-                    padding: "10px 12px",
-                    marginTop: 6,
-                  }}>
-                    <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 6, display: "flex", alignItems: "center", gap: 5 }}>
-                      🔍 <span>IA identificou o produto como:</span>
-                    </div>
-                    <div style={{ fontSize: 14, color: "#c4b5fd", fontWeight: 600, marginBottom: 8 }}>
-                      &ldquo;{visionSuggestion}&rdquo;
-                    </div>
-                    {produto.trim() && (
-                      <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 8 }}>
-                        Você escreveu: <span style={{ color: "#eef2f9" }}>&ldquo;{produto}&rdquo;</span>
-                        {produto.trim().toLowerCase() === visionSuggestion.toLowerCase()
-                          ? <span style={{ color: "#16c784", marginLeft: 6 }}>✓ Acertou!</span>
-                          : null}
-                      </div>
-                    )}
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => { setProduto(visionSuggestion); setVisionSuggestion(null); }}
-                        style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}
-                      >
-                        Usar este
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setVisionSuggestion(null)}
-                        style={{ fontSize: 12, color: "#4e5c72", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 14px", cursor: "pointer" }}
-                      >
-                        Manter o meu
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {creationMode !== "fundo_branco" && (
