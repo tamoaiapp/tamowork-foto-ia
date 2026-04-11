@@ -2319,7 +2319,7 @@ function NotifyButton({ onRequest }: { onRequest: () => Promise<void> }) {
   if (state === "granted") {
     return (
       <div style={notifyStyles.notice}>
-        Pode fechar o app — te avisamos quando ficar pronta
+        Converse com seu assistente de IA enquanto sua foto é criada ✨
       </div>
     );
   }
@@ -2327,7 +2327,7 @@ function NotifyButton({ onRequest }: { onRequest: () => Promise<void> }) {
   if (state === "denied") {
     return (
       <div style={notifyStyles.notice}>
-        Pode fechar o app — ative notificações no navegador para receber aviso
+        Converse com seu assistente de IA enquanto sua foto é criada ✨
       </div>
     );
   }
