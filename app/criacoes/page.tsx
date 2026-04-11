@@ -10,7 +10,9 @@ import { useI18n } from "@/lib/i18n";
 interface AccountJob {
   id: string;
   status: string;
+  type: "photo" | "video";
   output_image_url?: string;
+  output_video_url?: string;
   input_image_url?: string;
   created_at: string;
   prompt?: string;
@@ -41,7 +43,9 @@ export default function CriacoesPage() {
       const res = await fetch("/api/account", { headers: { Authorization: `Bearer ${t}` } });
       if (res.ok) {
         const data = await res.json();
-        setJobs((data.jobs ?? []).filter((j: AccountJob) => j.status === "done" && j.output_image_url));
+        setJobs((data.jobs ?? []).filter((j: AccountJob) =>
+          j.status === "done" && (j.output_image_url || j.output_video_url)
+        ));
       }
       setLoading(false);
     });
@@ -86,23 +90,51 @@ export default function CriacoesPage() {
           <div style={s.grid} className="criacoes-grid">
             {jobs.map((job) => (
               <div key={job.id} style={s.card} onClick={() => setSelected(job)}>
-                <img src={job.output_image_url!} alt="foto" style={s.img} />
+                {job.type === "video" && job.output_video_url ? (
+                  <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                    <video
+                      src={job.output_video_url}
+                      style={s.img}
+                      muted
+                      loop
+                      playsInline
+                      autoPlay
+                    />
+                    <div style={s.videoBadge}>▶</div>
+                  </div>
+                ) : (
+                  <img src={job.output_image_url!} alt="foto" style={s.img} />
+                )}
               </div>
             ))}
           </div>
         )}
       </main>
 
-      {/* Modal de foto */}
+      {/* Modal de foto / vídeo */}
       {selected && (
         <div style={s.overlay} onClick={() => setSelected(null)}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-            <img src={selected.output_image_url!} alt="foto" style={s.modalImg} />
+            {selected.type === "video" && selected.output_video_url ? (
+              <video
+                src={selected.output_video_url}
+                style={s.modalImg}
+                controls
+                autoPlay
+                loop
+                playsInline
+              />
+            ) : (
+              <img src={selected.output_image_url!} alt="foto" style={s.modalImg} />
+            )}
             <div style={{ display: "flex", gap: 8, padding: "14px 16px 0" }}>
+              {selected.type !== "video" && (
               <button onClick={() => {
                 sessionStorage.setItem("editor_image", selected.output_image_url!);
                 router.push("/editor");
               }} style={s.editBtn}>{t("criacoes_edit")}</button>
+              )}
+              {selected.type !== "video" && (
               <button onClick={async () => {
                 // Verificar se há foto ou vídeo ativo antes de permitir criar novo vídeo
                 const [imgRes, vidRes] = await Promise.all([
@@ -132,17 +164,20 @@ export default function CriacoesPage() {
                 sessionStorage.setItem("video_from_job", selected.id);
                 router.push("/");
               }} style={s.videoBtn}>{t("criacoes_video")}</button>
+              )}
             </div>
             <div style={s.modalActions}>
               <button onClick={async () => {
+                const url = selected.type === "video" ? selected.output_video_url! : selected.output_image_url!;
+                const ext = selected.type === "video" ? "mp4" : "jpg";
                 try {
-                  const res = await fetch(selected.output_image_url!);
+                  const res = await fetch(url);
                   const blob = await res.blob();
                   const a = document.createElement("a");
                   a.href = URL.createObjectURL(blob);
-                  a.download = "foto-ia.jpg";
+                  a.download = `criacao-ia.${ext}`;
                   a.click();
-                } catch { window.open(selected.output_image_url!, "_blank"); }
+                } catch { window.open(url, "_blank"); }
               }} style={s.dlBtn}>{t("criacoes_download")}</button>
               <button onClick={() => handleDelete(selected.id)} disabled={deletingId === selected.id} style={s.delBtn}>
                 {deletingId === selected.id ? "..." : t("criacoes_delete")}
@@ -196,6 +231,12 @@ const s: Record<string, React.CSSProperties> = {
   img: {
     width: "100%", height: "100%", objectFit: "cover",
     display: "block", transition: "opacity 0.2s",
+  },
+  videoBadge: {
+    position: "absolute", bottom: 6, right: 6,
+    background: "rgba(0,0,0,0.6)", borderRadius: "50%",
+    width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 10, color: "#fff", pointerEvents: "none",
   },
   // Modal
   overlay: {
