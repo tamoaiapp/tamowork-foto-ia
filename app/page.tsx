@@ -1256,7 +1256,13 @@ export default function HomePage() {
     if (["done", "failed", "canceled"].includes(videoJob.status ?? "")) {
       if (videoPollRef.current) clearInterval(videoPollRef.current);
       if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
-      if (videoJob.status === "done") sendPushNotification("Seu vídeo está pronto! 🎬", "Toque para ver o vídeo gerado.");
+      if (videoJob.status === "done") {
+        sendPushNotification("Seu vídeo está pronto! 🎬", "Toque para ver o vídeo gerado.");
+        setVideoMode(true); // garante que o resultado aparece
+      }
+      if (videoJob.status === "failed") {
+        setVideoMode(false); // volta para o resultado da foto
+      }
       return;
     }
     // Timer de tempo decorrido para barra de progresso
@@ -1604,6 +1610,21 @@ export default function HomePage() {
               }}
               aria-label="Fechar"
             >×</button>
+          </div>
+        )}
+
+        {/* Banner de vídeo falhou — aparece quando !videoMode */}
+        {videoJob?.status === "failed" && !videoMode && (
+          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 14, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 22 }}>😔</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Erro ao gerar vídeo</div>
+              <div style={{ color: "#8394b0", fontSize: 12 }}>Houve um problema. Tente novamente.</div>
+            </div>
+            <button onClick={() => { resetVideo(); setVideoMode(true); }} style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)", borderRadius: 10, padding: "6px 12px", color: "#a78bfa", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              Tentar
+            </button>
+            <button onClick={resetVideo} style={{ background: "none", border: "none", color: "#4e5c72", fontSize: 18, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>×</button>
           </div>
         )}
 
@@ -2163,7 +2184,7 @@ export default function HomePage() {
         )}
 
         {/* Vídeo — pronto */}
-        {videoJob?.status === "done" && videoJob.output_video_url && (
+        {videoJob?.status === "done" && videoJob.output_video_url && videoMode && (
           <div style={{ ...styles.card, padding: 0, overflow: "hidden", animation: "fadeIn 0.5s ease" }}>
             <video
               src={videoJob.output_video_url}
@@ -2178,17 +2199,22 @@ export default function HomePage() {
                 🎬 Seu vídeo está pronto!
               </p>
               <div style={{ display: "flex", gap: 10 }}>
-                <a
-                  href={videoJob.output_video_url}
-                  download="video-ia.mp4"
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(videoJob!.output_video_url!);
+                      const blob = await res.blob();
+                      await downloadBlob(blob, "video-ia.mp4");
+                    } catch { window.open(videoJob!.output_video_url!, "_blank"); }
+                  }}
                   style={{
                     flex: 1, background: "linear-gradient(135deg, #6366f1, #a855f7)",
                     border: "none", borderRadius: 14, padding: "14px 0",
                     color: "#fff", fontSize: 15, fontWeight: 700, textAlign: "center",
-                    display: "block", cursor: "pointer", textDecoration: "none",
+                    display: "block", cursor: "pointer",
                     boxShadow: "0 4px 16px rgba(139,92,246,0.35)",
                   }}
-                >⬇ Baixar</a>
+                >⬇ Baixar</button>
                 <button
                   onClick={resetAll}
                   style={{
@@ -2202,13 +2228,15 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Vídeo — erro */}
-        {videoJob?.status === "failed" && (
+        {/* Vídeo — erro (só dentro do videoMode) */}
+        {videoJob?.status === "failed" && videoMode && (
           <div style={styles.card}>
             <div style={styles.bigIcon}>😔</div>
             <h2 style={styles.centerTitle}>Ops, algo deu errado</h2>
             <p style={styles.centerDesc}>Pedimos desculpas pelo transtorno. Houve um problema ao gerar seu vídeo, mas você pode tentar novamente agora — é gratuito.</p>
-            <button onClick={resetVideo} style={styles.submitBtn}>Tentar novamente</button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => { resetVideo(); }} style={styles.submitBtn}>Tentar novamente</button>
+            </div>
           </div>
         )}
 
