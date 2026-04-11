@@ -219,14 +219,73 @@ export default function PhotoEditor({ imageUrl, onClose, onSave }: Props) {
     setSelectedId(null);
     try {
       await new Promise(r => setTimeout(r, 80));
-      const { default: html2canvas } = await import("html2canvas");
-      const canvas = await html2canvas(stageRef.current!, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-        backgroundColor: null,
+
+      // Aguarda fontes carregarem para o Canvas reproduzir o texto corretamente
+      await document.fonts.ready;
+
+      const stage = stageRef.current!;
+      const stageW = stage.offsetWidth;
+      const stageH = stage.offsetHeight;
+
+      // Carrega a imagem base para obter as dimensões reais (sem limitação de CSS)
+      const baseEl = new window.Image();
+      baseEl.crossOrigin = "anonymous";
+      await new Promise<void>((resolve, reject) => {
+        baseEl.onload = () => resolve();
+        baseEl.onerror = reject;
+        baseEl.src = bgRemovedUrl ?? imageUrl;
       });
-      onSave(canvas.toDataURL("image/png"));
+
+      const outW = baseEl.naturalWidth;
+      const outH = baseEl.naturalHeight;
+      // Fator de escala: posição dos layers no stage → posição na imagem real
+      const scaleX = outW / stageW;
+      const scaleY = outH / stageH;
+      const scale = (scaleX + scaleY) / 2; // escala uniforme para fontes
+
+      const canvas = document.createElement("canvas");
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext("2d")!;
+
+      // Desenha imagem base na resolução original
+      ctx.drawImage(baseEl, 0, 0, outW, outH);
+
+      // Desenha cada layer na posição correta e escala
+      for (const layer of layers) {
+        if (layer.kind === "text") {
+          const t = layer.data as TextLayer;
+          ctx.save();
+          ctx.textBaseline = "top";
+          const fs = Math.round(t.fontSize * scale);
+          ctx.font = `${t.fontWeight} ${fs}px Outfit, Arial, sans-serif`;
+          ctx.fillStyle = t.color;
+          // Reproduz textShadow: 1px 1px 4px rgba(0,0,0,0.85)
+          ctx.shadowColor = "rgba(0,0,0,0.85)";
+          ctx.shadowBlur = 4 * scale;
+          ctx.shadowOffsetX = scale;
+          ctx.shadowOffsetY = scale;
+          // Compensa padding do elemento DOM: padding: "2px 4px"
+          ctx.fillText(t.text, (t.x + 4) * scaleX, (t.y + 2) * scaleY);
+          ctx.restore();
+        } else {
+          const l = layer.data as ImageLayer;
+          const imgEl = new window.Image();
+          imgEl.crossOrigin = "anonymous";
+          await new Promise<void>(resolve => {
+            imgEl.onload = () => resolve();
+            imgEl.onerror = () => resolve(); // ignora se falhar (não bloqueia o export)
+            imgEl.src = l.src;
+          });
+          if (imgEl.naturalWidth > 0) {
+            const dw = l.size * scaleX;
+            const dh = (imgEl.naturalHeight / imgEl.naturalWidth) * dw;
+            ctx.drawImage(imgEl, l.x * scaleX, l.y * scaleY, dw, dh);
+          }
+        }
+      }
+
+      onSave(canvas.toDataURL("image/jpeg", 0.95));
     } catch {
       alert(
         lang === "en" ? "Export error. Please try again."
