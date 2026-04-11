@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 
-const ANDROID_APP_URL = "https://play.google.com/store/apps/details?id=com.tamowork.app";
-const ANDROID_FALLBACK = "https://tamowork.com/login";
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.tamowork.app";
 
 function detectPlatform(): "android" | "ios" | "desktop" {
   if (typeof navigator === "undefined") return "desktop";
@@ -25,8 +24,6 @@ export default function AppRedirectPage() {
   const router = useRouter();
   const { lang } = useI18n();
   const [platform, setPlatform] = useState<"android" | "ios" | "desktop" | null>(null);
-  const [dots, setDots] = useState(".");
-  const [redirecting, setRedirecting] = useState(false);
   const [standalone, setStandalone] = useState(false);
 
   useEffect(() => {
@@ -35,329 +32,271 @@ export default function AppRedirectPage() {
     setPlatform(p);
     setStandalone(sa);
 
-    // Marca que o usuário iOS visitou esta página (viu as instruções de instalação)
     if (p === "ios") {
       try { localStorage.setItem("ios_app_visited", "1"); } catch { /* ignora */ }
+      if (sa) {
+        // já instalado como PWA — vai direto pro app
+        setTimeout(() => { router.replace("/"); }, 800);
+      }
+    } else if (p === "android") {
+      // Abre Play Store imediatamente
+      window.location.href = PLAY_STORE_URL;
+    } else {
+      setTimeout(() => { router.replace("/login"); }, 1000);
     }
-
-    if (p === "android") {
-      setRedirecting(true);
-      const timer = setTimeout(() => {
-        window.location.href = ANDROID_APP_URL;
-        setTimeout(() => { window.location.href = ANDROID_FALLBACK; }, 2000);
-      }, 1800);
-      return () => clearTimeout(timer);
-    } else if (p === "ios" && sa) {
-      // Já está rodando como PWA — vai direto pro app
-      const timer = setTimeout(() => { router.replace("/"); }, 1000);
-      return () => clearTimeout(timer);
-    } else if (p === "desktop") {
-      const timer = setTimeout(() => { router.replace("/login"); }, 1400);
-      return () => clearTimeout(timer);
-    }
-    // iOS sem standalone: não redireciona automaticamente — mostra instruções
   }, [router]);
 
-  // Animação dos pontinhos
-  useEffect(() => {
-    const id = setInterval(() => {
-      setDots((d) => (d.length >= 3 ? "." : d + "."));
-    }, 400);
-    return () => clearInterval(id);
-  }, []);
-
+  const showIOSInstructions = platform === "ios" && !standalone;
   const isAndroid = platform === "android";
-  const isIOS = platform === "ios";
-  const showIOSInstructions = isIOS && !standalone;
 
   return (
     <>
       <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.08); opacity: 0.85; }
-        }
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
+          from { opacity: 0; transform: translateY(14px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes spinRing {
-          to { transform: rotate(360deg); }
-        }
         @keyframes glow {
-          0%, 100% { box-shadow: 0 0 30px rgba(139,92,246,0.4), 0 0 60px rgba(99,102,241,0.15); }
-          50%       { box-shadow: 0 0 50px rgba(139,92,246,0.7), 0 0 100px rgba(99,102,241,0.3); }
+          0%, 100% { box-shadow: 0 0 30px rgba(139,92,246,0.4); }
+          50%       { box-shadow: 0 0 55px rgba(139,92,246,0.7); }
         }
         @keyframes arrowBounce {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(5px); }
+          50%       { transform: translateY(6px); }
         }
-        @keyframes shimmer {
-          0% { opacity: 0.6; }
-          50% { opacity: 1; }
-          100% { opacity: 0.6; }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
+        .fade1 { animation: fadeUp 0.45s ease both; }
+        .fade2 { animation: fadeUp 0.45s 0.1s ease both; opacity: 0; }
+        .fade3 { animation: fadeUp 0.45s 0.22s ease both; opacity: 0; }
+        .fade4 { animation: fadeUp 0.45s 0.36s ease both; opacity: 0; }
       `}</style>
 
       <div style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         background: "#07080b",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: showIOSInstructions ? "flex-start" : "center",
-        gap: 0,
-        padding: showIOSInstructions ? "48px 24px 120px" : 24,
+        padding: showIOSInstructions ? "44px 20px 100px" : "24px 20px",
+        fontFamily: "Outfit, sans-serif",
+        color: "#eef2f9",
       }}>
 
-        {/* Logo com anel giratório */}
-        <div style={{ position: "relative", marginBottom: 28, animation: "fadeUp 0.5s ease both" }}>
+        {/* Logo */}
+        <div className="fade1" style={{ position: "relative", marginBottom: 20 }}>
           <div style={{
-            position: "absolute",
-            inset: -10,
-            borderRadius: "50%",
+            position: "absolute", inset: -8, borderRadius: "50%",
             border: "2px solid transparent",
-            borderTop: "2px solid #6366f1",
-            borderRight: "2px solid #a855f7",
-            animation: "spinRing 1.2s linear infinite",
+            borderTop: "2px solid #6366f1", borderRight: "2px solid #a855f7",
+            animation: "spin 1.2s linear infinite",
           }} />
           <img
             src="/icons/icon-512.png"
             alt="TamoWork"
             style={{
-              width: 80,
-              height: 80,
-              borderRadius: 22,
-              display: "block",
-              animation: "pulse 2s ease-in-out infinite, glow 2s ease-in-out infinite",
-              objectFit: "cover",
+              width: 76, height: 76, borderRadius: 20,
+              display: "block", objectFit: "cover",
+              animation: "glow 2.5s ease-in-out infinite",
             }}
           />
         </div>
 
         {/* Nome */}
-        <div style={{ textAlign: "center", animation: "fadeUp 0.5s 0.1s ease both", opacity: 0, marginBottom: showIOSInstructions ? 32 : 0 }}>
+        <div className="fade2" style={{ textAlign: "center", marginBottom: showIOSInstructions ? 28 : 0 }}>
           <div style={{
-            fontSize: 26,
-            fontWeight: 900,
-            background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            letterSpacing: "-0.03em",
-            marginBottom: 4,
-          }}>
-            TamoWork
-          </div>
-          <div style={{ fontSize: 13, color: "#4e5c72", fontWeight: 600, letterSpacing: "0.06em" }}>
-            FOTO IA
-          </div>
+            fontSize: 24, fontWeight: 900, letterSpacing: "-0.03em",
+            background: "linear-gradient(135deg, #6366f1, #a855f7)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            marginBottom: 3,
+          }}>TamoWork</div>
+          <div style={{ fontSize: 12, color: "#4e5c72", fontWeight: 600, letterSpacing: "0.08em" }}>FOTO IA</div>
         </div>
 
         {/* ── iOS: instruções para adicionar à tela inicial ── */}
         {showIOSInstructions && (
-          <div style={{ width: "100%", maxWidth: 380, animation: "fadeUp 0.5s 0.25s ease both", opacity: 0 }}>
+          <div style={{ width: "100%", maxWidth: 370 }}>
 
-            {/* Card principal */}
-            <div style={{
+            <div className="fade3" style={{
               background: "linear-gradient(160deg, #13102a 0%, #0f1520 60%, #0c1018 100%)",
-              border: "1px solid rgba(168,85,247,0.3)",
-              borderRadius: 20,
-              padding: "24px 20px",
-              marginBottom: 16,
-              boxShadow: "0 0 40px rgba(168,85,247,0.08)",
+              border: "1px solid rgba(168,85,247,0.28)",
+              borderRadius: 20, padding: "22px 18px 18px",
+              marginBottom: 14,
             }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", marginBottom: 6, textAlign: "center" }}>
-                {lang === "en" ? "Add to Home Screen 📲" : lang === "es" ? "Añadir a Pantalla de Inicio 📲" : "Adicione à Tela Inicial 📲"}
+              <div style={{ fontSize: 15, fontWeight: 800, textAlign: "center", marginBottom: 4 }}>
+                📲 {lang === "en" ? "Install on your iPhone" : "Instalar no iPhone"}
               </div>
-              <div style={{ fontSize: 13, color: "#8394b0", textAlign: "center", marginBottom: 20, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13, color: "#8394b0", textAlign: "center", marginBottom: 22, lineHeight: 1.55 }}>
                 {lang === "en"
-                  ? "Use TamoWork as an app directly from your iPhone home screen — no need to open Safari every time."
-                  : lang === "es"
-                  ? "Accede a TamoWork como una app directamente desde tu iPhone — sin abrir Safari cada vez."
-                  : "Acesse o TamoWork como um app direto da tela do seu iPhone — sem abrir o Safari toda vez."}
+                  ? "Add TamoWork to your home screen and use it like a native app — no App Store needed."
+                  : "Adicione o TamoWork na tela inicial e use como um app nativo — sem precisar da App Store."}
               </div>
 
               {/* Passo 1 */}
-              <div style={stepStyle}>
-                <div style={stepNum}>1</div>
-                <div style={{ flex: 1 }}>
+              <div style={step}>
+                <div style={badge}>1</div>
+                <div>
                   <div style={stepTitle}>
-                    {lang === "en" ? "Tap " : lang === "es" ? "Toca " : "Toque em "}
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, verticalAlign: "middle" }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ display: "inline-block", verticalAlign: "middle" }}>
-                        <rect x="3" y="11" width="18" height="11" rx="2" stroke="#a78bfa" strokeWidth="1.8" fill="none"/>
-                        <path d="M12 3v10M9 6l3-3 3 3" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      <span style={{ color: "#a78bfa", fontWeight: 700 }}>
-                        {lang === "en" ? "Share" : lang === "es" ? "Compartir" : "Compartilhar"}
-                      </span>
+                    {lang === "en" ? "Tap the " : "Toque no "}
+                    <span style={{ color: "#a78bfa", fontWeight: 700 }}>
+                      {lang === "en" ? "Share button" : "botão Compartilhar"}
                     </span>
+                    {" "}
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style={{ display: "inline-block", verticalAlign: "middle", marginBottom: 2 }}>
+                      <rect x="3" y="11" width="18" height="11" rx="2" stroke="#a78bfa" strokeWidth="1.9" fill="none"/>
+                      <path d="M12 3v10M9 6l3-3 3 3" stroke="#a78bfa" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </div>
                   <div style={stepSub}>
-                    {lang === "en" ? "In Safari's bottom toolbar" : lang === "es" ? "En la barra inferior de Safari" : "Na barra inferior do Safari"}
+                    {lang === "en" ? "Tap the icon at the bottom of Safari" : "Ícone na barra inferior do Safari"}
                   </div>
                 </div>
               </div>
 
               {/* Passo 2 */}
-              <div style={stepStyle}>
-                <div style={stepNum}>2</div>
-                <div style={{ flex: 1 }}>
+              <div style={step}>
+                <div style={badge}>2</div>
+                <div>
                   <div style={stepTitle}>
-                    {lang === "en" ? "Select " : lang === "es" ? "Selecciona " : "Selecione "}
+                    {lang === "en" ? "Tap " : "Toque em "}
                     <span style={{ color: "#a78bfa", fontWeight: 700 }}>
-                      {lang === "en" ? '"Add to Home Screen"' : lang === "es" ? '"Añadir a pantalla de inicio"' : '"Adicionar à Tela de Início"'}
+                      {lang === "en" ? '"Add to Home Screen"' : '"Adicionar à Tela de Início"'}
                     </span>
                   </div>
                   <div style={stepSub}>
-                    {lang === "en" ? "Scroll down the options list" : lang === "es" ? "Desplázate por la lista de opciones" : "Role a lista de opções para baixo"}
+                    {lang === "en" ? "Scroll down in the share menu" : "Role o menu de compartilhamento para baixo"}
                   </div>
                 </div>
               </div>
 
               {/* Passo 3 */}
-              <div style={{ ...stepStyle, marginBottom: 0 }}>
-                <div style={stepNum}>3</div>
-                <div style={{ flex: 1 }}>
+              <div style={{ ...step, marginBottom: 0 }}>
+                <div style={badge}>3</div>
+                <div>
                   <div style={stepTitle}>
-                    {lang === "en" ? "Tap " : lang === "es" ? "Toca " : "Toque em "}
+                    {lang === "en" ? "Tap " : "Toque em "}
                     <span style={{ color: "#a78bfa", fontWeight: 700 }}>
-                      {lang === "en" ? '"Add"' : lang === "es" ? '"Agregar"' : '"Adicionar"'}
+                      {lang === "en" ? '"Add"' : '"Adicionar"'}
                     </span>
+                    {lang === "en" ? " to confirm" : " para confirmar"}
                   </div>
                   <div style={stepSub}>
-                    {lang === "en" ? "The icon appears on your home screen" : lang === "es" ? "El ícono aparece en tu pantalla de inicio" : "O ícone aparece na sua tela inicial"}
+                    {lang === "en" ? "The icon appears on your home screen" : "O ícone aparece na sua tela inicial 🎉"}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Seta apontando para baixo */}
-            <div style={{ textAlign: "center", marginBottom: 16, animation: "arrowBounce 1.5s ease-in-out infinite" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 5v14M5 12l7 7 7-7" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            {/* Seta indicando barra inferior do Safari */}
+            <div className="fade3" style={{ textAlign: "center", marginBottom: 14, animation: "arrowBounce 1.5s ease-in-out infinite" }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14M5 12l7 7 7-7" stroke="#6366f1" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
+              <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 2 }}>
+                {lang === "en" ? "Safari's share button is here ↓" : "O botão Compartilhar do Safari fica aqui ↓"}
+              </div>
             </div>
 
             {/* Separador */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
-              <span style={{ fontSize: 12, color: "#4e5c72" }}>{lang === "en" ? "or" : lang === "es" ? "o" : "ou"}</span>
-              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
+              <span style={{ fontSize: 12, color: "#4e5c72" }}>{lang === "en" ? "or" : "ou"}</span>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
             </div>
 
-            {/* Botão entrar pelo browser */}
-            <a
-              href="/login"
-              style={{
-                display: "block",
-                textAlign: "center",
-                background: "rgba(99,102,241,0.12)",
-                border: "1px solid rgba(99,102,241,0.3)",
-                borderRadius: 14,
-                padding: "13px",
-                fontSize: 14,
-                fontWeight: 600,
-                color: "#a78bfa",
-                textDecoration: "none",
-              }}
-            >
-              {lang === "en" ? "Continue in Safari instead" : lang === "es" ? "Continuar en Safari de todos modos" : "Continuar pelo Safari mesmo"}
+            {/* Botão continuar pelo browser */}
+            <a href="/login" className="fade4" style={{
+              display: "block", textAlign: "center",
+              background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)",
+              borderRadius: 14, padding: "13px",
+              fontSize: 14, fontWeight: 600, color: "#a78bfa", textDecoration: "none",
+            }}>
+              {lang === "en" ? "Continue in Safari instead" : "Continuar pelo Safari mesmo"}
             </a>
           </div>
         )}
 
-        {/* ── Android / Desktop: status de redirecionamento ── */}
-        {!showIOSInstructions && platform !== null && (
-          <>
-            <div style={{ textAlign: "center", animation: "fadeUp 0.5s 0.3s ease both", opacity: 0, marginTop: 24 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#eef2f9", marginBottom: 8 }}>
-                {isAndroid && redirecting
-                  ? `${lang === "en" ? "Opening app" : lang === "es" ? "Abriendo app" : "Abrindo o app"}${dots}`
-                  : platform === "desktop"
-                  ? `${lang === "en" ? "Redirecting" : lang === "es" ? "Redirigiendo" : "Redirecionando"}${dots}`
-                  : `${lang === "en" ? "Loading" : lang === "es" ? "Cargando" : "Carregando"}${dots}`}
-              </div>
-              <div style={{ fontSize: 13, color: "#4e5c72" }}>
-                {isAndroid
-                  ? (lang === "en" ? "You'll be redirected shortly" : lang === "es" ? "Serás redirigido en instantes" : "Você será redirecionado em instantes")
-                  : (lang === "en" ? "Preparing your free account" : lang === "es" ? "Preparando tu cuenta gratis" : "Preparando sua conta grátis")}
-              </div>
+        {/* ── Android: botão Play Store ── */}
+        {isAndroid && (
+          <div className="fade3" style={{ textAlign: "center", marginTop: 24, width: "100%", maxWidth: 320 }}>
+            <div style={{ fontSize: 15, color: "#8394b0", marginBottom: 20 }}>
+              {lang === "en"
+                ? "Opening Google Play Store..."
+                : "Abrindo o Google Play Store..."}
             </div>
 
-            {/* Barra de progresso */}
-            <div style={{
-              marginTop: 32,
-              width: 160,
-              height: 3,
-              background: "rgba(255,255,255,0.07)",
-              borderRadius: 99,
-              overflow: "hidden",
-              animation: "fadeUp 0.5s 0.4s ease both",
-              opacity: 0,
-            }}>
-              <div style={{
-                height: "100%",
-                background: "linear-gradient(90deg, #6366f1, #a855f7)",
-                borderRadius: 99,
-                animation: "spinRing 1.4s ease-in-out infinite alternate",
-                width: "60%",
-              }} />
-            </div>
-
-            {/* Link manual */}
-            <div style={{ marginTop: 40, animation: "fadeUp 0.5s 0.6s ease both", opacity: 0, textAlign: "center" }}>
-              <div style={{ fontSize: 12, color: "#4e5c72", marginBottom: 8 }}>
-                {lang === "en" ? "Didn't redirect?" : lang === "es" ? "¿No redirigió?" : "Não redirecionou?"}
+            <a
+              href={PLAY_STORE_URL}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
+                background: "#1a1a2e", border: "1.5px solid rgba(255,255,255,0.12)",
+                borderRadius: 16, padding: "16px 24px", textDecoration: "none",
+                marginBottom: 12,
+              }}
+            >
+              {/* Ícone Play Store */}
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M3 20.5v-17c0-.83 1-.83 1.5-.5l16 8.5-16 8.5C3.5 21.33 3 21.33 3 20.5z" fill="url(#ps)" />
+                <defs>
+                  <linearGradient id="ps" x1="3" y1="12" x2="20" y2="12" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#00d2ff" />
+                    <stop offset="0.5" stopColor="#00e676" />
+                    <stop offset="1" stopColor="#ffee58" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 11, color: "#8394b0", letterSpacing: "0.04em" }}>
+                  {lang === "en" ? "GET IT ON" : "DISPONÍVEL NO"}
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#eef2f9", letterSpacing: "-0.01em", lineHeight: 1.1 }}>
+                  Google Play
+                </div>
               </div>
-              <a
-                href={isAndroid ? ANDROID_APP_URL : "/login"}
-                style={{ fontSize: 13, color: "#8b5cf6", fontWeight: 600, textDecoration: "underline" }}
-              >
-                {isAndroid
-                  ? (lang === "en" ? "Open in Play Store" : lang === "es" ? "Abrir en Play Store" : "Abrir na Play Store")
-                  : (lang === "en" ? "Access now" : lang === "es" ? "Acceder ahora" : "Acessar agora")}
-              </a>
-            </div>
-          </>
+            </a>
+
+            <a href="/login" style={{ fontSize: 13, color: "#4e5c72", textDecoration: "underline" }}>
+              {lang === "en" ? "Continue in browser instead" : "Continuar pelo navegador mesmo"}
+            </a>
+          </div>
         )}
+
+        {/* ── Desktop / loading ── */}
+        {platform === "desktop" && (
+          <div className="fade3" style={{ textAlign: "center", marginTop: 20, color: "#4e5c72", fontSize: 14 }}>
+            {lang === "en" ? "Redirecting..." : "Redirecionando..."}
+          </div>
+        )}
+
+        {/* iOS standalone: já instalado */}
+        {platform === "ios" && standalone && (
+          <div className="fade3" style={{ textAlign: "center", marginTop: 20, color: "#16c784", fontSize: 14 }}>
+            {lang === "en" ? "Opening app..." : "Abrindo o app..."}
+          </div>
+        )}
+
       </div>
     </>
   );
 }
 
-const stepStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  gap: 12,
-  marginBottom: 16,
+const step: React.CSSProperties = {
+  display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 16,
 };
 
-const stepNum: React.CSSProperties = {
-  width: 26,
-  height: 26,
-  borderRadius: "50%",
-  background: "rgba(99,102,241,0.2)",
-  border: "1px solid rgba(99,102,241,0.4)",
-  color: "#a78bfa",
-  fontSize: 13,
-  fontWeight: 700,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-  marginTop: 1,
+const badge: React.CSSProperties = {
+  width: 26, height: 26, borderRadius: "50%", flexShrink: 0, marginTop: 1,
+  background: "rgba(99,102,241,0.18)", border: "1px solid rgba(99,102,241,0.4)",
+  color: "#a78bfa", fontSize: 13, fontWeight: 700,
+  display: "flex", alignItems: "center", justifyContent: "center",
 };
 
 const stepTitle: React.CSSProperties = {
-  fontSize: 14,
-  fontWeight: 600,
-  color: "#eef2f9",
-  marginBottom: 2,
-  lineHeight: 1.4,
+  fontSize: 14, fontWeight: 600, color: "#eef2f9", marginBottom: 2, lineHeight: 1.4,
 };
 
 const stepSub: React.CSSProperties = {
-  fontSize: 12,
-  color: "#4e5c72",
+  fontSize: 12, color: "#4e5c72", lineHeight: 1.45,
 };
