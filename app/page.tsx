@@ -863,6 +863,10 @@ export default function HomePage() {
     const res = await fetch(`/api/image-jobs/${jobId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    if (res.status === 401) {
+      router.push("/login");
+      return;
+    }
     if (!res.ok) return;
     const data: Job = await res.json();
     if (data.status === "done") {
@@ -1079,9 +1083,11 @@ export default function HomePage() {
         });
 
         if (res.status === 429) {
-          const err = await res.json();
-          setRateLimitedUntil(new Date(err.nextAvailableAt));
-          setJob({ id: "rate_limited", status: "queued" });
+          const err = await res.json().catch(() => ({}));
+          const nextAt = err.nextAvailableAt ? new Date(err.nextAvailableAt) : null;
+          const validAt = nextAt && !isNaN(nextAt.getTime()) && nextAt > new Date() ? nextAt : new Date(Date.now() + 60 * 60 * 1000);
+          setRateLimitedUntil(validAt);
+          setJob(null);
           setSubmitting(false);
           return;
         }
@@ -1126,9 +1132,11 @@ export default function HomePage() {
       });
 
       if (jobRes.status === 429) {
-        const err = await jobRes.json();
-        setRateLimitedUntil(new Date(err.nextAvailableAt));
-        setJob({ id: "rate_limited", status: "queued" }); // mantém tela "trabalhando" com timer
+        const err = await jobRes.json().catch(() => ({}));
+        const nextAt = err.nextAvailableAt ? new Date(err.nextAvailableAt) : null;
+        const validAt = nextAt && !isNaN(nextAt.getTime()) && nextAt > new Date() ? nextAt : new Date(Date.now() + 60 * 60 * 1000);
+        setRateLimitedUntil(validAt);
+        setJob(null); // não deixa spinner infinito — volta para tela de limite diário
         setSubmitting(false);
         return;
       }

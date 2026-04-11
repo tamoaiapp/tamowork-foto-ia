@@ -3,8 +3,8 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { setUserPro } from "@/lib/plans";
 import { createServerClient } from "@/lib/supabase/server";
 
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN!;
-const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET!;
+const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN ?? "";
+const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET ?? "";
 const MP_MONTHLY_PLAN_ID = process.env.MP_MONTHLY_PLAN_ID ?? "";
 
 function validateSignature(req: NextRequest, rawBody: string, dataId: string): boolean {
@@ -38,6 +38,11 @@ async function mpGet(path: string) {
 }
 
 export async function POST(req: NextRequest) {
+  if (!MP_ACCESS_TOKEN) {
+    console.error("[MP webhook] MP_ACCESS_TOKEN não configurado");
+    return NextResponse.json({ error: "Servidor não configurado" }, { status: 503 });
+  }
+
   const rawBody = await req.text();
   let event: { type: string; data: { id: string }; action?: string };
 
@@ -71,8 +76,13 @@ export async function POST(req: NextRequest) {
         else if (isAnnual) periodEnd.setFullYear(periodEnd.getFullYear() + 1);
         else periodEnd.setMonth(periodEnd.getMonth() + 1); // fallback seguro: 1 mês
 
-        await setUserPro(userId, { periodEnd, mpSubscriptionId: String(event.data.id) });
-        console.log(`[MP] payment approved: user ${userId} → PRO até ${periodEnd.toISOString()}`);
+        try {
+          await setUserPro(userId, { periodEnd, mpSubscriptionId: String(event.data.id) });
+          console.log(`[MP] payment approved: user ${userId} → PRO até ${periodEnd.toISOString()}`);
+        } catch (err) {
+          console.error(`[MP] CRÍTICO: setUserPro falhou para ${userId}:`, err);
+          return NextResponse.json({ error: "Falha ao ativar plano" }, { status: 500 });
+        }
       }
     }
     return NextResponse.json({ received: true });
@@ -89,12 +99,16 @@ export async function POST(req: NextRequest) {
       const periodEnd = new Date();
       periodEnd.setMonth(periodEnd.getMonth() + (isMonthly ? 1 : 12));
 
-      await setUserPro(userId, {
-        periodEnd,
-        mpSubscriptionId: sub.id,
-      });
-
-      console.log(`[MP] User ${userId} → PRO anual até ${periodEnd.toISOString()}`);
+      try {
+        await setUserPro(userId, {
+          periodEnd,
+          mpSubscriptionId: sub.id,
+        });
+        console.log(`[MP] User ${userId} → PRO anual até ${periodEnd.toISOString()}`);
+      } catch (err) {
+        console.error(`[MP] CRÍTICO: setUserPro falhou para ${userId}:`, err);
+        return NextResponse.json({ error: "Falha ao ativar plano" }, { status: 500 });
+      }
     }
 
     if (sub.status === "cancelled" || sub.status === "paused") {
@@ -123,11 +137,16 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (plan?.user_id) {
-        await setUserPro(plan.user_id, {
-          periodEnd,
-          mpSubscriptionId: payment.preapproval_id,
-        });
-        console.log(`[MP] Renewed user ${plan.user_id} até ${periodEnd.toISOString()}`);
+        try {
+          await setUserPro(plan.user_id, {
+            periodEnd,
+            mpSubscriptionId: payment.preapproval_id,
+          });
+          console.log(`[MP] Renewed user ${plan.user_id} até ${periodEnd.toISOString()}`);
+        } catch (err) {
+          console.error(`[MP] CRÍTICO: renovação setUserPro falhou para ${plan.user_id}:`, err);
+          return NextResponse.json({ error: "Falha ao renovar plano" }, { status: 500 });
+        }
       }
     }
   }

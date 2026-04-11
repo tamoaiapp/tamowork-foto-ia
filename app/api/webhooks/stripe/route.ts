@@ -35,13 +35,18 @@ export async function POST(req: NextRequest) {
     const periodEnd = new Date(subData.current_period_end * 1000);
     periodEnd.setMonth(periodEnd.getMonth() + 1);
 
-    await setUserPro(userId, {
-      periodEnd,
-      stripeCustomerId: sub.customer as string,
-      stripeSubscriptionId: sub.id,
-    });
-
-    console.log(`[Stripe] User ${userId} → PRO até ${periodEnd.toISOString()}`);
+    try {
+      await setUserPro(userId, {
+        periodEnd,
+        stripeCustomerId: sub.customer as string,
+        stripeSubscriptionId: sub.id,
+      });
+      console.log(`[Stripe] User ${userId} → PRO até ${periodEnd.toISOString()}`);
+    } catch (err) {
+      console.error(`[Stripe] CRÍTICO: setUserPro falhou para ${userId}:`, err);
+      // Retorna 500 para Stripe re-tentar o webhook
+      return NextResponse.json({ error: "Falha ao ativar plano" }, { status: 500 });
+    }
   }
 
   // Renovação da assinatura
@@ -56,13 +61,17 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ ok: true });
 
     const periodEnd = new Date(subData2.current_period_end * 1000);
-    await setUserPro(userId, {
-      periodEnd,
-      stripeCustomerId: subData2.customer as string,
-      stripeSubscriptionId: subData2.id,
-    });
-
-    console.log(`[Stripe] Renovado user ${userId} até ${periodEnd.toISOString()}`);
+    try {
+      await setUserPro(userId, {
+        periodEnd,
+        stripeCustomerId: subData2.customer as string,
+        stripeSubscriptionId: subData2.id,
+      });
+      console.log(`[Stripe] Renovado user ${userId} até ${periodEnd.toISOString()}`);
+    } catch (err) {
+      console.error(`[Stripe] CRÍTICO: renovação setUserPro falhou para ${userId}:`, err);
+      return NextResponse.json({ error: "Falha ao renovar plano" }, { status: 500 });
+    }
   }
 
   // Assinatura cancelada — volta para free

@@ -16,11 +16,21 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser(getToken(req));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { active } = await req.json().catch(() => ({ active: true }));
+  const body = await req.json().catch(() => ({}));
+  const { active } = body;
 
-  await supabaseAdmin
+  if (typeof active !== "boolean") {
+    return NextResponse.json({ error: "active deve ser boolean" }, { status: 400 });
+  }
+
+  const { error: updateErr } = await supabaseAdmin
     .from("user_plans")
     .upsert({ user_id: user.id, bot_active: active }, { onConflict: "user_id" });
+
+  if (updateErr) {
+    console.error("[bot/activate] Erro ao atualizar:", updateErr.message);
+    return NextResponse.json({ error: "Erro ao atualizar configuração" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true, bot_active: active });
 }

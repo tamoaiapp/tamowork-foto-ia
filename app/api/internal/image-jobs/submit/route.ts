@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitImageJob } from "@/lib/image-jobs/submit";
 
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET;
 
 export async function POST(req: NextRequest) {
+  if (!INTERNAL_SECRET) {
+    console.error("[submit] INTERNAL_SECRET não configurado no ambiente");
+    return NextResponse.json({ error: "Servidor não configurado" }, { status: 503 });
+  }
   const secret = req.headers.get("x-internal-secret");
-  if (secret !== INTERNAL_SECRET) {
+  if (!secret || secret !== INTERNAL_SECRET) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 

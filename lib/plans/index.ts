@@ -30,7 +30,7 @@ export async function setUserPro(
   }
 ) {
   const supabase = createServerClient();
-  await supabase.from("user_plans").upsert({
+  const { error } = await supabase.from("user_plans").upsert({
     user_id: userId,
     plan: "pro",
     period_end: opts.periodEnd.toISOString(),
@@ -39,6 +39,10 @@ export async function setUserPro(
     mp_subscription_id: opts.mpSubscriptionId ?? null,
     updated_at: new Date().toISOString(),
   });
+  if (error) {
+    console.error(`[setUserPro] Falha ao salvar plano PRO do usuário ${userId}:`, error.message);
+    throw new Error(`setUserPro failed: ${error.message}`);
+  }
 }
 
 export async function setUserTrial(userId: string, days = 30) {
