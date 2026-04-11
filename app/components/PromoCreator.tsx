@@ -64,18 +64,21 @@ export default function PromoCreator({ onBack, initialPhoto }: Props) {
       <button onClick={onBack} style={s.backBtn}>← Voltar</button>
       <div style={s.title}>Criar promoção</div>
 
-      {/* Upload foto */}
-      <div style={s.uploadZone} onClick={() => fileRef.current?.click()}>
-        {photo
-          ? <img src={photo} alt="produto" style={s.uploadImg} />
-          : <>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>📷</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#eef2f9" }}>Foto do produto</div>
-              <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 4 }}>Clique para enviar</div>
-            </>
-        }
-        <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
-      </div>
+      {/* Upload foto — só mostra quando não tem foto ainda */}
+      {!photo && (
+        <div style={s.uploadZone} onClick={() => fileRef.current?.click()}>
+          <div style={{ fontSize: 28, marginBottom: 8 }}>📷</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#eef2f9" }}>Foto do produto</div>
+          <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 4 }}>Clique para enviar</div>
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
+        </div>
+      )}
+      {photo && (
+        <button onClick={() => fileRef.current?.click()} style={{ background: "none", border: "none", color: "#4e5c72", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "inherit", textAlign: "left" }}>
+          📷 Trocar foto
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
+        </button>
+      )}
 
       {/* Campos */}
       <div style={s.fields}>

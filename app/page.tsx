@@ -2063,20 +2063,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* TamoBot — aparece abaixo do resultado */}
-        {workState === "terminado" && !videoMode && (
-          <BotChat
-            workState={workState}
-            resultReady={true}
-            botActive={botActive}
-            visible={true}
-            onViewResult={() => {
-              const el = document.querySelector(".result-wrap");
-              el?.scrollIntoView({ behavior: "smooth" });
-            }}
-            onActivate24h={() => setBotActive(true)}
-          />
-        )}
 
         {/* Vídeo — form */}
         {videoMode && !videoJob && job?.status === "done" && job.output_image_url && (
@@ -2296,37 +2282,32 @@ export default function HomePage() {
         />
       )}
 
-      {/* Chat via ícone da nav (quando bot está ativo 24h) */}
+      {/* Chat via ícone da nav — posicionado entre header e bottom nav */}
       {botNavOpen && (
         <div style={{
-          position: "fixed", inset: 0, zIndex: 200,
-          background: "rgba(7,8,11,0.95)",
+          position: "fixed",
+          top: 66, bottom: 70,
+          left: 0, right: 0,
+          zIndex: 100,
+          background: "#07080b",
           display: "flex", flexDirection: "column",
+          padding: "10px 16px 12px",
+          overflowY: "hidden",
         }}>
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "16px 20px",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
-          }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#eef2f9" }}>✦ Assistente IA</div>
-            <button
-              onClick={() => setBotNavOpen(false)}
-              style={{ background: "none", border: "none", color: "#8394b0", fontSize: 22, cursor: "pointer", lineHeight: 1 }}
-            >×</button>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 16px" }}>
-            <BotChat
-              workState={workState}
-              resultReady={workState === "terminado"}
-              botActive={botActive}
-              visible={true}
-              onViewResult={() => {
-                setBotNavOpen(false);
-                setTimeout(() => document.querySelector(".result-wrap")?.scrollIntoView({ behavior: "smooth" }), 100);
-              }}
-              onActivate24h={() => setBotActive(true)}
-            />
-          </div>
+          <button
+            onClick={() => setBotNavOpen(false)}
+            style={{ background: "none", border: "none", color: "#8394b0", fontSize: 14, cursor: "pointer", padding: "0 0 8px", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", fontWeight: 600, flexShrink: 0 }}
+          >
+            ← Voltar
+          </button>
+          <BotChat
+            workState={workState}
+            resultReady={false}
+            botActive={botActive}
+            visible={true}
+            navMode={true}
+            onActivate24h={() => setBotActive(true)}
+          />
         </div>
       )}
 
