@@ -8,11 +8,11 @@ interface Props {
 }
 
 const CENARIOS = [
-  "Mesa de madeira, luz natural",
-  "Fundo neutro cinza, estúdio",
-  "Ambiente moderno minimalista",
-  "Varanda com plantas, luz do dia",
-  "Cozinha clean, bancada branca",
+  "Mulher usando o produto, fundo clean",
+  "Homem usando o produto, ao ar livre",
+  "Modelo feminino elegante, estúdio",
+  "Modelo masculino jovem, cidade",
+  "Fundo branco, luz de estúdio",
 ];
 
 export default function OnboardingScreen({ onSubmit, onSkip }: Props) {
@@ -102,7 +102,7 @@ export default function OnboardingScreen({ onSubmit, onSkip }: Props) {
           <label style={s.label}>Onde vai aparecer?</label>
           <input
             style={s.input}
-            placeholder="Ex: mesa de madeira com luz natural, fundo cinza neutro..."
+            placeholder="Ex: mulher usando o produto, homem jovem ao ar livre, fundo branco estúdio..."
             value={cenario}
             onChange={(e) => setCenario(e.target.value)}
             maxLength={200}
