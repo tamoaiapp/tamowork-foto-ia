@@ -17,7 +17,7 @@
   },
   "8": {
     "inputs": {
-      "samples": ["58", 0],
+      "samples": ["57", 0],
       "vae": ["39", 0]
     },
     "class_type": "VAEDecode",
@@ -65,8 +65,8 @@
       "sampler_name": "uni_pc",
       "scheduler": "simple",
       "start_at_step": 0,
-      "end_at_step": 4,
-      "return_with_leftover_noise": "enable",
+      "end_at_step": 10000,
+      "return_with_leftover_noise": "disable",
       "model": ["67", 0],
       "positive": ["50", 0],
       "negative": ["50", 1],
@@ -75,32 +75,8 @@
     "class_type": "KSamplerAdvanced",
     "_meta": { "title": "KSampler (Advanced)" }
   },
-  "58": {
-    "inputs": {
-      "add_noise": "disable",
-      "noise_seed": 0,
-      "steps": 8,
-      "cfg": 1,
-      "sampler_name": "uni_pc",
-      "scheduler": "simple",
-      "start_at_step": 4,
-      "end_at_step": 1000,
-      "return_with_leftover_noise": "disable",
-      "model": ["68", 0],
-      "positive": ["50", 0],
-      "negative": ["50", 1],
-      "latent_image": ["57", 0]
-    },
-    "class_type": "KSamplerAdvanced",
-    "_meta": { "title": "KSampler (Advanced)" }
-  },
   "61": {
-    "inputs": { "unet_name": "Wan2.2-I2V-A14B-HighNoise-Q4_K_S.gguf" },
-    "class_type": "UnetLoaderGGUF",
-    "_meta": { "title": "Unet Loader (GGUF)" }
-  },
-  "62": {
-    "inputs": { "unet_name": "Wan2.2-I2V-A14B-LowNoise-Q4_K_S.gguf" },
+    "inputs": { "unet_name": "wan2.1-i2v-14b-480p-Q4_K_S.gguf" },
     "class_type": "UnetLoaderGGUF",
     "_meta": { "title": "Unet Loader (GGUF)" }
   },
@@ -108,7 +84,7 @@
     "inputs": {
       "frame_rate": 16,
       "loop_count": 0,
-      "filename_prefix": "wan22",
+      "filename_prefix": "wan21",
       "format": "video/h264-mp4",
       "pix_fmt": "yuv420p",
       "crf": 15,
@@ -130,22 +106,8 @@
     "class_type": "LoraLoaderModelOnly",
     "_meta": { "title": "LoraLoaderModelOnly" }
   },
-  "66": {
-    "inputs": {
-      "lora_name": "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
-      "strength_model": 1,
-      "model": ["62", 0]
-    },
-    "class_type": "LoraLoaderModelOnly",
-    "_meta": { "title": "LoraLoaderModelOnly" }
-  },
   "67": {
     "inputs": { "shift": 8, "model": ["64", 0] },
-    "class_type": "ModelSamplingSD3",
-    "_meta": { "title": "ModelSamplingSD3" }
-  },
-  "68": {
-    "inputs": { "shift": 8, "model": ["66", 0] },
     "class_type": "ModelSamplingSD3",
     "_meta": { "title": "ModelSamplingSD3" }
   },
