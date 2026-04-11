@@ -55,7 +55,7 @@ export default function RootLayout({
               navigator.serviceWorker.register('/sw.js');
             });
           }
-          // Bloqueia pull-to-refresh no iOS Safari (overscroll-behavior não funciona no iOS)
+          // Bloqueia pull-to-refresh no iOS/Android sem quebrar o scroll normal
           (function() {
             var startY = 0;
             var pickerOpen = false;
@@ -66,7 +66,6 @@ export default function RootLayout({
               while (el) {
                 if (el.tagName === 'INPUT' && el.type === 'file') {
                   pickerOpen = true;
-                  // Quando a galeria fechar (foco volta para a janela), desbloqueia
                   function onFocus() {
                     pickerOpen = false;
                     window.removeEventListener('focus', onFocus);
@@ -84,11 +83,20 @@ export default function RootLayout({
 
             document.addEventListener('touchmove', function(e) {
               var dy = e.touches[0].clientY - startY;
-              var el = document.scrollingElement || document.documentElement;
-              // Bloqueia pull-to-refresh: quando galeria está aberta OU quando está no topo da página puxando pra baixo
-              if (pickerOpen || (dy > 0 && el.scrollTop <= 0)) {
-                e.preventDefault();
+              // Dedo movendo para cima = scrolling para baixo = nunca bloquear
+              if (!pickerOpen && dy <= 0) return;
+              // Dedo movendo para baixo = potencial pull-to-refresh
+              // Verifica se algum container ancestral ainda pode scrollar para cima
+              var target = e.target;
+              while (target && target !== document.body) {
+                var style = window.getComputedStyle(target);
+                var ov = style.overflowY;
+                if ((ov === 'auto' || ov === 'scroll') && target.scrollTop > 0) {
+                  return; // Container tem conteúdo acima — deixa scrollar normalmente
+                }
+                target = target.parentElement;
               }
+              e.preventDefault(); // No topo — bloqueia pull-to-refresh
             }, { passive: false });
           })();
         `}} />
