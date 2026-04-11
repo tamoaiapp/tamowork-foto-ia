@@ -6,6 +6,8 @@ import { useI18n } from "@/lib/i18n";
 
 interface Props {
   hasActiveJob?: boolean;
+  botActive?: boolean;
+  onOpenBot?: () => void;
 }
 
 function IconCriar({ active }: { active: boolean }) {
@@ -62,7 +64,23 @@ function IconCriacoes({ active }: { active: boolean }) {
   );
 }
 
-export default function BottomNav({ hasActiveJob = false }: Props) {
+function IconBot({ active }: { active: boolean }) {
+  const c = active ? "#a855f7" : "#4e5c72";
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="8" width="16" height="12" rx="3"
+        fill={active ? "rgba(168,85,247,0.2)" : "none"}
+        stroke={c} strokeWidth="1.8" />
+      <circle cx="9" cy="13" r="1.5" fill={c} />
+      <circle cx="15" cy="13" r="1.5" fill={c} />
+      <path d="M9 17h6" stroke={c} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 8V5" stroke={c} strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="4" r="1" fill={c} />
+    </svg>
+  );
+}
+
+export default function BottomNav({ hasActiveJob = false, botActive = false, onOpenBot }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useI18n();
@@ -118,6 +136,21 @@ export default function BottomNav({ hasActiveJob = false }: Props) {
           </button>
         );
       })}
+
+      {/* Ícone IA — aparece quando usuário ativou o bot 24h */}
+      {botActive && (
+        <button onClick={onOpenBot} style={s.tab} className="nav-tab">
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <IconBot active={false} />
+            <span style={{
+              position: "absolute", top: -3, right: -3,
+              width: 8, height: 8, borderRadius: "50%",
+              background: "#16c784", border: "2px solid #0c1018",
+            }} />
+          </div>
+          <span style={{ ...s.label, color: "#4e5c72" }} className="nav-label">IA</span>
+        </button>
+      )}
     </nav>
   );
 }

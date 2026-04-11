@@ -12,6 +12,7 @@ import { useProductVision, warmupVision } from "@/lib/vision/useProductVision";
 const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 const UpsellPopup = dynamic(() => import("@/app/components/UpsellPopup"), { ssr: false });
+const BotChat = dynamic(() => import("@/app/components/BotChat"), { ssr: false });
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type Plan = "free" | "pro";
@@ -497,6 +498,10 @@ export default function HomePage() {
 
   // Upsell popup A/B
   const [showUpsell, setShowUpsell] = useState(false);
+
+  // TamoBot
+  const [botActive, setBotActive] = useState(false);
+  const [botNavOpen, setBotNavOpen] = useState(false);
 
   // Pré-carrega o modelo de visão silenciosamente assim que o app abre
   useEffect(() => { warmupVision(); }, []);
@@ -1599,6 +1604,7 @@ export default function HomePage() {
                   catalogo: "Catálogo com modelo",
                   personalizado: "Personalizado",
                   video: "Criar vídeo",
+                  promo: "Criar promoção",
                 }[creationMode]}
               </div>
             </div>
@@ -1860,28 +1866,20 @@ export default function HomePage() {
                     </button>
                   )}
                 </div>
-                {/* Preview (visível no mobile como bloco, no desktop como coluna direita) */}
-                {preview && (
-                  <div style={{ ...styles.blurWrapper, marginBottom: 0 }} className="generating-preview">
-                    <img
-                      src={preview}
-                      alt="produto"
-                      style={{
-                        ...styles.blurImg,
-                        filter: `blur(${blurPx}px) brightness(0.7)`,
-                        transform: `scale(${1 + blurPx * 0.002})`,
-                      }}
-                    />
-                    <div style={styles.blurOverlay} />
-                    <div style={styles.blurBadge}>
-                      <span style={styles.blurDot} />
-                      {submitting ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : statusLabel(job?.status ?? null, elapsedSec, job?.created_at, lang)}
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>
+        )}
+
+        {/* TamoBot — aparece durante geração (substitui preview borrado) */}
+        {workState === "trabalhando" && (
+          <BotChat
+            workState={workState}
+            resultReady={false}
+            botActive={botActive}
+            visible={true}
+            onActivate24h={() => setBotActive(true)}
+          />
         )}
 
         {/* Resultado */}
@@ -2011,6 +2009,21 @@ export default function HomePage() {
               )}
             </div>
           </div>
+        )}
+
+        {/* TamoBot — aparece abaixo do resultado */}
+        {workState === "terminado" && !videoMode && (
+          <BotChat
+            workState={workState}
+            resultReady={true}
+            botActive={botActive}
+            visible={true}
+            onViewResult={() => {
+              const el = document.querySelector(".result-wrap");
+              el?.scrollIntoView({ behavior: "smooth" });
+            }}
+            onActivate24h={() => setBotActive(true)}
+          />
         )}
 
         {/* Vídeo — form */}
@@ -2167,7 +2180,7 @@ export default function HomePage() {
           </div>
         )}
       </main>
-      <BottomNav hasActiveJob={isGenerating} />
+      <BottomNav hasActiveJob={isGenerating} botActive={botActive} onOpenBot={() => setBotNavOpen(true)} />
 
       {/* Mini editor */}
       {editorOpen && job?.output_image_url && (
@@ -2189,6 +2202,40 @@ export default function HomePage() {
           }}
           onClose={() => setShowUpsell(false)}
         />
+      )}
+
+      {/* Chat via ícone da nav (quando bot está ativo 24h) */}
+      {botNavOpen && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 200,
+          background: "rgba(7,8,11,0.95)",
+          display: "flex", flexDirection: "column",
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "16px 20px",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#eef2f9" }}>✦ Assistente IA</div>
+            <button
+              onClick={() => setBotNavOpen(false)}
+              style={{ background: "none", border: "none", color: "#8394b0", fontSize: 22, cursor: "pointer", lineHeight: 1 }}
+            >×</button>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 16px" }}>
+            <BotChat
+              workState={workState}
+              resultReady={workState === "terminado"}
+              botActive={botActive}
+              visible={true}
+              onViewResult={() => {
+                setBotNavOpen(false);
+                setTimeout(() => document.querySelector(".result-wrap")?.scrollIntoView({ behavior: "smooth" }), 100);
+              }}
+              onActivate24h={() => setBotActive(true)}
+            />
+          </div>
+        </div>
       )}
 
       {promoOpen && (
