@@ -55,6 +55,8 @@ export async function GET(req: NextRequest) {
   const staleQueuedCutoff = new Date(Date.now() - QUEUED_TIMEOUT_MS).toISOString();
   const restartCutoff = new Date(Date.now() - RESTART_AFTER_MS).toISOString();
   const totalFailCutoff = new Date(Date.now() - TOTAL_FAIL_MS).toISOString();
+  // submitting preso há mais de 2 min → reset para queued (submit falhou no meio)
+  const staleSubmittingCutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
 
   const [
     { data: queuedJobs },
@@ -63,12 +65,15 @@ export async function GET(req: NextRequest) {
     { data: queuedVideoJobs },
     { data: processingVideoJobs },
     { data: staleVideoJobs },
-    // Jobs travados em submitted/processing há 10-30 min → reiniciar
+    // Jobs travados em submitted/processing há 5-15 min → reiniciar
     { data: restartImageJobs },
     { data: restartVideoJobs },
-    // Jobs travados há mais de 30 min → desistir
+    // Jobs travados há mais de 15 min → desistir
     { data: failImageJobs },
     { data: failVideoJobs },
+    // Jobs presos em "submitting" há mais de 2 min → reset para queued
+    { data: staleSubmittingImageJobs },
+    { data: staleSubmittingVideoJobs },
   ] = await Promise.all([
     supabase.from("image_jobs").select("id").eq("status", "queued").gte("updated_at", staleQueuedCutoff).limit(1),
     supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", checkCutoff).gte("updated_at", restartCutoff).limit(10),
@@ -76,15 +81,34 @@ export async function GET(req: NextRequest) {
     supabase.from("video_jobs").select("id").eq("status", "queued").gte("updated_at", staleQueuedCutoff).limit(3),
     supabase.from("video_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", checkCutoff).gte("updated_at", restartCutoff).limit(5),
     supabase.from("video_jobs").select("id").eq("status", "queued").lt("updated_at", staleQueuedCutoff).limit(20),
-    // submitted/processing entre 10-30 min → recolocar na fila
+    // submitted/processing entre 5-15 min → recolocar na fila
     supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", restartCutoff).gte("updated_at", totalFailCutoff).limit(10),
     supabase.from("video_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", restartCutoff).gte("updated_at", totalFailCutoff).limit(5),
-    // submitted/processing há mais de 30 min → falhar definitivamente
+    // submitted/processing há mais de 15 min → falhar definitivamente
     supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", totalFailCutoff).limit(10),
     supabase.from("video_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", totalFailCutoff).limit(5),
+    // submitting preso há mais de 2 min → reset para queued
+    supabase.from("image_jobs").select("id").eq("status", "submitting").lt("updated_at", staleSubmittingCutoff).limit(10),
+    supabase.from("video_jobs").select("id").eq("status", "submitting").lt("updated_at", staleSubmittingCutoff).limit(5),
   ]);
 
   const results: { id: string; action: string; ok: boolean; error?: string }[] = [];
+
+  // REGRA -1: Jobs presos em "submitting" → reset para queued
+  if ((staleSubmittingImageJobs ?? []).length > 0) {
+    const ids = (staleSubmittingImageJobs ?? []).map(j => j.id);
+    await supabase.from("image_jobs")
+      .update({ status: "queued", updated_at: new Date().toISOString() })
+      .in("id", ids);
+    results.push(...ids.map(id => ({ id, action: "img-submitting-reset", ok: true })));
+  }
+  if ((staleSubmittingVideoJobs ?? []).length > 0) {
+    const ids = (staleSubmittingVideoJobs ?? []).map(j => j.id);
+    await supabase.from("video_jobs")
+      .update({ status: "queued", updated_at: new Date().toISOString() })
+      .in("id", ids);
+    results.push(...ids.map(id => ({ id, action: "vid-submitting-reset", ok: true })));
+  }
 
   // REGRA 0: Jobs stuck há mais de 30 min → falha definitiva
   if ((failImageJobs ?? []).length > 0) {
@@ -107,7 +131,7 @@ export async function GET(req: NextRequest) {
   if ((restartImageJobs ?? []).length > 0) {
     const ids = (restartImageJobs ?? []).map(j => j.id);
     await supabase.from("image_jobs")
-      .update({ status: "queued", external_job_id: null, attempts: 0 })
+      .update({ status: "queued", external_job_id: null, attempts: 0, updated_at: new Date().toISOString() })
       .in("id", ids);
     results.push(...ids.map(id => ({ id, action: "img-restart", ok: true })));
   }
@@ -115,7 +139,7 @@ export async function GET(req: NextRequest) {
   if ((restartVideoJobs ?? []).length > 0) {
     const ids = (restartVideoJobs ?? []).map(j => j.id);
     await supabase.from("video_jobs")
-      .update({ status: "queued", external_job_id: null, attempts: 0 })
+      .update({ status: "queued", external_job_id: null, attempts: 0, updated_at: new Date().toISOString() })
       .in("id", ids);
     results.push(...ids.map(id => ({ id, action: "vid-restart", ok: true })));
   }

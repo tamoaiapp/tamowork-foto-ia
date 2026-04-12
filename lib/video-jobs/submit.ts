@@ -8,14 +8,17 @@ const USE_SERVERLESS = process.env.RUNPOD_SERVERLESS_ENABLED === "true";
 export async function submitVideoJob(jobId: string) {
   const supabase = createServerClient();
 
-  const { data: job, error } = await supabase
+  // Lock atômico: transiciona queued → submitting para evitar submissões duplicadas paralelas
+  const { data: locked, error: lockErr } = await supabase
     .from("video_jobs")
-    .select()
+    .update({ status: "submitting", updated_at: new Date().toISOString() })
     .eq("id", jobId)
     .eq("status", "queued")
+    .select()
     .single();
 
-  if (error || !job) throw new Error("Video job não encontrado ou não está na fila");
+  if (lockErr || !locked) return; // Outro processo já pegou — sai silenciosamente
+  const job = locked;
 
   let externalJobId: string;
   let provider: string;
@@ -32,7 +35,7 @@ export async function submitVideoJob(jobId: string) {
 
     if (!podReady) {
       // Pod não está pronto — volta para queued, o cron tenta novamente em 1 min
-      await supabase.from("video_jobs").update({ status: "queued" }).eq("id", jobId);
+      await supabase.from("video_jobs").update({ status: "queued", updated_at: new Date().toISOString() }).eq("id", jobId);
       return;
     }
 

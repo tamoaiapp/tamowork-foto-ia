@@ -55,14 +55,17 @@ const MODEL_IMG_PREFIX = "model_img:";
 export async function submitImageJob(jobId: string) {
   const supabase = createServerClient();
 
-  const { data: job, error } = await supabase
+  // Lock atômico: transiciona queued → submitting para evitar submissões duplicadas paralelas
+  const { data: locked, error: lockErr } = await supabase
     .from("image_jobs")
-    .select()
+    .update({ status: "submitting", updated_at: new Date().toISOString() })
     .eq("id", jobId)
     .eq("status", "queued")
+    .select()
     .single();
 
-  if (error || !job) throw new Error("Job não encontrado ou não está na fila");
+  if (lockErr || !locked) return; // Outro processo já pegou — sai silenciosamente
+  const job = locked;
 
   // Detecta catálogo: prompt começa com "model_img:URL | ..."
   let rawPrompt = job.prompt ?? "";
@@ -84,7 +87,11 @@ export async function submitImageJob(jobId: string) {
   // Verifica se o pod está online antes de submeter
   // Se não estiver, dispara o resume e retorna limpo — job fica em queued para próxima tentativa
   const podReady = await ensureFotoPodRunning(comfyBase);
-  if (!podReady) return;
+  if (!podReady) {
+    // Pod não está pronto — volta para queued com updated_at atualizado
+    await supabase.from("image_jobs").update({ status: "queued", updated_at: new Date().toISOString() }).eq("id", jobId);
+    return;
+  }
 
   const productImageName = await uploadImageToComfy(job.input_image_url, comfyBase, `prod_${jobId}`);
 
