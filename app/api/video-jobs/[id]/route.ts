@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkVideoJob } from "@/lib/video-jobs/check";
+import { submitVideoJob } from "@/lib/video-jobs/submit";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient();
@@ -18,11 +19,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   if (dbErr || !data) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
 
-  // Se o job está em andamento, aciona o check diretamente (fallback caso o cron falhe)
-  if (["submitted", "processing"].includes(data.status)) {
+  // Aciona submit/check inline — cron roda no deploy antigo, não no prod
+  if (data.status === "queued") {
+    try {
+      await submitVideoJob(id);
+      const { data: updated } = await supabase
+        .from("video_jobs")
+        .select()
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .single();
+      if (updated) return NextResponse.json(updated);
+    } catch {
+      // Pod pode estar iniciando — retorna estado atual
+    }
+  } else if (["submitted", "processing"].includes(data.status)) {
     try {
       await checkVideoJob(id);
-      // Re-lê o status atualizado
       const { data: updated } = await supabase
         .from("video_jobs")
         .select()

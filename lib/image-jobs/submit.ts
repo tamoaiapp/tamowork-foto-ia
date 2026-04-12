@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow } from "@/lib/comfyui/client";
+import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 
 /**
  * Prompt imperativo para o Qwen Image Edit (modo catálogo).
@@ -78,6 +79,12 @@ export async function submitImageJob(jobId: string) {
 
   const comfyIndex = 0;
   const comfyBase = COMFY_BASES[0];
+  if (!comfyBase) throw new Error("Nenhum pod de foto configurado (COMFY_BASES vazio)");
+
+  // Verifica se o pod está online antes de submeter
+  // Se não estiver, dispara o resume e retorna limpo — job fica em queued para próxima tentativa
+  const podReady = await ensureFotoPodRunning(comfyBase);
+  if (!podReady) return;
 
   const productImageName = await uploadImageToComfy(job.input_image_url, comfyBase, `prod_${jobId}`);
 

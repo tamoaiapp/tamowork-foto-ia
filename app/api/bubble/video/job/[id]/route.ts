@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkVideoJob } from "@/lib/video-jobs/check";
+import { submitVideoJob } from "@/lib/video-jobs/submit";
 
 const BUBBLE_API_KEY = process.env.BUBBLE_API_KEY ?? "";
 
@@ -27,8 +28,31 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ ok: false, error: "job não encontrado" }, { status: 404 });
   }
 
-  // Aciona check inline se ainda em andamento (cron roda no deploy antigo, não no prod)
-  if (["submitted", "processing"].includes(job.status)) {
+  // Aciona submit/check inline — cron roda no deploy antigo, não no prod
+  if (job.status === "queued") {
+    try {
+      await submitVideoJob(id);
+      const { data: updated } = await supabase
+        .from("video_jobs")
+        .select("id, status, output_video_url, error_message, created_at, updated_at, attempts")
+        .eq("id", id)
+        .single();
+      if (updated) {
+        return NextResponse.json({
+          ok: true,
+          job_id: updated.id,
+          status: updated.status,
+          outputUrl: updated.output_video_url ?? null,
+          error: updated.error_message ?? null,
+          attempts: updated.attempts ?? 0,
+          created_at: updated.created_at,
+          updated_at: updated.updated_at,
+        });
+      }
+    } catch {
+      // Pod pode estar iniciando — retorna estado atual
+    }
+  } else if (["submitted", "processing"].includes(job.status)) {
     try {
       await checkVideoJob(id);
       const { data: updated } = await supabase

@@ -23,14 +23,13 @@ export async function finalizeVideoJob(jobId: string, videoData: Buffer | string
 
   if (uploadError) throw uploadError;
 
-  const { data: signed } = await supabase.storage
+  // URL pública permanente (bucket video-jobs deve ser público no Supabase)
+  const { data: publicData } = supabase.storage
     .from("video-jobs")
-    .createSignedUrl(fileName, 7 * 24 * 3600);
+    .getPublicUrl(fileName);
 
-  if (signed?.signedUrl) {
-    await supabase.from("video_jobs").update({ status: "done", output_video_url: signed.signedUrl }).eq("id", jobId);
-    return;
-  }
+  const outputUrl = publicData.publicUrl;
+  if (!outputUrl) throw new Error("Falha ao obter URL pública do vídeo");
 
-  throw new Error("Falha ao gerar URL assinada do vídeo");
+  await supabase.from("video_jobs").update({ status: "done", output_video_url: outputUrl }).eq("id", jobId);
 }

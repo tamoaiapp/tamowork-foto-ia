@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { checkImageJob } from "@/lib/image-jobs/check";
+import { submitImageJob } from "@/lib/image-jobs/submit";
 
 // GET /api/image-jobs/:id — consulta status de um job
 export async function GET(
@@ -26,6 +28,35 @@ export async function GET(
 
   if (error || !data) {
     return NextResponse.json({ error: "Job não encontrado" }, { status: 404 });
+  }
+
+  // Aciona submit/check inline — cron roda no deploy antigo, não no prod
+  if (data.status === "queued") {
+    try {
+      await submitImageJob(id);
+      const { data: updated } = await supabase
+        .from("image_jobs")
+        .select()
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .single();
+      if (updated) return NextResponse.json(updated);
+    } catch {
+      // Pod pode estar iniciando — retorna estado atual
+    }
+  } else if (["submitted", "processing"].includes(data.status)) {
+    try {
+      await checkImageJob(id);
+      const { data: updated } = await supabase
+        .from("image_jobs")
+        .select()
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .single();
+      if (updated) return NextResponse.json(updated);
+    } catch {
+      // Ignora erros no check — retorna estado atual
+    }
   }
 
   return NextResponse.json(data);
