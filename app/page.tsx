@@ -1250,6 +1250,10 @@ export default function HomePage() {
     setModelPreview(null);
     setModeSelected(false); // volta para o menu
     setEditExpanded(false);
+    // Limpa videoJob concluído — evita que o botão "Criar vídeo" persista na nova foto
+    if (videoJob && ["done", "canceled", "failed"].includes(videoJob.status ?? "")) {
+      resetVideo();
+    }
   }
 
   async function handleCancel() {
@@ -2045,25 +2049,27 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Gerar novamente + Criar vídeo lado a lado */}
-              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              {/* Gerar novamente */}
+              <div style={{ marginBottom: 8 }}>
                 {plan === "free" && rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
+                  <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
                 ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
-                )}
-                {plan === "pro" ? (
-                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, flex: 1 }}>
-                    {t("result_create_video")}
-                  </button>
-                ) : (
-                  <button disabled style={{ ...styles.videoBtnLocked, flex: 1, cursor: "not-allowed" }}>
-                    🔒 {t("result_create_video")}
-                  </button>
+                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
                 )}
               </div>
+
+              {/* Criar vídeo — 100% largura */}
+              {plan === "pro" ? (
+                <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>
+                  {t("result_create_video")}
+                </button>
+              ) : (
+                <button disabled style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "not-allowed" }}>
+                  🔒 {t("result_create_video")}
+                </button>
+              )}
 
               {/* Upsell PRO — só para free */}
               {plan === "free" && (
@@ -2111,23 +2117,25 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Gerar novamente + Criar vídeo */}
-              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              {/* Gerar novamente */}
+              <div style={{ marginBottom: 8 }}>
                 {plan === "free" && rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, flex: 1, opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
+                  <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
                 ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, flex: 1 }}>{t("result_new")}</button>
-                )}
-                {plan === "pro" ? (
-                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, flex: 1 }}>{t("result_create_video")}</button>
-                ) : (
-                  <button disabled style={{ ...styles.videoBtnLocked, flex: 1, cursor: "not-allowed", fontSize: 12 }}>
-                    🔒 {t("result_create_video")}
-                  </button>
+                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
                 )}
               </div>
+
+              {/* Criar vídeo — 100% largura */}
+              {plan === "pro" ? (
+                <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>{t("result_create_video")}</button>
+              ) : (
+                <button disabled style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "not-allowed", fontSize: 12 }}>
+                  🔒 {t("result_create_video")}
+                </button>
+              )}
 
               {/* Upsell PRO — só para free */}
               {plan === "free" && (
