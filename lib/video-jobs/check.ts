@@ -19,7 +19,8 @@ export async function checkVideoJob(jobId: string) {
 
   const external_job_id = job.external_job_id as string | null;
   if (!external_job_id) {
-    await supabase.from("video_jobs").update({ status: "failed", error_message: "external_job_id ausente" }).eq("id", jobId);
+    // Sem external_job_id significa que o submit não concluiu — recoloca em queued para re-submeter
+    await supabase.from("video_jobs").update({ status: "queued", attempts: 0 }).eq("id", jobId);
     return;
   }
 
