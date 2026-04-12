@@ -53,11 +53,14 @@ export async function checkVideoJob(jobId: string) {
       const videoBuffer = Buffer.from(result.outputs[0], "base64");
       await finalizeVideoJob(jobId, videoBuffer);
     } else if (result.status === "failed") {
-      await supabase.from("video_jobs").update({ status: "failed", error_message: "Falha no RunPod Serverless" }).eq("id", jobId);
-    } else {
-      // Pendente — o cron verifica novamente no próximo ciclo
-      return;
+      if (newAttempts <= 2) {
+        // Primeiras 2 falhas: recoloca na fila para re-submeter
+        await supabase.from("video_jobs").update({ status: "queued", external_job_id: null }).eq("id", jobId);
+      } else {
+        await supabase.from("video_jobs").update({ status: "failed", error_message: "Falha no RunPod Serverless" }).eq("id", jobId);
+      }
     }
+    // se pending: cron verifica novamente no próximo minuto
     return;
   }
 
@@ -67,12 +70,22 @@ export async function checkVideoJob(jobId: string) {
   const promptId = external_job_id.slice(colonIdx + 1);
   const comfyBase = VIDEO_COMFY_BASES[comfyIndex] ?? VIDEO_COMFY_BASES[0];
 
-  const result = await getVideoHistory(promptId, comfyBase);
+  let result;
+  try {
+    result = await getVideoHistory(promptId, comfyBase);
+  } catch {
+    result = { status: "pending" as const, outputUrl: null };
+  }
 
   if (result.status === "done" && result.outputUrl) {
     await finalizeVideoJob(jobId, result.outputUrl);
   } else if (result.status === "failed") {
-    await supabase.from("video_jobs").update({ status: "failed", error_message: "Falha no ComfyUI" }).eq("id", jobId);
+    if (newAttempts <= 2) {
+      // Primeiras 2 falhas: recoloca na fila para re-submeter
+      await supabase.from("video_jobs").update({ status: "queued", external_job_id: null }).eq("id", jobId);
+    } else {
+      await supabase.from("video_jobs").update({ status: "failed", error_message: "Falha no ComfyUI" }).eq("id", jobId);
+    }
   }
   // Se pendente, o cron verifica novamente no próximo ciclo
 }
