@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const LANDING_URL = "https://tamowork-site.vercel.app";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "15mb",
+    },
+  },
   async redirects() {
     return [
       { source: "/onboarding", destination: "/", permanent: false },

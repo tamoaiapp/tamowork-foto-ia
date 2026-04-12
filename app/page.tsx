@@ -984,23 +984,33 @@ export default function HomePage() {
     });
   }
 
+  // Comprime e redimensiona qualquer imagem para JPEG max 2048px, ~1-2MB
   async function convertToJpegIfNeeded(file: File): Promise<File> {
-    const isHeic = file.type === "image/heic" || file.type === "image/heif" ||
-      file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
-    if (!isHeic) return file;
+    const MAX_DIM = 2048;
+    const QUALITY = 0.88;
     return new Promise((resolve) => {
       const url = URL.createObjectURL(file);
       const img = new window.Image();
       img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { naturalWidth: w, naturalHeight: h } = img;
+        // Redimensiona se necessário
+        if (w > MAX_DIM || h > MAX_DIM) {
+          const ratio = Math.min(MAX_DIM / w, MAX_DIM / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
         const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext("2d")!.drawImage(img, 0, 0);
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
         canvas.toBlob((blob) => {
-          URL.revokeObjectURL(url);
-          if (blob) resolve(new File([blob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: "image/jpeg" }));
+          if (blob) resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
           else resolve(file);
-        }, "image/jpeg", 0.92);
+        }, "image/jpeg", QUALITY);
       };
       img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
       img.src = url;
@@ -1030,7 +1040,10 @@ export default function HomePage() {
         const form = new FormData();
         form.append("file", fileToUpload);
         const uploadRes = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
-        if (!uploadRes.ok) throw new Error("Falha ao enviar imagem");
+        if (!uploadRes.ok) {
+          const errBody = await uploadRes.json().catch(() => ({}));
+          throw new Error(errBody?.error || `Falha ao enviar imagem (${uploadRes.status})`);
+        }
         const { url: imageUrl } = await uploadRes.json();
         await handleVideoSubmit(imageUrl);
         setVideoMode(true);
