@@ -484,6 +484,7 @@ export default function HomePage() {
   const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null);
   const [promoOpen, setPromoOpen] = useState(false);
   const [editExpanded, setEditExpanded] = useState(false);
+  const [editFreePopup, setEditFreePopup] = useState(false);
   const [removingResultBg, setRemovingResultBg] = useState(false);
 
   // Video state
@@ -1447,6 +1448,10 @@ export default function HomePage() {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         @keyframes pulseBtnAnim {
           0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.55); transform: scale(1); }
           60% { box-shadow: 0 0 0 14px rgba(168,85,247,0); transform: scale(1.03); }
@@ -2026,7 +2031,17 @@ export default function HomePage() {
 
               {/* Botão único de edição → expande opções */}
               {!editExpanded ? (
-                <button onClick={() => setEditExpanded(true)} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
+                <button onClick={() => {
+                  setEditExpanded(true);
+                  if (plan === "free") {
+                    try {
+                      if (!localStorage.getItem("edit_free_seen")) {
+                        localStorage.setItem("edit_free_seen", "1");
+                        setEditFreePopup(true);
+                      }
+                    } catch { /* ignora */ }
+                  }
+                }} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
                   ✏️ {lang === "en" ? "Edit photo" : "Editar foto"}
                 </button>
               ) : (
@@ -2094,7 +2109,17 @@ export default function HomePage() {
 
               {/* Botão único de edição → expande opções */}
               {!editExpanded ? (
-                <button onClick={() => setEditExpanded(true)} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
+                <button onClick={() => {
+                  setEditExpanded(true);
+                  if (plan === "free") {
+                    try {
+                      if (!localStorage.getItem("edit_free_seen")) {
+                        localStorage.setItem("edit_free_seen", "1");
+                        setEditFreePopup(true);
+                      }
+                    } catch { /* ignora */ }
+                  }
+                }} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
                   ✏️ {lang === "en" ? "Edit photo" : "Editar foto"}
                 </button>
               ) : (
@@ -2379,6 +2404,37 @@ export default function HomePage() {
             onBack={() => setPromoOpen(false)}
             initialPhoto={editedImageUrl ?? job?.output_image_url}
           />
+        </div>
+      )}
+
+      {/* Popup: edição grátis — só na primeira vez que usuário free abre a seção */}
+      {editFreePopup && (
+        <div
+          onClick={() => setEditFreePopup(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 90px" }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#111820", border: "1px solid rgba(99,102,241,0.35)", borderRadius: 22, padding: "28px 24px 24px", maxWidth: 380, width: "calc(100% - 32px)", textAlign: "center", animation: "slideUp 0.3s ease" }}
+          >
+            <div style={{ fontSize: 42, marginBottom: 12 }}>✏️</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#eef2f9", marginBottom: 8 }}>
+              {lang === "en" ? "Editing is 100% free" : lang === "es" ? "La edición es 100% gratis" : "Edição é 100% grátis"}
+            </div>
+            <div style={{ fontSize: 14, color: "#8394b0", lineHeight: 1.6, marginBottom: 22 }}>
+              {lang === "en"
+                ? "Customize, add promotions, remove backgrounds — use as much as you want, no limits."
+                : lang === "es"
+                ? "Personaliza, agrega promociones, elimina fondos — úsalo todo lo que quieras, sin límites."
+                : "Personalize, crie promoções, remova fundos — use à vontade, sem limite nenhum."}
+            </div>
+            <button
+              onClick={() => setEditFreePopup(false)}
+              style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "13px 0", width: "100%", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
+            >
+              {lang === "en" ? "Got it!" : lang === "es" ? "¡Entendido!" : "Entendido!"}
+            </button>
+          </div>
         </div>
       )}
     </div>
