@@ -1876,7 +1876,7 @@ export default function HomePage() {
         )}
 
         {/* Gerando — blur animation estilo GPT */}
-        {workState === "trabalhando" && !(videoMode && videoJob?.status === "done") && (
+        {workState === "trabalhando" && !videoMode && (
           <div style={styles.card} className="generating-wrap">
             {/* Rate limit detectado durante o envio — mostra timer em vez de spinner */}
             {rateLimitedUntil && countdown > 0 ? (
@@ -1982,9 +1982,8 @@ export default function HomePage() {
         )}
 
         {/* Chat durante geração de foto ou vídeo */}
-        {((workState === "trabalhando" && !(rateLimitedUntil && countdown > 0)) ||
-          (videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? ""))) &&
-          !(videoMode && videoJob?.status === "done") && (
+        {((workState === "trabalhando" && !videoMode && !(rateLimitedUntil && countdown > 0)) ||
+          (videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? ""))) && (
           onboardingMode ? (
             <OnboardingChat />
           ) : (
