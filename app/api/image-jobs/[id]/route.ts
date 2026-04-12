@@ -31,9 +31,14 @@ export async function GET(
   }
 
   // Aciona submit/check inline — cron roda no deploy antigo, não no prod
+  // Timeout de 8s para não estourar limite de função serverless
+  const INLINE_TIMEOUT = 8_000;
   if (data.status === "queued") {
     try {
-      await submitImageJob(id);
+      await Promise.race([
+        submitImageJob(id),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), INLINE_TIMEOUT)),
+      ]);
       const { data: updated } = await supabase
         .from("image_jobs")
         .select()
@@ -42,11 +47,14 @@ export async function GET(
         .single();
       if (updated) return NextResponse.json(updated);
     } catch {
-      // Pod pode estar iniciando — retorna estado atual
+      // Pod pode estar iniciando ou timeout — retorna estado atual
     }
   } else if (["submitted", "processing"].includes(data.status)) {
     try {
-      await checkImageJob(id);
+      await Promise.race([
+        checkImageJob(id),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), INLINE_TIMEOUT)),
+      ]);
       const { data: updated } = await supabase
         .from("image_jobs")
         .select()
@@ -55,7 +63,7 @@ export async function GET(
         .single();
       if (updated) return NextResponse.json(updated);
     } catch {
-      // Ignora erros no check — retorna estado atual
+      // Ignora erros no check ou timeout — retorna estado atual
     }
   }
 

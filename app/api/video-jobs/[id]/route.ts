@@ -20,9 +20,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (dbErr || !data) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
 
   // Aciona submit/check inline — cron roda no deploy antigo, não no prod
+  // Timeout de 8s para não estourar limite de função serverless
+  const INLINE_TIMEOUT = 8_000;
   if (data.status === "queued") {
     try {
-      await submitVideoJob(id);
+      await Promise.race([
+        submitVideoJob(id),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), INLINE_TIMEOUT)),
+      ]);
       const { data: updated } = await supabase
         .from("video_jobs")
         .select()
@@ -31,11 +36,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         .single();
       if (updated) return NextResponse.json(updated);
     } catch {
-      // Pod pode estar iniciando — retorna estado atual
+      // Pod pode estar iniciando ou timeout — retorna estado atual
     }
   } else if (["submitted", "processing"].includes(data.status)) {
     try {
-      await checkVideoJob(id);
+      await Promise.race([
+        checkVideoJob(id),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), INLINE_TIMEOUT)),
+      ]);
       const { data: updated } = await supabase
         .from("video_jobs")
         .select()
@@ -44,7 +52,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         .single();
       if (updated) return NextResponse.json(updated);
     } catch {
-      // Ignora erros no check — retorna o estado atual
+      // Ignora erros no check ou timeout — retorna o estado atual
     }
   }
 

@@ -29,9 +29,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   // Aciona submit/check inline — cron roda no deploy antigo, não no prod
+  // Timeout de 8s para não estourar limite de função serverless
+  const INLINE_TIMEOUT = 8_000;
   if (job.status === "queued") {
     try {
-      await submitVideoJob(id);
+      await Promise.race([
+        submitVideoJob(id),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), INLINE_TIMEOUT)),
+      ]);
       const { data: updated } = await supabase
         .from("video_jobs")
         .select("id, status, output_video_url, error_message, created_at, updated_at, attempts")
@@ -50,11 +55,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         });
       }
     } catch {
-      // Pod pode estar iniciando — retorna estado atual
+      // Pod pode estar iniciando ou timeout — retorna estado atual
     }
   } else if (["submitted", "processing"].includes(job.status)) {
     try {
-      await checkVideoJob(id);
+      await Promise.race([
+        checkVideoJob(id),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), INLINE_TIMEOUT)),
+      ]);
       const { data: updated } = await supabase
         .from("video_jobs")
         .select("id, status, output_video_url, error_message, created_at, updated_at, attempts")
@@ -73,7 +81,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         });
       }
     } catch {
-      // Ignora erros no check — retorna estado atual
+      // Ignora erros no check ou timeout — retorna estado atual
     }
   }
 
