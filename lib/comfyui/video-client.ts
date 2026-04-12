@@ -51,6 +51,7 @@ export function buildVideoWorkflow(
   (workflow["63"] as { inputs: { frame_rate: number; filename_prefix: string } }).inputs.frame_rate = fps;
   (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["57"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed;
+  (workflow["58"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed + 1;
   return workflow;
 }
 
@@ -75,6 +76,7 @@ export async function submitVideoWorkflow(
   (workflow["63"] as { inputs: { frame_rate: number; filename_prefix: string } }).inputs.frame_rate = fps;
   (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["57"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed;
+  (workflow["58"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed + 1;
 
   const res = await fetch(`${comfyBase}/prompt`, {
     method: "POST",

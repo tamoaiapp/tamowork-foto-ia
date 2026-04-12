@@ -17,7 +17,7 @@
   },
   "8": {
     "inputs": {
-      "samples": ["57", 0],
+      "samples": ["58", 0],
       "vae": ["39", 0]
     },
     "class_type": "VAEDecode",
@@ -65,26 +65,50 @@
       "sampler_name": "uni_pc",
       "scheduler": "simple",
       "start_at_step": 0,
-      "end_at_step": 10000,
-      "return_with_leftover_noise": "disable",
+      "end_at_step": 4,
+      "return_with_leftover_noise": "enable",
       "model": ["67", 0],
       "positive": ["50", 0],
       "negative": ["50", 1],
       "latent_image": ["50", 2]
     },
     "class_type": "KSamplerAdvanced",
-    "_meta": { "title": "KSampler (Advanced)" }
+    "_meta": { "title": "KSampler (Advanced) HighNoise" }
+  },
+  "58": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 0,
+      "steps": 8,
+      "cfg": 1,
+      "sampler_name": "uni_pc",
+      "scheduler": "simple",
+      "start_at_step": 4,
+      "end_at_step": 1000,
+      "return_with_leftover_noise": "disable",
+      "model": ["68", 0],
+      "positive": ["50", 0],
+      "negative": ["50", 1],
+      "latent_image": ["57", 0]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": { "title": "KSampler (Advanced) LowNoise" }
   },
   "61": {
     "inputs": { "unet_name": "Wan2.2-I2V-A14B-HighNoise-Q4_K_S.gguf" },
     "class_type": "UnetLoaderGGUF",
-    "_meta": { "title": "Unet Loader (GGUF)" }
+    "_meta": { "title": "Unet Loader (GGUF) HighNoise" }
+  },
+  "62": {
+    "inputs": { "unet_name": "Wan2.2-I2V-A14B-LowNoise-Q4_K_S.gguf" },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": { "title": "Unet Loader (GGUF) LowNoise" }
   },
   "63": {
     "inputs": {
       "frame_rate": 16,
       "loop_count": 0,
-      "filename_prefix": "wan21",
+      "filename_prefix": "wan22",
       "format": "video/h264-mp4",
       "pix_fmt": "yuv420p",
       "crf": 15,
@@ -95,7 +119,7 @@
       "images": ["8", 0]
     },
     "class_type": "VHS_VideoCombine",
-    "_meta": { "title": "Video Combine" }
+    "_meta": { "title": "Video Combine 🎥🅥🅗🅢" }
   },
   "64": {
     "inputs": {
@@ -104,12 +128,26 @@
       "model": ["61", 0]
     },
     "class_type": "LoraLoaderModelOnly",
-    "_meta": { "title": "LoraLoaderModelOnly" }
+    "_meta": { "title": "LoraLoaderModelOnly HighNoise" }
+  },
+  "66": {
+    "inputs": {
+      "lora_name": "Wan21_I2V_14B_lightx2v_cfg_step_distill_lora_rank64.safetensors",
+      "strength_model": 1,
+      "model": ["62", 0]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": { "title": "LoraLoaderModelOnly LowNoise" }
   },
   "67": {
     "inputs": { "shift": 8, "model": ["64", 0] },
     "class_type": "ModelSamplingSD3",
-    "_meta": { "title": "ModelSamplingSD3" }
+    "_meta": { "title": "ModelSamplingSD3 HighNoise" }
+  },
+  "68": {
+    "inputs": { "shift": 8, "model": ["66", 0] },
+    "class_type": "ModelSamplingSD3",
+    "_meta": { "title": "ModelSamplingSD3 LowNoise" }
   },
   "100": {
     "inputs": {
