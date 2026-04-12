@@ -1020,9 +1020,10 @@ export default function HomePage() {
 
     // Modo vídeo: rota separada
     if (_mode === "video") {
-      if (!_file) { setFormError("Envie uma foto"); return; }
+      if (!_file) { setVideoError("Envie uma foto"); return; }
       setFormError("");
       setVideoError("");
+      setVideoSubmitting(true);
       try {
         const token = await getToken();
         const fileToUpload = await convertToJpegIfNeeded(_file);
@@ -1034,7 +1035,9 @@ export default function HomePage() {
         await handleVideoSubmit(imageUrl);
         setVideoMode(true);
       } catch (err) {
-        setFormError(err instanceof Error ? err.message : "Erro");
+        setVideoError(err instanceof Error ? err.message : "Erro ao iniciar vídeo");
+      } finally {
+        setVideoSubmitting(false);
       }
       return;
     }
@@ -1728,13 +1731,23 @@ export default function HomePage() {
 
                   {videoError && <div style={styles.error}>{videoError}</div>}
 
-                  <button
-                    type="submit"
-                    disabled={videoSubmitting || !imageFile || plan !== "pro"}
-                    style={{ ...styles.submitBtn, opacity: (videoSubmitting || !imageFile || plan !== "pro") ? 0.5 : 1 }}
-                  >
-                    {videoSubmitting ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : t("btn_generate_video")}
-                  </button>
+                  {plan !== "pro" ? (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/planos")}
+                      style={styles.unlockBtn}
+                    >
+                      ⚡ {lang === "en" ? "Subscribe to create videos" : lang === "es" ? "Suscribirse para crear videos" : "Assinar para criar vídeos"}
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={videoSubmitting || !imageFile}
+                      style={{ ...styles.submitBtn, opacity: (videoSubmitting || !imageFile) ? 0.5 : 1 }}
+                    >
+                      {videoSubmitting ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : t("btn_generate_video")}
+                    </button>
+                  )}
                 </>
               ) : (
               <>
