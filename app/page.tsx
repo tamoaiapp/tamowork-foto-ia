@@ -1953,6 +1953,34 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Vídeo — gerando: barra no topo, igual à foto */}
+        {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && videoMode && (
+          <div style={styles.card} className="generating-wrap">
+            <div className="generating-panel">
+              <div style={styles.generatingTitle}>
+                <span style={styles.shimmerText}>{lang === "en" ? "Creating your video" : lang === "es" ? "Creando tu video" : "Criando seu vídeo"}</span>
+                <span style={styles.dots}>
+                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
+                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+                </span>
+              </div>
+              <div style={styles.progressBarBg}>
+                <div style={{
+                  ...styles.progressBarFill,
+                  width: `${videoDisplayProgress}%`,
+                  background: videoDisplayProgress > 80
+                    ? "linear-gradient(90deg, #6366f1, #22c55e)"
+                    : "linear-gradient(90deg, #6366f1, #a855f7)",
+                }} />
+              </div>
+              <p style={{ margin: "10px 0 0", fontSize: 13, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.5 }}>
+                {lang === "en" ? "Videos take 3–5 min. You can close — we'll notify you. 🔔" : lang === "es" ? "Videos tardan 3–5 min. Puedes cerrar — te avisamos. 🔔" : "Vídeos levam 3–5 min. Pode fechar — te avisamos. 🔔"}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Chat durante geração de foto ou vídeo */}
         {((workState === "trabalhando" && !(rateLimitedUntil && countdown > 0)) ||
           (videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? ""))) &&
@@ -2152,10 +2180,6 @@ export default function HomePage() {
             <div style={styles.card}>
               <button onClick={resetVideo} style={styles.backBtn}>{t("back")}</button>
               <h2 style={styles.centerTitle}>{lang === "en" ? "🎬 Create video from photo" : lang === "es" ? "🎬 Crear video de la foto" : "🎬 Criar vídeo da foto"}</h2>
-              <p style={{ ...styles.centerDesc, marginBottom: 16 }}>
-                {lang === "en" ? "Describe how the camera will move or what will happen in the scene." : lang === "es" ? "Describe cómo se moverá la cámara o qué ocurrirá en la escena." : "Descreva como a câmera vai se mover ou o que vai acontecer na cena."}
-              </p>
-              <img src={job.output_image_url} alt="base" style={{ ...styles.resultImg, marginBottom: 16 }} />
               <div style={styles.fieldGroup}>
                 <label style={styles.label}>{lang === "en" ? "Movement" : lang === "es" ? "Movimiento" : "Movimento"} <span style={{ color: "#4e5c72" }}>{t("field_scene_optional")}</span></label>
                 <input
@@ -2164,6 +2188,7 @@ export default function HomePage() {
                   value={videoPrompt}
                   onChange={(e) => setVideoPrompt(e.target.value)}
                   style={styles.input}
+                  onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 350)}
                 />
               </div>
               {videoError && <div style={{ ...styles.error, marginTop: 12 }}>{videoError}</div>}
@@ -2174,44 +2199,12 @@ export default function HomePage() {
               >
                 {videoSubmitting ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : t("btn_generate_video")}
               </button>
+              <img src={job.output_image_url} alt="base" style={{ ...styles.resultImg, marginTop: 20 }} />
             </div>
           )
         )}
 
-        {/* Vídeo — gerando (card completo — só aparece quando videoMode está ativo) */}
-        {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && videoMode && (
-          <div style={styles.card}>
-            <div style={styles.generatingTitle}>
-              <span style={styles.shimmerText}>{lang === "en" ? "Creating your video" : lang === "es" ? "Creando tu video" : "Criando seu vídeo"}</span>
-              <span style={styles.dots}>
-                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
-                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-              </span>
-            </div>
-            {/* Barra de progresso do vídeo */}
-            <div style={styles.progressBarBg}>
-              <div style={{
-                ...styles.progressBarFill,
-                width: `${videoDisplayProgress}%`,
-                background: videoDisplayProgress > 80
-                  ? "linear-gradient(90deg, #6366f1, #22c55e)"
-                  : "linear-gradient(90deg, #6366f1, #a855f7)",
-              }} />
-            </div>
-
-            <p style={{ ...styles.centerDesc, marginBottom: 20 }}>
-              {lang === "en" ? "Videos take 3–5 minutes. You can close — we'll notify you when it's ready. 🔔" : lang === "es" ? "Los videos tardan 3–5 minutos. Puedes cerrar — te avisamos cuando esté listo. 🔔" : "Vídeos levam 3–5 minutos. Pode fechar — te avisamos quando ficar pronto. 🔔"}
-            </p>
-            {(job?.output_image_url || videoJob?.input_image_url) && (
-              <div style={styles.blurWrapper}>
-                <img src={job?.output_image_url || videoJob!.input_image_url!} alt="base" style={{ ...styles.blurImg, filter: "blur(20px) brightness(0.6)" }} />
-                <div style={styles.blurOverlay} />
-                <div style={styles.blurBadge}><span style={styles.blurDot} />Criando seu vídeo...</div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Vídeo gerando — renderizado antes do BotChat (acima) */}
 
         {/* Vídeo — pronto */}
         {videoJob?.status === "done" && videoJob.output_video_url && videoMode && (
