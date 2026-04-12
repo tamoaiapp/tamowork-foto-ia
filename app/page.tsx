@@ -637,6 +637,7 @@ export default function HomePage() {
         } else if (doneVideo) {
           setVideoJob(doneVideo);
           setVideoMode(true);
+          setPendingResult(false); // vídeo pronto — esconde "Ver Resultado" da foto
         }
       }
 
@@ -1259,6 +1260,7 @@ export default function HomePage() {
       if (videoJob.status === "done") {
         sendPushNotification("Seu vídeo está pronto! 🎬", "Toque para ver o vídeo gerado.");
         setVideoMode(true); // garante que o resultado aparece
+        setPendingResult(false); // limpa "Ver Resultado" da foto
       }
       if (videoJob.status === "failed") {
         setVideoMode(false); // volta para o resultado da foto
@@ -1848,7 +1850,7 @@ export default function HomePage() {
         )}
 
         {/* Gerando — blur animation estilo GPT */}
-        {workState === "trabalhando" && (
+        {workState === "trabalhando" && !(videoMode && videoJob?.status === "done") && (
           <div style={styles.card} className="generating-wrap">
             {/* Rate limit detectado durante o envio — mostra timer em vez de spinner */}
             {rateLimitedUntil && countdown > 0 ? (
@@ -1926,7 +1928,7 @@ export default function HomePage() {
         )}
 
         {/* Chat durante geração: modo onboarding mostra benefícios Pro, modo normal mostra BotChat */}
-        {workState === "trabalhando" && !(rateLimitedUntil && countdown > 0) && (
+        {workState === "trabalhando" && !(rateLimitedUntil && countdown > 0) && !(videoMode && videoJob?.status === "done") && (
           onboardingMode ? (
             <OnboardingChat />
           ) : (
