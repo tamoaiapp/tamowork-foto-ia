@@ -5,6 +5,38 @@ export const VIDEO_COMFY_BASES = (process.env.VIDEO_COMFY_BASES ?? "")
   .map((s) => s.trim())
   .filter(Boolean);
 
+// Resolução máxima para geração de vídeo (lado maior)
+// 512px → ~3-5 min no A40. 1024px → 30+ min.
+const MAX_VIDEO_PX = 512;
+
+// Lê dimensões de imagem JPEG/PNG sem baixar o arquivo completo
+async function getImageDimensions(url: string): Promise<{ w: number; h: number } | null> {
+  try {
+    const res = await fetch(url, { headers: { Range: "bytes=0-2048" } });
+    const buf = Buffer.from(await res.arrayBuffer());
+    // JPEG: procura marcador SOF (FF C0, FF C1, FF C2)
+    for (let i = 0; i < buf.length - 8; i++) {
+      if (buf[i] === 0xFF && (buf[i+1] === 0xC0 || buf[i+1] === 0xC1 || buf[i+1] === 0xC2)) {
+        return { w: buf.readUInt16BE(i + 7), h: buf.readUInt16BE(i + 5) };
+      }
+    }
+    // PNG: dimensões nos bytes 16-24
+    if (buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) {
+      return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+    }
+  } catch { /* ignora */ }
+  return null;
+}
+
+// Calcula scale_by para que o lado maior fique dentro de MAX_VIDEO_PX
+export async function calcVideoScaleFactor(imageUrl: string): Promise<number> {
+  const dims = await getImageDimensions(imageUrl);
+  if (!dims) return 0.5; // fallback conservador
+  const longest = Math.max(dims.w, dims.h);
+  // Garante que o lado maior não passe de MAX_VIDEO_PX após o scale
+  return Math.min(0.5, MAX_VIDEO_PX / longest);
+}
+
 export function pickVideoComfyBase(): { base: string; index: number } {
   const index = Math.floor(Math.random() * VIDEO_COMFY_BASES.length);
   return { base: VIDEO_COMFY_BASES[index], index };
@@ -39,7 +71,8 @@ export function buildVideoWorkflow(
   promptPos: string,
   durationSec = 6,
   fps = 16,
-  promptNeg?: string
+  promptNeg?: string,
+  scaleFactor = 0.5
 ): Record<string, unknown> {
   const workflow = JSON.parse(JSON.stringify(videoTemplate)) as Record<string, unknown>;
   const seed = Math.floor(Math.random() * 999_999_999);
@@ -52,6 +85,8 @@ export function buildVideoWorkflow(
   (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["57"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed;
   (workflow["58"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed + 1;
+  // Limita resolução: scale_by calculado para não passar de MAX_VIDEO_PX
+  (workflow["100"] as { inputs: { scale_by: number } }).inputs.scale_by = scaleFactor;
   return workflow;
 }
 
@@ -63,8 +98,12 @@ export async function submitVideoWorkflow(
   comfyBase: string,
   durationSec = 6,
   fps = 16,
-  promptNeg?: string
+  promptNeg?: string,
+  imageUrl?: string
 ): Promise<string> {
+  // Calcula scale_by dinâmico para limitar o lado maior a MAX_VIDEO_PX (512px)
+  const scaleFactor = imageUrl ? await calcVideoScaleFactor(imageUrl) : 0.5;
+
   const workflow = JSON.parse(JSON.stringify(videoTemplate)) as Record<string, unknown>;
   const seed = Math.floor(Math.random() * 999_999_999);
   const frames = Math.max(1, Math.floor(durationSec * fps));
@@ -77,6 +116,7 @@ export async function submitVideoWorkflow(
   (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["57"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed;
   (workflow["58"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed + 1;
+  (workflow["100"] as { inputs: { scale_by: number } }).inputs.scale_by = scaleFactor;
 
   const res = await fetch(`${comfyBase}/prompt`, {
     method: "POST",

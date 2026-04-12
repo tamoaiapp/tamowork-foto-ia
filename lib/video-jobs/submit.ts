@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { pickVideoComfyBase, uploadImageToVideoComfy, submitVideoWorkflow, buildVideoWorkflow } from "@/lib/comfyui/video-client";
+import { pickVideoComfyBase, uploadImageToVideoComfy, submitVideoWorkflow, buildVideoWorkflow, calcVideoScaleFactor } from "@/lib/comfyui/video-client";
 import { submitRunpodJob, RUNPOD_VIDEO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { ensureVideoPodRunning } from "@/lib/runpod/pods";
 
@@ -25,7 +25,8 @@ export async function submitVideoJob(jobId: string) {
 
   if (USE_SERVERLESS) {
     const imgName = `product_${jobId.replace(/-/g, "").slice(0, 12)}.jpg`;
-    const workflow = buildVideoWorkflow(jobId, imgName, job.prompt ?? "", 6, 16, job.prompt_neg ?? undefined);
+    const scaleFactor = await calcVideoScaleFactor(job.input_image_url ?? "");
+    const workflow = buildVideoWorkflow(jobId, imgName, job.prompt ?? "", 6, 16, job.prompt_neg ?? undefined, scaleFactor);
     const runpodJobId = await submitRunpodJob(RUNPOD_VIDEO_ENDPOINT, workflow, job.input_image_url, imgName);
     externalJobId = `runpod:${runpodJobId}`;
     provider = "runpod-serverless";
@@ -40,7 +41,7 @@ export async function submitVideoJob(jobId: string) {
     }
 
     const imageName = await uploadImageToVideoComfy(job.input_image_url, comfyBase, jobId);
-    const promptId = await submitVideoWorkflow(jobId, imageName, job.prompt ?? "", comfyBase, 6, 16, job.prompt_neg ?? undefined);
+    const promptId = await submitVideoWorkflow(jobId, imageName, job.prompt ?? "", comfyBase, 6, 16, job.prompt_neg ?? undefined, job.input_image_url);
     externalJobId = `${comfyIndex}:${promptId}`;
     provider = "comfyui-direct";
   }
