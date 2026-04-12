@@ -1953,8 +1953,10 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Chat durante geração: modo onboarding mostra benefícios Pro, modo normal mostra BotChat */}
-        {workState === "trabalhando" && !(rateLimitedUntil && countdown > 0) && !(videoMode && videoJob?.status === "done") && (
+        {/* Chat durante geração de foto ou vídeo */}
+        {((workState === "trabalhando" && !(rateLimitedUntil && countdown > 0)) ||
+          (videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? ""))) &&
+          !(videoMode && videoJob?.status === "done") && (
           onboardingMode ? (
             <OnboardingChat />
           ) : (
