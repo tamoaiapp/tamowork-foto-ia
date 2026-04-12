@@ -35,6 +35,7 @@ export async function checkImageJob(jobId: string) {
     .update({
       status: job.status === "submitted" ? "processing" : job.status,
       attempts: newAttempts,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", jobId);
 
