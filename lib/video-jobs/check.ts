@@ -3,7 +3,7 @@ import { VIDEO_COMFY_BASES, getVideoHistory } from "@/lib/comfyui/video-client";
 import { checkRunpodJob, RUNPOD_VIDEO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { finalizeVideoJob } from "@/lib/video-jobs/finalize";
 
-const MAX_ATTEMPTS = 60; // 60 ciclos de cron = ~60 minutos
+const MAX_ATTEMPTS = 150; // 150 ciclos de cron = ~2,5 horas (cobre fila longa nos picos)
 
 export async function checkVideoJob(jobId: string) {
   const supabase = createServerClient();
