@@ -45,6 +45,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "prompt e input_image_url são obrigatórios" }, { status: 400 });
   }
 
+  // Valida URL da imagem — rejeita URLs malformadas (ex: "https://https:")
+  try {
+    const parsed = new URL(input_image_url);
+    if (!parsed.hostname || !parsed.hostname.includes(".")) {
+      return NextResponse.json({ error: "input_image_url inválida" }, { status: 400 });
+    }
+  } catch {
+    return NextResponse.json({ error: "input_image_url inválida" }, { status: 400 });
+  }
+
   try {
     const job = await createImageJob(user.id, prompt, input_image_url);
     return NextResponse.json({ jobId: job.id, status: job.status }, { status: 201 });
