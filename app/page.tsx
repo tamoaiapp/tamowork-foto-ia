@@ -2670,24 +2670,19 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Banner: 1 foto grátis restante — aparece após 1ª foto, antes de bater o limite */}
-              {plan === "free" && photosToday === 1 && !rateLimitedUntil && (
-                <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 12, padding: "10px 14px", marginBottom: 8, textAlign: "center" as const }}>
-                  <div style={{ fontSize: 13, color: "#a5b4fc", fontWeight: 700 }}>✨ Você ainda tem 1 foto grátis hoje!</div>
-                  <div style={{ fontSize: 12, color: "#8394b0", marginTop: 2 }}>Crie agora enquanto é grátis</div>
-                </div>
-              )}
-
               {/* Gerar novamente */}
               <div style={{ marginBottom: 8 }}>
                 {plan === "free" && rateLimitedUntil && countdown > 0 ? (
                   <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
-                ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>
-                    {plan === "free" && photosToday === 1 ? "📷 Criar minha 2ª foto grátis" : t("result_new")}
+                ) : plan === "free" && photosToday === 1 ? (
+                  // CTA primária: 2ª foto grátis — destaque máximo
+                  <button onClick={resetJob} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0 }}>
+                    📷 Criar minha 2ª foto grátis
                   </button>
+                ) : (
+                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
                 )}
               </div>
 
@@ -2697,18 +2692,31 @@ export default function HomePage() {
                   {t("result_create_video")}
                 </button>
               ) : (
-                <button disabled style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "not-allowed" }}>
-                  🔒 {t("result_create_video")}
+                <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc" }}>
+                  🎬 Vídeo animado — exclusivo PRO ✨
                 </button>
               )}
 
               {/* Upsell PRO — só para free */}
               {plan === "free" && (
                 <>
-                  {rateLimitedUntil && countdown > 0
-                    ? <RateLimitCard countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
-                    : <ProUpsell onAssinar={handleAssinarDireto} />
-                  }
+                  {rateLimitedUntil && countdown > 0 ? (
+                    <>
+                      <RateLimitCard countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
+                      <ProUpsell onAssinar={handleAssinarDireto} />
+                    </>
+                  ) : (
+                    // Antes do limite: teaser leve, sem pressão de compra
+                    <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 14, padding: "12px 14px", marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.6 }}>
+                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos ilimitadas + vídeos animados
+                        <br />
+                        <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
+                          A partir de R$29/mês → Assinar agora
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -2755,24 +2763,18 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Banner: 1 foto grátis restante — mobile */}
-              {plan === "free" && photosToday === 1 && !rateLimitedUntil && (
-                <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 12, padding: "10px 14px", marginBottom: 8, textAlign: "center" as const }}>
-                  <div style={{ fontSize: 13, color: "#a5b4fc", fontWeight: 700 }}>✨ Você ainda tem 1 foto grátis hoje!</div>
-                  <div style={{ fontSize: 12, color: "#8394b0", marginTop: 2 }}>Crie agora enquanto é grátis</div>
-                </div>
-              )}
-
               {/* Gerar novamente */}
               <div style={{ marginBottom: 8 }}>
                 {plan === "free" && rateLimitedUntil && countdown > 0 ? (
                   <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
-                ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>
-                    {plan === "free" && photosToday === 1 ? "📷 Criar minha 2ª foto grátis" : t("result_new")}
+                ) : plan === "free" && photosToday === 1 ? (
+                  <button onClick={resetJob} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0 }}>
+                    📷 Criar minha 2ª foto grátis
                   </button>
+                ) : (
+                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
                 )}
               </div>
 
@@ -2780,18 +2782,30 @@ export default function HomePage() {
               {plan === "pro" ? (
                 <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>{t("result_create_video")}</button>
               ) : (
-                <button disabled style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "not-allowed", fontSize: 12 }}>
-                  🔒 {t("result_create_video")}
+                <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc", fontSize: 12 }}>
+                  🎬 Vídeo animado — exclusivo PRO ✨
                 </button>
               )}
 
               {/* Upsell PRO — só para free */}
               {plan === "free" && (
                 <>
-                  {rateLimitedUntil && countdown > 0
-                    ? <RateLimitCard countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
-                    : <ProUpsell onAssinar={handleAssinarDireto} />
-                  }
+                  {rateLimitedUntil && countdown > 0 ? (
+                    <>
+                      <RateLimitCard countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
+                      <ProUpsell onAssinar={handleAssinarDireto} />
+                    </>
+                  ) : (
+                    <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 14, padding: "12px 14px", marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.6 }}>
+                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos ilimitadas + vídeos animados
+                        <br />
+                        <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
+                          A partir de R$29/mês → Assinar agora
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
