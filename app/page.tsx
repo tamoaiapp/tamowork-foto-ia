@@ -508,6 +508,9 @@ export default function HomePage() {
   const [narratedElapsed, setNarratedElapsed] = useState(0);
   const narratedElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [narratedVoice, setNarratedVoice] = useState<"feminino" | "masculino">("feminino");
+  const [narratedSceneSource, setNarratedSceneSource] = useState<"generate" | "existing">("generate");
+  const [narratedDonePhotos, setNarratedDonePhotos] = useState<{ id: string; output_image_url: string }[]>([]);
+  const [narratedSelectedScenes, setNarratedSelectedScenes] = useState<string[]>([]);
 
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
@@ -1380,28 +1383,64 @@ export default function HomePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [narratedJob?.id, narratedJob?.status, user]);
 
+  async function loadNarratedDonePhotos() {
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/image-jobs", { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json();
+      const jobs: { id: string; status: string; output_image_url?: string }[] = Array.isArray(data) ? data : (data.jobs ?? []);
+      const done = jobs.filter((j) => j.status === "done" && j.output_image_url).slice(0, 20) as { id: string; output_image_url: string }[];
+      setNarratedDonePhotos(done);
+    } catch { /* ignora */ }
+  }
+
+  function toggleNarratedScene(url: string) {
+    setNarratedSelectedScenes((prev) =>
+      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+    );
+  }
+
   async function handleNarratedSubmit() {
-    if (!imageFile) { setNarratedError("Envie uma foto do produto"); return; }
+    if (narratedSceneSource === "generate" && !imageFile) {
+      setNarratedError("Envie uma foto do produto"); return;
+    }
+    if (narratedSceneSource === "existing" && narratedSelectedScenes.length < 2) {
+      setNarratedError("Selecione pelo menos 2 fotos para as cenas"); return;
+    }
     if (!narratedRoteiro.trim()) { setNarratedError("Escreva o roteiro — o que você quer dizer no vídeo"); return; }
     setNarratedError("");
     setNarratedSubmitting(true);
     try {
       const token = await getToken();
-      // Upload da imagem
-      const fileToUpload = await convertToJpegIfNeeded(imageFile);
-      const form = new FormData();
-      form.append("file", fileToUpload);
-      const uploadRes = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
-      if (!uploadRes.ok) throw new Error("Falha ao enviar imagem");
-      const { url: imageUrl } = await uploadRes.json();
+      let imageUrl: string | undefined;
+      if (narratedSceneSource === "generate") {
+        // Upload da imagem para gerar cenas no ComfyUI
+        const fileToUpload = await convertToJpegIfNeeded(imageFile!);
+        const form = new FormData();
+        form.append("file", fileToUpload);
+        const uploadRes = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
+        if (!uploadRes.ok) throw new Error("Falha ao enviar imagem");
+        const uploaded = await uploadRes.json();
+        imageUrl = uploaded.url;
+      }
       // Cria job
       const res = await fetch("/api/narrated-video", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ input_image_url: imageUrl, roteiro: narratedRoteiro, voice: narratedVoice }),
+        body: JSON.stringify({
+          input_image_url: imageUrl,
+          roteiro: narratedRoteiro,
+          voice: narratedVoice,
+          scene_source: narratedSceneSource,
+          scene_urls: narratedSceneSource === "existing" ? narratedSelectedScenes : undefined,
+        }),
       });
       if (res.status === 403) { setNarratedError("Disponível apenas no plano Pro."); return; }
-      if (!res.ok) throw new Error("Erro ao criar job");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error((errData as { error?: string }).error ?? "Erro ao criar job");
+      }
       const { jobId } = await res.json();
       setNarratedJob({ id: jobId, status: "queued" });
       setTimeout(async () => {
@@ -1424,6 +1463,8 @@ export default function HomePage() {
     setNarratedError("");
     setNarratedElapsed(0);
     setNarratedVoice("feminino");
+    setNarratedSceneSource("generate");
+    setNarratedSelectedScenes([]);
   }
 
   function resetVideo() {
@@ -1878,22 +1919,108 @@ export default function HomePage() {
                         </div>
                       )}
 
-                      {/* Upload foto */}
-                      <div
-                        style={{ ...styles.dropzone, ...(preview ? styles.dropzoneWithPreview : {}) }}
-                        onClick={() => fileRef.current?.click()}
-                      >
-                        {preview ? (
-                          <img src={preview} alt="preview" style={styles.previewImg} />
-                        ) : (
-                          <>
-                            <div style={styles.uploadIcon}>🎙️</div>
-                            <div style={styles.uploadText}>Foto do produto</div>
-                            <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
-                          </>
-                        )}
-                        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+                      {/* Fonte das cenas */}
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>Cenas do vídeo</label>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {([
+                            { value: "generate", label: "✨ Gerar cenas novas" },
+                            { value: "existing", label: "🖼️ Usar minhas fotos" },
+                          ] as const).map(({ value, label }) => (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => {
+                                setNarratedSceneSource(value);
+                                setNarratedSelectedScenes([]);
+                                if (value === "existing") loadNarratedDonePhotos();
+                              }}
+                              style={{
+                                flex: 1,
+                                padding: "10px 6px",
+                                borderRadius: 10,
+                                border: `1.5px solid ${narratedSceneSource === value ? "rgba(168,85,247,0.7)" : "rgba(255,255,255,0.08)"}`,
+                                background: narratedSceneSource === value ? "rgba(168,85,247,0.18)" : "rgba(255,255,255,0.03)",
+                                color: narratedSceneSource === value ? "#c4b5fd" : "#8394b0",
+                                fontWeight: 700,
+                                fontSize: 12,
+                                cursor: "pointer",
+                                transition: "all 0.15s",
+                              }}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 4 }}>
+                          {narratedSceneSource === "generate"
+                            ? "A IA gera variações profissionais da sua foto de produto"
+                            : "Use fotos que você já gerou — selecione 2 ou mais abaixo"}
+                        </div>
                       </div>
+
+                      {/* Upload foto (apenas quando gerar cenas novas) */}
+                      {narratedSceneSource === "generate" && (
+                        <div
+                          style={{ ...styles.dropzone, ...(preview ? styles.dropzoneWithPreview : {}) }}
+                          onClick={() => fileRef.current?.click()}
+                        >
+                          {preview ? (
+                            <img src={preview} alt="preview" style={styles.previewImg} />
+                          ) : (
+                            <>
+                              <div style={styles.uploadIcon}>🎙️</div>
+                              <div style={styles.uploadText}>Foto do produto</div>
+                              <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
+                            </>
+                          )}
+                          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+                        </div>
+                      )}
+
+                      {/* Galeria de fotos existentes */}
+                      {narratedSceneSource === "existing" && (
+                        <div style={{ marginBottom: 4 }}>
+                          {narratedDonePhotos.length === 0 ? (
+                            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: 12, padding: "20px 16px", textAlign: "center", color: "#4e5c72", fontSize: 13 }}>
+                              Nenhuma foto gerada ainda. Gere fotos profissionais primeiro na aba de simulação.
+                            </div>
+                          ) : (
+                            <>
+                              <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 8 }}>
+                                Selecione as fotos para as cenas ({narratedSelectedScenes.length} selecionadas — mínimo 2)
+                              </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                                {narratedDonePhotos.map((p) => {
+                                  const sel = narratedSelectedScenes.includes(p.output_image_url);
+                                  return (
+                                    <div
+                                      key={p.id}
+                                      onClick={() => toggleNarratedScene(p.output_image_url)}
+                                      style={{
+                                        position: "relative",
+                                        borderRadius: 10,
+                                        overflow: "hidden",
+                                        cursor: "pointer",
+                                        border: sel ? "2.5px solid #a855f7" : "2.5px solid transparent",
+                                        aspectRatio: "1",
+                                        transition: "border 0.15s",
+                                      }}
+                                    >
+                                      <img src={p.output_image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                      {sel && (
+                                        <div style={{ position: "absolute", top: 4, right: 4, background: "#a855f7", borderRadius: "50%", width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", fontWeight: 800 }}>
+                                          {narratedSelectedScenes.indexOf(p.output_image_url) + 1}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
 
                       {/* Voz */}
                       <div style={styles.fieldGroup}>
@@ -1961,9 +2088,9 @@ export default function HomePage() {
                       ) : (
                         <button
                           type="button"
-                          disabled={narratedSubmitting || !imageFile || !narratedRoteiro.trim()}
+                          disabled={narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || !narratedRoteiro.trim()}
                           onClick={handleNarratedSubmit}
-                          style={{ ...styles.submitBtn, opacity: (narratedSubmitting || !imageFile || !narratedRoteiro.trim()) ? 0.5 : 1 }}
+                          style={{ ...styles.submitBtn, opacity: (narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || !narratedRoteiro.trim()) ? 0.5 : 1 }}
                         >
                           {narratedSubmitting ? "Enviando..." : "🎙️ Gerar vídeo com narração"}
                         </button>

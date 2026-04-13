@@ -9,8 +9,9 @@ import { createServerClient } from "@/lib/supabase/server";
 import { uploadImageToComfy, COMFY_BASES } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 
-const NUM_SCENES = 4;
+const DEFAULT_SCENES = 4;
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
+const ASSEMBLY_BASE = process.env.NARRATED_ASSEMBLY_BASE ?? "";
 
 // ─── Melhoria do roteiro via Ollama ───────────────────────────────────────────
 
@@ -115,20 +116,73 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
   }
 
   try {
-    // 1. Melhora roteiro em paralelo com upload da imagem
+    // 1. Descobre quantas cenas precisam com base na duração do áudio (via /prepare)
+    let scenesNeeded = DEFAULT_SCENES;
+    if (ASSEMBLY_BASE) {
+      try {
+        const prepRes = await fetch(`${ASSEMBLY_BASE}/prepare`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: job.roteiro, voice: job.voice ?? "feminino" }),
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (prepRes.ok) {
+          const prep = await prepRes.json() as { duration_seconds: number; scenes_needed: number };
+          scenesNeeded = prep.scenes_needed;
+          console.log(`[narrated] áudio=${prep.duration_seconds}s → ${scenesNeeded} cenas`);
+        }
+      } catch (err) {
+        console.warn("[narrated] /prepare falhou, usando", DEFAULT_SCENES, "cenas:", err);
+      }
+    }
+
+    // 2. Se scene_source = 'existing', pula ComfyUI e inicia montagem diretamente
+    if (job.scene_source === "existing" && (job.scene_urls ?? []).length >= 2) {
+      const roteiroMelhorado = await improveRoteiro(job.roteiro);
+      await supabase.from("narrated_video_jobs").update({
+        status: "assembling",
+        roteiro_melhorado: roteiroMelhorado,
+        scenes_needed: scenesNeeded,
+        updated_at: new Date().toISOString(),
+      }).eq("id", jobId);
+
+      // Inicia montagem imediatamente (sem passar pelo ComfyUI)
+      if (ASSEMBLY_BASE) {
+        try {
+          const assemblyRes = await fetch(`${ASSEMBLY_BASE}/assemble`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              job_id: jobId,
+              scenes: job.scene_urls,
+              text: roteiroMelhorado || job.roteiro,
+              voice: job.voice ?? "feminino",
+              supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+              supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+            }),
+            signal: AbortSignal.timeout(10_000),
+          });
+          if (!assemblyRes.ok) console.error(`[narrated] assembly start error: ${assemblyRes.status}`);
+        } catch (err) {
+          console.error("[narrated] existing assembly start error:", err);
+        }
+      }
+      return;
+    }
+
+    // 3. Melhora roteiro em paralelo com upload da imagem
     const [roteiroMelhorado, imageName] = await Promise.all([
       improveRoteiro(job.roteiro),
       uploadImageToComfy(job.input_image_url, comfyBase, `narr_${jobId.replace(/-/g, "").slice(0, 12)}`),
     ]);
 
-    // 2. Gera prompt profissional para fotos de produto
-    // Extrai palavras-chave do roteiro para contextualizar o prompt
+    // 4. Gera prompt profissional para fotos de produto
     const keywords = job.roteiro.split(/\s+/).slice(0, 10).join(" ");
     const promptPos = `professional product photography, clean studio lighting, sharp focus, high quality commercial photo, ${keywords}, white or neutral background`;
 
-    // 3. Submete N variações ao ComfyUI (ficam na fila interna do ComfyUI)
+    // 5. Submete N variações ao ComfyUI (dinâmico com base na duração do áudio)
     const scenePromptIds: string[] = [];
-    for (let i = 0; i < NUM_SCENES; i++) {
+    for (let i = 0; i < scenesNeeded; i++) {
       try {
         const promptId = await submitSceneVariation(imageName, promptPos, jobId, i, comfyBase);
         scenePromptIds.push(promptId);
@@ -146,6 +200,7 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       roteiro_melhorado: roteiroMelhorado,
       scene_comfy_ids: scenePromptIds,
       scene_comfy_index: 0,
+      scenes_needed: scenesNeeded,
       updated_at: new Date().toISOString(),
     }).eq("id", jobId);
 

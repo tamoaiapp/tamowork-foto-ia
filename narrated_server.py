@@ -123,8 +123,8 @@ def _assemble_video(job_id: str, scene_urls: list, text: str,
             raise RuntimeError("Cenas insuficientes para montar o vídeo (mínimo 2)")
 
         n = len(scene_files)
-        per_scene_dur = 5  # segundos por cena (inclui sobreposição da transição)
-        transition_dur = 0.8  # segundos de crossfade entre cenas
+        per_scene_dur = PER_SCENE_DUR
+        transition_dur = TRANSITION_DUR
         fps = 25
         # Formato Story 9:16 para Instagram/TikTok/Reels
         OUT_W, OUT_H = 1080, 1920
@@ -247,6 +247,58 @@ def _run_assembly_thread(body: dict):
             _jobs[job_id] = {"status": "failed", "error": str(e)}
 
 
+# ── Prepara áudio + calcula cenas necessárias ────────────────────────────────────
+
+PER_SCENE_DUR = 5      # segundos por cena
+TRANSITION_DUR = 0.8   # sobreposição entre cenas
+MIN_SCENES = 2
+MAX_SCENES = 12
+
+def _prepare_audio(text: str, voice: str) -> dict:
+    """
+    Gera TTS, mede duração e retorna quantas cenas precisam ser geradas.
+    """
+    voice_map = {
+        "masculino": "pt-BR-AntonioNeural",
+        "feminino":  "pt-BR-FranciscaNeural",
+    }
+    voice_name = voice_map.get(voice, "pt-BR-FranciscaNeural")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        audio_file = os.path.join(tmp, "narration.mp3")
+        tts_cmd = [
+            sys.executable, "-m", "edge_tts",
+            "--voice", voice_name,
+            "--text", text,
+            "--write-media", audio_file,
+        ]
+        r = subprocess.run(tts_cmd, capture_output=True, text=True, timeout=60)
+        if r.returncode != 0:
+            raise RuntimeError(f"edge-tts error: {r.stderr[-300:]}")
+
+        # Mede duração com ffprobe
+        probe = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", audio_file],
+            capture_output=True, text=True, timeout=10
+        )
+        try:
+            duration = float(probe.stdout.strip())
+        except ValueError:
+            duration = 20.0  # fallback
+
+    # Calcula cenas: cada cena cobre (PER_SCENE_DUR - TRANSITION_DUR) segundos líquidos
+    net_per_scene = PER_SCENE_DUR - TRANSITION_DUR
+    scenes_needed = max(MIN_SCENES, min(MAX_SCENES, -(-int(duration) // int(net_per_scene))))
+    print(f"[prepare] voz={voice_name} duração={duration:.1f}s → {scenes_needed} cenas")
+
+    return {
+        "duration_seconds": round(duration, 1),
+        "scenes_needed": scenes_needed,
+        "per_scene_seconds": PER_SCENE_DUR,
+    }
+
+
 # ── HTTP Handler ──────────────────────────────────────────────────────────────────
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -277,16 +329,28 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self._send_json(404, {"error": "not found"})
 
     def do_POST(self):
-        if self.path != "/assemble":
-            self._send_json(404, {"error": "not found"})
-            return
-
         length = int(self.headers.get("Content-Length", 0))
         try:
             body = json.loads(self.rfile.read(length))
         except Exception:
             self._send_json(400, {"error": "invalid JSON"})
             return
+
+        if self.path == "/prepare":
+            # Gera áudio TTS, mede duração e calcula quantas cenas precisam
+            text = body.get("text", "")
+            voice = body.get("voice", "feminino")
+            if not text.strip():
+                self._send_json(400, {"error": "text obrigatório"})
+                return
+            try:
+                result = _prepare_audio(text, voice)
+                self._send_json(200, result)
+            except Exception as e:
+                self._send_json(500, {"error": str(e)})
+            return
+
+        # /assemble já leu o body acima
 
         job_id = body.get("job_id") or str(uuid.uuid4())
         body["job_id"] = job_id
