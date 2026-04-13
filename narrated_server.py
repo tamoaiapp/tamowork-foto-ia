@@ -119,9 +119,10 @@ def _assemble_video(job_id: str, scene_urls: list, text: str,
         n = len(scene_files)
         per_scene_dur = 4  # segundos por cena
         fps = 25
+        # Formato Story 9:16 para Instagram/TikTok/Reels
+        OUT_W, OUT_H = 1080, 1920
 
-        # 3. Monta com ffmpeg (Ken Burns: zoompan alternado)
-        #    Cada cena = imagem estática → ~100 frames com zoom suave
+        # 3. Monta com ffmpeg (Ken Burns: zoompan alternado) — formato Story 9:16
         output_file = os.path.join(tmp, "output.mp4")
 
         # Construir filtro complexo: N imagens → zoompan → concat → mix áudio
@@ -131,22 +132,32 @@ def _assemble_video(job_id: str, scene_urls: list, text: str,
         for i, sf in enumerate(scene_files):
             frames = per_scene_dur * fps
             if i % 2 == 0:
-                # zoom in
+                # zoom in do centro
                 z_expr = f"'min(zoom+0.0008,1.35)'"
                 x_expr = "'iw/2-(iw/zoom/2)'"
                 y_expr = "'ih/2-(ih/zoom/2)'"
-            else:
-                # zoom out
+            elif i % 4 == 1:
+                # zoom in do topo
+                z_expr = f"'min(zoom+0.0008,1.35)'"
+                x_expr = "'iw/2-(iw/zoom/2)'"
+                y_expr = "'0'"
+            elif i % 4 == 2:
+                # zoom out do centro
                 z_expr = f"'if(eq(on,1),1.35,max(zoom-0.0008,1.0))'"
                 x_expr = "'iw/2-(iw/zoom/2)'"
                 y_expr = "'ih/2-(ih/zoom/2)'"
+            else:
+                # zoom in da base
+                z_expr = f"'min(zoom+0.0008,1.35)'"
+                x_expr = "'iw/2-(iw/zoom/2)'"
+                y_expr = "'ih-(ih/zoom)'"
 
             filter_parts.append(
                 f"[{i}:v]"
-                f"scale=1280:720:force_original_aspect_ratio=increase,"
-                f"crop=1280:720,"
+                f"scale={OUT_W}:{OUT_H}:force_original_aspect_ratio=increase,"
+                f"crop={OUT_W}:{OUT_H},"
                 f"zoompan=z={z_expr}:x={x_expr}:y={y_expr}"
-                f":d={frames}:s=1280x720:fps={fps},"
+                f":d={frames}:s={OUT_W}x{OUT_H}:fps={fps},"
                 f"setpts=PTS-STARTPTS"
                 f"[v{i}]"
             )
