@@ -498,6 +498,16 @@ export default function HomePage() {
   const [videoDisplayProgress, setVideoDisplayProgress] = useState(0);
   const videoElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Narrated video state
+  type NarratedJob = { id: string; status: string; output_video_url?: string; error_message?: string; created_at?: string };
+  const [narratedJob, setNarratedJob] = useState<NarratedJob | null>(null);
+  const [narratedRoteiro, setNarratedRoteiro] = useState("");
+  const [narratedSubmitting, setNarratedSubmitting] = useState(false);
+  const [narratedError, setNarratedError] = useState("");
+  const narratedPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [narratedElapsed, setNarratedElapsed] = useState(0);
+  const narratedElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
   const [pendingResult, setPendingResult] = useState(false);
@@ -1029,6 +1039,9 @@ export default function HomePage() {
     const _produto = overrides?.produto ?? produto;
     const _cenario = overrides?.cenario ?? cenario;
 
+    // Modo vídeo com narração: gerenciado pelo próprio componente — não passa por aqui
+    if (_mode === "video_narrado") return;
+
     // Modo vídeo: rota separada
     if (_mode === "video") {
       if (!_file) { setVideoError("Envie uma foto"); return; }
@@ -1339,6 +1352,76 @@ export default function HomePage() {
     } finally {
       setVideoSubmitting(false);
     }
+  }
+
+  // ── Narrated video polling ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!narratedJob || !user) return;
+    if (["done", "failed", "canceled"].includes(narratedJob.status)) {
+      if (narratedPollRef.current) clearInterval(narratedPollRef.current);
+      if (narratedElapsedRef.current) clearInterval(narratedElapsedRef.current);
+      if (narratedJob.status === "done") {
+        sendPushNotification("Seu vídeo com narração está pronto! 🎙️", "Toque para ver o vídeo.");
+      }
+      return;
+    }
+    setNarratedElapsed(0);
+    narratedElapsedRef.current = setInterval(() => setNarratedElapsed(s => s + 1), 1000);
+    narratedPollRef.current = setInterval(async () => {
+      const token = await getToken();
+      const res = await fetch(`/api/narrated-video/${narratedJob.id}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setNarratedJob(await res.json());
+    }, 15_000);
+    return () => {
+      if (narratedPollRef.current) clearInterval(narratedPollRef.current);
+      if (narratedElapsedRef.current) clearInterval(narratedElapsedRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [narratedJob?.id, narratedJob?.status, user]);
+
+  async function handleNarratedSubmit() {
+    if (!imageFile) { setNarratedError("Envie uma foto do produto"); return; }
+    if (!narratedRoteiro.trim()) { setNarratedError("Escreva o roteiro — o que você quer dizer no vídeo"); return; }
+    setNarratedError("");
+    setNarratedSubmitting(true);
+    try {
+      const token = await getToken();
+      // Upload da imagem
+      const fileToUpload = await convertToJpegIfNeeded(imageFile);
+      const form = new FormData();
+      form.append("file", fileToUpload);
+      const uploadRes = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
+      if (!uploadRes.ok) throw new Error("Falha ao enviar imagem");
+      const { url: imageUrl } = await uploadRes.json();
+      // Cria job
+      const res = await fetch("/api/narrated-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ input_image_url: imageUrl, roteiro: narratedRoteiro }),
+      });
+      if (res.status === 403) { setNarratedError("Disponível apenas no plano Pro."); return; }
+      if (!res.ok) throw new Error("Erro ao criar job");
+      const { jobId } = await res.json();
+      setNarratedJob({ id: jobId, status: "queued" });
+      setTimeout(async () => {
+        const t = await getToken();
+        const r = await fetch(`/api/narrated-video/${jobId}`, { headers: { Authorization: `Bearer ${t}` } });
+        if (r.ok) setNarratedJob(await r.json());
+      }, 15_000);
+    } catch (err) {
+      setNarratedError(err instanceof Error ? err.message : "Erro ao criar vídeo");
+    } finally {
+      setNarratedSubmitting(false);
+    }
+  }
+
+  function resetNarrated() {
+    if (narratedPollRef.current) clearInterval(narratedPollRef.current);
+    if (narratedElapsedRef.current) clearInterval(narratedElapsedRef.current);
+    setNarratedJob(null);
+    setNarratedRoteiro("");
+    setNarratedError("");
+    setNarratedElapsed(0);
   }
 
   function resetVideo() {
@@ -1707,14 +1790,158 @@ export default function HomePage() {
                   personalizado: "Personalizado",
                   video: "Criar vídeo",
                   promo: "Criar promoção",
+                  video_narrado: "Vídeo com narração",
                 }[creationMode]}
               </div>
             </div>
 
             <form onSubmit={handleSubmit} style={styles.form}>
 
-              {/* ── MODO VÍDEO ── */}
-              {creationMode === "video" ? (
+              {/* ── MODO VÍDEO COM NARRAÇÃO ── */}
+              {creationMode === "video_narrado" ? (
+                <>
+                  {narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status) ? (
+                    /* Gerando... */
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center", padding: "16px 0" }}>
+                      <div style={{ fontSize: 44 }}>🎙️</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", textAlign: "center" }}>
+                        {narratedJob.status === "queued" || narratedJob.status === "submitting"
+                          ? "Na fila..."
+                          : narratedJob.status === "generating_scenes"
+                          ? "Gerando cenas com IA..."
+                          : "Montando vídeo com narração..."}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" }}>
+                        {narratedJob.status === "assembling"
+                          ? "Adicionando voz e efeitos Ken Burns"
+                          : "Pode demorar 5-10 minutos. Pode fechar o app!"}
+                      </div>
+                      {/* Barra de progresso baseada no tempo */}
+                      <div style={{ width: "100%", height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99 }}>
+                        <div style={{
+                          height: "100%",
+                          width: `${Math.min(90, Math.round((narratedElapsed / 480) * 90))}%`,
+                          background: "linear-gradient(90deg, #a855f7, #6366f1)",
+                          borderRadius: 99,
+                          transition: "width 2s ease",
+                        }} />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={resetNarrated}
+                        style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 16px", color: "#8394b0", fontSize: 13, cursor: "pointer" }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : narratedJob?.status === "done" && narratedJob.output_video_url ? (
+                    /* Resultado */
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center" }}>
+                        🎉 Seu vídeo com narração ficou pronto!
+                      </div>
+                      <video
+                        src={narratedJob.output_video_url}
+                        controls
+                        playsInline
+                        style={{ width: "100%", borderRadius: 14, background: "#000", maxHeight: 400 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(narratedJob.output_video_url!);
+                            const blob = await res.blob();
+                            await downloadBlob(blob, "video-narrado.mp4");
+                          } catch { window.open(narratedJob.output_video_url!, "_blank"); }
+                        }}
+                        style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
+                      >
+                        ⬇ Baixar vídeo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetNarrated}
+                        style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 13, cursor: "pointer" }}
+                      >
+                        Criar outro vídeo
+                      </button>
+                    </div>
+                  ) : (
+                    /* Formulário */
+                    <>
+                      {narratedJob?.status === "failed" && (
+                        <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, padding: "12px 14px", marginBottom: 4, fontSize: 13, color: "#fca5a5" }}>
+                          Algo deu errado. Tente novamente.
+                        </div>
+                      )}
+
+                      {/* Upload foto */}
+                      <div
+                        style={{ ...styles.dropzone, ...(preview ? styles.dropzoneWithPreview : {}) }}
+                        onClick={() => fileRef.current?.click()}
+                      >
+                        {preview ? (
+                          <img src={preview} alt="preview" style={styles.previewImg} />
+                        ) : (
+                          <>
+                            <div style={styles.uploadIcon}>🎙️</div>
+                            <div style={styles.uploadText}>Foto do produto</div>
+                            <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
+                          </>
+                        )}
+                        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+                      </div>
+
+                      {/* Roteiro */}
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>
+                          O que você quer dizer no vídeo? <span style={{ color: "#ef4444" }}>*</span>
+                        </label>
+                        <textarea
+                          placeholder={"Ex: Oi pessoal, hoje vou mostrar nosso novo produto. Olha que diferença faz na sua vida do dia a dia. Aproveita o desconto especial só essa semana!"}
+                          value={narratedRoteiro}
+                          onChange={(e) => setNarratedRoteiro(e.target.value)}
+                          rows={5}
+                          style={{
+                            ...styles.input,
+                            resize: "vertical",
+                            minHeight: 100,
+                          } as React.CSSProperties}
+                        />
+                        <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 4 }}>
+                          A IA vai melhorar o texto e gerar a narração automaticamente
+                        </div>
+                      </div>
+
+                      {plan !== "pro" && (
+                        <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 4 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#c4b5fd", marginBottom: 4 }}>🔒 Disponível no plano Pro</div>
+                          <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 12 }}>Vídeos com narração de IA a partir de R$0,61/dia</div>
+                          <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>✨ Assinar agora</button>
+                        </div>
+                      )}
+
+                      {narratedError && <div style={styles.error}>{narratedError}</div>}
+
+                      {plan !== "pro" ? (
+                        <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>
+                          ⚡ Assinar para criar vídeos
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={narratedSubmitting || !imageFile || !narratedRoteiro.trim()}
+                          onClick={handleNarratedSubmit}
+                          style={{ ...styles.submitBtn, opacity: (narratedSubmitting || !imageFile || !narratedRoteiro.trim()) ? 0.5 : 1 }}
+                        >
+                          {narratedSubmitting ? "Enviando..." : "🎙️ Gerar vídeo com narração"}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </>
+              ) : creationMode === "video" ? (
                 <>
                   <div
                     style={{ ...styles.dropzone, ...(preview ? styles.dropzoneWithPreview : {}) }}

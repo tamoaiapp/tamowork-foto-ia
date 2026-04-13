@@ -4,6 +4,8 @@ import { submitImageJob } from "@/lib/image-jobs/submit";
 import { checkImageJob } from "@/lib/image-jobs/check";
 import { submitVideoJob } from "@/lib/video-jobs/submit";
 import { checkVideoJob } from "@/lib/video-jobs/check";
+import { submitNarratedVideoJob } from "@/lib/narrated-video/submit";
+import { checkNarratedVideoJob } from "@/lib/narrated-video/check";
 import { COMFY_BASES } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning, ensureVideoPodRunning } from "@/lib/runpod/pods";
 import { VIDEO_COMFY_BASES } from "@/lib/comfyui/video-client";
@@ -74,6 +76,9 @@ export async function GET(req: NextRequest) {
     // Jobs presos em "submitting" há mais de 2 min → reset para queued
     { data: staleSubmittingImageJobs },
     { data: staleSubmittingVideoJobs },
+    // Narrated video jobs
+    { data: queuedNarratedJobs },
+    { data: activeNarratedJobs },
   ] = await Promise.all([
     supabase.from("image_jobs").select("id").eq("status", "queued").gte("updated_at", staleQueuedCutoff).limit(1),
     supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", checkCutoff).gte("updated_at", restartCutoff).limit(10),
@@ -90,6 +95,9 @@ export async function GET(req: NextRequest) {
     // submitting preso há mais de 2 min → reset para queued
     supabase.from("image_jobs").select("id").eq("status", "submitting").lt("updated_at", staleSubmittingCutoff).limit(10),
     supabase.from("video_jobs").select("id").eq("status", "submitting").lt("updated_at", staleSubmittingCutoff).limit(5),
+    // narrated video: queued + ativos
+    supabase.from("narrated_video_jobs").select("id").eq("status", "queued").limit(2),
+    supabase.from("narrated_video_jobs").select("id").in("status", ["submitting", "generating_scenes", "assembling"]).lt("updated_at", checkCutoff).limit(5),
   ]);
 
   const results: { id: string; action: string; ok: boolean; error?: string }[] = [];
@@ -262,6 +270,34 @@ export async function GET(req: NextRequest) {
       results.push({ id: job.id, action: "vid-check", ok: true });
     } catch (e) {
       results.push({ id: job.id, action: "vid-check", ok: false, error: String((e as Error)?.message ?? e) });
+    }
+  }
+
+  // Narrated video jobs — submete queued (se pod de foto online)
+  if (fotoPodOnline) {
+    const job = (queuedNarratedJobs ?? [])[0];
+    if (job) {
+      try {
+        await submitNarratedVideoJob(job.id);
+        results.push({ id: job.id, action: "narr-submit", ok: true });
+      } catch (e) {
+        const errMsg = String((e as Error)?.message ?? e);
+        results.push({ id: job.id, action: "narr-submit", ok: false, error: errMsg });
+        const supabaseClient = createServerClient();
+        await supabaseClient.from("narrated_video_jobs")
+          .update({ status: "failed", error_message: errMsg })
+          .eq("id", job.id);
+      }
+    }
+  }
+
+  // Verifica narrated video em andamento
+  for (const job of activeNarratedJobs ?? []) {
+    try {
+      await checkNarratedVideoJob(job.id);
+      results.push({ id: job.id, action: "narr-check", ok: true });
+    } catch (e) {
+      results.push({ id: job.id, action: "narr-check", ok: false, error: String((e as Error)?.message ?? e) });
     }
   }
 

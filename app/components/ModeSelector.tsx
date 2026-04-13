@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 
-export type CreationMode = "simulacao" | "fundo_branco" | "catalogo" | "personalizado" | "video" | "promo";
+export type CreationMode = "simulacao" | "fundo_branco" | "catalogo" | "personalizado" | "video" | "promo" | "video_narrado";
 
 const BASE = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/examples";
 
@@ -19,22 +19,25 @@ type ModeData = { id: CreationMode; name: string; title: string; desc: string; i
 
 function getModes(lang: string): ModeData[] {
   if (lang === "en") return [
-    { id: "simulacao",   name: "Lifestyle scene",  title: "Product in real setting", desc: "Place your product in a beautiful, real-world scene.", img: `${BASE}/simulacao.jpg`, badge: "Most used" },
-    { id: "catalogo",    name: "With model",        title: "AI-dressed model",        desc: "Virtual model wears your item — no photographer needed.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video",       name: "Animated video",    title: "Photo that moves",        desc: "Turn your photo into a video ready for Reels.", img: "", badge: "PRO" },
-    { id: "personalizado", name: "Custom",          title: "You choose the scene",    desc: "Describe what you want and the AI creates it your way.", img: `${BASE}/produto.jpg` },
+    { id: "simulacao",     name: "Lifestyle scene",   title: "Product in real setting",  desc: "Place your product in a beautiful, real-world scene.", img: `${BASE}/simulacao.jpg`, badge: "Most used" },
+    { id: "catalogo",      name: "With model",         title: "AI-dressed model",         desc: "Virtual model wears your item — no photographer needed.", img: `${BASE}/modelo_opt1.jpg` },
+    { id: "video",         name: "Animated video",     title: "Photo that moves",         desc: "Turn your photo into a video ready for Reels.", img: "", badge: "PRO" },
+    { id: "video_narrado", name: "Narrated video",     title: "Photo + voiceover",        desc: "Your product photo becomes a video with AI narration. Write the script, AI reads it.", img: "", badge: "PRO" },
+    { id: "personalizado", name: "Custom",             title: "You choose the scene",     desc: "Describe what you want and the AI creates it your way.", img: `${BASE}/produto.jpg` },
   ];
   if (lang === "es") return [
-    { id: "simulacao",   name: "Foto en escena",    title: "Producto en ambiente real", desc: "Pon tu producto en una escena bonita y real.", img: `${BASE}/simulacao.jpg`, badge: "Más usado" },
-    { id: "catalogo",    name: "Con modelo",         title: "Ropa vestida por IA",      desc: "Modelo virtual usa tu prenda sin necesitar fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video",       name: "Video animado",      title: "Foto que se mueve",        desc: "Transforma tu foto en un video listo para Reels.", img: "", badge: "PRO" },
-    { id: "personalizado", name: "A mi manera",      title: "Tú eliges la escena",      desc: "Describe lo que quieres y la IA lo crea a tu manera.", img: `${BASE}/produto.jpg` },
+    { id: "simulacao",     name: "Foto en escena",     title: "Producto en ambiente real", desc: "Pon tu producto en una escena bonita y real.", img: `${BASE}/simulacao.jpg`, badge: "Más usado" },
+    { id: "catalogo",      name: "Con modelo",          title: "Ropa vestida por IA",       desc: "Modelo virtual usa tu prenda sin necesitar fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
+    { id: "video",         name: "Video animado",       title: "Foto que se mueve",         desc: "Transforma tu foto en un video listo para Reels.", img: "", badge: "PRO" },
+    { id: "video_narrado", name: "Video narrado",       title: "Foto + narración",          desc: "Tu foto se convierte en video con narración de IA. Escribe el guión, la IA lo lee.", img: "", badge: "PRO" },
+    { id: "personalizado", name: "A mi manera",         title: "Tú eliges la escena",       desc: "Describe lo que quieres y la IA lo crea a tu manera.", img: `${BASE}/produto.jpg` },
   ];
   return [
-    { id: "simulacao",   name: "Foto em cena",      title: "Produto em ambiente real", desc: "Coloca seu produto numa cena bonita e real.", img: `${BASE}/simulacao.jpg`, badge: "Mais usado" },
-    { id: "catalogo",    name: "Com modelo",         title: "Roupa vestida por IA",    desc: "Modelo virtual usa sua peça sem precisar de fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video",       name: "Vídeo animado",      title: "Foto que se mexe",        desc: "Transforma sua foto num vídeo pronto para Reels.", img: "", badge: "PRO" },
-    { id: "personalizado", name: "Do meu jeito",     title: "Você escolhe a cena",     desc: "Descreva o que quer e a IA cria do seu jeito.", img: `${BASE}/produto.jpg` },
+    { id: "simulacao",     name: "Foto em cena",       title: "Produto em ambiente real",  desc: "Coloca seu produto numa cena bonita e real.", img: `${BASE}/simulacao.jpg`, badge: "Mais usado" },
+    { id: "catalogo",      name: "Com modelo",          title: "Roupa vestida por IA",      desc: "Modelo virtual usa sua peça sem precisar de fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
+    { id: "video",         name: "Vídeo animado",       title: "Foto que se mexe",          desc: "Transforma sua foto num vídeo pronto para Reels.", img: "", badge: "PRO" },
+    { id: "video_narrado", name: "Vídeo com narração",  title: "Foto + voz narrada",        desc: "Sua foto vira vídeo com narração de IA. Você escreve o roteiro, a IA fala.", img: "", badge: "PRO" },
+    { id: "personalizado", name: "Do meu jeito",        title: "Você escolhe a cena",       desc: "Descreva o que quer e a IA cria do seu jeito.", img: `${BASE}/produto.jpg` },
   ];
 }
 
@@ -227,17 +230,57 @@ export default function ModeSelector({ onChange }: Props) {
       <div style={{ display: "grid", gap: 12 }} className="mode-grid">
         {MODES.map((mode) => {
           const btnLabel = lang === "en" ? "Use now" : lang === "es" ? "Usar ahora" : "Usar agora";
-          return mode.id === "video" ? (
-            <VideoCard
-              key="video"
-              name={mode.name}
-              title={mode.title}
-              desc={mode.desc}
-              badge={mode.badge}
-              onClick={() => onChange("video")}
-              btnLabel={btnLabel}
-            />
-          ) : (
+          if (mode.id === "video") {
+            return (
+              <VideoCard
+                key="video"
+                name={mode.name}
+                title={mode.title}
+                desc={mode.desc}
+                badge={mode.badge}
+                onClick={() => onChange("video")}
+                btnLabel={btnLabel}
+              />
+            );
+          }
+          if (mode.id === "video_narrado") {
+            return (
+              <ModeCard
+                key="video_narrado"
+                name={mode.name}
+                title={mode.title}
+                desc={mode.desc}
+                badge={mode.badge}
+                media={
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    background: "linear-gradient(135deg, #1a0533 0%, #0f1a2e 50%, #07080b 100%)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexDirection: "column", gap: 8,
+                  }}>
+                    <div style={{ fontSize: 44, lineHeight: 1 }}>🎙️</div>
+                    <div style={{ fontSize: 11, color: "rgba(196,181,253,0.7)", fontWeight: 600, letterSpacing: "0.06em" }}>
+                      FOTO + VOZ
+                    </div>
+                    {/* Animação de ondas sonoras */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 4 }}>
+                      {[4, 8, 12, 8, 6, 10, 7, 5].map((h, i) => (
+                        <div key={i} style={{
+                          width: 3, height: h, background: "#a855f7",
+                          borderRadius: 2, opacity: 0.7,
+                          animation: `pulse 1.2s ease-in-out infinite`,
+                          animationDelay: `${i * 0.12}s`,
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                }
+                onClick={() => onChange("video_narrado")}
+                btnLabel={btnLabel}
+              />
+            );
+          }
+          return (
             <ModeCard
               key={mode.id}
               name={mode.name}
