@@ -17,6 +17,7 @@ const UpsellPopup = dynamic(() => import("@/app/components/UpsellPopup"), { ssr:
 const BotChat = dynamic(() => import("@/app/components/BotChat"), { ssr: false });
 const OnboardingScreen = dynamic(() => import("@/app/components/OnboardingScreen"), { ssr: false });
 const ConversionScreen = dynamic(() => import("@/app/components/ConversionScreen"), { ssr: false });
+const VideoHookScreen = dynamic(() => import("@/app/components/VideoHookScreen"), { ssr: false });
 const OnboardingChat = dynamic(() => import("@/app/components/OnboardingChat"), { ssr: false });
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
@@ -508,6 +509,8 @@ export default function HomePage() {
   const [rateLimitedUntil, setRateLimitedUntil] = useState<Date | null>(null);
   const [photosToday, setPhotosToday] = useState(0);
   const [pushTrigger, setPushTrigger] = useState<"photo_done" | "rate_limit" | "return_visit" | null>(null);
+  const [abVariant, setAbVariant] = useState<"A" | "B" | "C" | null>(null);
+  const [showVideoHook, setShowVideoHook] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notifiedJobsRef = useRef<Set<string>>(new Set());
@@ -936,6 +939,29 @@ export default function HomePage() {
   }
 
   // Pede permissão e registra — chamado após primeira foto pronta
+  async function trackABEvent(event: string, variant: string) {
+    try {
+      const tok = await getToken();
+      await fetch("/api/ab/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+        body: JSON.stringify({ event, variant }),
+      });
+    } catch {}
+  }
+
+  async function fetchABVariant(): Promise<"A" | "B" | "C"> {
+    try {
+      const tok = await getToken();
+      const res = await fetch("/api/ab/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+      });
+      const { variant } = await res.json();
+      return variant as "A" | "B" | "C";
+    } catch { return "A"; }
+  }
+
   async function syncPushStatus(status: "enabled" | "denied" | "skipped") {
     try {
       const tok = await getToken();
@@ -989,8 +1015,26 @@ export default function HomePage() {
     if (!res.ok) return;
     const data: Job = await res.json();
     if (data.status === "done") {
-      // Atualiza contador de fotos do dia
-      setPhotosToday((prev) => Math.max(prev, prev + 1 <= 2 ? prev + 1 : prev));
+      // A/B test — dispara na 1ª foto de usuários free
+      let variant = abVariant;
+      if (!variant) {
+        variant = await fetchABVariant();
+        setAbVariant(variant);
+      }
+      // photosToday ainda é o valor anterior (antes do setPhotosToday acima)
+      // Se for 0, é a 1ª foto
+      setPhotosToday((prev) => {
+        if (prev === 0 && variant && plan === "free") {
+          trackABEvent("photo1_done", variant);
+          if (variant === "B") {
+            setTimeout(() => setShowConversion(true), 800);
+          } else if (variant === "C") {
+            setTimeout(() => setShowVideoHook(true), 800);
+          }
+        }
+        return Math.max(prev, prev + 1 <= 2 ? prev + 1 : prev);
+      });
+
       // Gatilho de conversão de push — só se ainda não tem permissão
       if (typeof Notification !== "undefined" && Notification.permission === "default") {
         setPushTrigger("photo_done");
@@ -1302,6 +1346,8 @@ export default function HomePage() {
   }
 
   async function handleAssinarDireto(selectedPlan: "annual" | "monthly") {
+    // Rastreia clique de CTA no A/B test
+    if (abVariant) trackABEvent("cta_clicked", abVariant);
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token ?? "";
@@ -3017,6 +3063,23 @@ export default function HomePage() {
           onContinuar={() => {
             setShowConversion(false);
             setOnboardingMode(false);
+          }}
+        />
+      )}
+
+      {/* A/B Variante C — VideoHookScreen */}
+      {showVideoHook && job?.output_image_url && (
+        <VideoHookScreen
+          photoUrl={editedImageUrl ?? job.output_image_url}
+          onAssinar={() => {
+            setShowVideoHook(false);
+            if (abVariant) trackABEvent("cta_clicked", abVariant);
+            handleAssinarDireto("annual");
+          }}
+          onCriar2aFoto={() => {
+            setShowVideoHook(false);
+            if (abVariant) trackABEvent("photo2_started", abVariant);
+            resetJob();
           }}
         />
       )}
