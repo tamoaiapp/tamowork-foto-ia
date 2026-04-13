@@ -33,16 +33,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "pro_required" }, { status: 403 });
   }
 
-  let body: { input_image_url?: string; roteiro?: string };
+  let body: { input_image_url?: string; roteiro?: string; voice?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  const { input_image_url, roteiro } = body;
+  const { input_image_url, roteiro, voice } = body;
   if (!input_image_url) return NextResponse.json({ error: "input_image_url obrigatório" }, { status: 400 });
   if (!roteiro?.trim()) return NextResponse.json({ error: "roteiro obrigatório" }, { status: 400 });
+
+  const validVoice = voice === "masculino" ? "masculino" : "feminino";
 
   const { data: job, error: insertErr } = await supabase
     .from("narrated_video_jobs")
@@ -50,6 +52,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       input_image_url,
       roteiro: roteiro.trim(),
+      voice: validVoice,
       status: "queued",
     })
     .select("id, status")

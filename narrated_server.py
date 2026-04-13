@@ -81,7 +81,7 @@ def _ensure_edge_tts():
 # ── Montagem do vídeo Ken Burns ──────────────────────────────────────────────────
 
 def _assemble_video(job_id: str, scene_urls: list, text: str,
-                    supabase_url: str, supabase_key: str) -> str:
+                    supabase_url: str, supabase_key: str, voice: str = "feminino") -> str:
     """
     Pipeline:
       1. edge-tts: texto → MP3
@@ -93,9 +93,15 @@ def _assemble_video(job_id: str, scene_urls: list, text: str,
     with tempfile.TemporaryDirectory() as tmp:
         # 1. TTS
         audio_file = os.path.join(tmp, "narration.mp3")
+        voice_map = {
+            "masculino": "pt-BR-AntonioNeural",
+            "feminino":  "pt-BR-FranciscaNeural",
+        }
+        voice_name = voice_map.get(voice, "pt-BR-FranciscaNeural")
+        print(f"[assemble] voz={voice_name}")
         tts_cmd = [
             sys.executable, "-m", "edge_tts",
-            "--voice", "pt-BR-FranciscaNeural",
+            "--voice", voice_name,
             "--text", text,
             "--write-media", audio_file,
         ]
@@ -209,6 +215,7 @@ def _run_assembly_thread(body: dict):
             text=body.get("text", ""),
             supabase_url=body.get("supabase_url", ""),
             supabase_key=body.get("supabase_key", ""),
+            voice=body.get("voice", "feminino"),
         )
         with _jobs_lock:
             _jobs[job_id] = {"status": "done", "video_url": video_url}

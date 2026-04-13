@@ -507,6 +507,7 @@ export default function HomePage() {
   const narratedPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [narratedElapsed, setNarratedElapsed] = useState(0);
   const narratedElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [narratedVoice, setNarratedVoice] = useState<"feminino" | "masculino">("feminino");
 
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
@@ -1397,7 +1398,7 @@ export default function HomePage() {
       const res = await fetch("/api/narrated-video", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ input_image_url: imageUrl, roteiro: narratedRoteiro }),
+        body: JSON.stringify({ input_image_url: imageUrl, roteiro: narratedRoteiro, voice: narratedVoice }),
       });
       if (res.status === 403) { setNarratedError("Disponível apenas no plano Pro."); return; }
       if (!res.ok) throw new Error("Erro ao criar job");
@@ -1422,6 +1423,7 @@ export default function HomePage() {
     setNarratedRoteiro("");
     setNarratedError("");
     setNarratedElapsed(0);
+    setNarratedVoice("feminino");
   }
 
   function resetVideo() {
@@ -1891,6 +1893,34 @@ export default function HomePage() {
                           </>
                         )}
                         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+                      </div>
+
+                      {/* Voz */}
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>Voz da narração</label>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          {(["feminino", "masculino"] as const).map((v) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => setNarratedVoice(v)}
+                              style={{
+                                flex: 1,
+                                padding: "10px 0",
+                                borderRadius: 10,
+                                border: `1.5px solid ${narratedVoice === v ? "rgba(168,85,247,0.7)" : "rgba(255,255,255,0.08)"}`,
+                                background: narratedVoice === v ? "rgba(168,85,247,0.18)" : "rgba(255,255,255,0.03)",
+                                color: narratedVoice === v ? "#c4b5fd" : "#8394b0",
+                                fontWeight: 700,
+                                fontSize: 13,
+                                cursor: "pointer",
+                                transition: "all 0.15s",
+                              }}
+                            >
+                              {v === "feminino" ? "👩 Feminina" : "👨 Masculina"}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Roteiro */}
