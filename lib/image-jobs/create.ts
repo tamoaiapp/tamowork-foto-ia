@@ -5,6 +5,7 @@ import { getUserPlan } from "@/lib/plans";
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
 
 const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 horas
+const FREE_DAILY_LIMIT = 2; // fotos grátis por período de 24h
 
 export class RateLimitError extends Error {
   nextAvailableAt: Date;
@@ -43,19 +44,20 @@ export async function createImageJob(
   if (plan === "free") {
     // Só desconta se a foto ficou pronta (status "done") — falhas não consomem o crédito
     const since = new Date(Date.now() - FREE_COOLDOWN_MS).toISOString();
-    const { data: recentJob } = await supabase
+    const { data: recentJobs } = await supabase
       .from("image_jobs")
       .select("created_at")
       .eq("user_id", userId)
       .eq("status", "done")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+      .limit(FREE_DAILY_LIMIT);
 
-    if (recentJob) {
+    if (recentJobs && recentJobs.length >= FREE_DAILY_LIMIT) {
+      // Libera 24h após a foto mais antiga do período
+      const oldest = recentJobs[recentJobs.length - 1];
       const nextAvailableAt = new Date(
-        new Date(recentJob.created_at).getTime() + FREE_COOLDOWN_MS
+        new Date(oldest.created_at).getTime() + FREE_COOLDOWN_MS
       );
       throw new RateLimitError(nextAvailableAt);
     }

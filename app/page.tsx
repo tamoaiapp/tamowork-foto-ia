@@ -508,6 +508,8 @@ export default function HomePage() {
   const [narratedElapsed, setNarratedElapsed] = useState(0);
   const narratedElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [narratedVoice, setNarratedVoice] = useState<"feminino" | "masculino">("feminino");
+  const [narratedMode, setNarratedMode] = useState(false);
+  const [narratedDisplayProgress, setNarratedDisplayProgress] = useState(0);
   const [narratedSceneSource, setNarratedSceneSource] = useState<"generate" | "existing">("generate");
   const [narratedDonePhotos, setNarratedDonePhotos] = useState<{ id: string; output_image_url: string }[]>([]);
   const [narratedSelectedScenes, setNarratedSelectedScenes] = useState<string[]>([]);
@@ -557,13 +559,7 @@ export default function HomePage() {
         resolvedPlan = userPlan;
         setPlan(userPlan);
 
-        // Exibe upsell popup 1s após login para usuários free
-        if (userPlan === "free") {
-          setTimeout(async () => {
-            const { shouldShowUpsell } = await import("@/app/components/UpsellPopup");
-            if (shouldShowUpsell()) setShowUpsell(true);
-          }, 1000);
-        }
+        // Upsell popup removido da entrada — não empurrar venda antes do usuário ver valor
 
         const active = jobs.find(
           (j) => j.status !== "done" && j.status !== "failed" && j.status !== "canceled"
@@ -615,17 +611,31 @@ export default function HomePage() {
           }
         }
 
-        // Detecta rate limit no carregamento: free user com job COMPLETO recente (<24h)
+        // Detecta rate limit no carregamento: free user com 2+ jobs COMPLETOS recentes (<24h)
         if (userPlan === "free") {
           const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-          const lastDoneJob = jobs
-            .filter((j) => j.status === "done")
-            .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())[0];
-          if (lastDoneJob?.created_at) {
-            const nextAvailable = new Date(new Date(lastDoneJob.created_at).getTime() + FREE_COOLDOWN_MS);
+          const FREE_DAILY_LIMIT = 2;
+          const since = Date.now() - FREE_COOLDOWN_MS;
+          const recentDoneJobs = jobs
+            .filter((j) => j.status === "done" && new Date(j.created_at ?? 0).getTime() > since)
+            .sort((a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime());
+          if (recentDoneJobs.length >= FREE_DAILY_LIMIT) {
+            const oldest = recentDoneJobs[0];
+            const nextAvailable = new Date(new Date(oldest.created_at ?? 0).getTime() + FREE_COOLDOWN_MS);
             if (nextAvailable > new Date()) {
               setRateLimitedUntil(nextAvailable);
             }
+          }
+        }
+
+        // Mostra onboarding direto se usuário não tem trabalho ativo nem resultado recente
+        if (!hasActivePhotoJob) {
+          const hasRecentResult = jobs.some(
+            (j) => j.status === "done" && j.output_image_url &&
+            new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
+          );
+          if (!hasRecentResult) {
+            setTimeout(() => setShowOnboarding(true), 600);
           }
         }
       }
@@ -1366,6 +1376,10 @@ export default function HomePage() {
       if (narratedElapsedRef.current) clearInterval(narratedElapsedRef.current);
       if (narratedJob.status === "done") {
         sendPushNotification("Seu vídeo com narração está pronto! 🎙️", "Toque para ver o vídeo.");
+        setNarratedMode(true);
+      }
+      if (narratedJob.status === "failed") {
+        setNarratedMode(false);
       }
       return;
     }
@@ -1382,6 +1396,13 @@ export default function HomePage() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [narratedJob?.id, narratedJob?.status, user]);
+
+  // Animação da barra de narração (máx 90% em ~5min)
+  useEffect(() => {
+    const MAX_SEC = 300;
+    const target = Math.min(90, Math.round((narratedElapsed / MAX_SEC) * 90));
+    setNarratedDisplayProgress((prev) => prev + (target - prev) * 0.08);
+  }, [narratedElapsed]);
 
   async function loadNarratedDonePhotos() {
     try {
@@ -1443,6 +1464,10 @@ export default function HomePage() {
       }
       const { jobId } = await res.json();
       setNarratedJob({ id: jobId, status: "queued" });
+      setNarratedMode(true);
+      setModeSelected(false);
+      setNarratedDisplayProgress(0);
+      setNarratedElapsed(0);
       setTimeout(async () => {
         const t = await getToken();
         const r = await fetch(`/api/narrated-video/${jobId}`, { headers: { Authorization: `Bearer ${t}` } });
@@ -1462,6 +1487,8 @@ export default function HomePage() {
     setNarratedRoteiro("");
     setNarratedError("");
     setNarratedElapsed(0);
+    setNarratedDisplayProgress(0);
+    setNarratedMode(false);
     setNarratedVoice("feminino");
     setNarratedSceneSource("generate");
     setNarratedSelectedScenes([]);
@@ -1795,8 +1822,25 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Banner de narração em criação — aparece no topo quando usuário navega para outras telas */}
+        {narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status) && !narratedMode && (
+          <div
+            style={{ background: "linear-gradient(135deg,rgba(168,85,247,0.18),rgba(99,102,241,0.12))", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 14, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
+            onClick={() => setNarratedMode(true)}
+          >
+            <span style={{ fontSize: 22 }}>🎙️</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Criando vídeo com narração...</div>
+              <div style={{ color: "#8394b0", fontSize: 12 }}>Toque para acompanhar — te avisamos quando ficar pronto</div>
+            </div>
+            <div style={{ width: 80, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${narratedDisplayProgress}%`, background: "linear-gradient(90deg,#a855f7,#6366f1)", borderRadius: 99, transition: "width 1s ease" }} />
+            </div>
+          </div>
+        )}
+
         {/* PASSO 1: Menu de escolha de modo */}
-        {workState === "sem_trabalho" && !modeSelected && !videoMode && (
+        {workState === "sem_trabalho" && !modeSelected && !videoMode && !narratedMode && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
               <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
@@ -1817,7 +1861,7 @@ export default function HomePage() {
         )}
 
         {/* PASSO 2: Formulário após escolher o modo */}
-        {workState === "sem_trabalho" && modeSelected && !videoMode && (
+        {workState === "sem_trabalho" && modeSelected && !videoMode && !narratedMode && (
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
@@ -2374,9 +2418,89 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Narração — gerando: barra no topo, igual ao vídeo */}
+        {narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status) && narratedMode && (
+          <div style={styles.card} className="generating-wrap">
+            <div className="generating-panel">
+              <div style={styles.generatingTitle}>
+                <span style={styles.shimmerText}>
+                  {narratedJob.status === "generating_scenes"
+                    ? "Gerando cenas com IA"
+                    : narratedJob.status === "assembling"
+                    ? "Montando vídeo com narração"
+                    : "Preparando seu vídeo"}
+                </span>
+                <span style={styles.dots}>
+                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
+                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+                </span>
+              </div>
+              <div style={styles.progressBarBg}>
+                <div style={{
+                  ...styles.progressBarFill,
+                  width: `${narratedDisplayProgress}%`,
+                  background: narratedDisplayProgress > 80
+                    ? "linear-gradient(90deg, #a855f7, #22c55e)"
+                    : "linear-gradient(90deg, #a855f7, #6366f1)",
+                }} />
+              </div>
+              <p style={{ margin: "10px 0 0", fontSize: 13, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.5 }}>
+                Pode demorar 3–5 min. Pode fechar — te avisamos quando ficar pronto. 🔔
+              </p>
+              <button
+                type="button"
+                onClick={resetNarrated}
+                style={{ marginTop: 8, background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 20px", color: "#4e5c72", fontSize: 13, cursor: "pointer" }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Narração — resultado */}
+        {narratedJob?.status === "done" && narratedJob.output_video_url && narratedMode && (
+          <div style={styles.card}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center", marginBottom: 14 }}>
+              🎉 Seu vídeo com narração ficou pronto!
+            </div>
+            <video
+              src={narratedJob.output_video_url}
+              controls
+              autoPlay
+              playsInline
+              style={{ width: "100%", borderRadius: 14, background: "#000", maxHeight: 500, marginBottom: 14 }}
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(narratedJob.output_video_url!);
+                    const blob = await res.blob();
+                    await downloadBlob(blob, "video-narrado.mp4");
+                  } catch { window.open(narratedJob.output_video_url!, "_blank"); }
+                }}
+                style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
+              >
+                ⬇ Baixar vídeo
+              </button>
+              <button
+                type="button"
+                onClick={resetNarrated}
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 13, cursor: "pointer" }}
+              >
+                Criar outro vídeo
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Chat durante geração de foto ou vídeo */}
         {((workState === "trabalhando" && !videoMode && !(rateLimitedUntil && countdown > 0)) ||
-          (videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? ""))) && (
+          (videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
+          (narratedMode && narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status))) && (
           onboardingMode ? (
             <OnboardingChat />
           ) : (
