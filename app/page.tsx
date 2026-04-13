@@ -11,6 +11,7 @@ import PushConversionAgent from "@/app/components/PushConversionAgent";
 import dynamic from "next/dynamic";
 import { useI18n, LangSelector } from "@/lib/i18n";
 import { useProductVision } from "@/lib/vision/useProductVision";
+import { CONVERSION } from "@/app/config/conversion";
 const PhotoEditor = dynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 const UpsellPopup = dynamic(() => import("@/app/components/UpsellPopup"), { ssr: false });
@@ -85,9 +86,9 @@ function RateLimitCard({ countdown, onAssinar }: { countdown: number; onAssinar:
     }}>
       <div style={{ textAlign: "center" as const }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 4 }}>
-          🔒 Limite diário atingido
+          {CONVERSION.rateLimitTitle}
         </div>
-        <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 6 }}>Próxima foto grátis em</div>
+        <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 6 }}>{CONVERSION.rateLimitSubtitle}</div>
         <div style={{
           fontSize: 36, fontWeight: 900, color: "#fff",
           letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", lineHeight: 1,
@@ -99,7 +100,7 @@ function RateLimitCard({ countdown, onAssinar }: { countdown: number; onAssinar:
       </div>
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
         <div style={{ fontSize: 12, color: "#c4b5fd", fontWeight: 700, marginBottom: 6, textAlign: "center" as const }}>
-          Ou assine o PRO e crie agora:
+          {CONVERSION.rateLimitCTALabel}
         </div>
         <button onClick={onAssinar} style={{
           width: "100%", background: "linear-gradient(135deg, #6366f1, #a855f7)",
@@ -108,10 +109,10 @@ function RateLimitCard({ countdown, onAssinar }: { countdown: number; onAssinar:
           fontFamily: "Outfit, sans-serif",
           boxShadow: "0 4px 16px rgba(139,92,246,0.4)",
         }}>
-          ✨ Assinar PRO — criar agora
+          {CONVERSION.rateLimitBtnLabel}
         </button>
         <div style={{ fontSize: 11, color: "#4e5c72", textAlign: "center" as const, marginTop: 6 }}>
-          Fotos ilimitadas · Cancela quando quiser
+          {CONVERSION.rateLimitFooter}
         </div>
       </div>
     </div>
@@ -1018,7 +1019,8 @@ export default function HomePage() {
       // A/B test — dispara na 1ª foto de usuários free
       let variant = abVariant;
       if (!variant) {
-        variant = await fetchABVariant();
+        // Se o agente promoveu uma variante vencedora, usa ela para todos
+        variant = CONVERSION.abPromotedVariant ?? await fetchABVariant();
         setAbVariant(variant);
       }
       // photosToday ainda é o valor anterior (antes do setPhotosToday acima)
@@ -2725,7 +2727,7 @@ export default function HomePage() {
                 ) : plan === "free" && photosToday === 1 ? (
                   // CTA primária: 2ª foto grátis — destaque máximo
                   <button onClick={resetJob} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0 }}>
-                    📷 Criar minha 2ª foto grátis
+                    {CONVERSION.cta1Label}
                   </button>
                 ) : (
                   <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
