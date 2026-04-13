@@ -20,7 +20,7 @@ export default function OnboardingScreen({ onSubmit, onSkip }: Props) {
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [produto, setProduto] = useState("");
-  const [cenario, setCenario] = useState("");
+  const [cenario, setCenario] = useState(CENARIOS[0]); // pré-selecionado
   const [error, setError] = useState("");
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -43,11 +43,10 @@ export default function OnboardingScreen({ onSubmit, onSkip }: Props) {
   }
 
   function handleSubmit() {
-    if (!file) { setError("Envie a foto do produto"); return; }
-    if (!produto.trim()) { setError("Escreva o nome do produto"); return; }
-    if (!cenario.trim()) { setError("Descreva ou escolha um cenário"); return; }
+    if (!file) { setError("Envie a foto do produto para começar"); return; }
     setError("");
-    onSubmit(file, produto.trim(), cenario.trim());
+    // produto é opcional — usa genérico se vazio
+    onSubmit(file, produto.trim() || "produto", cenario.trim() || CENARIOS[0]);
   }
 
   return (
@@ -60,10 +59,9 @@ export default function OnboardingScreen({ onSubmit, onSkip }: Props) {
           <button onClick={onSkip} style={s.skipBtn}>Pular</button>
         </div>
 
-        <div style={s.headline}>Crie sua primeira foto agora ✨</div>
+        <div style={s.headline}>Transforme qualquer foto em profissional ✨</div>
         <p style={s.sub}>
-          Envie a foto do produto, escreva o nome e escolha onde vai aparecer.
-          A IA cuida do resto.
+          Envie a foto do produto — a IA coloca em um cenário profissional em ~2 minutos. Grátis.
         </p>
 
         {/* Upload */}
@@ -85,21 +83,21 @@ export default function OnboardingScreen({ onSubmit, onSkip }: Props) {
           <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: "none" }} />
         </div>
 
-        {/* Nome do produto */}
+        {/* Nome do produto — opcional */}
         <div style={s.fieldGroup}>
-          <label style={s.label}>Nome do produto</label>
+          <label style={s.label}>Nome do produto <span style={{ color: "#4e5c72", fontWeight: 400 }}>(opcional)</span></label>
           <input
             style={s.input}
-            placeholder="Ex: Tênis Nike branco, Caneca xícara, Bolsa de couro..."
+            placeholder="Ex: Tênis Nike, Bolsa de couro, Caneca..."
             value={produto}
             onChange={(e) => setProduto(e.target.value)}
             maxLength={120}
           />
         </div>
 
-        {/* Cenário */}
+        {/* Cenário — pré-selecionado */}
         <div style={s.fieldGroup}>
-          <label style={s.label}>Onde vai aparecer?</label>
+          <label style={s.label}>Estilo da foto</label>
           <input
             style={s.input}
             placeholder="Ex: mulher usando o produto, homem jovem ao ar livre, fundo branco estúdio..."
@@ -128,11 +126,11 @@ export default function OnboardingScreen({ onSubmit, onSkip }: Props) {
         {error && <div style={s.error}>{error}</div>}
 
         <button onClick={handleSubmit} style={s.submitBtn}>
-          ✨ Gerar foto com IA
+          {file ? "✨ Gerar foto profissional grátis" : "📷 Envie a foto para começar"}
         </button>
 
         <button onClick={onSkip} style={s.secondaryBtn}>
-          Prefiro explorar por conta
+          Explorar o app primeiro
         </button>
 
       </div>
