@@ -116,20 +116,28 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
   }
 
   try {
-    // 1. Descobre quantas cenas precisam com base na duração do áudio (via /prepare)
+    // 1. Gera áudio TTS + calcula quantas cenas precisam (áudio salvo no Supabase para reuso)
     let scenesNeeded = DEFAULT_SCENES;
+    let audioUrl = "";
     if (ASSEMBLY_BASE) {
       try {
         const prepRes = await fetch(`${ASSEMBLY_BASE}/prepare`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: job.roteiro, voice: job.voice ?? "feminino" }),
-          signal: AbortSignal.timeout(30_000),
+          body: JSON.stringify({
+            text: job.roteiro,
+            voice: job.voice ?? "feminino",
+            supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+            supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+            job_id: jobId,
+          }),
+          signal: AbortSignal.timeout(60_000),
         });
         if (prepRes.ok) {
-          const prep = await prepRes.json() as { duration_seconds: number; scenes_needed: number };
+          const prep = await prepRes.json() as { duration_seconds: number; scenes_needed: number; audio_url?: string };
           scenesNeeded = prep.scenes_needed;
-          console.log(`[narrated] áudio=${prep.duration_seconds}s → ${scenesNeeded} cenas`);
+          audioUrl = prep.audio_url ?? "";
+          console.log(`[narrated] áudio=${prep.duration_seconds}s → ${scenesNeeded} cenas | audio_url=${audioUrl ? "ok" : "none"}`);
         }
       } catch (err) {
         console.warn("[narrated] /prepare falhou, usando", DEFAULT_SCENES, "cenas:", err);
@@ -143,6 +151,7 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
         status: "assembling",
         roteiro_melhorado: roteiroMelhorado,
         scenes_needed: scenesNeeded,
+        audio_url: audioUrl || null,
         updated_at: new Date().toISOString(),
       }).eq("id", jobId);
 
@@ -155,6 +164,7 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
             body: JSON.stringify({
               job_id: jobId,
               scenes: job.scene_urls,
+              audio_url: audioUrl || undefined,
               text: roteiroMelhorado || job.roteiro,
               voice: job.voice ?? "feminino",
               supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -208,6 +218,7 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       scene_comfy_ids: scenePromptIds,
       scene_comfy_index: 0,
       scenes_needed: scenesNeeded,
+      audio_url: audioUrl || null,
       updated_at: new Date().toISOString(),
     }).eq("id", jobId);
 

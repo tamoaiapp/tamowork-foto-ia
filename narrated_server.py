@@ -81,33 +81,38 @@ def _ensure_edge_tts():
 # ── Montagem do vídeo Ken Burns ──────────────────────────────────────────────────
 
 def _assemble_video(job_id: str, scene_urls: list, text: str,
-                    supabase_url: str, supabase_key: str, voice: str = "feminino") -> str:
+                    supabase_url: str, supabase_key: str, voice: str = "feminino",
+                    audio_url: str = "") -> str:
     """
     Pipeline:
-      1. edge-tts: texto → MP3
+      1. edge-tts (ou download do áudio pré-gerado): texto → MP3
       2. Download cenas JPG
       3. ffmpeg zoompan (Ken Burns) + mix áudio → MP4
       4. Upload para Supabase Storage
       5. Retorna URL pública
     """
     with tempfile.TemporaryDirectory() as tmp:
-        # 1. TTS
+        # 1. Áudio: reutiliza o gerado em /prepare se disponível
         audio_file = os.path.join(tmp, "narration.mp3")
-        voice_map = {
-            "masculino": "pt-BR-AntonioNeural",
-            "feminino":  "pt-BR-FranciscaNeural",
-        }
-        voice_name = voice_map.get(voice, "pt-BR-FranciscaNeural")
-        print(f"[assemble] voz={voice_name}")
-        tts_cmd = [
-            sys.executable, "-m", "edge_tts",
-            "--voice", voice_name,
-            "--text", text,
-            "--write-media", audio_file,
-        ]
-        r = subprocess.run(tts_cmd, capture_output=True, text=True, timeout=60)
-        if r.returncode != 0:
-            raise RuntimeError(f"edge-tts error: {r.stderr[-500:]}")
+        if audio_url:
+            print(f"[assemble] baixando áudio pré-gerado: {audio_url[-60:]}")
+            _download(audio_url, audio_file)
+        else:
+            voice_map = {
+                "masculino": "pt-BR-AntonioNeural",
+                "feminino":  "pt-BR-FranciscaNeural",
+            }
+            voice_name = voice_map.get(voice, "pt-BR-FranciscaNeural")
+            print(f"[assemble] gerando TTS voz={voice_name}")
+            tts_cmd = [
+                sys.executable, "-m", "edge_tts",
+                "--voice", voice_name,
+                "--text", text,
+                "--write-media", audio_file,
+            ]
+            r = subprocess.run(tts_cmd, capture_output=True, text=True, timeout=60)
+            if r.returncode != 0:
+                raise RuntimeError(f"edge-tts error: {r.stderr[-500:]}")
 
         # 2. Download cenas
         scene_files = []
@@ -236,6 +241,7 @@ def _run_assembly_thread(body: dict):
             supabase_url=body.get("supabase_url", ""),
             supabase_key=body.get("supabase_key", ""),
             voice=body.get("voice", "feminino"),
+            audio_url=body.get("audio_url", ""),
         )
         with _jobs_lock:
             _jobs[job_id] = {"status": "done", "video_url": video_url}
@@ -254,9 +260,12 @@ TRANSITION_DUR = 0.8   # sobreposição entre cenas
 MIN_SCENES = 2
 MAX_SCENES = 12
 
-def _prepare_audio(text: str, voice: str) -> dict:
+def _prepare_audio(text: str, voice: str,
+                   supabase_url: str = "", supabase_key: str = "",
+                   job_id: str = "") -> dict:
     """
-    Gera TTS, mede duração e retorna quantas cenas precisam ser geradas.
+    Gera TTS, mede duração exata, faz upload do MP3 pro Supabase e
+    retorna quantas cenas precisam ser geradas (cobrindo 100% do áudio).
     """
     voice_map = {
         "masculino": "pt-BR-AntonioNeural",
@@ -264,8 +273,13 @@ def _prepare_audio(text: str, voice: str) -> dict:
     }
     voice_name = voice_map.get(voice, "pt-BR-FranciscaNeural")
 
-    with tempfile.TemporaryDirectory() as tmp:
-        audio_file = os.path.join(tmp, "narration.mp3")
+    # Gera para arquivo persistente se tiver job_id, senão temporário
+    use_tmp = not (supabase_url and supabase_key and job_id)
+    tmp_obj = tempfile.TemporaryDirectory() if use_tmp else None
+    audio_dir = tmp_obj.name if tmp_obj else tempfile.gettempdir()
+    audio_file = os.path.join(audio_dir, f"narr_{job_id or 'tmp'}.mp3")
+
+    try:
         tts_cmd = [
             sys.executable, "-m", "edge_tts",
             "--voice", voice_name,
@@ -276,7 +290,7 @@ def _prepare_audio(text: str, voice: str) -> dict:
         if r.returncode != 0:
             raise RuntimeError(f"edge-tts error: {r.stderr[-300:]}")
 
-        # Mede duração com ffprobe
+        # Mede duração exata com ffprobe
         probe = subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration",
              "-of", "default=noprint_wrappers=1:nokey=1", audio_file],
@@ -287,15 +301,58 @@ def _prepare_audio(text: str, voice: str) -> dict:
         except ValueError:
             duration = 20.0  # fallback
 
-    # Calcula cenas: cada cena cobre (PER_SCENE_DUR - TRANSITION_DUR) segundos líquidos
-    net_per_scene = PER_SCENE_DUR - TRANSITION_DUR
-    scenes_needed = max(MIN_SCENES, min(MAX_SCENES, -(-int(duration) // int(net_per_scene))))
-    print(f"[prepare] voz={voice_name} duração={duration:.1f}s → {scenes_needed} cenas")
+        # Fórmula correta: total_video = N * PER_SCENE_DUR - (N-1) * TRANSITION_DUR
+        # Para cobrir o áudio: N * PER_SCENE_DUR - (N-1) * TRANSITION_DUR >= duration
+        # => N >= (duration - TRANSITION_DUR) / (PER_SCENE_DUR - TRANSITION_DUR)
+        import math
+        net_per_scene = PER_SCENE_DUR - TRANSITION_DUR  # 4.2s
+        scenes_needed = max(MIN_SCENES, min(MAX_SCENES,
+            math.ceil((duration - TRANSITION_DUR) / net_per_scene)
+        ))
+        print(f"[prepare] voz={voice_name} duração={duration:.1f}s → {scenes_needed} cenas necessárias")
+
+        # Upload do áudio para Supabase (reutilizar no /assemble)
+        audio_url = ""
+        if supabase_url and supabase_key and job_id:
+            try:
+                object_name = f"narrated/audio_{job_id}.mp3"
+                audio_url = _upload_supabase(
+                    audio_file, supabase_url, supabase_key,
+                    "video-jobs", object_name
+                )
+                # Corrige content-type (o helper usa video/mp4 mas precisamos audio/mpeg)
+                # Fazemos re-upload com tipo correto
+                with open(audio_file, "rb") as f:
+                    data = f.read()
+                up_url = f"{supabase_url}/storage/v1/object/video-jobs/{object_name}"
+                req = urllib.request.Request(up_url, data=data, method="POST",
+                    headers={
+                        "Authorization": f"Bearer {supabase_key}",
+                        "Content-Type": "audio/mpeg",
+                        "x-upsert": "true",
+                    })
+                with urllib.request.urlopen(req, timeout=30) as rr:
+                    rr.read()
+                audio_url = f"{supabase_url}/storage/v1/object/public/video-jobs/{object_name}"
+                print(f"[prepare] áudio salvo: {audio_url[-60:]}")
+            except Exception as e:
+                print(f"[prepare] upload áudio falhou (ignorando): {e}")
+                audio_url = ""
+
+    finally:
+        if tmp_obj:
+            tmp_obj.cleanup()
+        elif os.path.exists(audio_file):
+            try:
+                os.remove(audio_file)
+            except Exception:
+                pass
 
     return {
         "duration_seconds": round(duration, 1),
         "scenes_needed": scenes_needed,
         "per_scene_seconds": PER_SCENE_DUR,
+        "audio_url": audio_url,
     }
 
 
@@ -337,14 +394,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
 
         if self.path == "/prepare":
-            # Gera áudio TTS, mede duração e calcula quantas cenas precisam
+            # Gera áudio TTS, faz upload e calcula quantas cenas precisam
             text = body.get("text", "")
             voice = body.get("voice", "feminino")
             if not text.strip():
                 self._send_json(400, {"error": "text obrigatório"})
                 return
             try:
-                result = _prepare_audio(text, voice)
+                result = _prepare_audio(
+                    text, voice,
+                    supabase_url=body.get("supabase_url", ""),
+                    supabase_key=body.get("supabase_key", ""),
+                    job_id=body.get("job_id", ""),
+                )
                 self._send_json(200, result)
             except Exception as e:
                 self._send_json(500, {"error": str(e)})
