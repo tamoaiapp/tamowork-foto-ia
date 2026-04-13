@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import BottomNav from "@/app/components/BottomNav";
 import ModeSelector, { type CreationMode } from "@/app/components/ModeSelector";
+import PushConversionAgent from "@/app/components/PushConversionAgent";
 import dynamic from "next/dynamic";
 import { useI18n, LangSelector } from "@/lib/i18n";
 import { useProductVision } from "@/lib/vision/useProductVision";
@@ -460,6 +461,7 @@ export default function HomePage() {
   const [formError, setFormError] = useState("");
   const [timeoutError, setTimeoutError] = useState("");
   const [rateLimitedUntil, setRateLimitedUntil] = useState<Date | null>(null);
+  const [pushTrigger, setPushTrigger] = useState<"photo_done" | "rate_limit" | "return_visit" | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notifiedJobsRef = useRef<Set<string>>(new Set());
@@ -625,6 +627,10 @@ export default function HomePage() {
             const nextAvailable = new Date(new Date(oldest.created_at ?? 0).getTime() + FREE_COOLDOWN_MS);
             if (nextAvailable > new Date()) {
               setRateLimitedUntil(nextAvailable);
+              // Gatilho de push — limite atingido é bom momento para engajar
+              if (typeof Notification !== "undefined" && Notification.permission === "default") {
+                setTimeout(() => setPushTrigger("rate_limit"), 2000);
+              }
             }
           }
         }
@@ -638,6 +644,12 @@ export default function HomePage() {
           if (!hasRecentResult) {
             setTimeout(() => setShowOnboarding(true), 600);
           }
+        }
+
+        // Gatilho return_visit: já criou fotos antes mas não tem push ativo
+        const hasDoneJobs = jobs.some((j) => j.status === "done");
+        if (hasDoneJobs && typeof Notification !== "undefined" && Notification.permission === "default") {
+          setTimeout(() => setPushTrigger("return_visit"), 5000);
         }
       }
 
@@ -930,7 +942,12 @@ export default function HomePage() {
     if (!res.ok) return;
     const data: Job = await res.json();
     if (data.status === "done") {
-      await requestAndRegisterPush();
+      // Gatilho de conversão de push — só se ainda não tem permissão
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        setPushTrigger("photo_done");
+      } else {
+        await requestAndRegisterPush();
+      }
       if (!notifiedJobsRef.current.has(jobId)) {
         notifiedJobsRef.current.add(jobId);
         await sendPushNotification(
@@ -2899,6 +2916,18 @@ export default function HomePage() {
           onSkip={() => setShowOnboarding(false)}
         />
       )}
+
+      <PushConversionAgent
+        trigger={pushTrigger}
+        onRequest={async () => {
+          await requestAndRegisterPush();
+          setPushTrigger(null);
+        }}
+        onSkip={() => {
+          syncPushStatus("skipped");
+          setPushTrigger(null);
+        }}
+      />
 
       {showConversion && job?.output_image_url && (
         <ConversionScreen
