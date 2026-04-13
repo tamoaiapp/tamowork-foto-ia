@@ -72,6 +72,51 @@ function formatMs(ms: number) {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
+// Card de urgência exibido no painel de resultado quando free user bate o limite
+function RateLimitCard({ countdown, onAssinar }: { countdown: number; onAssinar: () => void }) {
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12))",
+      border: "1.5px solid rgba(168,85,247,0.35)",
+      borderRadius: 16, padding: "16px 14px",
+      display: "flex", flexDirection: "column" as const, gap: 10,
+      marginBottom: 8,
+    }}>
+      <div style={{ textAlign: "center" as const }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 4 }}>
+          🔒 Limite diário atingido
+        </div>
+        <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 6 }}>Próxima foto grátis em</div>
+        <div style={{
+          fontSize: 36, fontWeight: 900, color: "#fff",
+          letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", lineHeight: 1,
+          background: "linear-gradient(135deg, #a5b4fc, #c084fc)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+        }}>
+          {formatMs(countdown)}
+        </div>
+      </div>
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
+        <div style={{ fontSize: 12, color: "#c4b5fd", fontWeight: 700, marginBottom: 6, textAlign: "center" as const }}>
+          Ou assine o PRO e crie agora:
+        </div>
+        <button onClick={onAssinar} style={{
+          width: "100%", background: "linear-gradient(135deg, #6366f1, #a855f7)",
+          border: "none", borderRadius: 12, padding: "12px",
+          color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer",
+          fontFamily: "Outfit, sans-serif",
+          boxShadow: "0 4px 16px rgba(139,92,246,0.4)",
+        }}>
+          ✨ Assinar PRO — criar agora
+        </button>
+        <div style={{ fontSize: 11, color: "#4e5c72", textAlign: "center" as const, marginTop: 6 }}>
+          Fotos ilimitadas · Cancela quando quiser
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const BASE_CATALOG = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/catalog";
 
 const CATALOG_GROUPS = [
@@ -2660,13 +2705,10 @@ export default function HomePage() {
               {/* Upsell PRO — só para free */}
               {plan === "free" && (
                 <>
-                  {rateLimitedUntil && countdown > 0 && (
-                    <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 4px", lineHeight: 1.5 }}>
-                      Plano gratuito · 2 criações a cada 24h<br/>
-                      <span style={{ color: "#6366f1" }}>Próxima disponível em {formatMs(countdown)}</span>
-                    </p>
-                  )}
-                  <ProUpsell onAssinar={handleAssinarDireto} />
+                  {rateLimitedUntil && countdown > 0
+                    ? <RateLimitCard countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
+                    : <ProUpsell onAssinar={handleAssinarDireto} />
+                  }
                 </>
               )}
             </div>
@@ -2746,13 +2788,10 @@ export default function HomePage() {
               {/* Upsell PRO — só para free */}
               {plan === "free" && (
                 <>
-                  {rateLimitedUntil && countdown > 0 && (
-                    <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 4px", lineHeight: 1.5 }}>
-                      Plano gratuito · 2 criações a cada 24h<br/>
-                      <span style={{ color: "#6366f1" }}>Próxima disponível em {formatMs(countdown)}</span>
-                    </p>
-                  )}
-                  <ProUpsell onAssinar={handleAssinarDireto} />
+                  {rateLimitedUntil && countdown > 0
+                    ? <RateLimitCard countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
+                    : <ProUpsell onAssinar={handleAssinarDireto} />
+                  }
                 </>
               )}
             </div>
