@@ -461,6 +461,7 @@ export default function HomePage() {
   const [formError, setFormError] = useState("");
   const [timeoutError, setTimeoutError] = useState("");
   const [rateLimitedUntil, setRateLimitedUntil] = useState<Date | null>(null);
+  const [photosToday, setPhotosToday] = useState(0);
   const [pushTrigger, setPushTrigger] = useState<"photo_done" | "rate_limit" | "return_visit" | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -622,6 +623,7 @@ export default function HomePage() {
           const recentDoneJobs = jobs
             .filter((j) => j.status === "done" && new Date(j.created_at ?? 0).getTime() > since)
             .sort((a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime());
+          setPhotosToday(recentDoneJobs.length);
           if (recentDoneJobs.length >= FREE_DAILY_LIMIT) {
             const oldest = recentDoneJobs[0];
             const nextAvailable = new Date(new Date(oldest.created_at ?? 0).getTime() + FREE_COOLDOWN_MS);
@@ -942,6 +944,8 @@ export default function HomePage() {
     if (!res.ok) return;
     const data: Job = await res.json();
     if (data.status === "done") {
+      // Atualiza contador de fotos do dia
+      setPhotosToday((prev) => Math.max(prev, prev + 1 <= 2 ? prev + 1 : prev));
       // Gatilho de conversão de push — só se ainda não tem permissão
       if (typeof Notification !== "undefined" && Notification.permission === "default") {
         setPushTrigger("photo_done");
@@ -2621,6 +2625,14 @@ export default function HomePage() {
                 </div>
               )}
 
+              {/* Banner: 1 foto grátis restante — aparece após 1ª foto, antes de bater o limite */}
+              {plan === "free" && photosToday === 1 && !rateLimitedUntil && (
+                <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 12, padding: "10px 14px", marginBottom: 8, textAlign: "center" as const }}>
+                  <div style={{ fontSize: 13, color: "#a5b4fc", fontWeight: 700 }}>✨ Você ainda tem 1 foto grátis hoje!</div>
+                  <div style={{ fontSize: 12, color: "#8394b0", marginTop: 2 }}>Crie agora enquanto é grátis</div>
+                </div>
+              )}
+
               {/* Gerar novamente */}
               <div style={{ marginBottom: 8 }}>
                 {plan === "free" && rateLimitedUntil && countdown > 0 ? (
@@ -2628,7 +2640,9 @@ export default function HomePage() {
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
                 ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
+                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>
+                    {plan === "free" && photosToday === 1 ? "📷 Criar minha 2ª foto grátis" : t("result_new")}
+                  </button>
                 )}
               </div>
 
@@ -2699,6 +2713,14 @@ export default function HomePage() {
                 </div>
               )}
 
+              {/* Banner: 1 foto grátis restante — mobile */}
+              {plan === "free" && photosToday === 1 && !rateLimitedUntil && (
+                <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 12, padding: "10px 14px", marginBottom: 8, textAlign: "center" as const }}>
+                  <div style={{ fontSize: 13, color: "#a5b4fc", fontWeight: 700 }}>✨ Você ainda tem 1 foto grátis hoje!</div>
+                  <div style={{ fontSize: 12, color: "#8394b0", marginTop: 2 }}>Crie agora enquanto é grátis</div>
+                </div>
+              )}
+
               {/* Gerar novamente */}
               <div style={{ marginBottom: 8 }}>
                 {plan === "free" && rateLimitedUntil && countdown > 0 ? (
@@ -2706,7 +2728,9 @@ export default function HomePage() {
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
                 ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
+                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>
+                    {plan === "free" && photosToday === 1 ? "📷 Criar minha 2ª foto grátis" : t("result_new")}
+                  </button>
                 )}
               </div>
 
