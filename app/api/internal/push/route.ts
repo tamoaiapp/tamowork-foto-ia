@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const { userId, userIds, title, body, url } = await req.json();
+  const { userId, userIds, title, body, url, notif_id } = await req.json();
   const ids: string[] = userIds ?? (userId ? [userId] : []);
 
   if (!ids.length || !title || !body) {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, sent: 0, message: "nenhuma subscription encontrada" });
   }
 
-  const payload = JSON.stringify({ title, body, url: url ?? "/" });
+  const payload = JSON.stringify({ title, body, url: url ?? "/", notif_id });
 
   const results = await Promise.allSettled(
     subs.map(sub =>

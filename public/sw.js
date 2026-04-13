@@ -67,6 +67,12 @@ self.addEventListener("notificationclick", (e) => {
   if (e.action === "close") return;
 
   const url = e.notification.data?.url ?? "/";
+  const notifId = e.notification.data?.notif_id;
+
+  // Rastrear abertura da notificação
+  if (notifId) {
+    fetch("/api/push/opened?id=" + notifId).catch(() => {});
+  }
 
   e.waitUntil(
     clients
