@@ -65,7 +65,7 @@ async function submitSceneVariation(
   (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt =
     `${promptPos}\n#job:${prefix}\n`;
   (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt =
-    "blurry, low quality, text, watermark, distorted";
+    "blurry, low quality, text, watermark, distorted, ugly, deformed face, bad anatomy, extra limbs, white background, plain background, product only, no person";
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = prefix;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = seed;
 
@@ -176,13 +176,20 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       uploadImageToComfy(job.input_image_url, comfyBase, `narr_${jobId.replace(/-/g, "").slice(0, 12)}`),
     ]);
 
-    // 4. Gera prompt profissional para fotos de produto
-    const keywords = job.roteiro.split(/\s+/).slice(0, 10).join(" ");
-    const promptPos = `professional product photography, clean studio lighting, sharp focus, high quality commercial photo, ${keywords}, white or neutral background`;
+    // 4. Gera prompts de simulação de uso — pessoa usando o produto em cenas lifestyle variadas
+    const SCENE_PROMPTS = [
+      "beautiful brazilian woman wearing the product, outdoor lifestyle photo, natural sunlight, city street background, stylish casual look, high quality fashion photography",
+      "elegant woman wearing the product, indoor lifestyle scene, modern interior, soft natural light, fashion editorial style, professional photography",
+      "young woman wearing the product, park or garden background, golden hour lighting, lifestyle fashion photo, vibrant colors, sharp focus",
+      "fashion model wearing the product, shopping mall or cafe background, candid lifestyle moment, natural light, high quality photo",
+      "woman wearing the product, close up detail shot, showing fabric texture and fit, soft bokeh background, professional fashion photography",
+      "woman wearing the product, dynamic pose, urban background, street style fashion photo, natural daylight",
+    ];
 
     // 5. Submete N variações ao ComfyUI (dinâmico com base na duração do áudio)
     const scenePromptIds: string[] = [];
     for (let i = 0; i < scenesNeeded; i++) {
+      const promptPos = SCENE_PROMPTS[i % SCENE_PROMPTS.length];
       try {
         const promptId = await submitSceneVariation(imageName, promptPos, jobId, i, comfyBase);
         scenePromptIds.push(promptId);
