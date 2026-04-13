@@ -173,7 +173,7 @@ export async function GET(req: NextRequest) {
   // REGRA 2: Verificar se o pod de foto está online antes de submeter
   const fotoBase = COMFY_BASES[0];
   let fotoPodOnline = false;
-  if (fotoBase && (queuedJobs ?? []).length > 0) {
+  if (fotoBase && ((queuedJobs ?? []).length > 0 || (queuedNarratedJobs ?? []).length > 0)) {
     fotoPodOnline = await ensureFotoPodRunning(fotoBase);
     if (!fotoPodOnline) {
       // Pod estava desligado, enviou sinal de resume — não tenta submeter agora
