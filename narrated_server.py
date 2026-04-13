@@ -123,56 +123,76 @@ def _assemble_video(job_id: str, scene_urls: list, text: str,
             raise RuntimeError("Cenas insuficientes para montar o vídeo (mínimo 2)")
 
         n = len(scene_files)
-        per_scene_dur = 4  # segundos por cena
+        per_scene_dur = 5  # segundos por cena (inclui sobreposição da transição)
+        transition_dur = 0.8  # segundos de crossfade entre cenas
         fps = 25
         # Formato Story 9:16 para Instagram/TikTok/Reels
         OUT_W, OUT_H = 1080, 1920
 
-        # 3. Monta com ffmpeg (Ken Burns: zoompan alternado) — formato Story 9:16
+        # Ken Burns alternados por cena
+        KB_PATTERNS = [
+            # zoom in centro
+            ("'min(zoom+0.0008,1.35)'", "'iw/2-(iw/zoom/2)'", "'ih/2-(ih/zoom/2)'"),
+            # zoom in topo-esquerda → pan diagonal
+            ("'min(zoom+0.0006,1.3)'",  "'0'",                "'0'"),
+            # zoom out centro (começa colado, recua)
+            ("'if(eq(on,1),1.35,max(zoom-0.0007,1.0))'", "'iw/2-(iw/zoom/2)'", "'ih/2-(ih/zoom/2)'"),
+            # zoom in base-direita
+            ("'min(zoom+0.0008,1.35)'", "'iw-(iw/zoom)'",    "'ih-(ih/zoom)'"),
+        ]
+
+        # 3. Monta com ffmpeg: Ken Burns por cena + xfade entre elas — Story 9:16
         output_file = os.path.join(tmp, "output.mp4")
 
-        # Construir filtro complexo: N imagens → zoompan → concat → mix áudio
+        # ── Passo 1: gera cada cena com Ken Burns ────────────────────────────────
         filter_parts = []
-        concat_inputs = ""
+        frames = per_scene_dur * fps
 
         for i, sf in enumerate(scene_files):
-            frames = per_scene_dur * fps
-            if i % 2 == 0:
-                # zoom in do centro
-                z_expr = f"'min(zoom+0.0008,1.35)'"
-                x_expr = "'iw/2-(iw/zoom/2)'"
-                y_expr = "'ih/2-(ih/zoom/2)'"
-            elif i % 4 == 1:
-                # zoom in do topo
-                z_expr = f"'min(zoom+0.0008,1.35)'"
-                x_expr = "'iw/2-(iw/zoom/2)'"
-                y_expr = "'0'"
-            elif i % 4 == 2:
-                # zoom out do centro
-                z_expr = f"'if(eq(on,1),1.35,max(zoom-0.0008,1.0))'"
-                x_expr = "'iw/2-(iw/zoom/2)'"
-                y_expr = "'ih/2-(ih/zoom/2)'"
-            else:
-                # zoom in da base
-                z_expr = f"'min(zoom+0.0008,1.35)'"
-                x_expr = "'iw/2-(iw/zoom/2)'"
-                y_expr = "'ih-(ih/zoom)'"
-
+            z_expr, x_expr, y_expr = KB_PATTERNS[i % len(KB_PATTERNS)]
+            # Fundo: escala para cobrir story + blur forte (sem cortar produto na fg)
             filter_parts.append(
-                f"[{i}:v]"
-                f"scale={OUT_W}:{OUT_H}:force_original_aspect_ratio=increase,"
-                f"crop={OUT_W}:{OUT_H},"
+                f"[{i}:v]scale={OUT_W}:{OUT_H}:force_original_aspect_ratio=increase,"
+                f"crop={OUT_W}:{OUT_H},boxblur=30:5[bg{i}]"
+            )
+            # Frente: escala para CABER inteiro dentro do story (sem cortar)
+            filter_parts.append(
+                f"[{i}:v]scale={OUT_W}:{OUT_H}:force_original_aspect_ratio=decrease,"
+                f"pad={OUT_W}:{OUT_H}:(ow-iw)/2:(oh-ih)/2:color=black@0[fg{i}]"
+            )
+            # Compõe: blur atrás + produto completo na frente
+            filter_parts.append(
+                f"[bg{i}][fg{i}]overlay=0:0[comp{i}]"
+            )
+            # Ken Burns no composto final
+            filter_parts.append(
+                f"[comp{i}]"
                 f"zoompan=z={z_expr}:x={x_expr}:y={y_expr}"
                 f":d={frames}:s={OUT_W}x{OUT_H}:fps={fps},"
                 f"setpts=PTS-STARTPTS"
                 f"[v{i}]"
             )
-            concat_inputs += f"[v{i}]"
 
-        filter_parts.append(f"{concat_inputs}concat=n={n}:v=1:a=0[vout]")
+        # ── Passo 2: encadeia xfade entre as cenas ───────────────────────────────
+        # Transitions alternadas para variedade visual
+        TRANSITIONS = ["fade", "fadeblack", "slideleft", "slideright"]
+        xfade_parts = []
+        prev_label = "[v0]"
+
+        for i in range(1, n):
+            offset = i * (per_scene_dur - transition_dur)
+            transition = TRANSITIONS[(i - 1) % len(TRANSITIONS)]
+            out_label = "[vout]" if i == n - 1 else f"[x{i}]"
+            xfade_parts.append(
+                f"{prev_label}[v{i}]xfade=transition={transition}"
+                f":duration={transition_dur}:offset={offset:.2f}{out_label}"
+            )
+            prev_label = f"[x{i}]"
+
+        filter_parts.extend(xfade_parts)
         full_filter = ";".join(filter_parts)
 
-        # Entradas: N imagens (loop) + 1 áudio
+        # Entradas: N imagens (loop, duração por cena) + 1 áudio
         cmd = ["ffmpeg", "-y"]
         for sf in scene_files:
             cmd += ["-loop", "1", "-t", str(per_scene_dur), "-i", sf]
@@ -185,7 +205,7 @@ def _assemble_video(job_id: str, scene_urls: list, text: str,
             "-c:a", "aac",
             "-b:a", "128k",
             "-preset", "fast",
-            "-crf", "23",
+            "-crf", "22",
             "-pix_fmt", "yuv420p",
             "-movflags", "+faststart",
             "-shortest",
