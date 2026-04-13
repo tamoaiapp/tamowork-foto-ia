@@ -2735,11 +2735,24 @@ export default function HomePage() {
               </div>
 
               {/* Criar vídeo — 100% largura */}
-              {plan === "pro" ? (
-                <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>
-                  {t("result_create_video")}
-                </button>
-              ) : (
+              {plan === "pro" ? (() => {
+                const videoInProgress =
+                  (videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
+                  (narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status));
+                return videoInProgress ? (
+                  <button
+                    disabled
+                    style={{ ...styles.videoBtn, width: "100%", marginBottom: 8, opacity: 0.45, cursor: "not-allowed" }}
+                    title="Ainda tem um vídeo sendo criado"
+                  >
+                    🎬 Ainda tem vídeo sendo criado...
+                  </button>
+                ) : (
+                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>
+                    {t("result_create_video")}
+                  </button>
+                );
+              })() : (
                 <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc" }}>
                   🎬 Vídeo animado — exclusivo PRO ✨
                 </button>
@@ -2827,9 +2840,21 @@ export default function HomePage() {
               </div>
 
               {/* Criar vídeo — 100% largura */}
-              {plan === "pro" ? (
-                <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>{t("result_create_video")}</button>
-              ) : (
+              {plan === "pro" ? (() => {
+                const videoInProgress =
+                  (videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
+                  (narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status));
+                return videoInProgress ? (
+                  <button
+                    disabled
+                    style={{ ...styles.videoBtn, width: "100%", marginBottom: 8, opacity: 0.45, cursor: "not-allowed" }}
+                  >
+                    🎬 Ainda tem vídeo sendo criado...
+                  </button>
+                ) : (
+                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>{t("result_create_video")}</button>
+                );
+              })() : (
                 <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc", fontSize: 12 }}>
                   🎬 Vídeo animado — exclusivo PRO ✨
                 </button>
