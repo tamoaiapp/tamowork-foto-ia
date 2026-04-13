@@ -567,6 +567,16 @@ export default function HomePage() {
   const [narratedDonePhotos, setNarratedDonePhotos] = useState<{ id: string; output_image_url: string }[]>([]);
   const [narratedSelectedScenes, setNarratedSelectedScenes] = useState<string[]>([]);
 
+  // Long video state
+  type LongVideoJob = { id: string; status: string; output_video_url?: string; clip_urls?: string[]; error_message?: string; created_at?: string };
+  const [longVideoJob, setLongVideoJob] = useState<LongVideoJob | null>(null);
+  const [longVideoMode, setLongVideoMode] = useState(false);
+  const [longVideoSubmitting, setLongVideoSubmitting] = useState(false);
+  const [longVideoError, setLongVideoError] = useState("");
+  const longVideoPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [longVideoElapsed, setLongVideoElapsed] = useState(0);
+  const longVideoElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
   const [pendingResult, setPendingResult] = useState(false);
@@ -1655,6 +1665,60 @@ export default function HomePage() {
     setVideoElapsedSec(0);
   }
 
+  function resetLongVideo() {
+    if (longVideoPollRef.current) clearInterval(longVideoPollRef.current);
+    if (longVideoElapsedRef.current) clearInterval(longVideoElapsedRef.current);
+    setLongVideoJob(null);
+    setLongVideoMode(false);
+    setLongVideoError("");
+    setLongVideoElapsed(0);
+  }
+
+  async function handleLongVideoSubmit(imageUrl: string, produtoName: string) {
+    setLongVideoSubmitting(true);
+    setLongVideoError("");
+    try {
+      const tok = await getToken();
+      const res = await fetch("/api/long-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+        body: JSON.stringify({ input_image_url: imageUrl, produto: produtoName }),
+      });
+      if (res.status === 403) { setLongVideoError("Disponível apenas no plano Pro."); return; }
+      if (res.status === 409) {
+        // Já tem um job ativo — restaura
+        const d = await res.json();
+        setLongVideoJob({ id: d.jobId, status: "queued" });
+        setLongVideoMode(true);
+        setModeSelected(false);
+        return;
+      }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error((d as { error?: string }).error ?? "Erro"); }
+      const { jobId } = await res.json();
+      setLongVideoJob({ id: jobId, status: "queued" });
+      setLongVideoMode(true);
+      setModeSelected(false);
+      setLongVideoElapsed(0);
+      // Poll a cada 30s (o agente roda a cada 5 min, não adianta poll frequente)
+      longVideoPollRef.current = setInterval(async () => {
+        const t = await getToken();
+        const r = await fetch(`/api/long-video/${jobId}`, { headers: { Authorization: `Bearer ${t}` } });
+        if (!r.ok) return;
+        const d = await r.json() as LongVideoJob;
+        setLongVideoJob(d);
+        if (["done", "failed", "canceled"].includes(d.status)) {
+          if (longVideoPollRef.current) clearInterval(longVideoPollRef.current);
+          if (longVideoElapsedRef.current) clearInterval(longVideoElapsedRef.current);
+        }
+      }, 30_000);
+      longVideoElapsedRef.current = setInterval(() => setLongVideoElapsed(s => s + 1), 1000);
+    } catch (err) {
+      setLongVideoError(err instanceof Error ? err.message : "Erro ao criar vídeo longo");
+    } finally {
+      setLongVideoSubmitting(false);
+    }
+  }
+
   function resetAll() {
     resetVideo();
     resetJob();
@@ -1979,8 +2043,30 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* Banner de vídeo longo em andamento */}
+        {longVideoJob && !["done", "failed", "canceled"].includes(longVideoJob.status) && !longVideoMode && (
+          <div
+            style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.18),rgba(168,85,247,0.12))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 14, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
+            onClick={() => setLongVideoMode(true)}
+          >
+            <span style={{ fontSize: 22 }}>🎬</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Criando vídeo longo (~32s)...</div>
+              <div style={{ color: "#8394b0", fontSize: 12 }}>
+                {{
+                  queued: "Na fila — o agente processa a cada 5 minutos",
+                  generating_photos: "Gerando 4 cenas com IA...",
+                  generating_videos: "Gerando 4 vídeos...",
+                  concatenating: "Juntando os clips...",
+                }[longVideoJob.status] ?? "Processando..."}
+              </div>
+            </div>
+            <span style={{ fontSize: 12, color: "#8394b0" }}>⏱ {Math.floor(longVideoElapsed / 60)}m</span>
+          </div>
+        )}
+
         {/* PASSO 1: Menu de escolha de modo */}
-        {workState === "sem_trabalho" && !modeSelected && !videoMode && !narratedMode && (
+        {workState === "sem_trabalho" && !modeSelected && !videoMode && !narratedMode && !longVideoMode && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
               <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
@@ -2001,7 +2087,7 @@ export default function HomePage() {
         )}
 
         {/* PASSO 2: Formulário após escolher o modo */}
-        {workState === "sem_trabalho" && modeSelected && !videoMode && !narratedMode && (
+        {workState === "sem_trabalho" && modeSelected && !videoMode && !narratedMode && !longVideoMode && (
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
@@ -2018,11 +2104,82 @@ export default function HomePage() {
                   video: "Criar vídeo",
                   promo: "Criar promoção",
                   video_narrado: "Vídeo com narração",
+                  video_longo: "🎬 Vídeo longo (~32s)",
                 }[creationMode]}
               </div>
             </div>
 
             <form onSubmit={handleSubmit} style={styles.form}>
+
+              {/* ── MODO VÍDEO LONGO ── */}
+              {creationMode === "video_longo" ? (
+                <>
+                  {/* Aviso de tempo */}
+                  <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 12, padding: "12px 14px", marginBottom: 16, display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <span style={{ fontSize: 20, flexShrink: 0 }}>⏰</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#fbbf24", marginBottom: 3 }}>Este processo demora 20-40 minutos</div>
+                      <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.5 }}>
+                        A IA gera <strong style={{ color: "#eef2f9" }}>4 fotos em cenários diferentes</strong>, depois converte cada uma em vídeo de ~8s e une tudo num vídeo final de ~32 segundos. Pode fechar o app — te avisamos quando ficar pronto.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upload foto */}
+                  <div onClick={() => fileRef.current?.click()} style={{ ...styles.uploadArea, cursor: "pointer" }}>
+                    {preview ? (
+                      <img src={preview} alt="preview" style={{ width: "100%", maxHeight: 180, objectFit: "contain", borderRadius: 10 }} />
+                    ) : (
+                      <>
+                        <div style={styles.uploadIcon}>📷</div>
+                        <div style={styles.uploadTitle}>Envie a foto do produto</div>
+                        <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
+                      </>
+                    )}
+                    <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+                  </div>
+
+                  {/* Produto */}
+                  <div style={styles.fieldGroup}>
+                    <label style={styles.label}>Nome / descrição do produto</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: tênis branco esportivo, bolsa feminina couro marrom…"
+                      value={produto}
+                      onChange={(e) => setProduto(e.target.value)}
+                      style={styles.input}
+                    />
+                  </div>
+
+                  {longVideoError && <div style={styles.error}>{longVideoError}</div>}
+
+                  <button
+                    type="button"
+                    disabled={longVideoSubmitting || !imageFile || !produto.trim() || plan !== "pro"}
+                    onClick={async () => {
+                      if (!imageFile || !produto.trim()) return;
+                      setLongVideoSubmitting(true);
+                      setLongVideoError("");
+                      try {
+                        const tok = await getToken();
+                        const fileToUpload = await convertToJpegIfNeeded(imageFile);
+                        const form = new FormData();
+                        form.append("file", fileToUpload);
+                        const up = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${tok}` }, body: form });
+                        if (!up.ok) throw new Error("Falha ao enviar imagem");
+                        const { url: imageUrl } = await up.json();
+                        await handleLongVideoSubmit(imageUrl, produto);
+                      } catch (err) {
+                        setLongVideoError(err instanceof Error ? err.message : "Erro");
+                        setLongVideoSubmitting(false);
+                      }
+                    }}
+                    style={{ ...styles.submitBtn, opacity: (longVideoSubmitting || !imageFile || !produto.trim() || plan !== "pro") ? 0.5 : 1 }}
+                  >
+                    {longVideoSubmitting ? "Enviando..." : plan !== "pro" ? "🔒 Exclusivo PRO" : "🎬 Criar vídeo longo"}
+                  </button>
+                </>
+              ) : null}
 
               {/* ── MODO VÍDEO COM NARRAÇÃO ── */}
               {creationMode === "video_narrado" ? (
@@ -2640,6 +2797,87 @@ export default function HomePage() {
                 Criar outro vídeo
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Vídeo longo — tela de progresso */}
+        {longVideoMode && longVideoJob && !["done", "failed", "canceled"].includes(longVideoJob.status) && (
+          <div style={styles.card}>
+            <div style={{ textAlign: "center", padding: "8px 0" }}>
+              <div style={{ fontSize: 44, marginBottom: 12 }}>🎬</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", marginBottom: 8 }}>
+                {{
+                  queued: "Na fila...",
+                  generating_photos: "Gerando 4 cenas diferentes com IA...",
+                  generating_videos: "Convertendo fotos em vídeos...",
+                  concatenating: "Juntando os clips em um vídeo único...",
+                }[longVideoJob.status] ?? "Processando..."}
+              </div>
+              <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 16, lineHeight: 1.6 }}>
+                ⏰ Este processo demora <strong style={{ color: "#eef2f9" }}>20-40 minutos</strong><br />
+                Pode fechar o app — te avisamos quando ficar pronto
+              </div>
+              {/* Barra de progresso por fase */}
+              <div style={{ width: "100%", height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, marginBottom: 8 }}>
+                <div style={{
+                  height: "100%",
+                  width: `${({ queued: 5, generating_photos: 30, generating_videos: 65, concatenating: 90 } as Record<string, number>)[longVideoJob.status] ?? 5}%`,
+                  background: "linear-gradient(90deg, #6366f1, #a855f7)",
+                  borderRadius: 99, transition: "width 1s ease",
+                }} />
+              </div>
+              <div style={{ fontSize: 11, color: "#4e5c72", marginBottom: 16 }}>
+                Fase: {longVideoJob.status === "queued" ? "1/4 — aguardando agente" : longVideoJob.status === "generating_photos" ? "2/4 — fotos" : longVideoJob.status === "generating_videos" ? "3/4 — vídeos" : "4/4 — concatenando"}
+              </div>
+              <button type="button" onClick={() => setLongVideoMode(false)} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 20px", color: "#4e5c72", fontSize: 13, cursor: "pointer" }}>
+                Continuar usando o app
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Vídeo longo — resultado */}
+        {longVideoJob?.status === "done" && longVideoJob.output_video_url && longVideoMode && (
+          <div style={styles.card}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center", marginBottom: 14 }}>
+              🎉 Seu vídeo longo ficou pronto!
+            </div>
+            <video
+              src={longVideoJob.output_video_url}
+              controls
+              autoPlay
+              playsInline
+              style={{ width: "100%", borderRadius: 14, background: "#000", maxHeight: 500, marginBottom: 14 }}
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(longVideoJob.output_video_url!);
+                    const blob = await res.blob();
+                    await downloadBlob(blob, "video-longo.mp4");
+                  } catch { window.open(longVideoJob.output_video_url!, "_blank"); }
+                }}
+                style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
+              >
+                ⬇ Baixar vídeo (~32s)
+              </button>
+              <button type="button" onClick={resetLongVideo} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 13, cursor: "pointer" }}>
+                Criar outro vídeo longo
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Vídeo longo — erro */}
+        {longVideoJob?.status === "failed" && longVideoMode && (
+          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 14, padding: "20px", textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#eef2f9", marginBottom: 8 }}>Erro ao gerar vídeo longo</div>
+            <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 16 }}>{longVideoJob.error_message ?? "Tente novamente."}</div>
+            <button onClick={resetLongVideo} style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)", borderRadius: 10, padding: "8px 16px", color: "#a78bfa", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+              Tentar novamente
+            </button>
           </div>
         )}
 
