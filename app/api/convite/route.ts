@@ -10,6 +10,11 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(req: NextRequest) {
+  const secret = req.headers.get("x-convite-secret");
+  if (!secret || secret !== process.env.CONVITE_SECRET) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
+
   const { email, password } = await req.json().catch(() => ({}));
 
   if (!email || !password) {
