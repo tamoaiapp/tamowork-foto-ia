@@ -462,6 +462,7 @@ export default function HomePage() {
   const [rateLimitedUntil, setRateLimitedUntil] = useState<Date | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notifiedJobsRef = useRef<Set<string>>(new Set());
 
   // Blur animation: decreases from 40px to 8px over ~90s
   const [blurPx, setBlurPx] = useState(40);
@@ -876,15 +877,33 @@ export default function HomePage() {
   }
 
   // Pede permissão e registra — chamado após primeira foto pronta
+  async function syncPushStatus(status: "enabled" | "denied" | "skipped") {
+    try {
+      const tok = await getToken();
+      await fetch("/api/push/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+        body: JSON.stringify({ status }),
+      });
+    } catch {}
+  }
+
   async function requestAndRegisterPush() {
     if (typeof Notification === "undefined") return;
-    if (Notification.permission === "denied") return;
+    if (Notification.permission === "denied") {
+      syncPushStatus("denied");
+      return;
+    }
     if (Notification.permission === "default") {
       const perm = await Notification.requestPermission();
-      if (perm !== "granted") return;
+      if (perm !== "granted") {
+        syncPushStatus("denied");
+        return;
+      }
     }
     const tok = await getToken();
     await registerPushSubscription(tok);
+    syncPushStatus("enabled");
   }
 
   // Envia notificação via servidor (Web Push real — funciona com app fechado)
@@ -912,10 +931,13 @@ export default function HomePage() {
     const data: Job = await res.json();
     if (data.status === "done") {
       await requestAndRegisterPush();
-      await sendPushNotification(
-        lang === "en" ? "Your photo is ready! 🎉" : lang === "es" ? "¡Tu foto está lista! 🎉" : "Sua foto está pronta! 🎉",
-        lang === "en" ? "Tap to see the AI-generated image." : lang === "es" ? "Toca para ver la imagen generada por IA." : "Toque para ver a imagem gerada pela IA."
-      );
+      if (!notifiedJobsRef.current.has(jobId)) {
+        notifiedJobsRef.current.add(jobId);
+        await sendPushNotification(
+          lang === "en" ? "Your photo is ready! 🎉" : lang === "es" ? "¡Tu foto está lista! 🎉" : "Sua foto está pronta! 🎉",
+          lang === "en" ? "Tap to see the AI-generated image." : lang === "es" ? "Toca para ver la imagen generada por IA." : "Toque para ver a imagem gerada pela IA."
+        );
+      }
     } else if (data.status === "failed") {
       sendPushNotification(
         lang === "en" ? "Generation error" : lang === "es" ? "Error en la generación" : "Erro na geração",
@@ -1306,7 +1328,10 @@ export default function HomePage() {
       if (videoPollRef.current) clearInterval(videoPollRef.current);
       if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
       if (videoJob.status === "done") {
-        sendPushNotification("Seu vídeo está pronto! 🎬", "Toque para ver o vídeo gerado.");
+        if (!notifiedJobsRef.current.has(videoJob.id)) {
+          notifiedJobsRef.current.add(videoJob.id);
+          sendPushNotification("Seu vídeo está pronto! 🎬", "Toque para ver o vídeo gerado.");
+        }
         setVideoMode(true); // garante que o resultado aparece
         setPendingResult(false); // limpa "Ver Resultado" da foto
       }
@@ -1357,6 +1382,7 @@ export default function HomePage() {
         body: JSON.stringify({ prompt: videoPrompt, input_image_url: imageUrl }),
       });
       if (res.status === 403) { setVideoError("Disponível apenas no plano Pro."); return; }
+      if (res.status === 503) { setVideoError("queue_busy"); return; }
       if (!res.ok) throw new Error("Erro ao criar job de vídeo");
       const { jobId } = await res.json();
       setVideoJob({ id: jobId, status: "queued" });
@@ -2179,7 +2205,13 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  {videoError && <div style={styles.error}>{videoError}</div>}
+                  {videoError && (
+                    <div style={styles.error}>
+                      {videoError === "queue_busy"
+                        ? "⏳ Nossos servidores estão trabalhando em vários vídeos agora. Aguarde alguns minutinhos e tente de novo!"
+                        : videoError}
+                    </div>
+                  )}
 
                   {plan !== "pro" ? (
                     <button
@@ -2731,7 +2763,13 @@ export default function HomePage() {
                   onFocus={(e) => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 350)}
                 />
               </div>
-              {videoError && <div style={{ ...styles.error, marginTop: 12 }}>{videoError}</div>}
+              {videoError && (
+                <div style={{ ...styles.error, marginTop: 12 }}>
+                  {videoError === "queue_busy"
+                    ? "⏳ Nossos servidores estão trabalhando em vários vídeos agora. Aguarde alguns minutinhos e tente de novo!"
+                    : videoError}
+                </div>
+              )}
               <button
                 onClick={() => handleVideoSubmit(job.output_image_url!)}
                 disabled={videoSubmitting}

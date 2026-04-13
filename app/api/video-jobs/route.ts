@@ -36,6 +36,16 @@ export async function POST(req: NextRequest) {
     input_image_url = "https://" + input_image_url;
   }
 
+  // Checa tamanho da fila global antes de criar
+  const { count: queueSize } = await supabase
+    .from("video_jobs")
+    .select("*", { count: "exact", head: true })
+    .in("status", ["queued", "submitted", "submitting", "processing"]);
+
+  if ((queueSize ?? 0) >= 10) {
+    return NextResponse.json({ error: "queue_busy" }, { status: 503 });
+  }
+
   try {
     const job = await createVideoJob(user.id, prompt ?? "", input_image_url);
     return NextResponse.json({ jobId: job.id, status: job.status }, { status: 201 });
