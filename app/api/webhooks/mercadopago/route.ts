@@ -70,8 +70,8 @@ export async function POST(req: NextRequest) {
         // Detecta plano pelo item id ou valor do pagamento
         const itemId = payment.additional_info?.items?.[0]?.id ?? "";
         const amount = payment.transaction_amount ?? 0;
-        const isMonthly = itemId === "weekly" || itemId === "monthly" || (amount >= 40 && amount < 100);
-        const isAnnual = itemId === "annual" || amount >= 200;
+        const isMonthly = itemId === "weekly" || itemId === "monthly" || (amount >= 60 && amount < 300);
+        const isAnnual = itemId === "annual" || amount >= 300;
         if (isMonthly) periodEnd.setMonth(periodEnd.getMonth() + 1);
         else if (isAnnual) periodEnd.setFullYear(periodEnd.getFullYear() + 1);
         else periodEnd.setMonth(periodEnd.getMonth() + 1); // fallback seguro: 1 mês

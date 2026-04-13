@@ -612,12 +612,12 @@ function OnboardingPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ ...s.planName, fontSize: 17 }}>Anual — melhor valor</div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>R$228 cobrado uma vez por ano</div>
-                    <div style={{ fontSize: 12, color: "#16c784", fontWeight: 700, marginTop: 2 }}>Economize R$360 vs. mensal</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>R$348 cobrado uma vez por ano</div>
+                    <div style={{ fontSize: 12, color: "#16c784", fontWeight: 700, marginTop: 2 }}>Economize R$600 vs. mensal</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>R$19<span style={{ fontSize: 13, fontWeight: 500 }}>/mês</span></div>
-                    <div style={{ fontSize: 13, color: "#16c784", fontWeight: 700, lineHeight: 1.3 }}>R$0,63/dia</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1 }}>R$29<span style={{ fontSize: 13, fontWeight: 500 }}>/mês</span></div>
+                    <div style={{ fontSize: 13, color: "#16c784", fontWeight: 700, lineHeight: 1.3 }}>R$0,96/dia</div>
                   </div>
                 </button>
 
@@ -634,8 +634,8 @@ function OnboardingPage() {
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Cobrado todo mês, cancele quando quiser</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$49<span style={{ fontSize: 12, fontWeight: 500 }}>/mês</span></div>
-                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>R$1,63/dia</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>R$79<span style={{ fontSize: 12, fontWeight: 500 }}>/mês</span></div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>R$2,63/dia</div>
                   </div>
                 </button>
               </div>

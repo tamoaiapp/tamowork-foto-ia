@@ -430,9 +430,9 @@ export default function PlanosPage() {
             <div style={styles.planLabel}>{isBR ? "Plano Anual" : "Annual Plan"}</div>
             {isBR ? (
               <>
-                <div style={styles.price}>R$19<span style={styles.pricePeriod}> /mês</span></div>
-                <div style={styles.priceBilled}>Cobrado R$228 por ano</div>
-                <div style={styles.priceHighlight}>Menos de R$0,61 por dia</div>
+                <div style={styles.price}>R$29<span style={styles.pricePeriod}> /mês</span></div>
+                <div style={styles.priceBilled}>Cobrado R$348 por ano</div>
+                <div style={styles.priceHighlight}>Menos de R$0,96 por dia</div>
               </>
             ) : (
               <>
@@ -458,7 +458,7 @@ export default function PlanosPage() {
                 onMouseEnter={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
                 onMouseLeave={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
               >
-                {loadingMP ? "Aguarde..." : "Quero assinar agora — R$228/ano"}
+                {loadingMP ? "Aguarde..." : "Quero assinar agora — R$348/ano"}
               </button>
             ) : (
               <button
@@ -472,7 +472,7 @@ export default function PlanosPage() {
               </button>
             )}
             <div style={{ ...styles.btnNote, fontWeight: 700, color: "#16c784" }}>
-              {isBR ? "Economize R$360 comparado ao plano mensal" : "Save vs monthly billing"}
+              {isBR ? "Economize R$600 comparado ao plano mensal" : "Save vs monthly billing"}
             </div>
           </div>
 
@@ -481,11 +481,11 @@ export default function PlanosPage() {
             <div style={{ height: 28, marginBottom: 16 }} />
             <div style={styles.planLabel}>{isBR ? "Plano Mensal" : "Monthly Plan"}</div>
             <div style={styles.price}>
-              R$49<span style={styles.pricePeriod}> /mês</span>
+              R$79<span style={styles.pricePeriod}> /mês</span>
             </div>
             <div style={styles.priceBilled}>
-              <span style={styles.strikethrough}>R$588/ano</span>
-              {" "}→ {lang === "en" ? "annual saves R$360" : lang === "es" ? "el anual ahorra R$360" : "anual sai R$360 mais barato"}
+              <span style={styles.strikethrough}>R$948/ano</span>
+              {" "}→ {lang === "en" ? "annual saves R$600" : lang === "es" ? "el anual ahorra R$600" : "anual sai R$600 mais barato"}
             </div>
             <div style={{ marginBottom: 24 }} />
             <div style={styles.divider} />
@@ -514,7 +514,7 @@ export default function PlanosPage() {
                 }
               }}
             >
-              {loadingMPMonthly ? "Aguarde..." : "Assinar por R$49/mês"}
+              {loadingMPMonthly ? "Aguarde..." : "Assinar por R$79/mês"}
             </button>
             <div style={styles.btnNote}>
               {isBR ? "\u00a0" : "Brazil only (MercadoPago)"}

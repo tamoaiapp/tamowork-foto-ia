@@ -243,11 +243,11 @@ function ProUpsell({ onAssinar }: { onAssinar: (plan: "annual" | "monthly") => v
           )}
           <div style={pu.planName}>Anual</div>
           <div style={pu.planPrice}>
-            <span style={pu.planAmount}>R$19</span>
+            <span style={pu.planAmount}>R$29</span>
             <span style={pu.planPer}>/mês</span>
           </div>
-          <div style={pu.planBilled}>R$228 cobrado uma vez</div>
-          <div style={pu.planSave}>Economize R$360</div>
+          <div style={pu.planBilled}>R$348 cobrado uma vez</div>
+          <div style={pu.planSave}>Economize R$600</div>
         </button>
 
         {/* Mensal */}
@@ -257,17 +257,17 @@ function ProUpsell({ onAssinar }: { onAssinar: (plan: "annual" | "monthly") => v
         >
           <div style={pu.planName}>Mensal</div>
           <div style={pu.planPrice}>
-            <span style={pu.planAmount}>R$49</span>
+            <span style={pu.planAmount}>R$79</span>
             <span style={pu.planPer}>/mês</span>
           </div>
-          <div style={pu.planBilled}>Cobrado todo mês</div>
-          <div style={{ ...pu.planSave, color: "#4e5c72" }}>R$360 a mais/ano</div>
+          <div style={pu.planBilled}>Cobrado todo mês · recorrente</div>
+          <div style={{ ...pu.planSave, color: "#4e5c72" }}>R$600 a mais/ano</div>
         </button>
       </div>
 
       {/* CTA */}
       <button onClick={() => onAssinar(selected)} style={pu.btn}>
-        {selected === "annual" ? "Assinar por R$228/ano" : "Assinar por R$49/mês"}
+        {selected === "annual" ? "Assinar por R$348/ano" : "Assinar por R$79/mês"}
       </button>
       <div style={pu.guarantee}>Cancela quando quiser · Sem fidelidade</div>
     </div>

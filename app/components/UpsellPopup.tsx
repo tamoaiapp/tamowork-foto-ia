@@ -15,7 +15,7 @@ const VARIANTS = [
     id: "v1_escassez",
     emoji: "⚡",
     headline: "Fotos profissionais ilimitadas",
-    subheadline: "Venda mais com imagens que vendem. Plano anual por apenas R$19/mês.",
+    subheadline: "Venda mais com imagens que vendem. Plano anual por apenas R$29/mês.",
     cta: "Quero o plano anual",
     badge: "🔥 Mais popular",
     accent: "#a855f7",
@@ -23,9 +23,9 @@ const VARIANTS = [
   {
     id: "v2_economia",
     emoji: "💰",
-    headline: "Economize R$360 por ano",
-    subheadline: "Plano mensal sai R$588/ano. O anual, só R$228. A diferença paga um iPhone.",
-    cta: "Assinar por R$228/ano",
+    headline: "Economize R$600 por ano",
+    subheadline: "Plano mensal sai R$948/ano. O anual, só R$348. A diferença paga um iPhone.",
+    cta: "Assinar por R$348/ano",
     badge: "💸 Melhor custo-benefício",
     accent: "#16c784",
   },
@@ -34,7 +34,7 @@ const VARIANTS = [
     emoji: "📸",
     headline: "Sua foto de produto em 60 segundos",
     subheadline: "Fotos ilimitadas, fundo branco, cenários profissionais e vídeos animados — tudo no anual.",
-    cta: "Começar agora — R$19/mês",
+    cta: "Começar agora — R$29/mês",
     badge: "✨ Resultado garantido",
     accent: "#6366f1",
   },
@@ -52,7 +52,7 @@ const VARIANTS = [
     emoji: "⭐",
     headline: "Usado por +500 lojistas",
     subheadline: "Quem vende no Instagram e WhatsApp usa o TamoWork para ter fotos de catálogo sem fotógrafo.",
-    cta: "Fazer parte — R$19/mês",
+    cta: "Fazer parte — R$29/mês",
     badge: "👥 +500 usuários",
     accent: "#ec4899",
   },
@@ -68,7 +68,7 @@ const VARIANTS = [
   {
     id: "v7_simples",
     emoji: "🎯",
-    headline: "R$19 por mês. Fotos ilimitadas.",
+    headline: "R$29 por mês. Fotos ilimitadas.",
     subheadline: "Sem taxa de fotógrafo. Sem estúdio. Sem edição manual. Só você e a IA.",
     cta: "Assinar o plano anual",
     badge: "🎯 Simples assim",
@@ -77,7 +77,7 @@ const VARIANTS = [
   {
     id: "v8_comparacao",
     emoji: "📊",
-    headline: "Fotógrafo: R$300/sessão. TamoWork: R$19/mês",
+    headline: "Fotógrafo: R$300/sessão. TamoWork: R$29/mês",
     subheadline: "Fotos ilimitadas, entregues em segundos. Sem agendamento, sem deslocamento.",
     cta: "Quero economizar agora",
     badge: "💡 Compare e decida",
@@ -87,7 +87,7 @@ const VARIANTS = [
     id: "v9_exclusivo",
     emoji: "👑",
     headline: "Acesso Pro — plano exclusivo anual",
-    subheadline: "Fotos ilimitadas + vídeo animado + fundo branco + catálogo com modelo. Por R$228/ano.",
+    subheadline: "Fotos ilimitadas + vídeo animado + fundo branco + catálogo com modelo. Por R$348/ano.",
     cta: "Quero acesso completo",
     badge: "👑 Tudo incluído",
     accent: "#8b5cf6",
@@ -96,7 +96,7 @@ const VARIANTS = [
     id: "v10_primeiro_job",
     emoji: "🎉",
     headline: "Sua primeira foto ficou incrível!",
-    subheadline: "Imagina ter isso sem limite. Assine o anual por R$19/mês e gere fotos todo dia.",
+    subheadline: "Imagina ter isso sem limite. Assine o anual por R$29/mês e gere fotos todo dia.",
     cta: "Continuar sem limites",
     badge: "🎉 Aproveite o momento",
     accent: "#f97316",
@@ -260,10 +260,10 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
               {lang === "en" ? "Annual plan" : "Plano anual"}
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-              <span style={{ fontSize: 32, fontWeight: 800, color: "#eef2f9" }}>R$19</span>
+              <span style={{ fontSize: 32, fontWeight: 800, color: "#eef2f9" }}>R$29</span>
               <span style={{ fontSize: 14, color: "#8394b0" }}>/mês</span>
             </div>
-            <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 2 }}>R$228 cobrado uma vez</div>
+            <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 2 }}>R$348 cobrado uma vez</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{
@@ -271,7 +271,7 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
               borderRadius: 10, padding: "6px 12px",
               fontSize: 13, fontWeight: 700, color: "#16c784",
             }}>
-              {lang === "en" ? "Save R$360" : "Economize R$360"}
+              {lang === "en" ? "Save R$600" : "Economize R$600"}
             </div>
           </div>
         </div>
@@ -315,7 +315,7 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
             color: "#8394b0", fontSize: 13, cursor: "pointer",
           }}
         >
-          {lang === "en" ? "Monthly plan — R$49/mo" : "Plano mensal — R$49/mês"}
+          {lang === "en" ? "Monthly plan — R$79/mo" : "Plano mensal — R$79/mês"}
         </button>
 
         {/* Rodapé */}

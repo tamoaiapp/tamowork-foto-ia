@@ -43,16 +43,16 @@ export default function ConversionScreen({ photoUrl, onAssinar, onContinuar }: P
           <div>
             <div style={s.priceLabel}>Plano anual</div>
             <div style={s.price}>
-              <span style={s.priceNum}>R$19</span>
+              <span style={s.priceNum}>R$29</span>
               <span style={s.pricePer}>/mês</span>
             </div>
-            <div style={s.priceSub}>R$228 cobrado uma vez · Cancele quando quiser</div>
+            <div style={s.priceSub}>R$348 cobrado uma vez · Cancele quando quiser</div>
           </div>
-          <div style={s.saveBadge}>Economize R$360</div>
+          <div style={s.saveBadge}>Economize R$600</div>
         </div>
 
         <button onClick={onAssinar} style={s.ctaBtn}>
-          ⚡ Assinar Pro agora · R$228/ano
+          ⚡ Assinar Pro agora · R$348/ano
         </button>
 
         <button onClick={onContinuar} style={s.skipBtn}>
