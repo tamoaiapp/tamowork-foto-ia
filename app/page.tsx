@@ -177,7 +177,7 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
           {formatMs(countdown)}
         </div>
         <div style={{ fontSize: 12, color: "#4e5c72", marginBottom: 20 }}>
-          O plano gratuito permite 1 foto por dia
+          O plano gratuito permite 2 fotos por dia
         </div>
       </div>
 
@@ -2599,7 +2599,7 @@ export default function HomePage() {
                 <>
                   {rateLimitedUntil && countdown > 0 && (
                     <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 4px", lineHeight: 1.5 }}>
-                      Plano gratuito · 1 criação a cada 24h<br/>
+                      Plano gratuito · 2 criações a cada 24h<br/>
                       <span style={{ color: "#6366f1" }}>Próxima disponível em {formatMs(countdown)}</span>
                     </p>
                   )}
@@ -2675,7 +2675,7 @@ export default function HomePage() {
                 <>
                   {rateLimitedUntil && countdown > 0 && (
                     <p style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, margin: "0 0 4px", lineHeight: 1.5 }}>
-                      Plano gratuito · 1 criação a cada 24h<br/>
+                      Plano gratuito · 2 criações a cada 24h<br/>
                       <span style={{ color: "#6366f1" }}>Próxima disponível em {formatMs(countdown)}</span>
                     </p>
                   )}
