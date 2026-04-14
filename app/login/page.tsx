@@ -249,6 +249,7 @@ export default function LoginPage() {
           background: #07080b;
           display: flex;
           flex-direction: column;
+          overflow-x: hidden;
           align-items: center;
         }
         .login-hero {
@@ -318,7 +319,7 @@ export default function LoginPage() {
         {/* Coluna esquerda — hero + carousel */}
         <div className="login-hero">
           {/* Glow */}
-          <div style={{ position: "absolute", top: 0, left: "30%", width: 400, height: 300, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(99,102,241,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: 0, left: "30%", width: "min(400px, 70vw)", height: 300, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(99,102,241,0.15) 0%, transparent 70%)", pointerEvents: "none", overflow: "hidden" }} />
 
           {/* Logo — só aparece no desktop */}
           <div className="login-logo-hero" style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>

@@ -1056,8 +1056,8 @@ export default function HomePage() {
       if (!notifiedJobsRef.current.has(jobId)) {
         notifiedJobsRef.current.add(jobId);
         await sendPushNotification(
-          lang === "en" ? "Your photo is ready! 🎉" : lang === "es" ? "¡Tu foto está lista! 🎉" : "Sua foto está pronta! 🎉",
-          lang === "en" ? "Tap to see the AI-generated image." : lang === "es" ? "Toca para ver la imagen generada por IA." : "Toque para ver a imagem gerada pela IA."
+          lang === "en" ? "Done! Here's how it turned out 👇" : lang === "es" ? "¡Listo! Así quedó 👇" : "Pronto! Ficou assim 👇",
+          lang === "en" ? "Tap to see the photo I created for you." : lang === "es" ? "Toca para ver la foto que creé para ti." : "Toque para ver a foto que criei pra você."
         );
       }
     } else if (data.status === "failed") {
@@ -2028,8 +2028,8 @@ export default function HomePage() {
           <div style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.18),rgba(168,85,247,0.12))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 14, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => setVideoMode(true)}>
             <span style={{ fontSize: 22 }}>🎬</span>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Criando seu vídeo...</div>
-              <div style={{ color: "#8394b0", fontSize: 12 }}>Pode continuar usando o app — te avisamos quando ficar pronto</div>
+              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Tô criando seu vídeo...</div>
+              <div style={{ color: "#8394b0", fontSize: 12 }}>Pode continuar usando o app — te aviso quando ficar pronto</div>
             </div>
             <div style={{ width: 80, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${videoDisplayProgress}%`, background: "linear-gradient(90deg,#6366f1,#a855f7)", borderRadius: 99, transition: "width 1s ease" }} />
@@ -2045,8 +2045,8 @@ export default function HomePage() {
           >
             <span style={{ fontSize: 22 }}>🎙️</span>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Criando vídeo com narração...</div>
-              <div style={{ color: "#8394b0", fontSize: 12 }}>Toque para acompanhar — te avisamos quando ficar pronto</div>
+              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Tô criando o vídeo com narração...</div>
+              <div style={{ color: "#8394b0", fontSize: 12 }}>Toque para acompanhar — te aviso quando ficar pronto</div>
             </div>
             <div style={{ width: 80, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${narratedDisplayProgress}%`, background: "linear-gradient(90deg,#a855f7,#6366f1)", borderRadius: 99, transition: "width 1s ease" }} />
@@ -2062,12 +2062,12 @@ export default function HomePage() {
           >
             <span style={{ fontSize: 22 }}>🎬</span>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Criando vídeo longo (~32s)...</div>
+              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Tô criando o vídeo longo (~32s)...</div>
               <div style={{ color: "#8394b0", fontSize: 12 }}>
                 {{
-                  queued: "Na fila — o agente processa a cada 5 minutos",
-                  generating_photos: "Gerando 4 cenas com IA...",
-                  generating_videos: "Gerando 4 vídeos...",
+                  queued: "Tô na fila — processo a cada 5 minutos",
+                  generating_photos: "Gerando as cenas...",
+                  generating_videos: "Gerando os vídeos...",
                   concatenating: "Juntando os clips...",
                 }[longVideoJob.status] ?? "Processando..."}
               </div>
@@ -2132,7 +2132,7 @@ export default function HomePage() {
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#fbbf24", marginBottom: 3 }}>Este processo demora 20-40 minutos</div>
                       <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.5 }}>
-                        A IA gera <strong style={{ color: "#eef2f9" }}>4 fotos em cenários diferentes</strong>, depois converte cada uma em vídeo de ~8s e une tudo num vídeo final de ~32 segundos. Pode fechar o app — te avisamos quando ficar pronto.
+                        Gero <strong style={{ color: "#eef2f9" }}>4 fotos em cenários diferentes</strong>, depois converto cada uma em vídeo de ~8s e uno tudo num vídeo final de ~32 segundos. Pode fechar o app — te aviso quando ficar pronto.
                       </div>
                     </div>
                   </div>
@@ -2144,7 +2144,7 @@ export default function HomePage() {
                     ) : (
                       <>
                         <div style={styles.uploadIcon}>📷</div>
-                        <div style={styles.uploadTitle}>Envie a foto do produto</div>
+                        <div style={styles.uploadTitle}>Me manda a foto do produto</div>
                         <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
                       </>
                     )}
@@ -2202,10 +2202,10 @@ export default function HomePage() {
                       <div style={{ fontSize: 44 }}>🎙️</div>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", textAlign: "center" }}>
                         {narratedJob.status === "queued" || narratedJob.status === "submitting"
-                          ? "Na fila..."
+                          ? "Tô na fila..."
                           : narratedJob.status === "generating_scenes"
-                          ? "Gerando cenas com IA..."
-                          : "Montando vídeo com narração..."}
+                          ? "Gerando as cenas..."
+                          : "Montando o vídeo com narração..."}
                       </div>
                       <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" }}>
                         {narratedJob.status === "assembling"
@@ -2234,7 +2234,7 @@ export default function HomePage() {
                     /* Resultado */
                     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center" }}>
-                        🎉 Seu vídeo com narração ficou pronto!
+                        🎉 Pronto! Seu vídeo com narração ficou assim 👇
                       </div>
                       <video
                         src={narratedJob.output_video_url}
@@ -2307,8 +2307,8 @@ export default function HomePage() {
                         </div>
                         <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 4 }}>
                           {narratedSceneSource === "generate"
-                            ? "A IA gera variações profissionais da sua foto de produto"
-                            : "Use fotos que você já gerou — selecione 2 ou mais abaixo"}
+                            ? "Gero variações profissionais da sua foto de produto"
+                            : "Use fotos que eu já criei pra você — selecione 2 ou mais abaixo"}
                         </div>
                       </div>
 
@@ -2420,7 +2420,7 @@ export default function HomePage() {
                           } as React.CSSProperties}
                         />
                         <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 4 }}>
-                          A IA vai melhorar o texto e gerar a narração automaticamente
+                          Eu melhoro o texto e gero a narração automaticamente
                         </div>
                       </div>
 
@@ -2445,7 +2445,7 @@ export default function HomePage() {
                           onClick={handleNarratedSubmit}
                           style={{ ...styles.submitBtn, opacity: (narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || !narratedRoteiro.trim()) ? 0.5 : 1 }}
                         >
-                          {narratedSubmitting ? "Enviando..." : "🎙️ Gerar vídeo com narração"}
+                          {narratedSubmitting ? "Enviando..." : "🎙️ Criar vídeo com narração"}
                         </button>
                       )}
                     </>
@@ -2462,7 +2462,7 @@ export default function HomePage() {
                     ) : (
                       <>
                         <div style={styles.uploadIcon}>🎬</div>
-                        <div style={styles.uploadText}>Envie a foto que vira vídeo</div>
+                        <div style={styles.uploadText}>Me manda a foto que eu animo</div>
                         <div style={styles.uploadSub}>JPG, PNG ou WEBP</div>
                       </>
                     )}
@@ -2491,7 +2491,7 @@ export default function HomePage() {
                   {videoError && (
                     <div style={styles.error}>
                       {videoError === "queue_busy"
-                        ? "⏳ Nossos servidores estão trabalhando em vários vídeos agora. Aguarde alguns minutinhos e tente de novo!"
+                        ? "⏳ Tô trabalhando em vários vídeos agora. Aguarda alguns minutinhos e tenta de novo!"
                         : videoError}
                     </div>
                   )}
@@ -2588,7 +2588,7 @@ export default function HomePage() {
                     type="text"
                     placeholder={
                       creationMode === "simulacao"
-                        ? (lang === "en" ? "Leave empty — AI identifies automatically" : "Deixe vazio — IA identifica sozinha")
+                        ? (lang === "en" ? "Leave empty — I'll identify automatically" : "Deixe vazio — eu identifico sozinho")
                         : "Ex: conjunto feminino floral, blusa cropped azul, tênis branco…"
                     }
                     value={produto}
@@ -2615,10 +2615,10 @@ export default function HomePage() {
                     type="text"
                     placeholder={
                       creationMode === "simulacao"
-                        ? (lang === "en" ? "Leave empty — AI chooses automatically" : lang === "es" ? "Deja vacío — IA elige automáticamente" : "Deixe vazio — IA escolhe o cenário sozinha")
+                        ? (lang === "en" ? "Leave empty — I'll choose automatically" : lang === "es" ? "Deja vacío — yo elijo automáticamente" : "Deixe vazio — eu escolho o cenário")
                         : creationMode === "catalogo"
                         ? (lang === "en" ? "Ex: streets of Paris, upscale café, modern urban setting" : lang === "es" ? "Ej: calle de París, café sofisticado, ambiente urbano moderno" : "Ex: rua de Paris, café sofisticado, ambiente urbano moderno")
-                        : (lang === "en" ? "Freely describe what the AI should create" : lang === "es" ? "Describe libremente lo que la IA debe crear" : "Descreva livremente o que a IA deve criar")
+                        : (lang === "en" ? "Freely describe what I should create" : lang === "es" ? "Describe libremente lo que voy a crear" : "Descreva livremente o que eu vou criar")
                     }
                     value={cenario}
                     onChange={(e) => setCenario(e.target.value)}
@@ -2631,8 +2631,10 @@ export default function HomePage() {
               {creationMode === "produto_exposto" && (
                 <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, fontSize: 13, color: "#a78bfa", lineHeight: 1.5 }}>
                   {lang === "en"
-                    ? "✨ AI reads the photo automatically and creates the ideal display — no description needed."
-                    : "✨ A IA lê a foto automaticamente e cria o expositor ideal — não precisa descrever nada."}
+                    ? "✨ I read your photo and create the ideal display automatically — no description needed."
+                    : lang === "es"
+                    ? "✨ Leo tu foto y creo el expositor ideal automáticamente — no necesitas describir nada."
+                    : "✨ Eu leio a foto e crio o expositor ideal — não precisa descrever nada."}
                 </div>
               )}
 
@@ -2644,7 +2646,7 @@ export default function HomePage() {
                 disabled={submitting || (creationMode !== "produto_exposto" && creationMode !== "simulacao" && !cenario.trim())}
                 style={{ ...styles.submitBtn, opacity: (submitting || (creationMode !== "produto_exposto" && creationMode !== "simulacao" && !cenario.trim())) ? 0.5 : 1 }}
               >
-                {submitting ? "Enviando..." : "✨ Gerar foto com IA"}
+                {submitting ? t("btn_generating") : t("btn_generate")}
               </button>
               </>
               )}
@@ -3208,7 +3210,7 @@ export default function HomePage() {
               {videoError && (
                 <div style={{ ...styles.error, marginTop: 12 }}>
                   {videoError === "queue_busy"
-                    ? "⏳ Nossos servidores estão trabalhando em vários vídeos agora. Aguarde alguns minutinhos e tente de novo!"
+                    ? "⏳ Tô trabalhando em vários vídeos agora. Aguarda alguns minutinhos e tenta de novo!"
                     : videoError}
                 </div>
               )}

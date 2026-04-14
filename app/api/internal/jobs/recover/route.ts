@@ -10,7 +10,7 @@ import { COMFY_BASES } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning, ensureVideoPodRunning } from "@/lib/runpod/pods";
 import { VIDEO_COMFY_BASES } from "@/lib/comfyui/video-client";
 
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 
 // Erros de rede/pod transitórios → merecem retry
 // Erros de dados permanentes (404 na imagem, prompt inválido) → falha imediata
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization") ?? "";
   const internalHeader = req.headers.get("x-internal-secret") ?? "";
   const isCron = authHeader === `Bearer ${process.env.CRON_SECRET}`;
-  const isInternal = internalHeader === INTERNAL_SECRET;
+  const isInternal = !!INTERNAL_SECRET && internalHeader === INTERNAL_SECRET;
 
   if (!isCron && !isInternal) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

@@ -42,7 +42,7 @@ const VARIANTS = [
     id: "v4_urgencia",
     emoji: "🚀",
     headline: "Desbloqueie tudo agora",
-    subheadline: "Você está limitado a 1 foto/dia. Com o Pro, são fotos ilimitadas todo dia.",
+    subheadline: "Você está limitado a 2 fotos/dia. Com o Pro, são fotos ilimitadas todo dia.",
     cta: "Desbloquear Pro",
     badge: "🔓 Sem limites",
     accent: "#f59e0b",

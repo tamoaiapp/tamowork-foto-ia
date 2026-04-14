@@ -13,7 +13,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 
 // POST /api/internal/push
 // Body: { userId, title, body, url? }

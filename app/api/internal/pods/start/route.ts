@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resumePod } from "@/lib/runpod/pods";
 
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 
 // Cron: liga pod 2 às 8h (BRT) = 11h UTC
 // Também aceita x-internal-secret para uso manual

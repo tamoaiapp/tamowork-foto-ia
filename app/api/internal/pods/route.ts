@@ -5,14 +5,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { FOTO_POD_IDS, VIDEO_POD_ID, getPodStatus, stopPod } from "@/lib/runpod/pods";
 
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 const IDLE_MINUTES = parseInt(process.env.POD_IDLE_MINUTES ?? "20");
 
 export async function GET(req: NextRequest) {
   // Vercel Cron envia Authorization: Bearer <CRON_SECRET>
   const auth = req.headers.get("authorization") ?? "";
   const isVercelCron = auth === `Bearer ${process.env.CRON_SECRET}`;
-  const isInternal = req.headers.get("x-internal-secret") === INTERNAL_SECRET;
+  const isInternal = !!INTERNAL_SECRET && req.headers.get("x-internal-secret") === INTERNAL_SECRET;
 
   if (!isVercelCron && !isInternal) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

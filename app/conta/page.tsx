@@ -279,7 +279,7 @@ export default function ContaPage() {
                       </div>
                     </div>
                     <div style={styles.subDesc}>
-                      {lang === "en" ? "1 photo per day. No video access." : lang === "es" ? "1 foto por día. Sin acceso a videos." : "1 foto por dia. Sem acesso a vídeos."}
+                      {lang === "en" ? "2 photos per day. No video access." : lang === "es" ? "2 fotos por día. Sin acceso a videos." : "2 fotos por dia. Sem acesso a vídeos."}
                     </div>
                     <div style={{
                       background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12))",

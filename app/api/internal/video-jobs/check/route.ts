@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkVideoJob } from "@/lib/video-jobs/check";
 
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 
 export async function POST(req: NextRequest) {
   if (req.headers.get("x-internal-secret") !== INTERNAL_SECRET) {

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkImageJob } from "@/lib/image-jobs/check";
 
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "tamowork-internal-2026";
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-internal-secret");
-  if (secret !== INTERNAL_SECRET) {
+  if (!INTERNAL_SECRET || secret !== INTERNAL_SECRET) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
