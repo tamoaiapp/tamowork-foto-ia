@@ -359,11 +359,14 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
   const productLabel = normalizeProductLabel(produto);
 
   // Slots hold_* que SÃO exibição de produto — não precisam de humano
+  // hold_flower: Qwen é img2img — não consegue ADICIONAR pessoa que não existe na foto.
+  // Resultado natural (buquê em display elegante) já é foto profissional válida.
   const DISPLAY_ONLY_HOLD = new Set([
     "hold_beauty_product",
     "hold_pet_product",
     "hold_food_display",
     "hold_display",
+    "hold_flower",
   ]);
   const refReq =
     (slot.startsWith("wear_") || slot.startsWith("hold_")) &&
@@ -407,17 +410,16 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
 
   // 5. Negativos críticos por slot — ficam PRIMEIRO para nunca serem truncados
   if (slot === "hold_flower") {
-    // Viés 1: modelo não coloca pessoa — flor fica sobre superfície
-    // Viés 2: noiva + flor → coroa de flores na cabeça
+    // Qwen é img2img — não adiciona pessoa que não existe na foto.
+    // Resultado correto: buquê em display elegante, fundo limpo, luz profissional.
     pos.push(
-      "IMPORTANT: A real woman must appear in this image holding the bouquet.",
-      "The flowers must be in her hands, held at chest or waist level, in front of her body.",
-      "If the input shows the bouquet resting on a surface, a plate, or a table — remove the surface completely and show a woman's hands holding the bouquet instead.",
-      "The woman's hands and arms must be clearly visible holding the bouquet.",
+      "Elegant floral product photography. The bouquet is the hero of the image.",
+      "Clean minimal background — white, soft cream, or soft bokeh. Soft natural light.",
+      "Remove any cluttered background, plate edges, or distracting surfaces.",
     );
     neg.push(
-      "No bouquet alone on a surface. No flowers on a plate. No flowers on a table. No product-only display. A person must hold the flowers.",
-      "Do NOT place flowers on the person's head. No flower crown. No floral headpiece. No flowers in hair. No hair crown. No wreath on head.",
+      "No cluttered background. No dark background. No harsh shadows.",
+      "No flowers on anyone's head. No flower crown. No floral headpiece.",
     );
   }
 
