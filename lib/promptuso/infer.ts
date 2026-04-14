@@ -215,14 +215,38 @@ export interface Persona {
   gender: string;
 }
 
-export function inferPersona(text: string): Persona {
+// Produtos inerentemente femininos — sempre geram modelo feminino independente do texto
+const INHERENTLY_FEMALE_SLOTS = new Set([
+  "wear_torso_full",  // vestido, macacao, lingerie, biquini, camisola
+  "wear_waist_legs",  // saia
+]);
+const INHERENTLY_FEMALE_WORDS = [
+  "vestido", "dress", "saia", "skirt", "lingerie", "biquini", "bikini",
+  "sutia", "calcinha", "camisola", "nightgown", "baby doll", "babydoll",
+  "conjunto feminino", "blusa feminina", "regata feminina", "cropped feminino",
+  "maio", "maiô", "swimsuit feminino", "short feminino", "noiva", "bride",
+  "dama de honra", "bridesmaid", "debutante",
+];
+const INHERENTLY_MALE_WORDS = [
+  "sunga", "cueca", "cueca boxer", "terno masculino", "gravata masculina",
+  "noivo", "groom",
+];
+
+export function inferPersona(text: string, slot?: string): Persona {
   const t = lower(text);
   const isBaby = hasAny(t, ["bebe", "beb", "baby", "newborn", "recem nascido", "recem-nascido", "recem nascida", "recem-nascida", "nenem", "onesie", "romper"]);
   const isChild = hasAny(t, ["infantil", "crianca", "criancas", "child", "children", "kid", "kids", "menino", "menina"]);
   const isTeen = hasAny(t, ["teen", "adolescente", "jovem", "juvenil", "teenager"]);
-  const isMale = hasAny(t, ["masculino", "homem", "menino", "boy", "male", "man", "masc"]);
-  const isFemale = hasAny(t, ["feminino", "mulher", "menina", "girl", "female", "woman", "fem"]);
+
+  // Palavras explícitas de gênero no texto
+  const isMaleWord = hasAny(t, ["masculino", "homem", "menino", "boy", "male", "man", "masc", "noivo", "groom"]);
+  const isFemaleWord = hasAny(t, ["feminino", "mulher", "menina", "girl", "female", "woman", "fem", "noiva", "bride", "dama"]);
   const unisex = hasAny(t, ["unissex", "unisex"]);
+
+  // Gênero inerente ao produto (mais forte que palavras no texto quando sem conflito explícito)
+  const isInherentlyFemale = hasAny(t, INHERENTLY_FEMALE_WORDS) ||
+    (slot !== undefined && INHERENTLY_FEMALE_SLOTS.has(slot) && !isMaleWord);
+  const isInherentlyMale = hasAny(t, INHERENTLY_MALE_WORDS) && !isFemaleWord;
 
   let age = "adult";
   if (isBaby) age = "baby";
@@ -230,9 +254,11 @@ export function inferPersona(text: string): Persona {
   else if (isTeen) age = "teen";
 
   let gender = "unisex";
-  if (unisex) gender = "unisex";
-  else if (isMale && !isFemale) gender = "male";
-  else if (isFemale && !isMale) gender = "female";
+  if (unisex && !isFemaleWord && !isMaleWord) gender = "unisex";
+  else if (isMaleWord && !isFemaleWord && !isInherentlyFemale) gender = "male";
+  else if (isFemaleWord && !isMaleWord) gender = "female";
+  else if (isInherentlyFemale && !isMaleWord) gender = "female";
+  else if (isInherentlyMale && !isFemaleWord) gender = "male";
 
   let subject = "a person";
   if (age === "baby") subject = "a baby";
@@ -302,7 +328,7 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
 
   const combinedContext = `${produto} ${cenario}`.trim();
   const mannequinDetected = detectMannequin(combinedContext);
-  const persona = inferPersona(combinedContext);
+  const persona = inferPersona(combinedContext, slot);
   const productLabel = normalizeProductLabel(produto);
 
   // Slots hold_* que SÃO exibição de produto — não precisam de humano
@@ -358,6 +384,15 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
       "If the original image was taken inside a store, showroom, or display window, completely replace the background with a clean studio or elegant lifestyle environment.",
       "Only one person must appear in the final image. Remove any other people, mannequins, or figures visible in the background.",
     );
+
+    // Forçar gênero correto no modelo gerado
+    if (persona.gender === "female") {
+      pos.push("The model must be a woman. Female model only.");
+      neg.push("No men. No male model. No man. No male anatomy. No masculine features. No male body.");
+    } else if (persona.gender === "male") {
+      pos.push("The model must be a man. Male model only.");
+      neg.push("No women. No female model. No woman. No feminine features.");
+    }
   }
 
   const rule = loadRule(slot);
