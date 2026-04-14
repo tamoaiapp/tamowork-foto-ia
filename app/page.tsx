@@ -2779,23 +2779,27 @@ export default function HomePage() {
                 <div style={styles.fieldGroup}>
                   <label style={styles.label}>
                     {t("field_product")}
-                    {creationMode === "simulacao" && (
-                      <span style={{ fontWeight: 400, color: "#4e5c72", marginLeft: 6, fontSize: 11 }}>
-                        {lang === "en" ? "(optional)" : "(opcional)"}
-                      </span>
-                    )}
                   </label>
                   <input
                     type="text"
                     placeholder={
                       creationMode === "simulacao"
-                        ? (lang === "en" ? "Leave empty — I'll identify automatically" : "Deixe vazio — eu identifico sozinho")
+                        ? (lang === "en" ? "Ex: women's dress, men's sneaker, floral kids headband…" : lang === "es" ? "Ej: vestido de mujer, zapatilla masculina, tiara floral infantil…" : "Ex: vestido feminino, tênis masculino, tiara floral infantil…")
                         : "Ex: conjunto feminino floral, blusa cropped azul, tênis branco…"
                     }
                     value={produto}
                     onChange={(e) => setProduto(e.target.value)}
                     style={styles.input}
                   />
+                  {creationMode === "simulacao" && (
+                    <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 4, lineHeight: 1.4 }}>
+                      {lang === "en"
+                        ? "Helps me choose the right model gender and pose for your product."
+                        : lang === "es"
+                        ? "Me ayuda a elegir el género y la pose correcta para tu producto."
+                        : "Ajuda eu escolher o gênero e pose certos para o seu produto."}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2844,8 +2848,8 @@ export default function HomePage() {
 
               <button
                 type="submit"
-                disabled={submitting || (creationMode !== "produto_exposto" && creationMode !== "simulacao" && !cenario.trim())}
-                style={{ ...styles.submitBtn, opacity: (submitting || (creationMode !== "produto_exposto" && creationMode !== "simulacao" && !cenario.trim())) ? 0.5 : 1 }}
+                disabled={submitting || (creationMode !== "produto_exposto" && creationMode !== "simulacao" && !cenario.trim()) || (creationMode === "simulacao" && !produto.trim())}
+                style={{ ...styles.submitBtn, opacity: (submitting || (creationMode !== "produto_exposto" && creationMode !== "simulacao" && !cenario.trim()) || (creationMode === "simulacao" && !produto.trim())) ? 0.5 : 1 }}
               >
                 {submitting ? t("btn_generating") : t("btn_generate")}
               </button>
