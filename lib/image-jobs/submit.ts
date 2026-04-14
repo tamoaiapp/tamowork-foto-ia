@@ -132,10 +132,13 @@ export async function submitImageJob(jobId: string) {
     return;
   }
 
-  // Mescla texto do usuário com resultado da visão
-  const enrichedProduto = isCatalog ? produto_frase.trim() : mergeProductTexts(produto_frase.trim(), visionDesc);
+  // Visão enriquece o prompt como âncora de fidelidade do produto
+  // Passamos produto e vision separados — buildPromptResult usa vision como descrição primária
+  const produtoBase = produto_frase.trim();
+  // Para catálogo, mantém merge tradicional (prompt imperativo próprio não usa vision da mesma forma)
+  const enrichedProduto = isCatalog ? mergeProductTexts(produtoBase, visionDesc) : produtoBase;
   if (visionDesc) {
-    console.log(`[submit] job ${jobId} — visão enriqueceu prompt: "${produto_frase.trim()}" → "${enrichedProduto}"`);
+    console.log(`[submit] job ${jobId} — vision desc: "${visionDesc}"`);
   }
 
   const productImageName = await uploadImageToComfy(job.input_image_url, comfyBase, `prod_${jobId}`);
@@ -160,7 +163,7 @@ export async function submitImageJob(jobId: string) {
     console.log(`[submit] job ${jobId} — produto_exposto categoria="${category}" produto="${enrichedProduto}"`);
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase);
   } else {
-    const promptResult = await criarPrompt(enrichedProduto, cenario.trim());
+    const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined);
 
     // Injeta qualidade profissional (sombra + iluminação + K4 cinematic)
     const positiveEnhanced = `${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();

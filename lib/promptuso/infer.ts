@@ -313,35 +313,40 @@ export interface PromptResult {
   };
 }
 
-// How the product is used/shown — tells Qwen WHERE and HOW to place it
-function getUsageVerb(slot: string): string {
-  const verbs: Record<string, string> = {
-    wear_head_top:    "worn on the head of",
-    wear_head_face:   "worn on the face of",
-    wear_head_ear:    "worn on the ear of",
-    wear_neck:        "worn around the neck of",
-    wear_torso_upper: "worn on the upper body of",
-    wear_torso_full:  "worn on the full body of",
-    wear_waist_legs:  "worn on the lower body of",
-    wear_feet:        "worn on the feet of",
-    wear_wrist:       "worn on the wrist of",
-    wear_finger:      "worn on a finger of",
-    wear_back:        "worn on the back of",
-    wear_crossbody:   "worn crossbody by",
-    hold_device:      "held naturally in hand by",
-    hold_bag_hand:    "held in one hand by",
-    hold_tool_safe:   "held safely in hand by",
-    hold_sport_object:"used in sport context by",
-    hold_flower:      "held at chest level by",
-    hold_beverage:    "held at chest level by",
+// Frase de uso humano — "[Subject] [usagePhrase]"
+// Retorna a frase completa de como a pessoa usa o produto
+function getUsagePhrase(slot: string, subject: string): string {
+  const s = subject; // "a woman", "a man", "a person", etc.
+  const cap = s.charAt(0).toUpperCase() + s.slice(1);
+  const map: Record<string, string> = {
+    wear_head_top:    `${cap} is wearing the product on their head`,
+    wear_head_face:   `${cap} is wearing the product on their face`,
+    wear_head_ear:    `${cap} is wearing the product on their ear`,
+    wear_neck:        `${cap} is wearing the product around their neck`,
+    wear_torso_upper: `${cap} is wearing the product on their upper body`,
+    wear_torso_full:  `${cap} is wearing the product, full body visible`,
+    wear_waist_legs:  `${cap} is wearing the product on their lower body`,
+    wear_feet:        `${cap} is wearing the product on their feet`,
+    wear_wrist:       `${cap} is wearing the product on their wrist`,
+    wear_finger:      `${cap} is wearing the product on a finger`,
+    wear_back:        `${cap} is wearing the product as a backpack`,
+    wear_crossbody:   `${cap} is wearing the product crossbody`,
+    hold_device:      `${cap} is holding the product naturally in hand`,
+    hold_bag_hand:    `${cap} is holding the product by the handle`,
+    hold_tool_safe:   `${cap} is holding the product safely in hand`,
+    hold_sport_object:`${cap} is using the product in a sport context`,
+    hold_flower:      `${cap} is holding the bouquet with both hands at chest level, facing camera`,
+    hold_beverage:    `${cap} is holding the product at chest level`,
   };
-  return verbs[slot] ?? "used naturally by";
+  return (map[slot] ?? `${cap} is using the product naturally`) + " in a natural realistic pose.";
 }
 
-export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptResult {
+export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDesc?: string): PromptResult {
   const produto = asciiSafe(produtoRaw, 180);
   const cenario = asciiSafe(cenarioRaw, 220);
+  const vision  = visionDesc ? asciiSafe(visionDesc, 300) : null;
 
+  // Slot + persona: sempre baseados no texto original (keywords PT/ES funcionam melhor)
   const rawSlot = inferSlot(produto);
   let slot = rawSlot;
 
@@ -356,7 +361,11 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
   const combinedContext = `${produto} ${cenario}`.trim();
   const mannequinDetected = detectMannequin(combinedContext);
   const persona = inferPersona(combinedContext, slot);
-  const productLabel = normalizeProductLabel(produto);
+
+  // Descrição do produto para o prompt:
+  // - visão da IA (mais precisa, em EN) tem prioridade absoluta
+  // - fallback: label normalizado do texto do usuário
+  const productLabel = vision ?? normalizeProductLabel(produto);
 
   // Slots hold_* que SÃO exibição de produto — não precisam de humano
   const DISPLAY_ONLY_HOLD = new Set([
@@ -370,76 +379,83 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
     !DISPLAY_ONLY_HOLD.has(slot);
   const forceHum = refReq || mannequinDetected;
 
-  // ── Short, vision-aware prompts ──────────────────────────────────────────
-  // Qwen already SEES the input image via TextEncodeQwenImageEditPlus.
-  // We tell it WHAT to produce, not HOW to interpret every possible input state.
-  // The model handles the "if it's on a hanger... if it's flat..." part itself.
+  // ── Prompt estruturado em blocos fixos ────────────────────────────────────
+  // Qwen Image Edit é multimodal — vê a imagem E processa o texto.
+  // Blocos: [tipo de imagem] → [produto fiel] → [regra preservação] → [uso] → [cena] → [fotografia]
   const pos: string[] = [];
   const neg: string[] = [];
 
-  // 1. Core task
-  pos.push(`Transform this ${productLabel} into a professional catalog photo.`);
+  // Bloco 1 — tipo de imagem
+  pos.push("High-quality realistic commercial photo of");
 
-  // 2. How to show it — usage context
+  // Bloco 2 — produto descrito fielmente (visão da IA ou label)
+  pos.push(`${productLabel}.`);
+
+  // Bloco 3 — regra de fidelidade (SEMPRE presente)
+  pos.push("The product must preserve its exact original design, color, material, proportions, and all visible details from the reference image.");
+
+  // Bloco 4 — uso / posição
   if (forceHum) {
-    const verb = getUsageVerb(slot);
-    pos.push(`Show it ${verb} ${persona.subject} in a natural realistic pose.`);
-    if (persona.gender === "female") pos.push("Female model only.");
-    else if (persona.gender === "male") pos.push("Male model only.");
+    pos.push(getUsagePhrase(slot, persona.subject));
+    if (persona.gender === "female") pos.push("Female model, no men visible.");
+    else if (persona.gender === "male") pos.push("Male model, no women visible.");
   } else if (DISPLAY_ONLY_HOLD.has(slot)) {
-    pos.push("Display the product on a clean minimal surface, product only, no hands.");
+    pos.push("The product is the hero — clean minimal display on a neutral surface, no hands, no people.");
   } else {
-    pos.push("Place the product in a clean, realistic setting.");
+    pos.push("The product is placed in a clean, realistic setting.");
   }
 
-  // 3. Scene context from user
+  // Bloco 5 — cena do usuário
   if (cenario) {
-    pos.push(`Setting: ${cenario}.`);
-    if (hasViolence(cenario)) neg.push("No violence, no threats, no aggressive action, no crime scene.");
+    pos.push(`Scene: ${cenario}.`);
+    if (hasViolence(cenario)) neg.push("no violence, no threats, no aggressive action, no crime scene,");
   }
 
-  // 4. Preservation + quality
+  // Bloco 6 — fotografia profissional
   pos.push(
-    "Preserve exact colors, textures, and design from the input photo.",
-    "Professional studio lighting, clean neutral background.",
-    "Ignore black borders, white padding, or screenshot framing present in the input — focus only on the physical product.",
+    "Natural realistic textures, professional product photography, authentic proportions, clean composition, realistic shadows.",
+    "Ignore any black borders, white padding, or screenshot framing in the input — focus only on the physical product.",
   );
 
-  // 5. Negativos críticos por slot — ficam PRIMEIRO para nunca serem truncados
+  // ── Negativos críticos por slot (unshift = sempre primeiros, nunca truncados) ──
   if (slot === "hold_flower") {
-    // Negativos críticos PRIMEIRO — evitam que Qwen coloque flores na cabeça (viés noiva = flower crown)
+    // Negativos críticos PRIMEIROS — previne o viés "noiva = flower crown" do Qwen
     neg.unshift(
-      "Do NOT place flowers on the person's head. No flower crown. No floral headpiece. No hair flowers.",
-      "The bouquet must be held in hands at chest level, NOT on the head or hair.",
+      "do NOT place flowers on the person's head, no flower crown, no floral headpiece, no hair flowers, bouquet held in hands NOT worn on head,",
     );
-    pos.push("The person is holding the bouquet with both hands at chest level, facing the camera.");
   }
 
   if (slot === "wear_feet") {
-    neg.push("No full body shot. No face visible. No upper body. Crop tightly from knee down only.");
+    neg.unshift("no full body shot, no face, no upper body,");
     pos.push("Tight crop from knee to ground. Both shoes clearly visible, filling the frame.");
   }
 
   if (slot === "wear_head_ear") {
-    neg.push("No hand holding the earring. No fingers in frame.");
+    neg.unshift("no hand holding the earring, no fingers near ear,");
   }
 
-  // 6. Negativos gerais
-  neg.push("No black borders, no white padding, no screenshot UI, no watermarks.");
-  neg.push("No product redesign, no extra objects, no text overlay, no duplicate product, no floating product.");
+  // ── Negativos de fidelidade ao produto (sempre presentes) ──────────────────
+  neg.push(
+    "wrong product design, altered shape, different color, different material, changed structure, missing details, duplicated product, distorted proportions, unrealistic texture, warped object, floating object,",
+    "random text, watermark, incorrect logo, black border, white padding, screenshot UI,",
+  );
 
+  // ── Negativos de qualidade ────────────────────────────────────────────────
+  neg.push(
+    "blurry image, low resolution, out of focus, grainy, oversaturated, plastic look, CGI look, cartoon, illustration, painting, deformed perspective, bad anatomy,",
+  );
+
+  // ── Negativos humanos (quando tem pessoa) ─────────────────────────────────
   if (forceHum) {
-    neg.push("No mannequin, no hanger, no flat lay, no product alone, no packaging, no retail background, no extra people.");
-    if (persona.gender === "female") neg.push("No men, no male model, no masculine features, no beard.");
-    else if (persona.gender === "male") neg.push("No women, no female model, no feminine features.");
+    neg.push("extra fingers, malformed hands, broken composition, mannequin, hanger, flat lay, product alone, packaging, retail background, extra people,");
+    if (persona.gender === "female") neg.push("men, male model, masculine features, beard,");
+    else if (persona.gender === "male") neg.push("women, female model, feminine features,");
   } else if (DISPLAY_ONLY_HOLD.has(slot)) {
-    neg.push("No hands, no person, no packaging, no clutter.");
-  } else {
-    neg.push("No hands, no fingers.");
+    neg.push("hands, fingers, person, packaging, clutter,");
   }
 
   if (slot.startsWith("wear_")) {
-    neg.push("Do not show the product alone without a person wearing it.");
+    neg.push("product alone without person wearing it,");
   }
 
   return {

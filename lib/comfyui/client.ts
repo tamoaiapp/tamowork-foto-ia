@@ -19,15 +19,16 @@ export interface PromptResult {
   meta?: Record<string, unknown>;
 }
 
-// criar prompt — promptuso: produto_frase + cenario → positive + negative
+// criar prompt — promptuso: produto_frase + cenario + vision_desc → positive + negative
 export async function criarPrompt(
   produto_frase: string,
-  cenario: string
+  cenario: string,
+  vision_desc?: string,
 ): Promise<PromptResult> {
   const res = await fetch(PROMPTUSO_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ produto_frase, cenario }),
+    body: JSON.stringify({ produto_frase, cenario, vision_desc }),
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`criarPrompt error: ${res.status}`);

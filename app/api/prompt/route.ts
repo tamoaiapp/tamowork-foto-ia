@@ -52,6 +52,10 @@ export async function POST(req: NextRequest) {
       body?.contexto ??
       "";
 
+    // vision_desc: leitura visual da foto feita por IA (Moondream) — já em inglês
+    // Quando presente, é a fonte primária de verdade sobre o produto no prompt
+    const visionDescRaw: string = body?.vision_desc ?? body?.vision ?? "";
+
     if (!produtoRaw) {
       return NextResponse.json(
         { ok: false, error: "Missing produto/produto_frase/product" },
@@ -65,7 +69,8 @@ export async function POST(req: NextRequest) {
       translateToEnglish(String(cenarioRaw)),
     ]);
 
-    const result = buildPromptResult(produtoEN, cenarioEN);
+    const visionDesc = visionDescRaw ? String(visionDescRaw).trim() : undefined;
+    const result = buildPromptResult(produtoEN, cenarioEN, visionDesc);
 
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
