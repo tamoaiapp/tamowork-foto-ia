@@ -741,6 +741,54 @@ export default function HomePage() {
         }
       }
 
+      // Restaura vídeo narrado ativo/recente
+      const nres = await fetch("/api/narrated-video", { headers: { Authorization: `Bearer ${token}` } });
+      if (nres.ok) {
+        const ndata: NarratedJob[] = await nres.json();
+        const dismissedNarrated: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+        const activeNarrated = ndata.find((v) => !["done", "failed", "canceled"].includes(v.status));
+        const doneNarrated = ndata.find(
+          (v) => v.status === "done" && v.output_video_url &&
+          !dismissedNarrated.includes(v.id) &&
+          new Date(v.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
+        );
+        if (activeNarrated) {
+          setNarratedJob(activeNarrated);
+          setNarratedMode(true);
+          setCreationMode("video_narrado");
+          setModeSelected(true);
+        } else if (doneNarrated) {
+          setNarratedJob(doneNarrated);
+          setNarratedMode(true);
+          setCreationMode("video_narrado");
+          setModeSelected(true);
+        }
+      }
+
+      // Restaura vídeo longo ativo/recente
+      const lres = await fetch("/api/long-video", { headers: { Authorization: `Bearer ${token}` } });
+      if (lres.ok) {
+        const ldata: LongVideoJob[] = await lres.json();
+        const dismissedLong: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+        const activeLong = ldata.find((v) => !["done", "failed", "canceled"].includes(v.status));
+        const doneLong = ldata.find(
+          (v) => v.status === "done" && v.output_video_url &&
+          !dismissedLong.includes(v.id) &&
+          new Date(v.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
+        );
+        if (activeLong) {
+          setLongVideoJob(activeLong);
+          setLongVideoMode(true);
+          setCreationMode("video_longo");
+          setModeSelected(true);
+        } else if (doneLong) {
+          setLongVideoJob(doneLong);
+          setLongVideoMode(true);
+          setCreationMode("video_longo");
+          setModeSelected(true);
+        }
+      }
+
       // Vindo de Criações: abrir modo vídeo para um job específico
       const videoFromJob = sessionStorage.getItem("video_from_job");
       if (videoFromJob && !hasActivePhotoJob) {
@@ -1558,6 +1606,34 @@ export default function HomePage() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [narratedJob?.id, narratedJob?.status, user]);
+
+  // ── Long video polling (inclui restauração ao navegar) ───────────────────────
+  useEffect(() => {
+    if (!longVideoJob || !user) return;
+    if (["done", "failed", "canceled"].includes(longVideoJob.status)) {
+      if (longVideoPollRef.current) clearInterval(longVideoPollRef.current);
+      if (longVideoElapsedRef.current) clearInterval(longVideoElapsedRef.current);
+      if (longVideoJob.status === "done") {
+        sendPushNotification("Seu vídeo longo está pronto! 🎬", "Toque para ver o vídeo.");
+        setLongVideoMode(true);
+      }
+      if (longVideoJob.status === "failed") setLongVideoMode(false);
+      return;
+    }
+    longVideoElapsedRef.current = setInterval(() => setLongVideoElapsed((s) => s + 1), 1000);
+    longVideoPollRef.current = setInterval(async () => {
+      const t = await getToken();
+      const r = await fetch(`/api/long-video/${longVideoJob.id}`, { headers: { Authorization: `Bearer ${t}` } });
+      if (!r.ok) return;
+      const d = await r.json() as LongVideoJob;
+      setLongVideoJob(d);
+    }, 30_000);
+    return () => {
+      if (longVideoPollRef.current) clearInterval(longVideoPollRef.current);
+      if (longVideoElapsedRef.current) clearInterval(longVideoElapsedRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [longVideoJob?.id, longVideoJob?.status, user]);
 
   // Animação da barra de narração (máx 90% em ~5min)
   useEffect(() => {

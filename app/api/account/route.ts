@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const [planRes, jobsRes, videoJobsRes] = await Promise.all([
+  const [planRes, jobsRes, videoJobsRes, narratedJobsRes, longJobsRes] = await Promise.all([
     supabase
       .from("user_plans")
       .select("plan, period_end, stripe_subscription_id, mp_subscription_id, created_at")
@@ -25,13 +25,27 @@ export async function GET(req: NextRequest) {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(20),
+    supabase
+      .from("narrated_video_jobs")
+      .select("id, status, output_video_url, input_image_url, created_at, roteiro")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("long_video_jobs")
+      .select("id, status, output_video_url, input_image_url, created_at, produto")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
 
   // Combina fotos e vídeos, marcando o tipo, ordena por data desc
   type AnyJob = Record<string, unknown> & { created_at: string };
   const photos = (jobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "photo" as const }));
   const videos = (videoJobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "video" as const }));
-  const allJobs = [...photos, ...videos].sort(
+  const narrated = (narratedJobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "video" as const, prompt: j.roteiro }));
+  const longVideos = (longJobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "video" as const, prompt: j.produto }));
+  const allJobs = [...photos, ...videos, ...narrated, ...longVideos].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
