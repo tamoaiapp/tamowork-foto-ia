@@ -74,6 +74,8 @@ function looksLikeFeetClothing(t: string): boolean {
     "tenis", "sapato", "chinelo", "sandalia", "bota", "shoe", "shoes", "sneaker",
     "boot", "boots", "sandal", "sandals", "meia", "meias", "sock", "socks",
     "meiao", "pantufa", "slipper",
+    // "tennis" = tradução de "tênis" (calçado) pelo MyMemory
+    "tennis shoe", "tennis sneaker", "men's tennis", "women's tennis",
   ]);
 }
 
@@ -239,7 +241,7 @@ export function inferPersona(text: string, slot?: string): Persona {
   const isTeen = hasAny(t, ["teen", "adolescente", "jovem", "juvenil", "teenager"]);
 
   // Palavras explícitas de gênero no texto
-  const isMaleWord = hasAny(t, ["masculino", "homem", "menino", "boy", "male", "man", "masc", "noivo", "groom"]);
+  const isMaleWord = hasAny(t, ["masculino", "homem", "menino", "boy", "male", "man", "men", "masc", "noivo", "groom"]);
   const isFemaleWord = hasAny(t, ["feminino", "mulher", "menina", "girl", "female", "woman", "fem", "noiva", "bride", "dama"]);
   const unisex = hasAny(t, ["unissex", "unisex"]);
 
@@ -403,7 +405,32 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
     "Ignore black borders, white padding, or screenshot framing present in the input — focus only on the physical product.",
   );
 
-  // 5. Focused negatives
+  // 5. Negativos críticos por slot — ficam PRIMEIRO para nunca serem truncados
+  if (slot === "hold_flower") {
+    // Viés 1: modelo não coloca pessoa — flor fica sobre superfície
+    // Viés 2: noiva + flor → coroa de flores na cabeça
+    pos.push(
+      "IMPORTANT: A real woman must appear in this image holding the bouquet.",
+      "The flowers must be in her hands, held at chest or waist level, in front of her body.",
+      "If the input shows the bouquet resting on a surface, a plate, or a table — remove the surface completely and show a woman's hands holding the bouquet instead.",
+      "The woman's hands and arms must be clearly visible holding the bouquet.",
+    );
+    neg.push(
+      "No bouquet alone on a surface. No flowers on a plate. No flowers on a table. No product-only display. A person must hold the flowers.",
+      "Do NOT place flowers on the person's head. No flower crown. No floral headpiece. No flowers in hair. No hair crown. No wreath on head.",
+    );
+  }
+
+  if (slot === "wear_feet") {
+    neg.push("No full body shot. No face visible. No upper body. Crop tightly from knee down only.");
+    pos.push("Tight crop from knee to ground. Both shoes clearly visible, filling the frame.");
+  }
+
+  if (slot === "wear_head_ear") {
+    neg.push("No hand holding the earring. No fingers in frame.");
+  }
+
+  // 6. Negativos gerais
   neg.push("No black borders, no white padding, no screenshot UI, no watermarks.");
   neg.push("No product redesign, no extra objects, no text overlay, no duplicate product, no floating product.");
 
@@ -421,38 +448,9 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
     neg.push("Do not show the product alone without a person wearing it.");
   }
 
-  // ── Negativos críticos por slot — viéses conhecidos do modelo ────────────
-  // Estes são adicionados por último e são específicos para casos onde o Qwen
-  // tem viéses fortes que causam erros recorrentes.
-  if (slot === "hold_flower") {
-    // Viés 1: modelo não coloca pessoa — flor fica sobre superfície
-    // Viés 2: noiva + flor → coroa de flores na cabeça
-    pos.push(
-      "IMPORTANT: A real woman must appear in this image holding the bouquet.",
-      "The flowers must be in her hands, held at chest or waist level, in front of her body.",
-      "If the input shows the bouquet resting on a surface, a plate, or a table — remove the surface completely and show a woman's hands holding the bouquet instead.",
-      "The woman's hands and arms must be clearly visible holding the bouquet.",
-    );
-    neg.push(
-      "No bouquet alone on a surface. No flowers on a plate. No flowers on a table. No product-only display. A person must hold the flowers.",
-      "Do NOT place flowers on the person's head. No flower crown. No floral headpiece. No flowers in hair. No hair crown. No wreath on head.",
-    );
-  }
-
-  if (slot === "wear_feet") {
-    // Viés: mostrar corpo inteiro em vez de cortar nos joelhos
-    neg.push("No full body shot. No face visible. No upper body. Crop tightly from knee down only.");
-    pos.push("Tight crop from knee to ground. Both shoes clearly visible, filling the frame.");
-  }
-
-  if (slot === "wear_head_ear") {
-    // Viés: mão aparece segurando o brinco
-    neg.push("No hand holding the earring. No fingers in frame.");
-  }
-
   return {
     positive: asciiSafe(pos.join(" "), 900),
-    negative: asciiSafe(neg.join(" "), 500),
+    negative: asciiSafe(neg.join(" "), 700),
     produto,
     cenario,
     usage_anchor: slot,
