@@ -10,14 +10,14 @@
 
 export const CONVERSION = {
   // ── CTA após 1ª foto (painel de resultado) ──────────────────────────────
-  cta1Label: "📷 Criar minha 2ª foto grátis",
+  cta1Label: "✨ Criar minha 2ª foto grátis agora →",
 
   // ── RateLimitCard — aparece quando bate o limite ─────────────────────────
-  rateLimitTitle: "🔒 Limite diário atingido",
+  rateLimitTitle: "⏰ Suas 2 fotos grátis de hoje foram usadas!",
   rateLimitSubtitle: "Próxima foto grátis em",
-  rateLimitCTALabel: "Ou assine o PRO e crie agora:",
-  rateLimitBtnLabel: "✨ Assinar PRO — criar agora",
-  rateLimitFooter: "Fotos ilimitadas · Cancela quando quiser",
+  rateLimitCTALabel: "Quer criar mais agora mesmo?",
+  rateLimitBtnLabel: "🚀 Quero fotos ilimitadas — Assinar PRO",
+  rateLimitFooter: "Fotos ilimitadas · Vídeos · Cancela quando quiser",
 
   // ── A/B test — variante promovida ───────────────────────────────────────
   // null = sorteia pelo user_id (comportamento padrão)
@@ -26,7 +26,7 @@ export const CONVERSION = {
 
   // ── Metadados da última decisão do agente ───────────────────────────────
   _agentDecision: {
-    updatedAt: "",
-    reason: "inicialização — aguardando dados suficientes",
+    updatedAt: "2026-04-13T21:00:00.000Z",
+    reason: "7 free users com 1 foto sem retorno — CTA 2ª foto com mais urgência + rate limit com framing positivo",
   },
 };
