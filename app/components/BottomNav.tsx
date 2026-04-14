@@ -137,20 +137,17 @@ export default function BottomNav({ hasActiveJob = false, botActive = false, onO
         );
       })}
 
-      {/* Ícone IA — aparece quando usuário ativou o bot 24h */}
-      {botActive && (
-        <button onClick={onOpenBot} style={s.tab} className="nav-tab">
-          <div style={{ position: "relative", flexShrink: 0 }}>
-            <IconBot active={false} />
-            <span style={{
-              position: "absolute", top: -3, right: -3,
-              width: 8, height: 8, borderRadius: "50%",
-              background: "#16c784", border: "2px solid #0c1018",
-            }} />
-          </div>
-          <span style={{ ...s.label, color: "#4e5c72" }} className="nav-label">IA</span>
-        </button>
-      )}
+      {/* Tamo — sempre visível na nav */}
+      <button onClick={onOpenBot} style={s.tab} className="nav-tab">
+        <div style={{ position: "relative", flexShrink: 0, width: 28, height: 28 }}>
+          <img
+            src="/tamo/idle.png"
+            alt="Tamo"
+            style={{ width: 28, height: 28, objectFit: "contain", objectPosition: "bottom" }}
+          />
+        </div>
+        <span style={{ ...s.label, color: "#a855f7" }} className="nav-label">Tamo</span>
+      </button>
     </nav>
   );
 }

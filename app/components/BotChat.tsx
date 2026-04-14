@@ -20,23 +20,23 @@ interface OnboardingData {
 const ONBOARDING_STEPS: { key: keyof OnboardingData; question: string; placeholder: string }[] = [
   {
     key: "business_name",
-    question: "👋 Olá! Antes de começarmos, me conta um pouco sobre seu negócio.\n\nQual é o nome da sua loja ou empresa?",
-    placeholder: "Ex: Moda Feminina da Cris, Loja da Ana...",
+    question: "Eaí! Eu sou o Tamo 🦎 Seu novo parceiro de negócios.\n\nPra eu te ajudar direitinho, me conta: qual é o nome da sua loja ou empresa?",
+    placeholder: "Ex: Moda da Cris, Atacado da Ana...",
   },
   {
     key: "business_type",
-    question: "Que tipo de produto você vende?\n\nEx: roupas femininas, cosméticos, eletrônicos...",
-    placeholder: "Ex: Roupas femininas plus size",
+    question: "Que tipo de produto você vende? Me dá uma ideia geral.",
+    placeholder: "Ex: Roupas femininas, cosméticos, calçados...",
   },
   {
     key: "products",
-    question: "Me descreve seus produtos principais — o que você mais vende?",
-    placeholder: "Ex: Vestidos, blusas e calças no atacado, foco em moda plus size",
+    question: "E o que você mais vende? Os carros-chefe do negócio 🚀",
+    placeholder: "Ex: Vestidos e blusas no atacado, foco em plus size",
   },
   {
     key: "tone",
-    question: "Como você gosta de se comunicar com seus clientes?\n\nEx: descontraído, elegante, jovem, profissional...",
-    placeholder: "Ex: Descontraído e próximo, uso bastante emoji",
+    question: "Última: como você gosta de falar com seus clientes? Mais soltão, mais formal, usa emoji...",
+    placeholder: "Ex: Bem descontraído, uso emoji, chamo de amiga",
   },
 ];
 
@@ -119,7 +119,7 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
     resultReadyNotifiedRef.current = true;
     setMessages(prev => [...prev, {
       role: "assistant" as const,
-      content: "🎉 *Sua foto ficou pronta!*\n\nClique no botão abaixo para ver o resultado.",
+      content: "🦎 *Ficou incrível!* Terminei sua foto aqui.\n\nClica aí embaixo pra ver como ficou!",
     }]);
   }, [resultReady, initialLoading]);
 
@@ -190,7 +190,7 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
               ...prev,
               {
                 role: "assistant",
-                content: `Pronto, ${(updated as OnboardingData).business_name}! 🎉 Agora conheço bem seu negócio.\n\nPosso te ajudar com legendas para Instagram, ideias de promoção, textos de produto, dicas de fotos e muito mais. O que você precisa?`,
+                content: `Arrasou, ${(updated as OnboardingData).business_name}! 🦎🔥 Agora conheço seu negócio.\n\nPode me chamar pra qualquer coisa — legenda, promoção, texto de produto, dicas de foto... Tô aqui. O que precisa primeiro?`,
               },
             ]);
           }, 600);
@@ -254,19 +254,21 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
 
       {/* Header */}
       <div style={s.header}>
-        <div style={s.avatar}>
-          <span style={{ fontSize: 14 }}>✦</span>
-        </div>
+        <img
+          src="/tamo/idle.png"
+          alt="Tamo"
+          style={{ width: 40, height: 40, objectFit: "contain", objectPosition: "bottom", flexShrink: 0 }}
+        />
         <div>
           <div style={s.headerTitle}>
-            {businessName ? `Assistente · ${businessName}` : "Assistente IA"}
+            Tamo{businessName ? ` · ${businessName}` : ""}
           </div>
           <div style={s.headerSub}>
             {isOnboarding
               ? `Passo ${onboardingStep + 1} de ${ONBOARDING_STEPS.length}`
               : workState === "trabalhando"
-              ? "Processando sua foto..."
-              : "Pronto para ajudar"}
+              ? "Criando sua foto... 🎨"
+              : "Seu parceiro de negócios"}
           </div>
         </div>
       </div>
@@ -376,12 +378,11 @@ function parseBold(text: string): React.ReactNode {
 function BotMessage({ content }: { content: string }) {
   return (
     <div className="bot-msg" style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 10 }}>
-      <div style={{
-        width: 26, height: 26, borderRadius: "50%", flexShrink: 0, marginTop: 2,
-        background: "linear-gradient(135deg, #6366f1, #a855f7)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 11, color: "#fff", fontWeight: 800,
-      }}>✦</div>
+      <img
+        src="/tamo/receiving.png"
+        alt="Tamo"
+        style={{ width: 28, height: 28, objectFit: "contain", objectPosition: "bottom", flexShrink: 0, marginTop: 2 }}
+      />
       <div style={{
         background: "#151d2a",
         border: "1px solid rgba(168,85,247,0.12)",
