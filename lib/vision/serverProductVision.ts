@@ -72,13 +72,13 @@ export async function getProductVisionDescription(
       ? `The user says this product is "${userText.trim()}". Confirm or correct this and describe the product accurately in one sentence: what type of product, color, material or texture, and style. Focus only on the product, ignore background and people.`
       : `Describe this product in one sentence for e-commerce: what type of product, color, material or texture, and style. Focus only on the product, ignore background, people, and props.`;
 
-    const res = await fetch(`${OLLAMA_BASE}/api/generate`, {
+    // moondream no Ollama requer o formato /api/chat com images no message
+    const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         model: VISION_MODEL,
-        prompt,
-        images: [base64],
+        messages: [{ role: "user", content: prompt, images: [base64] }],
         stream: false,
         options: {
           num_predict: 120,
@@ -93,8 +93,8 @@ export async function getProductVisionDescription(
       return null;
     }
 
-    const data = (await res.json()) as { response?: string };
-    const description = cleanVisionResponse(data.response ?? "");
+    const data = (await res.json()) as { message?: { content?: string } };
+    const description = cleanVisionResponse(data.message?.content ?? "");
 
     if (!description || description.length < 4) return null;
 
