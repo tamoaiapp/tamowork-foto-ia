@@ -1229,8 +1229,11 @@ export default function HomePage() {
 
     if (_mode === "catalogo" && !modelFile && !modelPreview) { setFormError(lang === "en" ? "Choose a model" : lang === "es" ? "Elige un modelo" : "Escolha um modelo"); return; }
     if (!_file) { setFormError(lang === "en" ? "Upload the product photo" : lang === "es" ? "Sube la foto del producto" : "Envie a foto do produto"); return; }
-    if (!_produto.trim()) { setFormError(lang === "en" ? "Describe the product" : lang === "es" ? "Describe el produto" : "Descreva o produto"); return; }
-    if (_mode !== "fundo_branco" && !_cenario.trim()) { setFormError(lang === "en" ? "Describe the photo scene" : lang === "es" ? "Describe la escena de la foto" : "Descreva o cenário da foto"); return; }
+    // produto_exposto: visão lê tudo, não precisa de texto nem cenário
+    const modeNeedsProduct = _mode !== "produto_exposto";
+    const modeNeedsCenario = _mode !== "fundo_branco" && _mode !== "produto_exposto";
+    if (modeNeedsProduct && !_produto.trim()) { setFormError(lang === "en" ? "Describe the product" : lang === "es" ? "Describe el produto" : "Descreva o produto"); return; }
+    if (modeNeedsCenario && !_cenario.trim()) { setFormError(lang === "en" ? "Describe the photo scene" : lang === "es" ? "Describe la escena de la foto" : "Descreva o cenário da foto"); return; }
 
     setFormError("");
     setTimeoutError("");
@@ -1317,8 +1320,16 @@ export default function HomePage() {
         modelImageUrl = url;
       }
 
-      // Monta prompt (catálogo codifica model_img no prefixo)
-      const basePrompt = _cenario.trim() ? `${_produto} | cenário: ${_cenario}` : _produto;
+      // Monta prompt — cada modo tem seu formato
+      // produto_exposto: prefixo [produto_exposto] + produto opcional (visão resolve o resto)
+      // catálogo: model_img:URL | produto | cenário
+      // demais: produto | cenário
+      let basePrompt: string;
+      if (_mode === "produto_exposto") {
+        basePrompt = `[produto_exposto] ${_produto.trim()}`.trim();
+      } else {
+        basePrompt = _cenario.trim() ? `${_produto} | cenário: ${_cenario}` : _produto;
+      }
       const prompt = modelImageUrl
         ? `model_img:${modelImageUrl} | ${basePrompt}`
         : basePrompt;

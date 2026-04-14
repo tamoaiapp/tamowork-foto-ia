@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/serverProductVision";
+import { detectDisplayCategory, buildDisplayPrompt } from "@/lib/promptuso/displayPrompt";
 
 // ── Qualificadores de qualidade profissional ───────────────────────────────────
 // Injetados no positive prompt depois do buildPromptResult para elevar o padrão
@@ -98,6 +99,17 @@ export async function submitImageJob(jobId: string) {
     rawPrompt = rawPrompt.slice(pipeIdx + 3);
   }
 
+  // Detecta modo especial: prompt começa com "[modo] ..."
+  // Ex: "[produto_exposto] vestido" ou "[produto_exposto]" (produto em branco — visão resolve)
+  let jobMode = "default";
+  if (rawPrompt.startsWith("[")) {
+    const modeEnd = rawPrompt.indexOf("]");
+    if (modeEnd > 0) {
+      jobMode = rawPrompt.slice(1, modeEnd).trim();
+      rawPrompt = rawPrompt.slice(modeEnd + 1).trim();
+    }
+  }
+
   const [produto_frase, cenarioPart] = rawPrompt.split(" | cenário: ");
   const cenario = cenarioPart ?? "";
 
@@ -135,6 +147,18 @@ export async function submitImageJob(jobId: string) {
     const catalogPos = buildCatalogPrompt(enrichedProduto, cenario.trim());
     const catalogNeg = buildCatalogNegative();
     promptId = await submitCatalogWorkflow(jobId, productImageName, modelImageName, catalogPos, catalogNeg, comfyBase);
+  } else if (jobMode === "produto_exposto") {
+    // Modo expositor: prompt gerado do zero com regras literais por categoria
+    // Visão detectou o produto → detectamos a categoria → prompt específico
+    const category = detectDisplayCategory(enrichedProduto);
+    const { positive, negative } = buildDisplayPrompt(enrichedProduto, category);
+
+    // Adiciona K4 + qualidade técnica (não conflita com display prompts)
+    const positiveEnhanced = `${positive} Cinematic Kodak Portra 400 color grade, 8K ultra-sharp commercial photography.`.trim();
+    const negativeEnhanced = `${negative} ${PROFESSIONAL_NEGATIVE_SUFFIX}`.trim();
+
+    console.log(`[submit] job ${jobId} — produto_exposto categoria="${category}" produto="${enrichedProduto}"`);
+    promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase);
   } else {
     const promptResult = await criarPrompt(enrichedProduto, cenario.trim());
 
