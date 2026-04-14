@@ -3,328 +3,365 @@ export interface Rule {
   neg_add: string[];
 }
 
+// REGRAS DE OURO:
+// 1. Nunca usar "if" — Qwen não executa lógica condicional
+// 2. Nunca descrever o erro no positivo — mencionar "hand" planta "hand" no modelo
+// 3. Negativos = palavras-chave diretas, não frases longas
+// 4. Sempre travar enquadramento e posição física exata
+
 export const RULES: Record<string, Rule> = {
   wear_head_top: {
     pos_add: [
-      "Product is worn on the head of a real person, correct orientation, realistic scale.",
-      "If the input shows the product resting on a surface, table, or held in a hand, remove that and show it worn on a real person's head instead.",
+      "The product is worn on the top of the head, correct orientation and realistic scale.",
+      "Natural fit, centered on the head, realistic proportion relative to the face.",
+      "Lifestyle portrait framing, head and shoulders visible.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No floating.", "No packaging.",
-      "No hand holding the product.", "Do not show product alone without a person wearing it.",
+      "floating, product on table, product on surface, product on floor, packaging, product alone,",
+      "wrong scale, oversized, undersized,",
     ],
   },
+
   wear_head_face: {
     pos_add: [
-      "Product is worn on the face of a real person in correct usage position.",
-      "If the input shows the product held in a hand, resting on a surface, or inside a case, remove that and show it worn on a real person's face instead.",
-      "Show the product naturally on the face, correct scale and alignment.",
+      "The product is worn on the face, correct position and realistic scale.",
+      "Natural fit on the face, aligned with facial features.",
+      "Close-up or portrait framing, face clearly visible.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No floating.", "No packaging.",
-      "No hand holding the glasses or product.", "No glasses case.", "No product alone.",
-      "Do not show product alone without a person wearing it.",
+      "floating, product on table, product on surface, packaging, product alone,",
+      "wrong position, misaligned, wrong scale,",
     ],
   },
+
   wear_head_ear: {
     pos_add: [
-      "Product is worn on the ear of a real person, correctly positioned.",
-      "If the input shows the product held in a hand or fingers, remove the hand completely and show the earring worn on a real person's ear instead.",
-      "Show the earring naturally attached to the earlobe, correct scale.",
+      "Close-up of a woman's ear with the earring naturally attached to the earlobe.",
+      "Correct position and scale. Realistic skin texture, soft lighting.",
+      "Professional jewelry close-up photography. Only the ear and earring in frame.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No floating.", "No packaging.",
-      "No hand holding the earring.", "No fingers.", "No hand in frame.",
-      "Do not show product alone without a person wearing it.",
+      "hand, fingers, holding, touching, product in hand,",
+      "floating earring, earring not on ear, misplaced earring,",
+      "full body, face, other body parts in frame,",
     ],
   },
+
   wear_neck: {
     pos_add: [
-      "Product is worn around the neck of a real person, centered, realistic size.",
-      "If the input shows the product laid flat on a surface, inside a box, or displayed on a card, remove that entirely and show it worn on a real person's neck instead.",
-      "Show the necklace, choker, or scarf naturally draped on the neck, correct scale.",
+      "The product is worn around the neck, centered, correct scale.",
+      "Natural drape on the neck, neckline clearly visible.",
+      "Portrait or bust framing, neck and décolleté visible.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No product laid flat.", "No floating.", "No packaging.", "No jewelry box.", "No display card.",
-      "Do not show product alone without a person wearing it.",
+      "floating, product on table, product on surface, product in hand, packaging, product alone,",
+      "wrong scale, misaligned,",
     ],
   },
+
   wear_torso_upper: {
     pos_add: [
-      "The clothing is actively worn on the upper body of a real person.",
-      "Show the garment on a person — not on a hanger, not on a table, not floating.",
-      "If the input shows the product in a flat lay (laid flat on a bed or floor), reconstruct it being worn by a real person instead.",
-      "If the input shows the product inside a plastic bag or garment bag, remove the bag and show the garment on a real person.",
-      "The person must be visible from at least waist up, wearing the product naturally.",
-      "Realistic fit, natural pose, correct fabric drape.",
+      "The clothing is actively worn on the upper body, natural fit and realistic fabric drape.",
+      "Person visible from at least waist up, wearing the garment naturally.",
+      "Realistic fabric texture, correct proportions, lifestyle or studio framing.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No product on hanger.", "No product on floor.",
-      "No flat lay.", "No plastic bag.", "No garment bag.", "No floating garment.", "No packaging.", "No disembodied clothing.",
-      "Do not show the product alone without a person wearing it.",
+      "hanger, flat lay, product on table, product on floor, plastic bag, garment bag, packaging, product alone,",
+      "floating garment, disembodied clothing,",
     ],
   },
+
   wear_torso_full: {
     pos_add: [
-      "The clothing is actively worn on the full body of a real person.",
-      "Show the complete outfit on a person — not on a hanger, not on a table, not floating.",
-      "If the input shows the product in a flat lay (laid flat on a bed or floor), reconstruct it being worn by a real person instead.",
-      "If the input shows the product inside a plastic bag, garment bag, or packaging, remove it and show the garment on a real person.",
-      "Full body shot preferred — show the garment from shoulders to hem.",
-      "Realistic fit, natural pose, correct fabric drape.",
+      "The clothing is actively worn on the full body, natural fit and correct fabric drape.",
+      "Full body or three-quarter shot, garment visible from shoulders to hem.",
+      "Realistic fit, natural pose, professional lifestyle or studio photography.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No product on hanger.", "No product on floor.",
-      "No flat lay.", "No plastic bag.", "No garment bag.", "No floating garment.", "No packaging.", "No disembodied clothing.",
-      "Do not show the product alone without a person wearing it.",
+      "hanger, flat lay, product on table, product on floor, plastic bag, garment bag, packaging, product alone,",
+      "floating garment, disembodied clothing,",
     ],
   },
+
   wear_waist_legs: {
     pos_add: [
-      "The clothing is actively worn on the lower body of a real person.",
-      "Show the garment on a person — not on a hanger, not on a table, not floating.",
-      "If the input shows the product in a flat lay (laid flat on a bed or floor), reconstruct it being worn by a real person instead.",
-      "The product must be clearly visible from waist to knee or ankle as appropriate.",
+      "The clothing is worn on the lower body, natural fit.",
+      "Product clearly visible from waist to knee or ankle.",
+      "Lower body framing, correct fabric drape.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No product on hanger.", "No product on floor.",
-      "No flat lay.", "No floating garment.", "No packaging.", "No disembodied clothing.",
-      "Do not show the product alone without a person wearing it.",
-      "Do not place the product on the upper body.",
+      "hanger, flat lay, product on table, product on floor, packaging, product alone,",
+      "floating garment, product on upper body,",
     ],
   },
+
   wear_feet: {
     pos_add: [
-      "Product is worn on the feet of a real person, correct orientation and realistic scale.",
-      "If the input shows a pair of shoes or sneakers displayed side by side on a surface or against a plain background, remove the surface and show the footwear worn on a real person's feet instead.",
-      "FRAMING: tight crop from knee down to the ground, both feet filling most of the frame. The shoes must be the clear hero of the image — large, sharp, and centered.",
-      "Standing or walking pose, feet slightly apart, shoes fully visible.",
-      "The shoes must occupy at least 50% of the image frame.",
+      "Tight close-up from knee to ground. Both shoes worn on feet, filling the frame.",
+      "Standing or walking pose. Shoes are the hero of the image.",
+      "Realistic shoe texture, correct scale, natural ground contact and shadow.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No shoes displayed alone.", "No floating.", "No packaging.",
-      "Do not show product alone without a person wearing it.",
-      "No full body shot. Do not show the person's face or upper body. Crop tightly from knee down.",
+      "full body, face, upper body visible,",
+      "floating shoes, shoes on table, shoes alone,",
+      "wrong scale, mismatched pair,",
     ],
   },
+
   wear_wrist: {
     pos_add: [
-      "Product is worn on the wrist of a real person, correctly positioned and sized.",
-      "If the input shows the product held in a hand or placed on a surface, remove that and show it worn on a real person's wrist instead.",
+      "The product is worn on the wrist, correctly positioned and sized.",
+      "Wrist close-up, product clearly visible, natural skin texture.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No floating.", "No packaging.",
-      "No extra hand holding the product.", "Do not show product alone without a person wearing it.",
+      "floating, product on table, product on surface, packaging, product alone,",
+      "wrong scale, misaligned,",
     ],
   },
+
   wear_finger: {
     pos_add: [
-      "Product is worn on a finger of a real person, correct orientation and realistic scale.",
-      "If the input shows the product held by another hand or placed loose, remove that and show it worn on a real person's finger instead.",
+      "The product is worn on a finger, correct orientation and realistic scale.",
+      "Hand close-up, product on finger, natural skin texture and lighting.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No floating.", "No packaging.",
-      "No extra hand holding the product.", "Do not show product alone without a person wearing it.",
+      "floating, product on table, product on surface, packaging, product alone,",
+      "wrong scale, wrong finger,",
     ],
   },
+
   wear_back: {
     pos_add: [
-      "Product is worn on the back of a real person, person facing away from camera.",
-      "If the input shows the backpack resting on the ground, a surface, or hanging on a wall or door, remove that and show it worn on a real person's back instead.",
-      "Both shoulder straps should be visible and on the person's shoulders, correct fit.",
+      "The backpack is worn on the back, both shoulder straps on the shoulders.",
+      "Person facing away from camera or three-quarter view. Correct fit and scale.",
+      "Natural standing or walking pose.",
     ],
     neg_add: [
-      "No product on table.", "No product on surface.", "No product on floor.", "No product hanging on wall.", "No floating.", "No packaging.",
-      "Do not show product alone without a person wearing it.",
+      "product on floor, product on table, product on surface, product on wall, packaging, product alone,",
+      "floating, straps hanging loose,",
     ],
   },
+
   wear_crossbody: {
     pos_add: [
-      "Product is worn crossbody or around the waist on a real person.",
-      "The strap crosses the chest or the bag sits on the hip.",
-      "Show the full product clearly — front panel must be visible.",
-      "Realistic natural pose, casual or active.",
+      "The product is worn crossbody, strap crossing the chest or bag on the hip.",
+      "Front panel clearly visible, natural pose, casual or active lifestyle.",
     ],
     neg_add: [
-      "No hand holding the product up artificially.",
-      "No packaging.",
-      "No floating product.",
-      "Do not place the product on a table or floor.",
+      "floating, product on table, product on floor, packaging, product alone,",
+      "strap not worn, product not on body,",
     ],
   },
+
   hold_device: {
     pos_add: [
-      "A real person holds the device naturally in hand, in correct usage position.",
-      "The device screen or front face must be clearly visible.",
-      "Natural relaxed pose, realistic grip.",
+      "A person holds the device naturally in one hand, screen or front face visible.",
+      "Natural relaxed grip, device at comfortable viewing angle.",
+      "Lifestyle framing, upper body visible.",
     ],
     neg_add: [
-      "No product on table.", "No product alone.", "No floating device.",
-      "No packaging.", "Do not show device without a person holding it.",
+      "product on table, product alone, floating device, packaging,",
+      "no person, device without hands,",
     ],
   },
+
   hold_bag_hand: {
     pos_add: [
-      "A real person holds the bag naturally in one hand.",
-      "If the input shows the bag hanging on a wall hook, door handle, or chair, remove that and show a real person holding the bag instead.",
-      "If the input shows the bag placed on a table or floor, show a real person holding it instead.",
-      "The bag must be clearly visible and unobstructed.",
-      "Natural relaxed standing pose.",
+      "A person holds the bag naturally in one hand, bag clearly visible and unobstructed.",
+      "Natural relaxed standing pose. Bag at side or in front of body.",
       "Realistic product size relative to the hand and body.",
     ],
     neg_add: [
-      "No mannequin.", "No dummy.", "No packaging.",
-      "No product on table.", "No product on floor.", "No bag hanging on wall.", "No bag on hook.", "No product alone.", "No floating bag.",
-      "Do not show bag without a person holding it.",
+      "product on table, product on floor, product on wall, product alone, floating, packaging,",
+      "no person,",
     ],
   },
+
   hold_tool_safe: {
     pos_add: [
-      "A real person holds the tool safely in hand, neutral non-threatening pose.",
-      "Tool is clearly visible and correctly oriented for its intended use.",
+      "A person holds the tool safely in hand, neutral non-threatening pose.",
+      "Tool clearly visible and correctly oriented for its intended use.",
     ],
     neg_add: [
-      "No cutting action.", "No aggressive action.", "No product on table.",
-      "No product alone.", "No packaging.", "Do not show tool without a person holding it.",
+      "cutting action, aggressive action, product on table, product alone, packaging,",
+      "no person,",
     ],
   },
+
   hold_food_display: {
     pos_add: [
       "Food product presented on a clean surface or wooden board, styled for photography.",
       "Professional food photography lighting, appetizing presentation.",
-      "No person needed — focus entirely on the food product.",
+      "Clean neutral background, product is the hero.",
     ],
-    neg_add: ["No packaging.", "No floating.", "No hand in frame.", "No cluttered background."],
+    neg_add: [
+      "packaging, floating, cluttered background,",
+    ],
   },
+
   hold_sport_object: {
     pos_add: [
-      "A real person holds or uses the sport object naturally in correct sport context.",
-      "Active or ready pose appropriate to the sport.",
-      "Realistic environment matching the sport.",
+      "A person holds or uses the sport object in correct sport context, active pose.",
+      "Realistic environment matching the sport. Dynamic natural movement.",
     ],
     neg_add: [
-      "No product on table.", "No product alone.", "No floating.",
-      "No packaging.", "Do not show sport object without a person using it.",
+      "product on table, product alone, floating, packaging,",
+      "no person, static unnatural pose,",
     ],
   },
+
   hold_display: {
     pos_add: [
-      "Product displayed cleanly on a neutral surface, centered, professional product photography.",
-      "Soft even lighting, minimal background.",
+      "Product displayed on a neutral surface, centered, professional product photography.",
+      "Soft even lighting, minimal clean background.",
     ],
-    neg_add: ["No hand visible.", "No packaging.", "No cluttered background.", "No floating."],
+    neg_add: [
+      "floating, packaging, cluttered background,",
+    ],
   },
+
   hold_flower: {
     pos_add: [
-      "A real person holds the flower bouquet or floral arrangement with both hands, at chest or waist level, facing the camera.",
-      "The bouquet is in front of the person's body, clearly visible and unobstructed.",
-      "Elegant natural pose — person slightly tilted toward camera, bouquet centered in frame.",
-      "The flowers are the hero of the image: sharp, colorful, well-lit.",
-      "Natural soft daylight or warm studio lighting highlighting the flowers.",
-      "If the input shows flowers lying flat on a surface, reconstruct a person holding them at chest level.",
+      "A person holds the bouquet with both hands, at chest or waist level, facing the camera.",
+      "Bouquet in front of the body, clearly visible and unobstructed.",
+      "Elegant natural pose, flowers are the hero of the image, sharp and well-lit.",
     ],
     neg_add: [
-      "CRITICAL: Do NOT place flowers on the person's head.",
-      "CRITICAL: Do NOT use the flowers as a hair crown, floral crown, or headpiece.",
-      "CRITICAL: Do NOT place the bouquet in the person's hair or on their head.",
-      "No flower crown. No floral headpiece. No flowers worn on head.",
-      "No flowers lying flat on table without a person holding them.",
-      "No packaging around the flowers.",
-      "No extra objects distracting from the bouquet.",
+      "flower crown, flowers on head, floral headpiece, flowers in hair,",
+      "flowers on table, flowers alone, flowers not in hands,",
+      "no person, person missing,",
     ],
   },
+
   hold_beauty_product: {
     pos_add: [
-      "Beauty or cosmetic product displayed on a clean white marble surface, upright, front label clearly visible.",
-      "Soft diffused studio lighting from above and both sides — luxury cosmetics photography.",
-      "Minimal elegant styling: one or two petals or leaves as props maximum.",
-      "Pure white or very light neutral background.",
-      "Premium beauty retail display. Commercial product photography.",
-      "The product is perfectly centered, the only item in the scene.",
+      "Beauty product displayed upright on a clean white or marble surface, front label visible.",
+      "Soft diffused studio lighting, luxury cosmetics photography.",
+      "Pure white or light neutral background. Product centered and perfectly lit.",
     ],
     neg_add: [
-      "No hand in frame.", "No packaging box if product is already visible.", "No clutter.",
-      "No floating product.", "No person needed — product only.",
-      "No multiple products unless it is explicitly a kit.",
+      "floating, cluttered background, packaging box over product,",
     ],
   },
+
   hold_beverage: {
     pos_add: [
-      "A real person holds the beverage naturally in one hand at chest level.",
-      "The label or front of the product faces the camera and is fully visible.",
-      "Natural casual standing pose, slight smile, clean background.",
-      "Bright airy lifestyle environment or minimal studio — not a bar or restaurant setting.",
-      "The beverage product is the clear focus of the image.",
+      "A person holds the beverage naturally in one hand at chest level.",
+      "Label facing camera, fully visible. Natural casual standing pose.",
+      "Clean bright lifestyle environment. Product is the clear focus.",
     ],
     neg_add: [
-      "No product alone on table without a person.", "No packaging obstructing the label.",
-      "No floating.", "No extra hands.", "No bar environment.", "No restaurant background.",
+      "product alone on table, floating, packaging obstructing label,",
+      "bar environment, restaurant background, no person,",
     ],
   },
+
   hold_pet_product: {
     pos_add: [
-      "Pet product displayed cleanly on a minimal indoor surface — white table or light wood.",
-      "Soft natural lighting, clean neutral background.",
-      "The product is centered and clearly visible, label or main feature facing camera.",
-      "If it is a collar or leash, show it flat on a clean surface.",
-      "Professional product photography. The product is the hero.",
+      "Pet product displayed on a minimal indoor surface, label or main feature facing camera.",
+      "Soft natural lighting, clean neutral background. Product centered.",
     ],
     neg_add: [
-      "No animal in frame unless the product is a collar actively worn by a pet.",
-      "No clutter.", "No packaging.", "No hand visible.",
+      "clutter, packaging, floating,",
     ],
   },
+
   scene_tabletop: {
     pos_add: [
-      "Product placed upright and centered on a clean light-colored indoor table surface.",
-      "Soft studio lighting, neutral or white background.",
-      "The product is the only item in the scene — no distracting props.",
-      "Professional commercial product photography. Sharp focus on the product.",
+      "Product placed upright on a clean light-colored surface, centered.",
+      "Soft studio lighting, neutral or white background. Sharp focus on product.",
+      "Product physically resting on surface with correct contact shadow.",
     ],
-    neg_add: ["No hand visible.", "No packaging.", "No clutter around product.", "No floating."],
+    neg_add: [
+      "floating, packaging, clutter,",
+    ],
   },
+
   scene_home_indoor: {
-    pos_add: ["Product placed indoors in a realistic home environment."],
-    neg_add: ["No packaging."],
+    pos_add: [
+      "Product placed in a realistic indoor home environment, correct scale.",
+      "Natural lighting, realistic perspective, product physically grounded.",
+    ],
+    neg_add: [
+      "floating, packaging, wrong scale,",
+    ],
   },
+
   scene_floor: {
-    pos_add: ["Product placed on floor in natural environment."],
-    neg_add: ["No floating.", "No hand visible."],
+    pos_add: [
+      "Product placed flat on the floor, correct contact and natural shadow.",
+      "Realistic perspective, correct scale relative to the room.",
+    ],
+    neg_add: [
+      "floating, packaging, wrong scale, tilted unrealistically,",
+    ],
   },
+
   scene_wall: {
-    pos_add: ["Product fixed to wall in correct position."],
-    neg_add: ["No hand visible.", "No packaging."],
+    pos_add: [
+      "Product mounted or fixed to wall in correct position.",
+      "Realistic perspective, correct scale, natural shadow on wall.",
+    ],
+    neg_add: [
+      "floating, packaging, wrong scale,",
+    ],
   },
+
   scene_store_shelf: {
-    pos_add: ["Product placed on store shelf."],
-    neg_add: ["No hand."],
+    pos_add: [
+      "Product placed on a store shelf, facing forward, correct scale.",
+    ],
+    neg_add: ["floating, wrong scale,"],
   },
+
   scene_outdoor_ground: {
-    pos_add: ["Product placed outdoors on ground."],
-    neg_add: ["No floating."],
+    pos_add: [
+      "Product placed outdoors on the ground, correct contact and natural shadow.",
+      "Realistic outdoor lighting, correct scale relative to surroundings.",
+    ],
+    neg_add: ["floating, packaging, wrong scale,"],
   },
+
   scene_water_surface: {
-    pos_add: ["Product floating on water surface."],
-    neg_add: ["No hand visible.", "No packaging."],
+    pos_add: [
+      "Product floating on water surface, realistic water reflection and contact.",
+    ],
+    neg_add: ["packaging, wrong scale,"],
   },
+
   scene_sport_environment: {
-    pos_add: ["Product placed on ground in sport environment."],
-    neg_add: ["No hand visible.", "No packaging."],
+    pos_add: [
+      "Product placed on the ground in a sport environment, correct context and scale.",
+    ],
+    neg_add: ["floating, packaging, wrong scale,"],
   },
+
   scene_vehicle_interior: {
-    pos_add: ["Product placed in correct vehicle interior position."],
-    neg_add: ["No wrong placement.", "No packaging."],
+    pos_add: [
+      "Product placed in correct vehicle interior position, realistic scale.",
+    ],
+    neg_add: ["wrong placement, packaging,"],
   },
+
   install_home_fixture: {
-    pos_add: ["Product installed in correct home fixture position."],
-    neg_add: ["No wrong placement."],
+    pos_add: [
+      "Product installed in correct home fixture position, realistic integration.",
+      "Correct scale, natural lighting, realistic installation.",
+    ],
+    neg_add: ["wrong placement, floating, packaging,"],
   },
+
   install_vehicle_fixture: {
-    pos_add: ["Product installed in correct vehicle position."],
-    neg_add: ["No wrong placement.", "No packaging."],
+    pos_add: [
+      "Product installed in correct vehicle position, realistic fit.",
+    ],
+    neg_add: ["wrong placement, floating, packaging,"],
   },
+
   install_wall_fixed: {
-    pos_add: ["Product fixed on wall correctly."],
-    neg_add: ["No wrong placement."],
+    pos_add: [
+      "Product fixed on wall in correct position, realistic scale and shadow.",
+    ],
+    neg_add: ["wrong placement, floating, packaging,"],
   },
 };

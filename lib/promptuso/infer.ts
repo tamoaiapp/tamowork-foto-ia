@@ -313,35 +313,35 @@ export interface PromptResult {
   };
 }
 
-// Template de ação curto — estilo do workflow real do Qwen:
-// "coloca essa mochila nas costas de uma criança na escola"
-// Qwen é multimodal — vê o produto. O prompt só diz O QUE FAZER com ele.
+// Template de ação — estilo direto do workflow Qwen.
+// REGRAS: nunca usar "if", nunca descrever o erro no positivo, nunca mencionar o que NÃO deve aparecer.
+// Só descrever o resultado desejado.
 function buildActionPhrase(slot: string, productLabel: string, subject: string, cenario: string): string {
   const prod = productLabel.toLowerCase();
   const cena = cenario ? `, ${cenario.toLowerCase()}` : "";
 
   const phrases: Record<string, string> = {
-    wear_head_top:    `Put this ${prod} on the head of ${subject}${cena}.`,
-    wear_head_face:   `Put this ${prod} on the face of ${subject}${cena}.`,
-    wear_head_ear:    `Put this ${prod} on the ear of ${subject}${cena}.`,
-    wear_neck:        `Put this ${prod} around the neck of ${subject}${cena}.`,
-    wear_torso_upper: `Dress ${subject} wearing this ${prod}${cena}.`,
-    wear_torso_full:  `Dress ${subject} wearing this ${prod}, full body shot${cena}.`,
-    wear_waist_legs:  `Dress ${subject} wearing this ${prod} on their lower body${cena}.`,
-    wear_feet:        `Show this ${prod} worn on the feet of ${subject}${cena}.`,
-    wear_wrist:       `Put this ${prod} on the wrist of ${subject}${cena}.`,
-    wear_finger:      `Put this ${prod} on a finger of ${subject}${cena}.`,
-    wear_back:        `Put this ${prod} on the back of ${subject}${cena}.`,
-    wear_crossbody:   `Show ${subject} wearing this ${prod} crossbody${cena}.`,
-    hold_device:      `Show ${subject} holding this ${prod} naturally in hand${cena}.`,
-    hold_bag_hand:    `Show ${subject} holding this ${prod} naturally in one hand${cena}.`,
-    hold_tool_safe:   `Show ${subject} holding this ${prod} safely${cena}.`,
-    hold_sport_object:`Show ${subject} using this ${prod} in sport context${cena}.`,
-    hold_flower:      `Show ${subject} holding this bouquet with both hands at chest level${cena}. The flowers must be in the hands, not on the head.`,
-    hold_beverage:    `Show ${subject} holding this ${prod} at chest level${cena}.`,
+    wear_head_top:    `${subject.charAt(0).toUpperCase() + subject.slice(1)} wearing this ${prod} on their head${cena}.`,
+    wear_head_face:   `${subject.charAt(0).toUpperCase() + subject.slice(1)} wearing this ${prod} on their face${cena}.`,
+    wear_head_ear:    `Close-up of ${subject} wearing this ${prod} on the ear, naturally attached to the earlobe${cena}.`,
+    wear_neck:        `${subject.charAt(0).toUpperCase() + subject.slice(1)} wearing this ${prod} around the neck${cena}.`,
+    wear_torso_upper: `${subject.charAt(0).toUpperCase() + subject.slice(1)} wearing this ${prod}${cena}.`,
+    wear_torso_full:  `${subject.charAt(0).toUpperCase() + subject.slice(1)} wearing this ${prod}, full body${cena}.`,
+    wear_waist_legs:  `${subject.charAt(0).toUpperCase() + subject.slice(1)} wearing this ${prod} on their lower body${cena}.`,
+    wear_feet:        `Close-up from knee to ground: this ${prod} worn on feet${cena}.`,
+    wear_wrist:       `Close-up of ${subject} wearing this ${prod} on the wrist${cena}.`,
+    wear_finger:      `Close-up of ${subject} wearing this ${prod} on a finger${cena}.`,
+    wear_back:        `${subject.charAt(0).toUpperCase() + subject.slice(1)} wearing this ${prod} on their back${cena}.`,
+    wear_crossbody:   `${subject.charAt(0).toUpperCase() + subject.slice(1)} wearing this ${prod} crossbody${cena}.`,
+    hold_device:      `${subject.charAt(0).toUpperCase() + subject.slice(1)} holding this ${prod} naturally in one hand${cena}.`,
+    hold_bag_hand:    `${subject.charAt(0).toUpperCase() + subject.slice(1)} holding this ${prod} in one hand${cena}.`,
+    hold_tool_safe:   `${subject.charAt(0).toUpperCase() + subject.slice(1)} holding this ${prod} in hand${cena}.`,
+    hold_sport_object:`${subject.charAt(0).toUpperCase() + subject.slice(1)} using this ${prod} in sport context${cena}.`,
+    hold_flower:      `${subject.charAt(0).toUpperCase() + subject.slice(1)} holding this bouquet with both hands at chest level${cena}.`,
+    hold_beverage:    `${subject.charAt(0).toUpperCase() + subject.slice(1)} holding this ${prod} at chest level${cena}.`,
   };
 
-  return phrases[slot] ?? `Show ${subject} using this ${prod} naturally${cena}.`;
+  return phrases[slot] ?? `${subject.charAt(0).toUpperCase() + subject.slice(1)} using this ${prod} naturally${cena}.`;
 }
 
 export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDesc?: string): PromptResult {
