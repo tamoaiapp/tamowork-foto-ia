@@ -145,6 +145,20 @@ function AuthCard() {
     setLoading(false);
   }
 
+  async function handleForgotPassword() {
+    if (!email) {
+      setError(lang === "en" ? "Enter your e-mail first" : lang === "es" ? "Ingresa tu e-mail primero" : "Digite seu e-mail primeiro");
+      return;
+    }
+    setLoading(true); setError(""); setMsg("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/`,
+    });
+    if (error) setError(error.message);
+    else setMsg(lang === "en" ? "Recovery e-mail sent! Check your inbox." : lang === "es" ? "¡E-mail de recuperación enviado!" : "E-mail de recuperação enviado! Verifique sua caixa de entrada.");
+    setLoading(false);
+  }
+
   return (
     <div style={a.card}>
       {/* Logo mobile — só aparece no mobile via CSS */}
@@ -193,6 +207,11 @@ function AuthCard() {
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <input type="email" placeholder={t("login_email")} value={email} onChange={e => setEmail(e.target.value)} required style={a.input} />
             <input type="password" placeholder={t("login_password")} value={password} onChange={e => setPassword(e.target.value)} required style={a.input} />
+            {mode === "login" && (
+              <button type="button" onClick={handleForgotPassword} style={{ background: "none", border: "none", color: "#8394b0", fontSize: 13, cursor: "pointer", textAlign: "right", padding: "2px 0", textDecoration: "underline", fontFamily: "inherit" }}>
+                {lang === "en" ? "Forgot password?" : lang === "es" ? "¿Olvidaste tu contraseña?" : "Esqueci minha senha"}
+              </button>
+            )}
             {error && <div style={a.errorBox}>{error}</div>}
             {msg && <div style={a.successBox}>{msg}</div>}
             <button type="submit" disabled={loading} style={a.submitBtn}>

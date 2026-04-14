@@ -68,10 +68,10 @@ export function LangSelector() {
       title="Change language"
       style={{
         background: "none", border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: 8, padding: "4px 8px", cursor: "pointer",
+        borderRadius: 8, padding: "8px 10px", cursor: "pointer",
         color: "#8394b0", fontSize: 11, fontWeight: 700,
         display: "flex", alignItems: "center", gap: 4,
-        fontFamily: "inherit",
+        fontFamily: "inherit", minHeight: 44, minWidth: 44,
       }}
     >
       {flags[lang]} {labels[lang]}
