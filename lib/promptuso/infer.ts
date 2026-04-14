@@ -311,6 +311,31 @@ export interface PromptResult {
   };
 }
 
+// How the product is used/shown — tells Qwen WHERE and HOW to place it
+function getUsageVerb(slot: string): string {
+  const verbs: Record<string, string> = {
+    wear_head_top:    "worn on the head of",
+    wear_head_face:   "worn on the face of",
+    wear_head_ear:    "worn on the ear of",
+    wear_neck:        "worn around the neck of",
+    wear_torso_upper: "worn on the upper body of",
+    wear_torso_full:  "worn on the full body of",
+    wear_waist_legs:  "worn on the lower body of",
+    wear_feet:        "worn on the feet of",
+    wear_wrist:       "worn on the wrist of",
+    wear_finger:      "worn on a finger of",
+    wear_back:        "worn on the back of",
+    wear_crossbody:   "worn crossbody by",
+    hold_device:      "held naturally in hand by",
+    hold_bag_hand:    "held in one hand by",
+    hold_tool_safe:   "held safely in hand by",
+    hold_sport_object:"used in sport context by",
+    hold_flower:      "held at chest level by",
+    hold_beverage:    "held at chest level by",
+  };
+  return verbs[slot] ?? "used naturally by";
+}
+
 export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptResult {
   const produto = asciiSafe(produtoRaw, 180);
   const cenario = asciiSafe(cenarioRaw, 220);
@@ -320,9 +345,9 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
 
   // Fallback if slot has no rule
   if (!loadRule(slot)) {
-    if (slot.startsWith("wear_")) slot = RULES["wear_torso_full"] ? "wear_torso_full" : "scene_tabletop";
-    else if (slot.startsWith("hold_")) slot = RULES["hold_display"] ? "hold_display" : "scene_tabletop";
-    else if (slot.startsWith("install_")) slot = RULES["install_home_fixture"] ? "install_home_fixture" : "scene_tabletop";
+    if (slot.startsWith("wear_")) slot = "wear_torso_full";
+    else if (slot.startsWith("hold_")) slot = "hold_display";
+    else if (slot.startsWith("install_")) slot = "install_home_fixture";
     else slot = "scene_tabletop";
   }
 
@@ -343,103 +368,62 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
     !DISPLAY_ONLY_HOLD.has(slot);
   const forceHum = refReq || mannequinDetected;
 
+  // ── Short, vision-aware prompts ──────────────────────────────────────────
+  // Qwen already SEES the input image via TextEncodeQwenImageEditPlus.
+  // We tell it WHAT to produce, not HOW to interpret every possible input state.
+  // The model handles the "if it's on a hanger... if it's flat..." part itself.
   const pos: string[] = [];
   const neg: string[] = [];
 
-  pos.push("Realistic commercial photo.");
-  pos.push(`Product: ${productLabel}.`);
+  // 1. Core task
+  pos.push(`Transform this ${productLabel} into a professional catalog photo.`);
 
-  // Ignora bordas, espaços vazios e artefatos de screenshot presentes na imagem de entrada
-  pos.push(
-    "IGNORE INPUT ARTIFACTS: The input image may contain black borders, white padding, gray borders, screenshot UI elements, watermarks, app interface elements, or empty space around the product. Ignore all of these completely.",
-    "Focus exclusively on the actual physical product. Treat any black, white, or gray space surrounding the product as irrelevant background to be replaced.",
-    "Do not reproduce black borders, white padding, or any screenshot-style framing in the output image.",
-  );
-  neg.push(
-    "No black borders. No white padding. No gray borders. No screenshot framing. No app interface elements. No empty canvas borders. No letterbox bars. No pillarbox bars.",
-    "Do not replicate the background color or framing style of the input image.",
-  );
+  // 2. How to show it — usage context
+  if (forceHum) {
+    const verb = getUsageVerb(slot);
+    pos.push(`Show it ${verb} ${persona.subject} in a natural realistic pose.`);
+    if (persona.gender === "female") pos.push("Female model only.");
+    else if (persona.gender === "male") pos.push("Male model only.");
+  } else if (DISPLAY_ONLY_HOLD.has(slot)) {
+    pos.push("Display the product on a clean minimal surface, product only, no hands.");
+  } else {
+    pos.push("Place the product in a clean, realistic setting.");
+  }
 
+  // 3. Scene context from user
   if (cenario) {
-    pos.push(`Scene/context: ${cenario}.`, "Use the scenario only as realistic environment support.", "The product must remain the main focus of the image.", "The background must not dominate the composition.", "Keep the scenario coherent with normal product usage.");
-    neg.push("Do not let the background overpower the product.", "Do not make the scenario more important than the product.");
-    if (hasViolence(cenario)) {
-      neg.push("No violence.", "No threats.", "No aggressive action.", "No injury.", "No crime scene.");
-    }
+    pos.push(`Setting: ${cenario}.`);
+    if (hasViolence(cenario)) neg.push("No violence, no threats, no aggressive action, no crime scene.");
   }
+
+  // 4. Preservation + quality
+  pos.push(
+    "Preserve exact colors, textures, and design from the input photo.",
+    "Professional studio lighting, clean neutral background.",
+    "Ignore black borders, white padding, or screenshot framing present in the input — focus only on the physical product.",
+  );
+
+  // 5. Focused negatives
+  neg.push("No black borders, no white padding, no screenshot UI, no watermarks.");
+  neg.push("No product redesign, no extra objects, no text overlay, no duplicate product, no floating product.");
 
   if (forceHum) {
-    pos.push(
-      `Subject: ${persona.subject}.`,
-      "HUMAN REFERENCE REQUIRED.",
-      "The human reference must show realistic scale and size.",
-      "Use a real human. Replace any mannequin, bust, head form, dummy, display stand, or clothing hanger with a real human wearing the product.",
-      "If the input image shows the product on a hanger, remove the hanger completely and show a real person wearing the product instead.",
-      "If the input image shows the product on a mannequin or display, remove it and replace with a real person wearing the product.",
-      "If the input image shows the product inside packaging, a box, a card, or a blister pack — remove the packaging completely and show only the product being worn or used by a real person.",
-      "If the input image shows the product laid flat (flat lay on a bed, floor, or table), reconstruct it being actively worn by a real person instead.",
-      "If the input image shows the product inside a plastic bag or garment bag, remove the bag completely and show the product worn by a real person.",
-      "If the input image shows the product hanging on a wall hook, door handle, or chair back, remove it from there and show a real person wearing or holding it instead.",
-      "CLEAN BACKGROUND REQUIRED: Remove ALL other objects from the background. Remove all other mannequins, clothing racks, store shelves, display stands, and store elements. Show only the person wearing the product against a clean, neutral, or lifestyle-appropriate background.",
-      "If the original image was taken inside a store, showroom, or display window, completely replace the background with a clean studio or elegant lifestyle environment.",
-      "Only one person must appear in the final image. Remove any other people, mannequins, or figures visible in the background.",
-    );
-
-    // Forçar gênero correto no modelo gerado
-    if (persona.gender === "female") {
-      pos.push("The model must be a woman. Female model only.");
-      neg.push("No men. No male model. No man. No male anatomy. No masculine features. No male body.");
-    } else if (persona.gender === "male") {
-      pos.push("The model must be a man. Male model only.");
-      neg.push("No women. No female model. No woman. No feminine features.");
-    }
-  }
-
-  const rule = loadRule(slot);
-  if (rule?.pos_add) pos.push(...rule.pos_add);
-  if (rule?.neg_add) neg.push(...rule.neg_add);
-
-  if (forceHum || refReq) {
-    pos.push("If any packaging exists, remove it completely and use only the physical product.");
-    neg.push("No packaging visible.");
-  }
-
-  if (refReq) {
-    pos.push("Human reference is mandatory to define scale.", "The human reference must clearly communicate the real-world size of the product.", "Use a relevant body part as scale reference.", "The product must look realistically sized compared to the human reference.", "Do not exaggerate or miniaturize the scale.");
+    neg.push("No mannequin, no hanger, no flat lay, no product alone, no packaging, no retail background, no extra people.");
+    if (persona.gender === "female") neg.push("No men, no male model, no masculine features, no beard.");
+    else if (persona.gender === "male") neg.push("No women, no female model, no feminine features.");
+  } else if (DISPLAY_ONLY_HOLD.has(slot)) {
+    neg.push("No hands, no person, no packaging, no clutter.");
   } else {
-    pos.push("The product must keep realistic size and proportion in the scene.", "Do not exaggerate or miniaturize the scale.");
+    neg.push("No hands, no fingers.");
   }
 
-  if (DISPLAY_ONLY_HOLD.has(slot)) {
-    // Display-only holds: remove any hands, product only
-    pos.push("If a hand or fingers are present in the input photo, remove them. Keep only the product.");
-    neg.push("No hands. No fingers. No person needed — product display only.");
-  } else if (!slot.startsWith("hold_")) {
-    pos.push("If a hand or fingers are present in the input photo, remove them. Keep only the product.");
-    neg.push("No hands. No fingers.");
-  } else {
-    neg.push("No extra hands. Only one hand.");
-  }
-
-  pos.push("Keep the product exactly unchanged from the input image.", "Maintain real-world size and proportion of the product.", "Keep realistic perspective, lighting, and product placement.");
-  neg.push("Do not change, redesign, stylize, resize, warp, or distort the product.", "Do not move the product to the wrong body location or wrong usage position.", "No text, logos, watermarks.", "No duplicate product.", "No extra objects distracting from the product.");
-
-  if (forceHum) {
-    neg.push(
-      "No mannequin. No bust. No head form. No dummy. No display stand. No product on mannequin. No hanger. No clothing rail. No product hanging. No flat lay. No plastic bag. No garment bag. No product on hook. No product alone without person.",
-      "No other mannequins in the background. No store display in background. No clothing rack in background. No store shelving in background. No shop window background. No retail environment. No other clothing items visible in background.",
-      "No other people in the image. No crowd. No other figures. Only one person wearing the product.",
-    );
-  }
-
-  neg.push("Do not invent decorations, fantasy elements, costumes, props, or themed add-ons.", "Do not reinterpret the product as a costume or novelty item.", "No floating product.", "No unrealistic glamour effects.");
   if (slot.startsWith("wear_")) {
-    neg.push("No product-only photo. No packshot. Do not show the product alone.");
+    neg.push("Do not show the product alone without a person wearing it.");
   }
 
   return {
-    positive: asciiSafe(pos.join(" "), 1200),
-    negative: asciiSafe(neg.join(" "), 1200),
+    positive: asciiSafe(pos.join(" "), 900),
+    negative: asciiSafe(neg.join(" "), 500),
     produto,
     cenario,
     usage_anchor: slot,
