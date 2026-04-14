@@ -425,12 +425,18 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
   // Estes são adicionados por último e são específicos para casos onde o Qwen
   // tem viéses fortes que causam erros recorrentes.
   if (slot === "hold_flower") {
-    // Viés forte: "noiva + flor" → Qwen coloca flores na cabeça como coroa
-    neg.push(
-      "Do NOT place flowers on the person's head. No flower crown. No floral headpiece. No flowers in hair. No hair crown. No wreath on head.",
-      "The bouquet must be held in the hands in front of the body, NOT worn on the head.",
+    // Viés 1: modelo não coloca pessoa — flor fica sobre superfície
+    // Viés 2: noiva + flor → coroa de flores na cabeça
+    pos.push(
+      "IMPORTANT: A real woman must appear in this image holding the bouquet.",
+      "The flowers must be in her hands, held at chest or waist level, in front of her body.",
+      "If the input shows the bouquet resting on a surface, a plate, or a table — remove the surface completely and show a woman's hands holding the bouquet instead.",
+      "The woman's hands and arms must be clearly visible holding the bouquet.",
     );
-    pos.push("The bouquet is held with both hands at chest or waist level, clearly in front of the body.");
+    neg.push(
+      "No bouquet alone on a surface. No flowers on a plate. No flowers on a table. No product-only display. A person must hold the flowers.",
+      "Do NOT place flowers on the person's head. No flower crown. No floral headpiece. No flowers in hair. No hair crown. No wreath on head.",
+    );
   }
 
   if (slot === "wear_feet") {
