@@ -41,8 +41,9 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { prompt, input_image_url } = body;
 
-  if (!prompt || !input_image_url) {
-    return NextResponse.json({ error: "prompt e input_image_url são obrigatórios" }, { status: 400 });
+  // prompt pode ser vazio — nesse caso a visão lê a imagem automaticamente
+  if (!input_image_url) {
+    return NextResponse.json({ error: "input_image_url é obrigatória" }, { status: 400 });
   }
 
   // Valida URL da imagem — rejeita URLs malformadas (ex: "https://https:")

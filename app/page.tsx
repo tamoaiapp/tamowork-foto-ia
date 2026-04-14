@@ -2573,41 +2573,66 @@ export default function HomePage() {
                 </div>
               )}
 
-              <div style={styles.fieldGroup}>
-                <label style={styles.label}>
-                  {t("field_product")}
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex: conjunto feminino floral, blusa cropped azul, tênis branco…"
-                  value={produto}
-                  onChange={(e) => setProduto(e.target.value)}
-                  required
-                  style={styles.input}
-                />
-              </div>
-
-              {creationMode !== "fundo_branco" && (
+              {/* Campo produto — oculto no produto_exposto (visão detecta automaticamente) */}
+              {creationMode !== "produto_exposto" && (
                 <div style={styles.fieldGroup}>
                   <label style={styles.label}>
-                    {creationMode === "personalizado"
-                      ? (lang === "en" ? "Describe the result you want" : lang === "es" ? "Describe el resultado que quieres" : "Descreva o resultado que quer")
-                      : t("field_scene")}
+                    {t("field_product")}
+                    {creationMode === "simulacao" && (
+                      <span style={{ fontWeight: 400, color: "#4e5c72", marginLeft: 6, fontSize: 11 }}>
+                        {lang === "en" ? "(optional)" : "(opcional)"}
+                      </span>
+                    )}
                   </label>
                   <input
                     type="text"
                     placeholder={
                       creationMode === "simulacao"
-                        ? (lang === "en" ? "Ex: stylish woman in elegant place, modern studio with soft light" : lang === "es" ? "Ej: mujer elegante en lugar sofisticado, estudio moderno con luz suave" : "Ex: mulher estilosa em lugar elegante, estúdio moderno com luz suave")
+                        ? (lang === "en" ? "Leave empty — AI identifies automatically" : "Deixe vazio — IA identifica sozinha")
+                        : "Ex: conjunto feminino floral, blusa cropped azul, tênis branco…"
+                    }
+                    value={produto}
+                    onChange={(e) => setProduto(e.target.value)}
+                    style={styles.input}
+                  />
+                </div>
+              )}
+
+              {/* Campo cenário — oculto no produto_exposto (IA detecta tudo) */}
+              {creationMode !== "fundo_branco" && creationMode !== "produto_exposto" && (
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>
+                    {creationMode === "personalizado"
+                      ? (lang === "en" ? "Describe the result you want" : lang === "es" ? "Describe el resultado que quieres" : "Descreva o resultado que quer")
+                      : t("field_scene")}
+                    {creationMode === "simulacao" && (
+                      <span style={{ fontWeight: 400, color: "#4e5c72", marginLeft: 6, fontSize: 11 }}>
+                        {lang === "en" ? "(optional)" : "(opcional)"}
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={
+                      creationMode === "simulacao"
+                        ? (lang === "en" ? "Leave empty — AI chooses automatically" : lang === "es" ? "Deja vacío — IA elige automáticamente" : "Deixe vazio — IA escolhe o cenário sozinha")
                         : creationMode === "catalogo"
                         ? (lang === "en" ? "Ex: streets of Paris, upscale café, modern urban setting" : lang === "es" ? "Ej: calle de París, café sofisticado, ambiente urbano moderno" : "Ex: rua de Paris, café sofisticado, ambiente urbano moderno")
                         : (lang === "en" ? "Freely describe what the AI should create" : lang === "es" ? "Describe libremente lo que la IA debe crear" : "Descreva livremente o que a IA deve criar")
                     }
                     value={cenario}
                     onChange={(e) => setCenario(e.target.value)}
-                    required
                     style={styles.input}
                   />
+                </div>
+              )}
+
+              {/* Aviso produto exposto — IA lê tudo automaticamente */}
+              {creationMode === "produto_exposto" && (
+                <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 12, padding: "12px 14px", marginBottom: 8, fontSize: 13, color: "#a78bfa", lineHeight: 1.5 }}>
+                  {lang === "en"
+                    ? "✨ AI reads the photo automatically and creates the ideal display — no description needed."
+                    : "✨ A IA lê a foto automaticamente e cria o expositor ideal — não precisa descrever nada."}
                 </div>
               )}
 
@@ -2616,8 +2641,8 @@ export default function HomePage() {
 
               <button
                 type="submit"
-                disabled={submitting || !cenario.trim()}
-                style={{ ...styles.submitBtn, opacity: (submitting || !cenario.trim()) ? 0.5 : 1 }}
+                disabled={submitting || (creationMode !== "produto_exposto" && creationMode !== "simulacao" && !cenario.trim())}
+                style={{ ...styles.submitBtn, opacity: (submitting || (creationMode !== "produto_exposto" && creationMode !== "simulacao" && !cenario.trim())) ? 0.5 : 1 }}
               >
                 {submitting ? "Enviando..." : "✨ Gerar foto com IA"}
               </button>
