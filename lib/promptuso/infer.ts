@@ -381,9 +381,55 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDes
 
   // ── Prompt estruturado em blocos fixos ────────────────────────────────────
   // Qwen Image Edit é multimodal — vê a imagem E processa o texto.
-  // Blocos: [tipo de imagem] → [produto fiel] → [regra preservação] → [uso] → [cena] → [fotografia]
   const pos: string[] = [];
   const neg: string[] = [];
+
+  // ── CASO ESPECIAL: hold_flower ─────────────────────────────────────────────
+  // Qwen img2img com foto de buquê "edita" o que vê → melhora o buquê, não gera pessoa.
+  // Solução: prompt orientado à CENA (retrato de pessoa), com buquê como prop de referência.
+  if (slot === "hold_flower") {
+    const sceneCtx = cenario || (persona.gender === "female" ? "wedding ceremony, church aisle, soft natural light" : "outdoor garden, daylight");
+    const subjectDesc = persona.gender === "female" ? "a beautiful bride in a white wedding dress" : persona.gender === "male" ? "a man in formal attire" : "a person";
+    const bouquetDesc = productLabel;
+
+    pos.push(
+      `Professional wedding portrait photograph.`,
+      `${subjectDesc.charAt(0).toUpperCase() + subjectDesc.slice(1)} is holding a bouquet with both hands at chest level.`,
+      `The bouquet held in her hands must look exactly like the reference image: ${bouquetDesc}.`,
+      `Preserve the exact flowers, colors, shape, ribbon, and all details of the bouquet from the reference photo.`,
+      cenario ? `Setting: ${cenario}.` : `Setting: ${sceneCtx}.`,
+      `Natural soft light, realistic shadows, professional photography, full portrait or half-body shot.`,
+    );
+    // Negativos: flower crown primeiro, depois qualidade
+    neg.push(
+      "flowers on head, flower crown, floral headpiece, hair flowers, bouquet on head,",
+      "product alone without person, bouquet floating, no hands, product on table, product on plate,",
+      "wrong bouquet design, different flowers, different colors, changed ribbon,",
+      "blurry, low resolution, grainy, cartoon, illustration, CGI, plastic look, bad anatomy, extra fingers, malformed hands,",
+      "men visible,",
+    );
+
+    return {
+      positive: asciiSafe(pos.join(" "), 900),
+      negative: asciiSafe(neg.join(" "), 700),
+      produto,
+      cenario,
+      usage_anchor: slot,
+      meta: {
+        raw_inferred_slot: rawSlot,
+        final_slot: slot,
+        reference_required: refReq,
+        force_human: forceHum,
+        mannequin_detected: mannequinDetected,
+        subject: persona.subject,
+        age: persona.age,
+        gender: persona.gender,
+        product_label: productLabel,
+      },
+    };
+  }
+
+  // ── Blocos padrão: [tipo] → [produto] → [preservação] → [uso] → [cena] → [foto] ──
 
   // Bloco 1 — tipo de imagem
   pos.push("High-quality realistic commercial photo of");
@@ -416,14 +462,6 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDes
     "Natural realistic textures, professional product photography, authentic proportions, clean composition, realistic shadows.",
     "Ignore any black borders, white padding, or screenshot framing in the input — focus only on the physical product.",
   );
-
-  // ── Negativos críticos por slot (unshift = sempre primeiros, nunca truncados) ──
-  if (slot === "hold_flower") {
-    // Negativos críticos PRIMEIROS — previne o viés "noiva = flower crown" do Qwen
-    neg.unshift(
-      "do NOT place flowers on the person's head, no flower crown, no floral headpiece, no hair flowers, bouquet held in hands NOT worn on head,",
-    );
-  }
 
   if (slot === "wear_feet") {
     neg.unshift("no full body shot, no face, no upper body,");
