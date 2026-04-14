@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 
 export type TamoState = "idle" | "receiving" | "processing" | "done" | "error"
 
@@ -29,6 +29,20 @@ const FRAME = { left: 0.27, top: 0.34, width: 0.59, height: 0.36 }
 
 // ── Keyframes CSS ────────────────────────────────────────────────────────────
 const KEYFRAMES = `
+@keyframes tamo-superjump {
+  0%   { transform: scale(1) translateY(0); }
+  15%  { transform: scale(1.08, 0.93) translateY(0); }
+  35%  { transform: scale(0.93, 1.08) translateY(-38px); }
+  55%  { transform: scale(1.05, 0.95) translateY(-18px); }
+  70%  { transform: scale(0.97, 1.03) translateY(-8px); }
+  85%  { transform: scale(1.02, 0.98) translateY(-2px); }
+  100% { transform: scale(1) translateY(0); }
+}
+@keyframes tamo-burst-particle {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
+}
 @keyframes tamo-blink-open {
   0%, 82%, 100% { opacity: 1; }
   88%, 94%      { opacity: 0; }
@@ -158,6 +172,56 @@ function useDominantColor(imageUrl?: string) {
   return color
 }
 
+// ── Partículas de burst ao clicar ─────────────────────────────────────────────
+const BURST_ICONS = ["⭐", "✨", "⚡", "💜", "🌟", "💫"]
+const BURST_COUNT = 10
+
+function BurstParticles({ size, onDone }: { size: number; onDone: () => void }) {
+  const particles = React.useMemo(() => {
+    return Array.from({ length: BURST_COUNT }, (_, i) => {
+      const angle = (360 / BURST_COUNT) * i + Math.random() * 20 - 10
+      const rad   = (angle * Math.PI) / 180
+      const dist  = size * (0.9 + Math.random() * 0.7)
+      const dx    = Math.round(Math.cos(rad) * dist)
+      const dy    = Math.round(Math.sin(rad) * dist)
+      const emoji = BURST_ICONS[Math.floor(Math.random() * BURST_ICONS.length)]
+      const delay = Math.random() * 0.12
+      const dur   = 0.55 + Math.random() * 0.2
+      const fs    = Math.round(size * (0.15 + Math.random() * 0.12))
+      return { dx, dy, emoji, delay, dur, fs }
+    })
+  }, [size])
+
+  useEffect(() => {
+    const t = setTimeout(onDone, 900)
+    return () => clearTimeout(t)
+  }, [onDone])
+
+  return (
+    <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 10 }}>
+      {particles.map((p, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: "50%", top: "50%",
+            fontSize: p.fs,
+            lineHeight: 1,
+            marginLeft: -p.fs / 2,
+            marginTop:  -p.fs / 2,
+            // @ts-expect-error CSS vars custom
+            "--dx": `${p.dx}px`,
+            "--dy": `${p.dy}px`,
+            animation: `tamo-burst-particle ${p.dur}s cubic-bezier(0.22,1,0.36,1) ${p.delay}s forwards`,
+          }}
+        >
+          {p.emoji}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Componente principal ─────────────────────────────────────────────────────
 export default function TamoMascot({
   state = "idle",
@@ -167,16 +231,32 @@ export default function TamoMascot({
 }: TamoMascotProps) {
   const dominantColor = useDominantColor(state === "done" ? resultImage : undefined)
   const isDone = state === "done"
+  const [bursting, setBursting] = useState(false)
+
+  const handleClick = useCallback(() => {
+    if (bursting) return
+    setBursting(true)
+    // Haptic feedback no mobile
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(50)
+    }
+  }, [bursting])
 
   return (
     <>
       <style>{KEYFRAMES}</style>
       <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 10, userSelect: "none" }}>
 
-        {/* Wrapper extra para estrelas não serem clipadas pela animação */}
-        <div style={{ position: "relative", width: size, height: size }}>
-        {/* Container animado */}
-        <div style={{ position: "relative", width: size, height: size, ...STATE_ANIM[state] }}>
+        {/* Wrapper extra — clique + estrelas/burst não clipadas */}
+        <div
+          style={{ position: "relative", width: size, height: size, cursor: "pointer" }}
+          onClick={handleClick}
+        >
+        {/* Container animado — superjump ao clicar */}
+        <div style={{
+          position: "relative", width: size, height: size,
+          ...(bursting ? { animation: "tamo-superjump 0.65s cubic-bezier(0.34,1.56,0.64,1) forwards" } : STATE_ANIM[state]),
+        }}>
 
           {/* Glow de fundo (cor dominante da foto no estado done, roxo nos outros) */}
           <div style={{
@@ -229,13 +309,18 @@ export default function TamoMascot({
           )}
 
         </div>
-        {/* Estrelinhas no done — fora do container animado para não serem clipadas */}
-        {isDone && (
+        {/* Estrelinhas no done — fora do container animado */}
+        {isDone && !bursting && (
           <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "visible" }}>
             <DoneStars size={size} />
           </div>
         )}
-        </div>{/* fim wrapper estrelas */}
+
+        {/* Burst de partículas ao clicar */}
+        {bursting && (
+          <BurstParticles size={size} onDone={() => setBursting(false)} />
+        )}
+        </div>{/* fim wrapper */}
 
         {label && (
           <span style={{
