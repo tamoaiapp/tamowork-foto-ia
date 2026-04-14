@@ -6,8 +6,10 @@ import { useI18n } from "@/lib/i18n";
 
 interface Props {
   hasActiveJob?: boolean;
+  hasDoneJob?: boolean;       // badge verde em Criações
   botActive?: boolean;
   onOpenBot?: () => void;
+  onCriarWhileBusy?: () => void; // callback quando Criar clicado durante job ativo
 }
 
 function IconCriar({ active }: { active: boolean }) {
@@ -80,7 +82,7 @@ function IconBot({ active }: { active: boolean }) {
   );
 }
 
-export default function BottomNav({ hasActiveJob = false, botActive = false, onOpenBot }: Props) {
+export default function BottomNav({ hasActiveJob = false, hasDoneJob = false, botActive = false, onOpenBot, onCriarWhileBusy }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useI18n();
@@ -115,6 +117,7 @@ export default function BottomNav({ hasActiveJob = false, botActive = false, onO
 
   return (
     <nav style={s.nav} className="bottom-nav">
+      <style>{`@keyframes pulseDone { 0%,100%{box-shadow:0 0 0 0 rgba(22,199,132,0.6)} 50%{box-shadow:0 0 0 4px rgba(22,199,132,0)} }`}</style>
       {/* Logo — visível apenas no desktop (sidebar) */}
       <div style={s.brand} className="sidebar-brand">
         <span style={s.brandText}>TamoWork</span>
@@ -122,13 +125,29 @@ export default function BottomNav({ hasActiveJob = false, botActive = false, onO
 
       {tabs.map((tab) => {
         const active = isActive(tab.path);
+        const isCriar = tab.key === "criar";
+        const isCriacoes = tab.key === "criacoes";
         return (
-          <button key={tab.key} onClick={() => router.push(tab.path)} style={s.tab} className="nav-tab">
+          <button
+            key={tab.key}
+            onClick={() => {
+              if (isCriar && hasActiveJob && onCriarWhileBusy) {
+                onCriarWhileBusy();
+              } else {
+                router.push(tab.path);
+              }
+            }}
+            style={s.tab}
+            className="nav-tab"
+          >
             <div style={{ position: "relative", flexShrink: 0 }}>
-              {tab.key === "criar" && <IconCriar active={active} />}
+              {isCriar && <IconCriar active={active} />}
               {tab.key === "editor" && <IconEditor active={active} />}
-              {tab.key === "criacoes" && <IconCriacoes active={active} />}
-              {tab.key === "criar" && hasActiveJob && <span style={s.activeDot} />}
+              {isCriacoes && <IconCriacoes active={active} />}
+              {/* Ponto roxo: job ativo no Criar */}
+              {isCriar && hasActiveJob && <span style={s.activeDot} />}
+              {/* Ponto verde: resultado pronto em Criações */}
+              {isCriacoes && hasDoneJob && <span style={s.doneDot} />}
             </div>
             <span style={{ ...s.label, color: active ? "#a855f7" : "#4e5c72" }} className="nav-label">
               {tab.label}
@@ -207,5 +226,16 @@ const s: Record<string, React.CSSProperties> = {
     borderRadius: "50%",
     background: "#a855f7",
     border: "2px solid #0c1018",
+  },
+  doneDot: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 10,
+    height: 10,
+    borderRadius: "50%",
+    background: "#16c784",
+    border: "2px solid #0c1018",
+    animation: "pulseDone 2s ease-in-out infinite",
   },
 };

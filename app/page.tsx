@@ -22,6 +22,7 @@ const ConversionScreen = nextDynamic(() => import("@/app/components/ConversionSc
 const VideoHookScreen = nextDynamic(() => import("@/app/components/VideoHookScreen"), { ssr: false });
 const OnboardingChat = nextDynamic(() => import("@/app/components/OnboardingChat"), { ssr: false });
 const TamoMascot = nextDynamic(() => import("@/app/components/TamoMascot"), { ssr: false });
+const MiniToast = nextDynamic(() => import("@/app/components/MiniToast"), { ssr: false });
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type Plan = "free" | "pro";
@@ -670,6 +671,10 @@ export default function HomePage() {
     try { return localStorage.getItem("bot_active_24h") === "1"; } catch { return false; }
   });
   const [botNavOpen, setBotNavOpen] = useState(false);
+  const [hasDoneJob, setHasDoneJob] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [botTriggerMessage, setBotTriggerMessage] = useState<string | undefined>(undefined);
 
   function activateBot() {
     setBotActive(true);
@@ -991,10 +996,19 @@ export default function HomePage() {
     }
   }, [job?.status, plan]);
 
-  // Quando foto fica pronta: segura na tela de carregamento — usuário vê botão "Ver Resultado"
+  // Quando foto fica pronta: mostra mini toast + badge em Criações + libera para criar novo
+  const toastFiredRef = useRef(false);
   useEffect(() => {
     if (job?.status === "done" && job.output_image_url && job.id !== "rate_limited") {
       setPendingResult(true);
+      if (!toastFiredRef.current) {
+        toastFiredRef.current = true;
+        setToastMessage("Sua foto ficou pronta!");
+        setShowToast(true);
+        setHasDoneJob(true);
+      }
+    } else {
+      toastFiredRef.current = false;
     }
   }, [job?.status, job?.output_image_url]);
 
@@ -1528,6 +1542,8 @@ export default function HomePage() {
 
       setJob({ id: jobId, status: "queued" });
       setTimeout(() => fetchJobStatus(jobId), 10_000);
+      // Abre Tamo automaticamente após submit
+      setBotNavOpen(true);
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Erro ao processar");
     } finally {
@@ -3554,7 +3570,16 @@ export default function HomePage() {
           </div>
         )}
       </main>
-      <BottomNav hasActiveJob={isGenerating} botActive={botActive} onOpenBot={() => setBotNavOpen(true)} />
+      <BottomNav
+        hasActiveJob={isGenerating}
+        hasDoneJob={hasDoneJob}
+        botActive={botActive}
+        onOpenBot={() => setBotNavOpen(true)}
+        onCriarWhileBusy={() => {
+          setBotNavOpen(true);
+          setBotTriggerMessage(`🦎 Ainda estou finalizando sua foto! Aguenta mais um minutinho.\n\nEnquanto isso, posso te ajudar com legenda, ideias de post ou qualquer outra coisa. O que precisa?`);
+        }}
+      />
 
       {/* Mini editor */}
       {editorOpen && job?.output_image_url && (
@@ -3672,8 +3697,19 @@ export default function HomePage() {
             visible={true}
             navMode={true}
             onActivate24h={activateBot}
+            triggerMessage={botTriggerMessage}
           />
         </div>
+      )}
+
+      {/* Mini toast — foto/vídeo pronto */}
+      {showToast && (
+        <MiniToast
+          message={toastMessage}
+          linkLabel="Ver em Criações"
+          linkHref="/criacoes"
+          onDismiss={() => { setShowToast(false); }}
+        />
       )}
 
       {promoOpen && (

@@ -57,12 +57,13 @@ interface Props {
   onViewResult?: () => void;
   onActivate24h?: () => void;
   botActive: boolean;
-  visible: boolean; // false = oculto (sem job ativo)
-  navMode?: boolean; // true = chat via nav, ocupa mais espaço
-  embedded?: boolean; // true = dentro de outro card, sem header próprio com avatar
+  visible: boolean;
+  navMode?: boolean;
+  embedded?: boolean;
+  triggerMessage?: string; // quando muda, injeta como mensagem do assistente
 }
 
-export default function BotChat({ workState, resultReady, onViewResult, onActivate24h, botActive, visible, navMode = false, embedded = false }: Props) {
+export default function BotChat({ workState, resultReady, onViewResult, onActivate24h, botActive, visible, navMode = false, embedded = false, triggerMessage }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -118,6 +119,29 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
 
   // Scroll ao receber novas mensagens
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+
+  // Greeting automático quando chat abre durante geração
+  const greetedRef = React.useRef(false);
+  useEffect(() => {
+    if (greetedRef.current || initialLoading || workState !== "trabalhando") return;
+    if (messages.length > 0) return; // já tem mensagens
+    greetedRef.current = true;
+    setTimeout(() => {
+      setMessages(prev => prev.length === 0 ? [{
+        role: "assistant" as const,
+        content: "🦎 Estou criando sua foto agora!\n\nAssim que ficar pronto, te aviso aqui. Me conta — como você vai usar essa foto? Posso escrever a legenda enquanto cria!",
+      }] : prev);
+    }, 600);
+  }, [workState, initialLoading, messages.length]);
+
+  // Injeta mensagem programática (ex: "ainda trabalhando..." quando Criar clicado)
+  const lastTriggerRef = React.useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!triggerMessage || triggerMessage === lastTriggerRef.current) return;
+    lastTriggerRef.current = triggerMessage;
+    setMessages(prev => [...prev, { role: "assistant" as const, content: triggerMessage }]);
+    scrollToBottom();
+  }, [triggerMessage, scrollToBottom]);
 
   // Auto-mensagem no chat quando foto fica pronta
   useEffect(() => {
