@@ -14,29 +14,38 @@ interface OnboardingData {
   business_name: string;
   business_type: string;
   products: string;
-  tone: string;
+  tone: string; // reutilizado para "canal de vendas + desafio"
 }
 
-const ONBOARDING_STEPS: { key: keyof OnboardingData; question: string; placeholder: string }[] = [
+// ── Introdução (exibida antes do step 0, não coletada) ───────────────────────
+const TAMO_INTRO = `Eaí! 🦎 Sou o Tamo — seu parceiro de negócios aqui no TamoWork!
+
+Posso te ajudar com legendas pro Instagram, textos de produto, ideias de promoção, dicas de foto e muito mais.
+
+Mas pra dar conselhos que realmente funcionam pro *seu* negócio, preciso te conhecer melhor. São só 4 perguntas rápidas 👇
+
+Qual é o nome da sua loja ou empresa?`;
+
+const ONBOARDING_STEPS: { key: keyof OnboardingData; question: (name?: string) => string; placeholder: string }[] = [
   {
     key: "business_name",
-    question: "Eaí! Eu sou o Tamo 🦎 Seu novo parceiro de negócios.\n\nPra eu te ajudar direitinho, me conta: qual é o nome da sua loja ou empresa?",
+    question: () => TAMO_INTRO,
     placeholder: "Ex: Moda da Cris, Atacado da Ana...",
   },
   {
     key: "business_type",
-    question: "Que tipo de produto você vende? Me dá uma ideia geral.",
-    placeholder: "Ex: Roupas femininas, cosméticos, calçados...",
+    question: (name) => `${name ? name + ", o" : "O"}brigado! 🔥\n\nO que você vende? Me conta o carro-chefe — o produto que mais sai.`,
+    placeholder: "Ex: Vestidos femininos, cosméticos naturais, calçados infantis...",
   },
   {
     key: "products",
-    question: "E o que você mais vende? Os carros-chefe do negócio 🚀",
-    placeholder: "Ex: Vestidos e blusas no atacado, foco em plus size",
+    question: () => `Entendido! Agora me conta: você vende mais por onde?\n\nInstagram, WhatsApp, loja física, Shopee, marketplace...`,
+    placeholder: "Ex: Instagram e WhatsApp, mando foto no grupo",
   },
   {
     key: "tone",
-    question: "Última: como você gosta de falar com seus clientes? Mais soltão, mais formal, usa emoji...",
-    placeholder: "Ex: Bem descontraído, uso emoji, chamo de amiga",
+    question: () => `Última pergunta — qual é o maior desafio do seu negócio hoje?\n\nIsso me ajuda a focar no que realmente importa pra você.`,
+    placeholder: "Ex: Atrair mais clientes, fazer fotos bonitas, escrever legenda...",
   },
 ];
 
@@ -165,7 +174,9 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
       setOnboardingStep((s) => s + 1);
       // Resposta do bot com próxima pergunta
       setTimeout(() => {
-        setMessages((prev) => [...prev, { role: "assistant", content: next.question }]);
+        // Passa o nome do negócio para personalizar a pergunta
+        const bname = (updated as Partial<OnboardingData>).business_name ?? businessName ?? undefined;
+        setMessages((prev) => [...prev, { role: "assistant", content: next.question(bname) }]);
       }, 300);
     } else {
       // Último passo — salva onboarding
@@ -283,7 +294,7 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
           <>
             {/* Mensagem inicial de onboarding */}
             {isOnboarding && messages.length === 0 && (
-              <BotMessage content={ONBOARDING_STEPS[0].question} />
+              <BotMessage content={ONBOARDING_STEPS[0].question()} />
             )}
 
             {messages.map((m, i) => (
