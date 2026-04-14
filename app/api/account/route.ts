@@ -54,3 +54,25 @@ export async function GET(req: NextRequest) {
     jobs: allJobs,
   });
 }
+
+// PATCH /api/account — ativa PRO via pré-ativação Stripe legacy
+export async function PATCH(req: NextRequest) {
+  const supabase = createServerClient();
+  const token = (req.headers.get("authorization") ?? "").replace("Bearer ", "");
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+
+  const { plan, period_end, source } = await req.json();
+  if (plan !== "pro") return NextResponse.json({ error: "Plano inválido" }, { status: 400 });
+
+  const { error: upsertError } = await supabase.from("user_plans").upsert({
+    user_id: user.id,
+    plan: "pro",
+    period_end,
+    stripe_subscription_id: source ?? "stripe_legacy",
+    created_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+
+  if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}

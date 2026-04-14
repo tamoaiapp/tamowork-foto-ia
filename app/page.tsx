@@ -613,6 +613,25 @@ export default function HomePage() {
       let resolvedPlan: Plan = "free";
       let hasActivePhotoJob = false;
 
+      // Pré-ativação Stripe legacy: verifica se o email está na fila de ativação
+      if (user.email) {
+        const { data: pending } = await supabase
+          .from("stripe_pending_pro")
+          .select("period_end")
+          .eq("email", user.email.toLowerCase())
+          .single();
+        if (pending) {
+          // Ativa PRO via API interna
+          await fetch("/api/account", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ plan: "pro", period_end: pending.period_end, source: "stripe_legacy" }),
+          }).catch(() => {});
+          // Remove da fila
+          await supabase.from("stripe_pending_pro").delete().eq("email", user.email.toLowerCase());
+        }
+      }
+
       const res = await fetch("/api/image-jobs", {
         headers: { Authorization: `Bearer ${token}` },
       });
