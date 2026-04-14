@@ -385,28 +385,37 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDes
   const neg: string[] = [];
 
   // ── CASO ESPECIAL: hold_flower ─────────────────────────────────────────────
-  // Qwen img2img com foto de buquê "edita" o que vê → melhora o buquê, não gera pessoa.
-  // Solução: prompt orientado à CENA (retrato de pessoa), com buquê como prop de referência.
+  // Regra de ouro: A CENA manda. O produto participa.
+  // Pessoa em primeiro lugar — bouquet como prop na mão, não como objeto isolado.
   if (slot === "hold_flower") {
-    const sceneCtx = cenario || (persona.gender === "female" ? "wedding ceremony, church aisle, soft natural light" : "outdoor garden, daylight");
-    const subjectDesc = persona.gender === "female" ? "a beautiful bride in a white wedding dress" : persona.gender === "male" ? "a man in formal attire" : "a person";
+    const sceneCtx = cenario || "wedding ceremony, soft natural light, elegant setting";
+    const subjectDesc = persona.gender === "female" ? "a woman" : persona.gender === "male" ? "a man" : "a person";
     const bouquetDesc = productLabel;
 
     pos.push(
-      `Professional wedding portrait photograph.`,
-      `${subjectDesc.charAt(0).toUpperCase() + subjectDesc.slice(1)} is holding a bouquet with both hands at chest level.`,
-      `The bouquet held in her hands must look exactly like the reference image: ${bouquetDesc}.`,
-      `Preserve the exact flowers, colors, shape, ribbon, and all details of the bouquet from the reference photo.`,
-      cenario ? `Setting: ${cenario}.` : `Setting: ${sceneCtx}.`,
-      `Natural soft light, realistic shadows, professional photography, full portrait or half-body shot.`,
+      // PESSOA É O SUJEITO — não "foto do produto"
+      `High-quality realistic lifestyle photo of ${subjectDesc} holding a bouquet with both hands at chest level, clearly visible in front of their body.`,
+      // Forçar presença humana explicitamente
+      `The person must be present in the image, holding the bouquet naturally and facing the camera.`,
+      // Bouquet como prop — não como objeto isolado
+      `The bouquet is held in their hands — not placed on any surface, not isolated, not floating.`,
+      // Fidelidade ao produto
+      `The bouquet must look exactly like in the reference image: ${bouquetDesc}. Preserve exact flowers, colors, shape and ribbon.`,
+      // Cena
+      `Setting: ${sceneCtx}.`,
+      // Fotografia
+      `Natural pose, soft lighting, realistic human presence, half-body or full portrait shot, professional lifestyle photography.`,
     );
-    // Negativos: flower crown primeiro, depois qualidade
+    // Negativos — bloquear product shot explicitamente
     neg.push(
-      "flowers on head, flower crown, floral headpiece, hair flowers, bouquet on head,",
-      "product alone without person, bouquet floating, no hands, product on table, product on plate,",
-      "wrong bouquet design, different flowers, different colors, changed ribbon,",
-      "blurry, low resolution, grainy, cartoon, illustration, CGI, plastic look, bad anatomy, extra fingers, malformed hands,",
-      "men visible,",
+      // Bloquear product-only mode (padrão default do Qwen)
+      "no isolated object, no product-only photo, no bouquet alone, no table placement, no flat lay, no studio product shot, no object on surface,",
+      // Bloquear flower crown
+      "flower crown, flowers on head, floral headpiece, hair flowers, bouquet worn on head,",
+      // Bloquear ausência de pessoa
+      "no human, no person, missing person, only flowers, empty scene,",
+      // Fidelidade + qualidade
+      "wrong bouquet design, different flowers, different colors, changed ribbon, blurry, low resolution, grainy, cartoon, CGI, bad anatomy, extra fingers, malformed hands,",
     );
 
     return {
@@ -443,6 +452,7 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDes
   // Bloco 4 — uso / posição
   if (forceHum) {
     pos.push(getUsagePhrase(slot, persona.subject));
+    pos.push("The person must be present and actively interacting with the product — not isolated.");
     if (persona.gender === "female") pos.push("Female model, no men visible.");
     else if (persona.gender === "male") pos.push("Male model, no women visible.");
   } else if (DISPLAY_ONLY_HOLD.has(slot)) {
@@ -485,7 +495,9 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDes
 
   // ── Negativos humanos (quando tem pessoa) ─────────────────────────────────
   if (forceHum) {
-    neg.push("extra fingers, malformed hands, broken composition, mannequin, hanger, flat lay, product alone, packaging, retail background, extra people,");
+    // Bloquear product-only mode explicitamente — regra de ouro: a cena manda
+    neg.push("no isolated product, no product-only photo, no object alone, no flat lay, no studio product shot without person,");
+    neg.push("extra fingers, malformed hands, broken composition, mannequin, hanger, packaging, retail background, extra people,");
     if (persona.gender === "female") neg.push("men, male model, masculine features, beard,");
     else if (persona.gender === "male") neg.push("women, female model, feminine features,");
   } else if (DISPLAY_ONLY_HOLD.has(slot)) {
