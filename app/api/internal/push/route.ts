@@ -2,26 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 
-webpush.setVapidDetails(
-  (process.env.VAPID_SUBJECT ?? "mailto:contato@tamowork.com").trim(),
-  (process.env.VAPID_PUBLIC_KEY ?? "").trim(),
-  (process.env.VAPID_PRIVATE_KEY ?? "").trim(),
-);
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
-
 // POST /api/internal/push
 // Body: { userId, title, body, url? }
 // OU:   { userIds: string[], title, body, url? }  — batch
 export async function POST(req: NextRequest) {
-  if (req.headers.get("x-internal-secret") !== INTERNAL_SECRET) {
+  const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
+  if (!INTERNAL_SECRET || req.headers.get("x-internal-secret") !== INTERNAL_SECRET) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  webpush.setVapidDetails(
+    (process.env.VAPID_SUBJECT ?? "mailto:contato@tamowork.com").trim(),
+    (process.env.VAPID_PUBLIC_KEY ?? "").trim(),
+    (process.env.VAPID_PRIVATE_KEY ?? "").trim(),
+  );
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
   const { userId, userIds, title, body, url, notif_id } = await req.json();
   const ids: string[] = userIds ?? (userId ? [userId] : []);

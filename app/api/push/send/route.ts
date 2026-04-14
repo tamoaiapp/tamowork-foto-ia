@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { createServerClient } from "@/lib/supabase/server";
 
-webpush.setVapidDetails(
-  (process.env.VAPID_SUBJECT ?? "mailto:contato@tamowork.com").trim(),
-  (process.env.VAPID_PUBLIC_KEY ?? "").trim(),
-  (process.env.VAPID_PRIVATE_KEY ?? "").trim(),
-);
-
 export async function POST(req: NextRequest) {
+  webpush.setVapidDetails(
+    (process.env.VAPID_SUBJECT ?? "mailto:contato@tamowork.com").trim(),
+    (process.env.VAPID_PUBLIC_KEY ?? "").trim(),
+    (process.env.VAPID_PRIVATE_KEY ?? "").trim(),
+  );
   const supabase = createServerClient();
   const token = (req.headers.get("authorization") ?? "").replace("Bearer ", "");
   const { data: { user }, error } = await supabase.auth.getUser(token);

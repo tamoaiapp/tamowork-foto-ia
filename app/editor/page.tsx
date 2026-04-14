@@ -3,12 +3,12 @@ export const dynamic = "force-dynamic";
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import BottomNav from "@/app/components/BottomNav";
 import AppHeader from "@/app/components/AppHeader";
 import { useI18n } from "@/lib/i18n";
 import { downloadDataUrl } from "@/lib/downloadBlob";
-const PromoCreator = dynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
+const PromoCreator = nextDynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 
 type EditorAction = "promo" | "remove_bg" | "personalizar" | null;
 
