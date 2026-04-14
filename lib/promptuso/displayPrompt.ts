@@ -75,10 +75,10 @@ export function buildDisplayPrompt(
       return {
         positive: [
           `A headless white retail mannequin wearing ${prod}.`,
-          `The mannequin stands upright on a clean white circular platform.`,
-          `Pure white seamless background. No people. No faces. No heads on mannequin.`,
+          `The mannequin stands upright on a clean white cylindrical platform.`,
+          `Background: soft gradient from light warm beige to cream, subtle bokeh — elegant boutique atmosphere, NOT pure white.`,
           `The garment is perfectly fitted, smooth, and wrinkle-free on the mannequin.`,
-          `Premium boutique store display lighting: soft overhead spotlights, no harsh shadows.`,
+          `Premium boutique store display lighting: soft overhead spotlights, warm ambient fill, no harsh shadows.`,
           `Full body shot showing the complete garment from top to bottom.`,
           `Editorial fashion retail display, professional commercial photography.`,
           `The product is the only item in the scene.`,
@@ -132,9 +132,9 @@ export function buildDisplayPrompt(
       return {
         positive: [
           `${prod} displayed on a white minimalist cylindrical pedestal, positioned at a 3/4 angle.`,
-          `Pure white seamless background. No people. No feet.`,
+          `Background: light warm gray gradient with subtle concrete or marble texture — NOT pure white. Soft depth of field.`,
           `One shoe displayed clearly showing the complete design from heel to toe.`,
-          `Professional footwear retail photography lighting: soft overhead light, subtle shadow beneath.`,
+          `Professional footwear retail photography lighting: soft directional key light, warm fill, subtle shadow beneath shoe.`,
           `Premium shoe store display style. Editorial footwear photography.`,
           `The product is the only item in the scene, centered on the pedestal.`,
         ].join(" "),
@@ -150,7 +150,7 @@ export function buildDisplayPrompt(
       return {
         positive: [
           `${prod} placed upright and open on a clear acrylic display stand.`,
-          `Pure white seamless background. No people. No hands holding the bag.`,
+          `Background: warm cream to soft ivory gradient with gentle bokeh — elegant boutique atmosphere, NOT pure white.`,
           `The bag stands on its own, structured and perfectly shaped.`,
           `Professional retail lighting: soft key light from the left, subtle fill from the right.`,
           `Premium fashion accessory store display. Luxury boutique aesthetic.`,
@@ -169,7 +169,7 @@ export function buildDisplayPrompt(
       return {
         positive: [
           `${prod} displayed on a minimalist dark matte surface.`,
-          `Pure black or very dark gray background. Premium tech product display.`,
+          `Background: deep charcoal to near-black gradient with subtle ambient light glow — NOT flat black. Premium tech product display.`,
           `Dramatic side lighting creating a crisp product silhouette.`,
           `The product is centered and perfectly positioned, showing the main face/screen.`,
           `Apple Store display aesthetic. Premium electronics retail style.`,

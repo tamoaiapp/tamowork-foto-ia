@@ -97,11 +97,14 @@ export const RULES: Record<string, Rule> = {
     pos_add: [
       "Product is worn on the feet of a real person, correct orientation and realistic scale.",
       "If the input shows a pair of shoes or sneakers displayed side by side on a surface or against a plain background, remove the surface and show the footwear worn on a real person's feet instead.",
-      "Show both feet naturally, standing or walking pose.",
+      "FRAMING: tight crop from knee down to the ground, both feet filling most of the frame. The shoes must be the clear hero of the image — large, sharp, and centered.",
+      "Standing or walking pose, feet slightly apart, shoes fully visible.",
+      "The shoes must occupy at least 50% of the image frame.",
     ],
     neg_add: [
       "No product on table.", "No product on surface.", "No shoes displayed alone.", "No floating.", "No packaging.",
       "Do not show product alone without a person wearing it.",
+      "No full body shot. Do not show the person's face or upper body. Crop tightly from knee down.",
     ],
   },
   wear_wrist: {
