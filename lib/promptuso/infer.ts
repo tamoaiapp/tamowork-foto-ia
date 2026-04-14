@@ -421,6 +421,29 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
     neg.push("Do not show the product alone without a person wearing it.");
   }
 
+  // ── Negativos críticos por slot — viéses conhecidos do modelo ────────────
+  // Estes são adicionados por último e são específicos para casos onde o Qwen
+  // tem viéses fortes que causam erros recorrentes.
+  if (slot === "hold_flower") {
+    // Viés forte: "noiva + flor" → Qwen coloca flores na cabeça como coroa
+    neg.push(
+      "Do NOT place flowers on the person's head. No flower crown. No floral headpiece. No flowers in hair. No hair crown. No wreath on head.",
+      "The bouquet must be held in the hands in front of the body, NOT worn on the head.",
+    );
+    pos.push("The bouquet is held with both hands at chest or waist level, clearly in front of the body.");
+  }
+
+  if (slot === "wear_feet") {
+    // Viés: mostrar corpo inteiro em vez de cortar nos joelhos
+    neg.push("No full body shot. No face visible. No upper body. Crop tightly from knee down only.");
+    pos.push("Tight crop from knee to ground. Both shoes clearly visible, filling the frame.");
+  }
+
+  if (slot === "wear_head_ear") {
+    // Viés: mão aparece segurando o brinco
+    neg.push("No hand holding the earring. No fingers in frame.");
+  }
+
   return {
     positive: asciiSafe(pos.join(" "), 900),
     negative: asciiSafe(neg.join(" "), 500),
