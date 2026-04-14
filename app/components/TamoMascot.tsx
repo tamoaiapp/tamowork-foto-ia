@@ -29,6 +29,14 @@ const FRAME = { left: 0.27, top: 0.34, width: 0.59, height: 0.36 }
 
 // ── Keyframes CSS ────────────────────────────────────────────────────────────
 const KEYFRAMES = `
+@keyframes tamo-blink-open {
+  0%, 82%, 100% { opacity: 1; }
+  88%, 94%      { opacity: 0; }
+}
+@keyframes tamo-blink-wink {
+  0%, 82%, 100% { opacity: 0; }
+  88%, 94%      { opacity: 1; }
+}
 @keyframes tamo-breathe {
   0%, 100% { transform: scale(1) translateY(0); }
   50%       { transform: scale(1.03) translateY(-2px); }
@@ -165,6 +173,8 @@ export default function TamoMascot({
       <style>{KEYFRAMES}</style>
       <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 10, userSelect: "none" }}>
 
+        {/* Wrapper extra para estrelas não serem clipadas pela animação */}
+        <div style={{ position: "relative", width: size, height: size }}>
         {/* Container animado */}
         <div style={{ position: "relative", width: size, height: size, ...STATE_ANIM[state] }}>
 
@@ -193,25 +203,39 @@ export default function TamoMascot({
           )}
 
           {/* Mascote PNG transparente */}
-          <img
-            src={STATE_IMAGES[state]}
-            alt={`Tamo ${state}`}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              objectPosition: "bottom center",
-              display: "block",
-              zIndex: 2,
-            }}
-            draggable={false}
-          />
+          {isDone ? (
+            /* Estado done: alterna entre olho aberto e piscando */
+            <>
+              <img
+                src="/tamo/done_moldura.png"
+                alt="Tamo done"
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", objectPosition: "bottom center", zIndex: 2, animation: "tamo-blink-open 4s ease-in-out infinite" }}
+                draggable={false}
+              />
+              <img
+                src="/tamo/done_moldura_wink.png"
+                alt="Tamo wink"
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", objectPosition: "bottom center", zIndex: 2, opacity: 0, animation: "tamo-blink-wink 4s ease-in-out infinite" }}
+                draggable={false}
+              />
+            </>
+          ) : (
+            <img
+              src={STATE_IMAGES[state]}
+              alt={`Tamo ${state}`}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", objectPosition: "bottom center", display: "block", zIndex: 2 }}
+              draggable={false}
+            />
+          )}
 
-          {/* Estrelinhas no done */}
-          {isDone && <DoneStars size={size} />}
         </div>
+        {/* Estrelinhas no done — fora do container animado para não serem clipadas */}
+        {isDone && (
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "visible" }}>
+            <DoneStars size={size} />
+          </div>
+        )}
+        </div>{/* fim wrapper estrelas */}
 
         {label && (
           <span style={{

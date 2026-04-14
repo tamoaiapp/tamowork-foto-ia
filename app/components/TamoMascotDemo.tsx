@@ -91,7 +91,12 @@ export default function TamoMascotDemo() {
               transform: activeState === state ? "scale(1.02)" : "scale(1)",
             }}
           >
-            <TamoMascot state={state} size={120} label={label} />
+            <TamoMascot
+              state={state}
+              size={140}
+              label={label}
+              resultImage={state === "done" ? "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80" : undefined}
+            />
 
             <div style={{ textAlign: "center" }}>
               <span
