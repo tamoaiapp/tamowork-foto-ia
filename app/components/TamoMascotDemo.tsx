@@ -59,7 +59,7 @@ export default function TamoMascotDemo() {
           Tamo — Demo de Animações
         </h1>
         <p style={{ color: "#8394b0", marginTop: 8, fontSize: 15 }}>
-          Mascote camaleão · 5 estados · SVG + CSS keyframes
+          Mascote camaleão · 5 estados · PNG transparente + CSS keyframes
         </p>
       </div>
 
