@@ -2131,7 +2131,6 @@ export default function HomePage() {
       {/* Header */}
       <header style={styles.header} className="app-header page-header">
         <div style={{ display: "flex", alignItems: "center", gap: 10 }} className="page-logo">
-          <img src="/icons/icon-512.png" alt="TamoWork" style={{ width: 34, height: 34, borderRadius: 9, objectFit: "cover", flexShrink: 0 }} />
           <div style={styles.logo}>TamoWork</div>
         </div>
         <div style={styles.headerRight}>
@@ -2937,6 +2936,22 @@ export default function HomePage() {
                 </div>
               </>
             )}
+            {/* Chat integrado no mesmo bloco — sem avatar duplicado */}
+            {!(rateLimitedUntil && countdown > 0) && (
+              onboardingMode ? (
+                <OnboardingChat />
+              ) : (
+                <BotChat
+                  workState={workState}
+                  resultReady={pendingResult}
+                  onViewResult={() => setPendingResult(false)}
+                  botActive={botActive}
+                  visible={true}
+                  onActivate24h={activateBot}
+                  embedded={true}
+                />
+              )
+            )}
           </div>
         )}
 
@@ -3128,9 +3143,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Chat durante geração de foto ou vídeo */}
-        {((workState === "trabalhando" && !videoMode && !(rateLimitedUntil && countdown > 0)) ||
-          (videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
+        {/* Chat durante geração de vídeo (foto usa bloco unificado acima) */}
+        {((videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
           (narratedMode && narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status))) && (
           onboardingMode ? (
             <OnboardingChat />

@@ -59,9 +59,10 @@ interface Props {
   botActive: boolean;
   visible: boolean; // false = oculto (sem job ativo)
   navMode?: boolean; // true = chat via nav, ocupa mais espaço
+  embedded?: boolean; // true = dentro de outro card, sem header próprio com avatar
 }
 
-export default function BotChat({ workState, resultReady, onViewResult, onActivate24h, botActive, visible, navMode = false }: Props) {
+export default function BotChat({ workState, resultReady, onViewResult, onActivate24h, botActive, visible, navMode = false, embedded = false }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -237,7 +238,7 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
   if (!visible) return null;
 
   return (
-    <div style={{ ...s.root, ...(navMode ? { flex: 1 } : {}) }}>
+    <div style={{ ...s.root, ...(navMode ? { flex: 1 } : {}), ...(embedded ? { marginTop: 0, borderRadius: 0, border: "none", boxShadow: "none", borderTop: "1px solid rgba(255,255,255,0.06)" } : {}) }}>
       <style>{`
         @keyframes botTyping {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
@@ -263,13 +264,15 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
         .result-btn { animation: resultPulse 2s ease-in-out infinite; }
       `}</style>
 
-      {/* Header */}
+      {/* Header — sem avatar quando embedded (já tem mascot acima) */}
       <div style={s.header}>
-        <img
-          src="/tamo/idle.png"
-          alt="Tamo"
-          style={{ width: 40, height: 40, objectFit: "contain", objectPosition: "bottom", flexShrink: 0 }}
-        />
+        {!embedded && (
+          <img
+            src="/tamo/idle.png"
+            alt="Tamo"
+            style={{ width: 40, height: 40, objectFit: "contain", objectPosition: "bottom", flexShrink: 0 }}
+          />
+        )}
         <div>
           <div style={s.headerTitle}>
             Tamo{businessName ? ` · ${businessName}` : ""}
@@ -278,7 +281,7 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
             {isOnboarding
               ? `Passo ${onboardingStep + 1} de ${ONBOARDING_STEPS.length}`
               : workState === "trabalhando"
-              ? "Criando sua foto... 🎨"
+              ? "Converse enquanto sua foto é criada ✨"
               : "Seu parceiro de negócios"}
           </div>
         </div>
