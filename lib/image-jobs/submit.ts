@@ -1,6 +1,27 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
+import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/serverProductVision";
+
+// ── Qualificadores de qualidade profissional ───────────────────────────────────
+// Injetados no positive prompt depois do buildPromptResult para elevar o padrão
+// sem interferir na lógica de slot/persona do promptuso.
+const PROFESSIONAL_QUALITY_SUFFIX = [
+  // Iluminação: three-point studio (key + fill + rim)
+  "Professional three-point studio lighting: soft key light from upper-left, subtle fill light, crisp rim light highlighting product edges.",
+  // Sombra realista
+  "Subtle natural drop shadow beneath the product, soft ground contact shadow, shadow opacity 25%.",
+  // Estilo K4 — cinematic Kodak Portra 400 film look
+  "Cinematic Kodak Portra 400 color grade: warm tones, rich mid-tone contrast, slight filmic desaturation in highlights, deep natural blacks.",
+  // Qualidade técnica
+  "8K ultra-sharp commercial photography, tack-sharp focus on product, professional lens rendering.",
+].join(" ");
+
+const PROFESSIONAL_NEGATIVE_SUFFIX = [
+  "flat lighting, harsh direct flash, overexposed highlights, underexposed shadows, no shadow at all, floating product with no ground shadow,",
+  "amateur snapshot, phone camera, grainy, noisy, low resolution, blurry, out of focus, pixelated,",
+  "oversaturated colors, neon colors, unnatural color cast, cold white balance,",
+].join(" ");
 
 /**
  * Prompt imperativo para o Qwen Image Edit (modo catálogo).
@@ -84,27 +105,44 @@ export async function submitImageJob(jobId: string) {
   const comfyBase = COMFY_BASES[0];
   if (!comfyBase) throw new Error("Nenhum pod de foto configurado (COMFY_BASES vazio)");
 
-  // Verifica se o pod está online antes de submeter
-  // Se não estiver, dispara o resume e retorna limpo — job fica em queued para próxima tentativa
-  const podReady = await ensureFotoPodRunning(comfyBase);
+  // ── Visão de produto (A40 Ollama) ─────────────────────────────────────────
+  // Roda em paralelo com a verificação do pod para não adicionar latência.
+  // Se o Ollama estiver offline, visionDesc é null e usamos o texto do usuário.
+  const isCatalog = !!modelImageUrl;
+  const [podReady, visionDesc] = await Promise.all([
+    ensureFotoPodRunning(comfyBase),
+    // Catálogo tem prompt imperativo próprio — não enriquece com visão
+    isCatalog ? Promise.resolve(null) : getProductVisionDescription(job.input_image_url, produto_frase.trim()),
+  ]);
+
   if (!podReady) {
-    // Pod não está pronto — volta para queued com updated_at atualizado
     await supabase.from("image_jobs").update({ status: "queued", updated_at: new Date().toISOString() }).eq("id", jobId);
     return;
+  }
+
+  // Mescla texto do usuário com resultado da visão
+  const enrichedProduto = isCatalog ? produto_frase.trim() : mergeProductTexts(produto_frase.trim(), visionDesc);
+  if (visionDesc) {
+    console.log(`[submit] job ${jobId} — visão enriqueceu prompt: "${produto_frase.trim()}" → "${enrichedProduto}"`);
   }
 
   const productImageName = await uploadImageToComfy(job.input_image_url, comfyBase, `prod_${jobId}`);
 
   let promptId: string;
-  if (modelImageUrl) {
-    // Modo catálogo: usa Qwen Image Edit — precisa de instruções diretas e imperativas
-    const modelImageName = await uploadImageToComfy(modelImageUrl, comfyBase, `model_${jobId}`);
-    const catalogPos = buildCatalogPrompt(produto_frase.trim(), cenario.trim());
+  if (isCatalog) {
+    // Modo catálogo: usa Qwen Image Edit — mantém prompt imperativo sem alterações
+    const modelImageName = await uploadImageToComfy(modelImageUrl!, comfyBase, `model_${jobId}`);
+    const catalogPos = buildCatalogPrompt(enrichedProduto, cenario.trim());
     const catalogNeg = buildCatalogNegative();
     promptId = await submitCatalogWorkflow(jobId, productImageName, modelImageName, catalogPos, catalogNeg, comfyBase);
   } else {
-    const promptResult = await criarPrompt(produto_frase.trim(), cenario.trim());
-    promptId = await submitWorkflow(jobId, productImageName, promptResult.positive, promptResult.negative, comfyBase);
+    const promptResult = await criarPrompt(enrichedProduto, cenario.trim());
+
+    // Injeta qualidade profissional (sombra + iluminação + K4 cinematic)
+    const positiveEnhanced = `${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();
+    const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${promptResult.negative}`.trim();
+
+    promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase);
   }
 
   const externalJobId = `${comfyIndex}:${promptId}`;
