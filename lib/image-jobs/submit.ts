@@ -7,11 +7,11 @@ import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/ser
 // Injetados no positive prompt depois do buildPromptResult para elevar o padrão
 // sem interferir na lógica de slot/persona do promptuso.
 const PROFESSIONAL_QUALITY_SUFFIX = [
-  // Iluminação: three-point studio (key + fill + rim)
-  "Professional three-point studio lighting: soft key light from upper-left, subtle fill light, crisp rim light highlighting product edges.",
-  // Sombra realista
-  "Subtle natural drop shadow beneath the product, soft ground contact shadow, shadow opacity 25%.",
-  // Estilo K4 — cinematic Kodak Portra 400 film look
+  // Iluminação genérica — respeita a cena (outdoor, estúdio, lifestyle, etc.)
+  "Professional photography lighting perfectly matched to the scene environment, well-balanced exposure, no harsh shadows on subject, soft and flattering light.",
+  // Sombra realista — sempre presente, adapta-se à direção da luz da cena
+  "Subtle natural drop shadow beneath the product consistent with scene lighting direction, soft ground contact shadow, realistic shadow opacity.",
+  // Estilo K4 — cinematic Kodak Portra 400 film look (pós-processamento, não conflita com cena)
   "Cinematic Kodak Portra 400 color grade: warm tones, rich mid-tone contrast, slight filmic desaturation in highlights, deep natural blacks.",
   // Qualidade técnica
   "8K ultra-sharp commercial photography, tack-sharp focus on product, professional lens rendering.",
