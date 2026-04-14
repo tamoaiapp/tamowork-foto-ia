@@ -250,6 +250,74 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
   );
 }
 
+function PhotoRating({
+  rating, hover, feedbackText, sent, loading,
+  onHover, onRate, onFeedbackChange, onSubmit,
+}: {
+  rating: number | null;
+  hover: number;
+  feedbackText: string;
+  sent: boolean;
+  loading: boolean;
+  onHover: (n: number) => void;
+  onRate: (n: number) => void;
+  onFeedbackChange: (s: string) => void;
+  onSubmit: () => void;
+}) {
+  const active = hover || rating || 0;
+
+  if (sent) {
+    return (
+      <div style={{ background: "rgba(22,199,132,0.08)", border: "1px solid rgba(22,199,132,0.2)", borderRadius: 12, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+        <img src="/tamo/idle.png" alt="Tamo" style={{ width: 28, height: 28, objectFit: "contain" }} />
+        <span style={{ fontSize: 13, color: "#16c784", fontWeight: 600 }}>
+          {(rating ?? 0) >= 4 ? "Que bom! Isso me motiva a melhorar cada vez mais 🦎" : "Obrigado! Vou analisar e melhorar! 🦎"}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "10px 14px", marginBottom: 10 }}>
+      {/* Linha de estrelas */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: rating !== null && rating <= 3 ? 8 : 0 }}>
+        <img src="/tamo/idle.png" alt="Tamo" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color: "#8394b0", flexShrink: 0 }}>Como ficou?</span>
+        <div style={{ display: "flex", gap: 2 }} onMouseLeave={() => onHover(0)}>
+          {[1,2,3,4,5].map(n => (
+            <button
+              key={n}
+              onMouseEnter={() => onHover(n)}
+              onClick={() => onRate(n)}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 3px", fontSize: 18, lineHeight: 1, color: n <= active ? "#fbbf24" : "#4e5c72", transition: "color 0.1s, transform 0.1s", transform: n <= active ? "scale(1.15)" : "scale(1)" }}
+            >★</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Campo de texto — só aparece se nota ruim (≤3) */}
+      {rating !== null && rating <= 3 && (
+        <div style={{ marginTop: 4 }}>
+          <textarea
+            value={feedbackText}
+            onChange={e => onFeedbackChange(e.target.value)}
+            placeholder="O que ficou errado? Ex: 'o produto ficou na cabeça', 'imagem cortada', 'produto sumiu'..."
+            rows={2}
+            style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 10px", color: "#eef2f9", fontSize: 12, fontFamily: "Outfit, sans-serif", resize: "none", boxSizing: "border-box" as const, outline: "none" }}
+          />
+          <button
+            onClick={onSubmit}
+            disabled={loading || !feedbackText.trim()}
+            style={{ marginTop: 6, background: feedbackText.trim() ? "#7c3aed" : "rgba(124,58,237,0.3)", border: "none", borderRadius: 8, padding: "7px 16px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: feedbackText.trim() ? "pointer" : "not-allowed", fontFamily: "Outfit, sans-serif" }}
+          >
+            {loading ? "Enviando..." : "Enviar feedback"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProUpsell({ onAssinar }: { onAssinar: (plan: "annual" | "monthly") => void }) {
   const [selected, setSelected] = useState<"annual" | "monthly">("annual");
 
@@ -582,6 +650,13 @@ export default function HomePage() {
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
   const [pendingResult, setPendingResult] = useState(false);
+
+  // Rating de qualidade da foto gerada
+  const [photoRating, setPhotoRating] = useState<number | null>(null);
+  const [ratingHover, setRatingHover] = useState<number>(0);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   // Upsell popup A/B
   const [showUpsell, setShowUpsell] = useState(false);
@@ -981,6 +1056,29 @@ export default function HomePage() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job]);
+
+  async function sendPhotoFeedback(rating: number, text: string) {
+    if (feedbackSent || feedbackLoading) return;
+    setFeedbackLoading(true);
+    try {
+      const token = await getToken();
+      await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          job_id: job?.id ?? null,
+          rating,
+          feedback_text: text || null,
+          product_name: produto || null,
+          input_url: job?.input_image_url ?? null,
+          output_url: job?.output_image_url ?? null,
+        }),
+      });
+      setFeedbackSent(true);
+    } catch { /* ignora erros silenciosamente */ } finally {
+      setFeedbackLoading(false);
+    }
+  }
 
   async function getToken() {
     const { data } = await supabase.auth.getSession();
@@ -1504,6 +1602,12 @@ export default function HomePage() {
     setModelPreview(null);
     setModeSelected(false); // volta para o menu
     setEditExpanded(false);
+    // Reseta rating
+    setPhotoRating(null);
+    setRatingHover(0);
+    setFeedbackText("");
+    setFeedbackSent(false);
+    setFeedbackLoading(false);
     // Limpa videoJob concluído — evita que o botão "Criar vídeo" persista na nova foto
     if (videoJob && ["done", "canceled", "failed"].includes(videoJob.status ?? "")) {
       resetVideo();
@@ -3060,6 +3164,22 @@ export default function HomePage() {
                 </div>
               </div>
 
+              {/* Rating de qualidade */}
+              <PhotoRating
+                rating={photoRating}
+                hover={ratingHover}
+                feedbackText={feedbackText}
+                sent={feedbackSent}
+                loading={feedbackLoading}
+                onHover={setRatingHover}
+                onRate={(r) => {
+                  setPhotoRating(r);
+                  if (r >= 4) sendPhotoFeedback(r, "");
+                }}
+                onFeedbackChange={setFeedbackText}
+                onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
+              />
+
               {/* Baixar */}
               <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
                 {t("result_download")}
@@ -3166,6 +3286,22 @@ export default function HomePage() {
 
             {/* Mobile: mesmo layout, só muda padding */}
             <div className="result-mobile-actions" style={{ display: "block", padding: "16px 16px 28px" }}>
+              {/* Rating de qualidade — mobile */}
+              <PhotoRating
+                rating={photoRating}
+                hover={ratingHover}
+                feedbackText={feedbackText}
+                sent={feedbackSent}
+                loading={feedbackLoading}
+                onHover={setRatingHover}
+                onRate={(r) => {
+                  setPhotoRating(r);
+                  if (r >= 4) sendPhotoFeedback(r, "");
+                }}
+                onFeedbackChange={setFeedbackText}
+                onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
+              />
+
               {/* Baixar */}
               <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
                 {t("result_download")}
