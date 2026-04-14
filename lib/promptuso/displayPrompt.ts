@@ -17,6 +17,7 @@ export type DisplayCategory =
   | "bag"
   | "electronics"
   | "food"
+  | "flowers"
   | "generic";
 
 function lower(s: string) {
@@ -53,6 +54,10 @@ export function detectDisplayCategory(visionDescription: string): DisplayCategor
 
   if (/food|snack|chocolate|candy|coffee|tea|juice|cookie|cake|bread|fruit|vegetable|sauce|oil|honey|jam|comida|alimento|biscoito|doce|café|suco|bolo|pão/.test(t)) {
     return "food";
+  }
+
+  if (/flower|bouquet|floral|roses|tulips|orchid|lily|lavender|daisy|sunflower|bouquet|arrangement|buque|buquê|flores|flor\b|arranjo floral|rosas/.test(t)) {
+    return "flowers";
   }
 
   return "generic";
@@ -196,6 +201,25 @@ export function buildDisplayPrompt(
           "person, hand, finger, skin,",
           "too many props, cluttered composition, messy styling,",
           "blurry, unappetizing, dark image, watermark, text, logo.",
+        ].join(" "),
+      };
+
+    case "flowers":
+      return {
+        positive: [
+          `${prod} held at chest level by a person's hands, both hands visible holding the stems.`,
+          `The bouquet or floral arrangement is the clear hero of the image, centered in frame.`,
+          `IMPORTANT: The flowers are in the person's HANDS at chest/waist level — NOT on the person's head, NOT in the hair.`,
+          `Natural soft daylight lighting, airy bright background — garden, white studio, or soft bokeh outdoors.`,
+          `The flowers are lush, colorful, and in sharp focus.`,
+          `Commercial floral product photography.`,
+        ].join(" "),
+        negative: [
+          "CRITICAL: No flowers on head. No flower crown. No floral headpiece. No flowers worn as hair accessory.",
+          "No flowers lying flat on table without hands.",
+          "No packaging around the flowers.",
+          "No clutter. No multiple bouquets.",
+          "blurry, low quality, watermark, text, logo.",
         ].join(" "),
       };
 

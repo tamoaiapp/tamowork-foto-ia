@@ -139,6 +139,73 @@ export function inferSlot(produtoText: string): string {
   ])) return "scene_home_indoor";
   if (hasAny(t, ["jardim", "grama", "outdoor", "externo", "quintal", "rua"])) return "scene_outdoor_ground";
 
+  // ── Flores e buquês — detectar ANTES do fallback para evitar que o modelo
+  // coloque flores na cabeça da pessoa (viés "bride = flower crown")
+  if (
+    hasAny(t, [
+      "buque", "bouquet", "ramalhete", "arranjo floral", "arranjo de flores",
+      "floral arrangement", "flores do campo", "wildflowers",
+      "astromelia", "alstroemeria", "girassol", "sunflower",
+      "orquidea", "orchid", "margarida", "daisy", "lirio", "lily",
+      "tulipa", "tulip", "peonia", "peony", "lavanda", "lavender",
+      "rosas", "roses", "flower bouquet", "bridal bouquet", "wedding bouquet",
+      "flores secas", "dried flowers", "flores artificiais", "artificial flowers",
+      "flores de noiva", "bridal flowers", "flores de casamento",
+    ]) ||
+    hasAnyWord(t, ["flor", "flores", "flower", "flowers", "floral"])
+  ) return "hold_flower";
+
+  // ── Beleza, cosméticos e perfumes
+  if (
+    hasAny(t, [
+      "perfume", "fragrance", "cologne", "eau de parfum", "eau de toilette",
+      "creme", "cream", "locao", "lotion", "serum", "tonico", "tonic",
+      "hidratante", "moisturizer", "protetor solar", "sunscreen", "spf",
+      "maquiagem", "makeup", "batom", "lipstick", "esmalte", "nail polish",
+      "sombra olhos", "eye shadow", "delineador", "eyeliner", "rimel",
+      "blush", "contour", "highlighter", "base maquiagem", "foundation",
+      "sabonete liquido", "body wash", "gel de banho", "shower gel",
+      "shampoo", "condicionador", "conditioner", "mascara capilar",
+      "oleo capilar", "hair oil", "leave-in", "queratina",
+      "creme facial", "face cream", "toner", "micellar",
+    ])
+  ) return "hold_beauty_product";
+
+  // ── Bebidas
+  if (
+    hasAny(t, [
+      "bebida", "drink", "beverage",
+      "suco", "juice", "néctar", "nectar",
+      "refrigerante", "soda", "energetico", "energy drink",
+      "vinho", "wine", "espumante", "sparkling wine", "champagne",
+      "cerveja", "beer", "chopp", "ale", "lager",
+      "whisky", "whiskey", "bourbon", "rum", "vodka", "gin", "tequila",
+      "cachaça", "cachaca", "licor", "liqueur",
+      "agua de coco", "coconut water",
+      "cápsula de café", "capsula de cafe", "coffee capsule", "coffee pod",
+      "garrafa", "bottle", "lata de", "can of",
+    ])
+  ) return "hold_beverage";
+
+  // ── Produtos pet
+  if (
+    hasAny(t, [
+      "coleira", "collar", "guia de cachorro", "leash", "pet", "cachorro", "gato",
+      "racao", "dog food", "cat food", "petisco", "pet treat", "brinquedo pet",
+      "cama pet", "caixa de areia", "arranhador", "bebedouro pet", "comedouro pet",
+    ])
+  ) return "hold_pet_product";
+
+  // ── Suplementos, vitaminas, medicamentos (exibição de embalagem)
+  if (
+    hasAny(t, [
+      "suplemento", "supplement", "whey", "creatina", "creatine", "proteina", "protein",
+      "vitamina", "vitamin", "omega", "colageno", "collagen", "prebiotico", "probiotico",
+      "termogenico", "thermogenic", "bcaa", "aminoacido", "amino acid",
+      "remedio", "medicine", "medicamento", "comprimido", "tablet", "capsula medicamento",
+    ])
+  ) return "hold_beauty_product"; // mesmo estilo de exibição — frasco/embalagem upright
+
   return "scene_tabletop";
 }
 
@@ -238,7 +305,16 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
   const persona = inferPersona(combinedContext);
   const productLabel = normalizeProductLabel(produto);
 
-  const refReq = slot.startsWith("wear_") || slot.startsWith("hold_");
+  // Slots hold_* que SÃO exibição de produto — não precisam de humano
+  const DISPLAY_ONLY_HOLD = new Set([
+    "hold_beauty_product",
+    "hold_pet_product",
+    "hold_food_display",
+    "hold_display",
+  ]);
+  const refReq =
+    (slot.startsWith("wear_") || slot.startsWith("hold_")) &&
+    !DISPLAY_ONLY_HOLD.has(slot);
   const forceHum = refReq || mannequinDetected;
 
   const pos: string[] = [];
@@ -293,13 +369,17 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = ""): PromptRe
     neg.push("No packaging visible.");
   }
 
-  if (slot.startsWith("wear_") || slot.startsWith("hold_")) {
+  if (refReq) {
     pos.push("Human reference is mandatory to define scale.", "The human reference must clearly communicate the real-world size of the product.", "Use a relevant body part as scale reference.", "The product must look realistically sized compared to the human reference.", "Do not exaggerate or miniaturize the scale.");
   } else {
     pos.push("The product must keep realistic size and proportion in the scene.", "Do not exaggerate or miniaturize the scale.");
   }
 
-  if (!slot.startsWith("hold_")) {
+  if (DISPLAY_ONLY_HOLD.has(slot)) {
+    // Display-only holds: remove any hands, product only
+    pos.push("If a hand or fingers are present in the input photo, remove them. Keep only the product.");
+    neg.push("No hands. No fingers. No person needed — product display only.");
+  } else if (!slot.startsWith("hold_")) {
     pos.push("If a hand or fingers are present in the input photo, remove them. Keep only the product.");
     neg.push("No hands. No fingers.");
   } else {

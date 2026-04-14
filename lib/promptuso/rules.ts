@@ -214,9 +214,74 @@ export const RULES: Record<string, Rule> = {
     ],
     neg_add: ["No hand visible.", "No packaging.", "No cluttered background.", "No floating."],
   },
+  hold_flower: {
+    pos_add: [
+      "A real person holds the flower bouquet or floral arrangement with both hands, at chest or waist level, facing the camera.",
+      "The bouquet is in front of the person's body, clearly visible and unobstructed.",
+      "Elegant natural pose — person slightly tilted toward camera, bouquet centered in frame.",
+      "The flowers are the hero of the image: sharp, colorful, well-lit.",
+      "Natural soft daylight or warm studio lighting highlighting the flowers.",
+      "If the input shows flowers lying flat on a surface, reconstruct a person holding them at chest level.",
+    ],
+    neg_add: [
+      "CRITICAL: Do NOT place flowers on the person's head.",
+      "CRITICAL: Do NOT use the flowers as a hair crown, floral crown, or headpiece.",
+      "CRITICAL: Do NOT place the bouquet in the person's hair or on their head.",
+      "No flower crown. No floral headpiece. No flowers worn on head.",
+      "No flowers lying flat on table without a person holding them.",
+      "No packaging around the flowers.",
+      "No extra objects distracting from the bouquet.",
+    ],
+  },
+  hold_beauty_product: {
+    pos_add: [
+      "Beauty or cosmetic product displayed on a clean white marble surface, upright, front label clearly visible.",
+      "Soft diffused studio lighting from above and both sides — luxury cosmetics photography.",
+      "Minimal elegant styling: one or two petals or leaves as props maximum.",
+      "Pure white or very light neutral background.",
+      "Premium beauty retail display. Commercial product photography.",
+      "The product is perfectly centered, the only item in the scene.",
+    ],
+    neg_add: [
+      "No hand in frame.", "No packaging box if product is already visible.", "No clutter.",
+      "No floating product.", "No person needed — product only.",
+      "No multiple products unless it is explicitly a kit.",
+    ],
+  },
+  hold_beverage: {
+    pos_add: [
+      "A real person holds the beverage naturally in one hand at chest level.",
+      "The label or front of the product faces the camera and is fully visible.",
+      "Natural casual standing pose, slight smile, clean background.",
+      "Bright airy lifestyle environment or minimal studio — not a bar or restaurant setting.",
+      "The beverage product is the clear focus of the image.",
+    ],
+    neg_add: [
+      "No product alone on table without a person.", "No packaging obstructing the label.",
+      "No floating.", "No extra hands.", "No bar environment.", "No restaurant background.",
+    ],
+  },
+  hold_pet_product: {
+    pos_add: [
+      "Pet product displayed cleanly on a minimal indoor surface — white table or light wood.",
+      "Soft natural lighting, clean neutral background.",
+      "The product is centered and clearly visible, label or main feature facing camera.",
+      "If it is a collar or leash, show it flat on a clean surface.",
+      "Professional product photography. The product is the hero.",
+    ],
+    neg_add: [
+      "No animal in frame unless the product is a collar actively worn by a pet.",
+      "No clutter.", "No packaging.", "No hand visible.",
+    ],
+  },
   scene_tabletop: {
-    pos_add: ["Product placed on a clean indoor table surface."],
-    neg_add: ["No hand visible.", "No packaging."],
+    pos_add: [
+      "Product placed upright and centered on a clean light-colored indoor table surface.",
+      "Soft studio lighting, neutral or white background.",
+      "The product is the only item in the scene — no distracting props.",
+      "Professional commercial product photography. Sharp focus on the product.",
+    ],
+    neg_add: ["No hand visible.", "No packaging.", "No clutter around product.", "No floating."],
   },
   scene_home_indoor: {
     pos_add: ["Product placed indoors in a realistic home environment."],
