@@ -696,8 +696,8 @@ export default function HomePage() {
           }
         }
 
-        // Mostra onboarding direto se usuário não tem trabalho ativo nem resultado recente
-        if (!hasActivePhotoJob) {
+        // Mostra onboarding direto se usuário FREE não tem trabalho ativo nem resultado recente
+        if (!hasActivePhotoJob && userPlan === "free") {
           const hasRecentResult = jobs.some(
             (j) => j.status === "done" && j.output_image_url &&
             new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
@@ -3290,8 +3290,8 @@ export default function HomePage() {
           }}
           onClose={() => {
             setShowUpsell(false);
-            // Só mostra onboarding se usuário ainda não tem nenhum job
-            if (workState === "sem_trabalho" && !modeSelected) {
+            // Só mostra onboarding para FREE sem jobs
+            if (workState === "sem_trabalho" && !modeSelected && plan === "free") {
               setShowOnboarding(true);
             }
           }}
