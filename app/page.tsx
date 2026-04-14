@@ -21,6 +21,7 @@ const OnboardingScreen = nextDynamic(() => import("@/app/components/OnboardingSc
 const ConversionScreen = nextDynamic(() => import("@/app/components/ConversionScreen"), { ssr: false });
 const VideoHookScreen = nextDynamic(() => import("@/app/components/VideoHookScreen"), { ssr: false });
 const OnboardingChat = nextDynamic(() => import("@/app/components/OnboardingChat"), { ssr: false });
+const TamoMascot = nextDynamic(() => import("@/app/components/TamoMascot"), { ssr: false });
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type Plan = "free" | "pro";
@@ -2770,6 +2771,9 @@ export default function HomePage() {
                   ) : (
                     /* Foto ainda processando */
                     <>
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
+                        <TamoMascot state="processing" size={80} label={lang === "en" ? "Working on it..." : lang === "es" ? "Trabajando en ello..." : "Tô trabalhando..."} />
+                      </div>
                       <div style={styles.generatingTitle}>
                         <span style={styles.shimmerText}>Transformando sua foto</span>
                         <span style={styles.dots}>
@@ -3029,8 +3033,13 @@ export default function HomePage() {
 
             {/* Ações — coluna direita no desktop / abaixo no mobile */}
             <div className="result-actions-col">
-              <h2 style={{ ...styles.centerTitle, textAlign: "left" as const, marginBottom: 4 }}>{t("result_ready")}</h2>
-              <p style={{ fontSize: 13, color: "#8394b0", marginBottom: 12 }}>Sua foto foi gerada com sucesso</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                <TamoMascot state="done" size={64} />
+                <div>
+                  <h2 style={{ ...styles.centerTitle, textAlign: "left" as const, margin: 0, marginBottom: 2 }}>{t("result_ready")}</h2>
+                  <p style={{ fontSize: 13, color: "#8394b0", margin: 0 }}>Sua foto foi gerada com sucesso</p>
+                </div>
+              </div>
 
               {/* Baixar */}
               <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
