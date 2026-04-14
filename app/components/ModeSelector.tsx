@@ -5,6 +5,9 @@ import { useI18n } from "@/lib/i18n";
 
 export type CreationMode = "simulacao" | "fundo_branco" | "catalogo" | "personalizado" | "video" | "promo" | "video_narrado" | "video_longo" | "produto_exposto";
 
+const FOTO_MODES: CreationMode[] = ["simulacao", "catalogo", "produto_exposto", "fundo_branco", "personalizado"];
+const VIDEO_MODES: CreationMode[] = ["video", "video_narrado", "video_longo"];
+
 const BASE = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/examples";
 
 const VIDEO_URLS = Array.from({ length: 9 }, (_, i) => `${BASE}/video${i + 1}.mp4`);
@@ -175,9 +178,19 @@ function ModeCard({ name, title, desc, badge, onClick, media, img, btnLabel }: {
 
 export default function ModeSelector({ onChange }: Props) {
   const { lang } = useI18n();
-  const MODES = getModes(lang);
+  const [tab, setTab] = useState<"foto" | "video">("foto");
+  const ALL_MODES = getModes(lang);
+  const activeIds = tab === "foto" ? FOTO_MODES : VIDEO_MODES;
+  const MODES = ALL_MODES.filter(m => activeIds.includes(m.id));
+
   const title = lang === "en" ? "What do you want to create?" : lang === "es" ? "¿Qué quieres crear?" : "O que você quer criar?";
   const subtitle = lang === "en" ? "Choose a mode to get started" : lang === "es" ? "Elige un modo para empezar" : "Escolha um modo para começar";
+
+  const tabLabel = (t: "foto" | "video") => {
+    if (t === "foto") return lang === "en" ? "📷 Photo" : "📷 Foto";
+    return lang === "en" ? "🎬 Video" : "🎬 Vídeo";
+  };
+
   return (
     <div className="mode-selector">
       <style>{`
@@ -227,10 +240,37 @@ export default function ModeSelector({ onChange }: Props) {
 
       <div className="mode-title">{title}</div>
       <div
-        style={{ fontSize: 14, color: "#8394b0", marginBottom: 24, display: "none" }}
+        style={{ fontSize: 14, color: "#8394b0", marginBottom: 16, display: "none" }}
         className="mode-subtitle"
       >
         {subtitle}
+      </div>
+
+      {/* Abas Foto / Vídeo */}
+      <div style={{
+        display: "flex", gap: 8, marginBottom: 20,
+        background: "rgba(255,255,255,0.04)",
+        borderRadius: 12, padding: 4,
+      }}>
+        {(["foto", "video"] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            style={{
+              flex: 1, padding: "10px 0",
+              borderRadius: 9, border: "none",
+              background: tab === t
+                ? "linear-gradient(135deg, #6366f1, #a855f7)"
+                : "transparent",
+              color: tab === t ? "#fff" : "#8394b0",
+              fontSize: 14, fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.15s",
+            }}
+          >
+            {tabLabel(t)}
+          </button>
+        ))}
       </div>
 
       <div style={{ display: "grid", gap: 12 }} className="mode-grid">
