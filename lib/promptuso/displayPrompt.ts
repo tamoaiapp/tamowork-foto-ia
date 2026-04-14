@@ -27,7 +27,7 @@ function lower(s: string) {
 export function detectDisplayCategory(visionDescription: string): DisplayCategory {
   const t = lower(visionDescription);
 
-  if (/dress|shirt|blouse|pants|skirt|jacket|coat|hoodie|sweater|jeans|shorts|suit|blazer|top|vest|cardigan|legging|romper|jumpsuit|polo|tee|t-shirt|uniform|clothing|garment|apparel|wear|outfit|costume|robe|nightgown|swimsuit|lingerie|underwear|bra|sock|hat|cap|scarf|glove|vestido|camisa|blusa|calça|saia|casaco|roupa|conjunto|moletom|jaqueta|jaqueta|terno|suéter/.test(t)) {
+  if (/dress|shirt|blouse|pants|skirt|jacket|coat|hoodie|sweater|jeans|shorts|suit|blazer|top|vest|cardigan|legging|romper|jumpsuit|polo|tee|t-shirt|uniform|clothing|garment|apparel|wear|outfit|costume|robe|nightgown|swimsuit|lingerie|underwear|bra|sock|hat|cap|scarf|glove|vestido|camisa|blusa|calça|saia|casaco|roupa|conjunto|moletom|jaqueta|terno|suéter|fantasia|macacão|macacao|pijama|camisola|regata|bermuda|cinto|avental|uniforme|farda|traje|maiô|maio|biquíni|biquini|cueca|calcinha|sutiã|sutia|meia|luva|gorro|gola|capuz/.test(t)) {
     return "clothing";
   }
 
