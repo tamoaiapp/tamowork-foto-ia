@@ -2116,6 +2116,7 @@ export default function HomePage() {
                   promo: "Criar promoção",
                   video_narrado: "Vídeo com narração",
                   video_longo: "🎬 Vídeo longo (~32s)",
+                  produto_exposto: "🏪 Expositor premium",
                 }[creationMode]}
               </div>
             </div>
