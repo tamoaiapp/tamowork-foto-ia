@@ -9,7 +9,127 @@ import { createServerClient } from "@/lib/supabase/server";
 import { uploadImageToComfy, COMFY_BASES } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/serverProductVision";
-import { buildPromptResult } from "@/lib/promptuso/infer";
+import { buildPromptResult, inferSlot } from "@/lib/promptuso/infer";
+
+// Cenários por tipo de produto — escolhidos para combinar com o slot
+const SLOT_CENARIOS: Record<string, string[]> = {
+  wear_head_ear: [
+    "close-up portrait, natural bokeh background, soft light on ear",
+    "lifestyle portrait, outdoor sunlight, candid look",
+    "indoor portrait, warm soft lighting, editorial style",
+    "close-up side profile, sharp focus, natural skin",
+  ],
+  wear_head_top: [
+    "outdoor lifestyle, natural sunlight, park or street background",
+    "candid portrait, golden hour, casual look",
+    "indoor lifestyle, modern interior, soft natural light",
+  ],
+  wear_head_face: [
+    "outdoor lifestyle, sunny day, candid portrait",
+    "beach or pool background, lifestyle photo, bright natural light",
+    "indoor portrait, clean background, editorial style",
+  ],
+  wear_neck: [
+    "portrait showing neck and décolleté, soft studio lighting",
+    "outdoor lifestyle, natural sunlight, city background",
+    "indoor lifestyle, warm light, elegant setting",
+  ],
+  wear_wrist: [
+    "close-up wrist, outdoor natural light, lifestyle shot",
+    "indoor portrait, wrist in focus, clean background",
+    "lifestyle scene, candid moment, soft natural light",
+  ],
+  wear_finger: [
+    "close-up hand, soft bokeh, natural light",
+    "lifestyle portrait, hand in focus, outdoor setting",
+    "indoor flat lay style, hand on elegant surface",
+  ],
+  wear_torso_upper: [
+    "outdoor lifestyle, natural sunlight, city street",
+    "park or garden, golden hour lighting",
+    "indoor lifestyle, modern interior, soft natural light",
+    "candid lifestyle moment, shopping area, natural light",
+  ],
+  wear_torso_full: [
+    "outdoor lifestyle, natural sunlight, city street, full body",
+    "park or garden, golden hour lighting, full body",
+    "indoor lifestyle, modern interior, full body, soft natural light",
+    "candid moment, shopping area or cafe, full body",
+  ],
+  wear_waist_legs: [
+    "outdoor lifestyle, city street, lower body framing",
+    "park, golden hour, lower body shot",
+    "indoor lifestyle, modern floor, lower body framing",
+  ],
+  wear_feet: [
+    "street style, urban pavement, close-up shoes, natural light",
+    "outdoor lifestyle, park path, golden hour, shoes in focus",
+    "indoor lifestyle, modern floor, close-up footwear",
+  ],
+  wear_back: [
+    "outdoor lifestyle, city street, person from behind",
+    "park or campus, natural light, back view",
+    "travel setting, outdoor, backpack in use",
+  ],
+  wear_crossbody: [
+    "outdoor lifestyle, city street, natural sunlight",
+    "shopping area or cafe, candid lifestyle moment",
+    "travel setting, outdoor, bag worn crossbody",
+  ],
+  hold_bag_hand: [
+    "outdoor lifestyle, city street, natural sunlight, bag in hand",
+    "shopping mall or boutique, lifestyle moment",
+    "park or garden, golden hour, elegant casual look",
+    "indoor lifestyle, modern interior, soft light",
+  ],
+  hold_device: [
+    "indoor lifestyle, modern workspace or sofa, natural light",
+    "outdoor, park bench or cafe, casual use",
+    "home setting, soft warm lighting, device in use",
+  ],
+  hold_flower: [
+    "wedding ceremony, elegant indoor setting, soft light",
+    "outdoor garden, romantic natural light, floral close-up",
+    "bridal shoot, soft bokeh background, bouquet in focus",
+    "nature setting, golden hour, flowers in hands",
+  ],
+  hold_food_display: [
+    "wooden table, natural light, food styling",
+    "kitchen countertop, clean background, appetizing presentation",
+    "outdoor picnic setting, natural light, food photography",
+  ],
+  hold_beauty_product: [
+    "marble surface, luxury beauty photography, soft diffused light",
+    "white or light neutral background, studio lighting, clean minimal",
+    "natural setting, soft bokeh, lifestyle beauty photo",
+  ],
+  hold_beverage: [
+    "outdoor lifestyle, cafe or street, natural light, held at chest",
+    "indoor lifestyle, kitchen or home, warm lighting",
+    "beach or park, sunny day, refreshing lifestyle shot",
+  ],
+  scene_tabletop: [
+    "clean white surface, soft studio lighting, minimal background",
+    "marble or wood surface, natural light, lifestyle flat lay",
+    "elegant surface, soft light, product photography style",
+  ],
+  scene_home_indoor: [
+    "cozy home setting, natural window light, lifestyle photo",
+    "modern interior, minimal decor, soft neutral tones",
+    "living room or kitchen, warm lighting, product in context",
+  ],
+};
+
+const DEFAULT_CENARIOS = [
+  "outdoor lifestyle, natural sunlight, city street background",
+  "indoor lifestyle, modern interior, soft natural light",
+  "park or garden, golden hour lighting, vibrant colors",
+  "candid lifestyle moment, shopping area, natural light",
+];
+
+function getCenariosForSlot(slot: string): string[] {
+  return SLOT_CENARIOS[slot] ?? DEFAULT_CENARIOS;
+}
 
 const DEFAULT_SCENES = 4;
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
@@ -188,23 +308,21 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       uploadImageToComfy(job.input_image_url, comfyBase, `narr_${jobId.replace(/-/g, "").slice(0, 12)}`),
     ]);
 
-    // 4. Visão do produto → gera prompts de simulação de uso iguais ao fluxo de foto normal
-    const visionDesc = await getProductVisionDescription(job.input_image_url, job.roteiro);
-    const productText = mergeProductTexts(job.roteiro, visionDesc);
-
-    const SCENE_CENARIOS = [
-      "outdoor lifestyle, natural sunlight, city street background",
-      "indoor lifestyle, modern interior, soft natural light",
-      "park or garden, golden hour lighting, vibrant colors",
-      "shopping mall or cafe, candid lifestyle moment, natural light",
-      "close up detail shot, soft bokeh background",
-      "urban background, street style, natural daylight",
-    ];
+    // 4. Visão do produto → identifica tipo e escolhe cenários compatíveis
+    // Usamos apenas a visão para identificar o produto — o roteiro é texto de marketing
+    // e pode conter frases que confundem inferSlot/inferPersona ("dia das mães", "presente", etc.)
+    const visionDesc = await getProductVisionDescription(job.input_image_url);
+    // Fallback offline: extrai apenas o trecho do produto antes de preço/promoção no roteiro
+    const roteiroHint = job.roteiro.replace(/\b(por|r\$|apenas|só|entrega|frete|disponível|unidade|parcelo|chama|compra|presente).*/i, "").trim().slice(0, 60);
+    const productText = visionDesc ?? roteiroHint ?? "product";
+    const slot = inferSlot(productText);
+    const cenarios = getCenariosForSlot(slot);
+    console.log(`[narrated] produto="${productText.slice(0, 60)}" → slot=${slot} | ${cenarios.length} cenários disponíveis`);
 
     // 5. Submete N variações ao ComfyUI (dinâmico com base na duração do áudio)
     const scenePromptIds: string[] = [];
     for (let i = 0; i < scenesNeeded; i++) {
-      const cenario = SCENE_CENARIOS[i % SCENE_CENARIOS.length];
+      const cenario = cenarios[i % cenarios.length];
       const { positive, negative } = buildPromptResult(productText, cenario);
       try {
         const promptId = await submitSceneVariation(imageName, positive, negative, jobId, i, comfyBase);
