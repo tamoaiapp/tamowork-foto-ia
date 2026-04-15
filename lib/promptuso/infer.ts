@@ -381,12 +381,15 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDes
 
   if (forceHum) {
     pos.push(buildActionPhrase(slot, productLabel, persona.subject, cenario));
+    // Identidade máxima: o produto deve ser cópia visual fiel da referência
+    pos.push("The product must remain visually identical to the reference image. All unique details, textures, shapes, and design elements must match the reference exactly. No redesign or variation allowed.");
     if (persona.gender === "female") pos.push("Female model only.");
     else if (persona.gender === "male") pos.push("Male model only.");
   } else {
     // Display / scene — sem pessoa
     if (cenario) pos.push(`${productLabel}, ${cenario}.`);
     else pos.push(`${productLabel}.`);
+    pos.push("Product must remain visually identical to the reference image, exact same design and details.");
   }
 
   // Regras específicas do slot (pos_add do rules.ts)
@@ -395,8 +398,8 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDes
   // ── Negativo: base simples + rules.neg_add ─────────────────────────────────
   const neg: string[] = [];
 
-  // Base: não mude o produto
-  neg.push("Do not change the product design, color, material or shape. Preserve all original details.");
+  // Identidade do produto — modo travado (noun-form para diffusion models)
+  neg.push("redesigned product, altered shape, simplified design, missing details, different texture, incorrect pattern, different product, reinterpretation, variation of product, modified design, changed product, different version, similar but different");
 
   // Gênero
   if (forceHum) {

@@ -7,7 +7,9 @@
  *   assembling        → polling assembly server → done | failed
  */
 import { createServerClient } from "@/lib/supabase/server";
-import { getComfyHistory, COMFY_BASES } from "@/lib/comfyui/client";
+import { getComfyHistory, uploadImageToComfy, COMFY_BASES } from "@/lib/comfyui/client";
+import { submitSceneVariation, type ScenePlan } from "@/lib/narrated-video/submit";
+import { type PhotoFormat } from "@/lib/formats";
 
 const ASSEMBLY_BASE = process.env.NARRATED_ASSEMBLY_BASE ?? "";
 
@@ -74,10 +76,14 @@ export async function checkNarratedVideoJob(jobId: string): Promise<void> {
   if (!job) return;
   if (["done", "failed", "canceled"].includes(job.status)) return;
 
-  // ── Estado: gerando cenas no ComfyUI ──────────────────────────────────────
+  // ── Estado: gerando cenas no ComfyUI (cadeia sequencial) ─────────────────
   if (job.status === "generating_scenes") {
     const comfyBase = COMFY_BASES[job.scene_comfy_index ?? 0] ?? COMFY_BASES[0];
     const promptIds: string[] = job.scene_comfy_ids ?? [];
+    const chainIdx: number = job.scene_chain_idx ?? 0;
+    const scenesNeeded: number = job.scenes_needed ?? 4;
+    const scenePlans: ScenePlan[] = (job.scene_plans as ScenePlan[]) ?? [];
+    const builtUrls: string[] = (job.scene_built_urls as string[]) ?? [];
 
     if (!comfyBase || promptIds.length === 0) {
       await supabase.from("narrated_video_jobs")
@@ -98,48 +104,92 @@ export async function checkNarratedVideoJob(jobId: string): Promise<void> {
       return;
     }
 
-    // Verifica cada cena
-    const sceneUrls: string[] = [];
-    let allSettled = true;
-
-    for (const promptId of promptIds) {
-      try {
-        const result = await getComfyHistory(promptId, comfyBase);
-        if (result.status === "done" && result.outputUrl) {
-          sceneUrls.push(result.outputUrl);
-        } else if (result.status === "failed") {
-          // Cena falhou — ignora e continua com as outras
-          console.warn(`[narrated] cena ${promptId} falhou — ignorando`);
-        } else {
-          // Ainda processando
-          allSettled = false;
-          break; // Não precisa checar as próximas agora
-        }
-      } catch {
-        allSettled = false;
-        break;
-      }
+    // Verifica apenas a cena atual da cadeia
+    const currentPromptId = promptIds[chainIdx];
+    if (!currentPromptId) {
+      await supabase.from("narrated_video_jobs")
+        .update({ status: "failed", error_message: `Prompt ID ausente para cena ${chainIdx}` })
+        .eq("id", jobId);
+      return;
     }
 
-    if (!allSettled || sceneUrls.length < 2) {
-      console.log(`[narrated] job ${jobId} aguardando cenas (${sceneUrls.length}/${promptIds.length})`);
-      return; // Cron verifica no próximo ciclo
+    let result: { status: string; outputUrl?: string | null };
+    try {
+      result = await getComfyHistory(currentPromptId, comfyBase);
+    } catch {
+      console.log(`[narrated] job ${jobId} cena ${chainIdx} — erro ao checar ComfyUI, aguardando`);
+      return;
+    }
+
+    if (result.status === "failed") {
+      console.warn(`[narrated] cena ${chainIdx} falhou — abortando job`);
+      await supabase.from("narrated_video_jobs")
+        .update({ status: "failed", error_message: `Cena ${chainIdx} falhou no ComfyUI` })
+        .eq("id", jobId);
+      return;
+    }
+
+    if (result.status !== "done" || !result.outputUrl) {
+      // Ainda processando — aguarda próximo ciclo
+      console.log(`[narrated] job ${jobId} aguardando cena ${chainIdx}/${scenesNeeded - 1}`);
+      return;
+    }
+
+    // Cena atual concluída — acumula a URL
+    const newBuiltUrls = [...builtUrls, result.outputUrl];
+    const nextIdx = chainIdx + 1;
+
+    console.log(`[narrated] job ${jobId} cena ${chainIdx} pronta (${newBuiltUrls.length}/${scenesNeeded})`);
+
+    if (nextIdx < scenesNeeded && scenePlans[nextIdx]) {
+      // Ainda há cenas — submete a próxima usando o output desta como input (cadeia)
+      try {
+        const chainImageName = await uploadImageToComfy(
+          result.outputUrl,
+          comfyBase,
+          `narr_chain_${jobId.replace(/-/g, "").slice(0, 8)}_s${nextIdx}`
+        );
+        const { positive, negative } = scenePlans[nextIdx];
+        const jobFormat = (job.format as PhotoFormat) ?? "story";
+        const nextPromptId = await submitSceneVariation(
+          chainImageName, positive, negative, jobId, nextIdx, comfyBase, jobFormat
+        );
+
+        await supabase.from("narrated_video_jobs").update({
+          scene_comfy_ids: [...promptIds, nextPromptId],
+          scene_chain_idx: nextIdx,
+          scene_built_urls: newBuiltUrls,
+          attempts: 0, // reset timeout counter para a nova cena
+          updated_at: new Date().toISOString(),
+        }).eq("id", jobId);
+
+        console.log(`[narrated] job ${jobId} → cena ${nextIdx} submetida (cadeia)`);
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[narrated] erro ao submeter cena ${nextIdx} em cadeia:`, errMsg);
+        await supabase.from("narrated_video_jobs")
+          .update({ status: "failed", error_message: `Erro na cadeia cena ${nextIdx}: ${errMsg}` })
+          .eq("id", jobId);
+      }
+      return;
     }
 
     // Todas as cenas prontas → inicia montagem
-    console.log(`[narrated] job ${jobId} → ${sceneUrls.length} cenas prontas, iniciando montagem`);
+    const allSceneUrls = newBuiltUrls;
+    console.log(`[narrated] job ${jobId} → ${allSceneUrls.length} cenas prontas, iniciando montagem`);
 
     await supabase.from("narrated_video_jobs")
       .update({
         status: "assembling",
-        scene_urls: sceneUrls,
+        scene_urls: allSceneUrls,
+        scene_built_urls: allSceneUrls,
         attempts: 0,
         updated_at: new Date().toISOString(),
       })
       .eq("id", jobId);
 
     try {
-      await startAssembly(jobId, sceneUrls, job.roteiro_melhorado || job.roteiro, job.voice, job.audio_url ?? undefined);
+      await startAssembly(jobId, allSceneUrls, job.roteiro_melhorado || job.roteiro, job.voice, job.audio_url ?? undefined);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error(`[narrated] assembly start error job ${jobId}:`, errMsg);

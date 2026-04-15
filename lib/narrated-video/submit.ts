@@ -12,112 +12,119 @@ import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/ser
 import { buildPromptResult, inferSlot } from "@/lib/promptuso/infer";
 import { type PhotoFormat, PHOTO_DIMS, DEFAULT_FORMAT } from "@/lib/formats";
 
-// Cenários por tipo de produto — escolhidos para combinar com o slot
+// Cenários por tipo de produto — visualmente DISTINTOS entre si para variedade real nas cenas
 const SLOT_CENARIOS: Record<string, string[]> = {
   wear_head_ear: [
-    "close-up portrait, natural bokeh background, soft light on ear",
-    "lifestyle portrait, outdoor sunlight, candid look",
-    "indoor portrait, warm soft lighting, editorial style",
-    "close-up side profile, sharp focus, natural skin",
+    "upscale restaurant interior, warm candlelight, elegant ambiance, shallow depth of field",
+    "city street, outdoor natural daylight, urban buildings in background, lifestyle photography",
+    "cozy home living room, soft window light, warm interior decor in background",
+    "outdoor garden, golden hour sunlight, lush green bokeh, romantic natural setting",
   ],
   wear_head_top: [
-    "outdoor lifestyle, natural sunlight, park or street background",
-    "candid portrait, golden hour, casual look",
-    "indoor lifestyle, modern interior, soft natural light",
+    "city street, outdoor natural sunlight, urban lifestyle, buildings in background",
+    "upscale cafe interior, warm lighting, modern decor in background",
+    "outdoor park, golden hour, trees and nature in background",
+    "indoor gym or sports area, dynamic lighting",
   ],
   wear_head_face: [
-    "outdoor lifestyle, sunny day, candid portrait",
-    "beach or pool background, lifestyle photo, bright natural light",
-    "indoor portrait, clean background, editorial style",
+    "beach or coastal setting, bright natural light, ocean in background",
+    "city rooftop, urban skyline in background, natural daylight",
+    "indoor studio, clean white background, editorial style lighting",
+    "outdoor park, greenery in background, candid lifestyle",
   ],
   wear_neck: [
-    "portrait showing neck and décolleté, soft studio lighting",
-    "outdoor lifestyle, natural sunlight, city background",
-    "indoor lifestyle, warm light, elegant setting",
+    "elegant dinner setting, restaurant interior, warm soft light",
+    "outdoor city street, natural sunlight, urban lifestyle",
+    "luxury boutique interior, minimal elegant decor in background",
+    "garden party setting, outdoor, soft natural light",
   ],
   wear_wrist: [
-    "close-up wrist, outdoor natural light, lifestyle shot",
-    "indoor portrait, wrist in focus, clean background",
-    "lifestyle scene, candid moment, soft natural light",
+    "office desk setting, laptop and coffee in background, natural light",
+    "outdoor city, natural sunlight, wrist in focus, street in background",
+    "elegant restaurant table, soft warm light, lifestyle close-up",
+    "home interior, cozy setting, warm natural window light",
   ],
   wear_finger: [
-    "close-up hand, soft bokeh, natural light",
-    "lifestyle portrait, hand in focus, outdoor setting",
-    "indoor flat lay style, hand on elegant surface",
+    "elegant table setting, soft candlelight, bokeh background",
+    "outdoor natural setting, sunlight, garden or park background",
+    "indoor luxury interior, marble surface, refined aesthetic",
+    "lifestyle moment, coffee cup in hand, cafe interior",
   ],
   wear_torso_upper: [
-    "outdoor lifestyle, natural sunlight, city street",
-    "park or garden, golden hour lighting",
-    "indoor lifestyle, modern interior, soft natural light",
-    "candid lifestyle moment, shopping area, natural light",
+    "city street, outdoor natural sunlight, urban architecture in background",
+    "upscale cafe or restaurant interior, warm ambient lighting",
+    "outdoor park or garden, golden hour, trees in background",
+    "indoor modern apartment, minimal decor, soft natural window light",
   ],
   wear_torso_full: [
-    "outdoor lifestyle, natural sunlight, city street, full body",
-    "park or garden, golden hour lighting, full body",
-    "indoor lifestyle, modern interior, full body, soft natural light",
-    "candid moment, shopping area or cafe, full body",
+    "city street, outdoor natural sunlight, urban lifestyle, full body",
+    "elegant indoor setting, marble floor, luxury interior, full body",
+    "outdoor park, golden hour lighting, lush background, full body",
+    "shopping area or boutique entrance, natural light, full body",
   ],
   wear_waist_legs: [
-    "outdoor lifestyle, city street, lower body framing",
-    "park, golden hour, lower body shot",
-    "indoor lifestyle, modern floor, lower body framing",
+    "outdoor city street, natural daylight, urban background, lower body",
+    "indoor modern interior, clean floor, minimal setting, lower body",
+    "outdoor park path, golden hour, natural light, lower body framing",
   ],
   wear_feet: [
-    "street style, urban pavement, close-up shoes, natural light",
-    "outdoor lifestyle, park path, golden hour, shoes in focus",
-    "indoor lifestyle, modern floor, close-up footwear",
+    "urban pavement, city street, outdoor natural light, close-up footwear",
+    "outdoor park path, golden hour, grass and path in background",
+    "indoor modern floor, minimal interior, lifestyle footwear shot",
+    "cafe or restaurant floor, cozy setting, lifestyle close-up",
   ],
   wear_back: [
-    "outdoor lifestyle, city street, person from behind",
-    "park or campus, natural light, back view",
-    "travel setting, outdoor, backpack in use",
+    "city street, outdoor, person walking away, urban background",
+    "outdoor park or campus, natural light, trees in background",
+    "airport or train station, travel lifestyle, modern interior",
   ],
   wear_crossbody: [
-    "outdoor lifestyle, city street, natural sunlight",
-    "shopping area or cafe, candid lifestyle moment",
-    "travel setting, outdoor, bag worn crossbody",
+    "city street, outdoor natural sunlight, urban lifestyle",
+    "boutique or shopping district, upscale area, natural light",
+    "travel setting, airport or historic street, lifestyle moment",
+    "outdoor cafe terrace, natural light, relaxed lifestyle",
   ],
   hold_bag_hand: [
-    "outdoor lifestyle, city street, natural sunlight, bag in hand",
-    "shopping mall or boutique, lifestyle moment",
-    "park or garden, golden hour, elegant casual look",
-    "indoor lifestyle, modern interior, soft light",
+    "city street, outdoor natural sunlight, urban buildings in background",
+    "luxury boutique or shopping mall entrance, elegant setting",
+    "outdoor park, golden hour, romantic casual lifestyle look",
+    "indoor modern apartment, soft natural light, minimal decor",
   ],
   hold_device: [
-    "indoor lifestyle, modern workspace or sofa, natural light",
-    "outdoor, park bench or cafe, casual use",
-    "home setting, soft warm lighting, device in use",
+    "modern home office, desk setup, natural window light",
+    "outdoor cafe terrace, relaxed lifestyle, natural light",
+    "cozy sofa at home, warm interior lighting, casual use",
   ],
   hold_flower: [
-    "wedding ceremony, elegant indoor setting, soft light",
-    "outdoor garden, romantic natural light, floral close-up",
-    "bridal shoot, soft bokeh background, bouquet in focus",
-    "nature setting, golden hour, flowers in hands",
+    "elegant wedding ceremony interior, soft diffused light, floral decor",
+    "outdoor garden, romantic natural light, greenery in background",
+    "bright modern interior, minimal decor, soft natural window light",
+    "outdoor park, golden hour, nature setting, romantic atmosphere",
   ],
   hold_food_display: [
-    "wooden table, natural light, food styling",
-    "kitchen countertop, clean background, appetizing presentation",
-    "outdoor picnic setting, natural light, food photography",
+    "rustic wooden table, natural window light, minimalist food styling",
+    "modern kitchen countertop, clean marble surface, editorial look",
+    "outdoor picnic setting, natural daylight, casual lifestyle",
   ],
   hold_beauty_product: [
-    "marble surface, luxury beauty photography, soft diffused light",
-    "white or light neutral background, studio lighting, clean minimal",
-    "natural setting, soft bokeh, lifestyle beauty photo",
+    "marble bathroom counter, luxury aesthetic, soft diffused light",
+    "clean white studio background, minimal lighting, editorial beauty",
+    "natural setting, soft bokeh greenery, lifestyle beauty photo",
   ],
   hold_beverage: [
-    "outdoor lifestyle, cafe or street, natural light, held at chest",
-    "indoor lifestyle, kitchen or home, warm lighting",
-    "beach or park, sunny day, refreshing lifestyle shot",
+    "outdoor cafe terrace, natural sunlight, city street in background",
+    "cozy home kitchen, warm morning light, lifestyle moment",
+    "beach or outdoor park, bright natural light, refreshing lifestyle",
   ],
   scene_tabletop: [
-    "clean white surface, soft studio lighting, minimal background",
-    "marble or wood surface, natural light, lifestyle flat lay",
-    "elegant surface, soft light, product photography style",
+    "clean white marble surface, soft studio lighting, minimal elegant background",
+    "rustic wooden table, natural window light, warm lifestyle flat lay",
+    "dark slate surface, dramatic side lighting, premium product photography",
   ],
   scene_home_indoor: [
-    "cozy home setting, natural window light, lifestyle photo",
-    "modern interior, minimal decor, soft neutral tones",
-    "living room or kitchen, warm lighting, product in context",
+    "bright modern living room, natural window light, minimal decor",
+    "cozy warm home interior, evening lamp light, comfortable setting",
+    "modern kitchen, clean surfaces, natural daylight from window",
   ],
 };
 
@@ -135,6 +142,12 @@ function getCenariosForSlot(slot: string): string[] {
 const DEFAULT_SCENES = 4;
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const ASSEMBLY_BASE = process.env.NARRATED_ASSEMBLY_BASE ?? "";
+
+export interface ScenePlan {
+  positive: string;
+  negative: string;
+  cenario: string;
+}
 
 // ─── Melhoria do roteiro via Ollama ───────────────────────────────────────────
 
@@ -169,7 +182,7 @@ Roteiro: ${original}`,
 // ─── Submete workflow de variação no ComfyUI ─────────────────────────────────
 // Usa a API /prompt diretamente com um workflow de img2img simplificado
 
-async function submitSceneVariation(
+export async function submitSceneVariation(
   imageName: string,
   promptPos: string,
   promptNeg: string,
@@ -328,35 +341,44 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
     const cenarios = getCenariosForSlot(slot);
     console.log(`[narrated] produto="${productText.slice(0, 60)}" → slot=${slot} | ${cenarios.length} cenários disponíveis`);
 
-    // 5. Submete N variações ao ComfyUI (dinâmico com base na duração do áudio)
-    const scenePromptIds: string[] = [];
+    // 5. Pré-computa os planos de todas as cenas (prompts positivo + negativo)
+    //    Cenas 1+ recebem um prefixo de cadeia para instruir o modelo a manter o produto
+    const jobFormat = (job.format as PhotoFormat) ?? DEFAULT_FORMAT;
+    const scenePlans: ScenePlan[] = [];
     for (let i = 0; i < scenesNeeded; i++) {
       const cenario = cenarios[i % cenarios.length];
       const { positive, negative } = buildPromptResult(productText, cenario);
-      try {
-        const jobFormat = (job.format as PhotoFormat) ?? DEFAULT_FORMAT;
-        const promptId = await submitSceneVariation(imageName, positive, negative, jobId, i, comfyBase, jobFormat);
-        scenePromptIds.push(promptId);
-      } catch (err) {
-        console.error(`[narrated] scene ${i} submit error:`, err);
-      }
+      // Cenas encadeadas (i > 0): o input já é a cena anterior com o produto correto
+      // → reforça "mantenha o produto, mude só o cenário"
+      const chainPositive = i === 0
+        ? positive
+        : `Maintain the exact same product as shown in this reference image, unchanged in every detail, same design, same material, same color. Only change the background and environment to a new scene: ${cenario}. ${positive}`;
+      scenePlans.push({ positive: chainPositive, negative, cenario });
     }
 
-    if (scenePromptIds.length === 0) {
-      throw new Error("Nenhuma cena foi submetida ao ComfyUI");
+    // 6. Submete APENAS a cena 0 agora — as demais serão submetidas em cadeia pelo check.ts
+    const { positive: p0, negative: n0 } = scenePlans[0];
+    let scene0Id: string;
+    try {
+      scene0Id = await submitSceneVariation(imageName, p0, n0, jobId, 0, comfyBase, jobFormat);
+    } catch (err) {
+      throw new Error(`Erro ao submeter cena 0: ${err}`);
     }
 
     await supabase.from("narrated_video_jobs").update({
       status: "generating_scenes",
       roteiro_melhorado: roteiroMelhorado,
-      scene_comfy_ids: scenePromptIds,
+      scene_comfy_ids: [scene0Id],
       scene_comfy_index: 0,
+      scene_chain_idx: 0,
+      scene_plans: scenePlans,
+      scene_built_urls: [],
       scenes_needed: scenesNeeded,
       audio_url: audioUrl || null,
       updated_at: new Date().toISOString(),
     }).eq("id", jobId);
 
-    console.log(`[narrated] job ${jobId} → generating_scenes (${scenePromptIds.length} cenas)`);
+    console.log(`[narrated] job ${jobId} → generating_scenes (cadeia de ${scenesNeeded} cenas, cena 0 submetida)`);
 
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
