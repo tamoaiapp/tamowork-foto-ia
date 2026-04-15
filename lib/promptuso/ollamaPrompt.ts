@@ -51,23 +51,41 @@ If surface → must touch a surface
 If environment → must be integrated into the space
 
 ## STEP 5 — BUILD POSITIVE PROMPT
-Must include: realistic photo style, product described faithfully, clear physical anchoring, correct interaction, correct scale, lighting and realism.
-ALWAYS include: "The product must preserve its exact original design, color, material, shape, and details from the reference image."
-AND: "The product is physically [clear position] with realistic contact, correct scale, and natural integration."
+Structure the positive prompt with these 4 parts in order:
+
+PART A — Scene + product in use:
+Describe the scene, the person (if wearable), and the product being used in the exact correct physical position.
+Must include: realistic photo style, product described faithfully, clear physical anchoring, correct scale.
+
+PART B — Fidelity clause (MANDATORY, always include exactly):
+"The product must preserve its exact original design, color, material, shape, and details from the reference image. The product is physically [clear position] with realistic contact, correct scale, and natural integration."
+
+PART C — Exclusivity clause (MANDATORY — this is the most important part):
+State EXPLICITLY and FORCEFULLY what is NOT happening. Be very specific about what the model must NOT generate.
+For wearable: "No hands in the scene. No fingers touching the product. The product is worn naturally with zero hand interaction. The scene shows only the person wearing the product, nothing else."
+For surface: "No hands in the scene. The product rests on the surface with no one touching it."
+For environment: "No person interacting with the product. The product is placed in the environment naturally."
+This clause PREVENTS the model from adding any alternative interactions.
+
+PART D — Quality (MANDATORY, always include):
+"Natural shadow beneath the product. Kodak Portra 400 film style. Soft natural lighting adapted to the scene. Realistic skin texture. Premium product photography. High realism."
 
 ## STEP 6 — BUILD NEGATIVE PROMPT
-Always block: floating, wrong placement, incorrect usage, distorted product, altered design, wrong color/material, low quality, CGI, cartoon.
-For wearable: also block hand, fingers, holding, touching, near face
-For surface: also block floating object, no contact, tilted object
-For environment: also block wrong scale, unrealistic placement
+CRITICAL RULE: The negative prompt must be SHORT KEYWORDS ONLY. No sentences. No "not", no "is", no verbs.
+Format: comma-separated keywords, each 1-3 words maximum.
+
+Always include: floating, wrong placement, distorted product, altered design, wrong color, wrong material, blurry, low quality, CGI, cartoon, watermark, text
+For wearable: also include: hand, hands, fingers, finger, holding, touching, adjusting earring, touching jewelry, hand near ear, fingers near product, product on finger, misplaced product, floating product
+For surface: also include: floating object, no contact, tilted object, midair, hand touching product
+For environment: also include: wrong scale, unrealistic placement, misplaced object, hand in scene
 
 ## CRITICAL RULES:
-* NEVER use "if", "when", or conditional logic
-* NEVER describe the error in the positive prompt
+* NEVER use sentences in the negative prompt — keywords only
+* NEVER use "if", "when", or conditional logic anywhere
 * NEVER be vague (no "nice scene", no "beautiful")
-* ALWAYS remove ambiguity
+* ALWAYS include the exclusivity clause in the positive prompt
 * ALWAYS force a single interpretation
-* The negative prompt must specifically prevent the most likely errors for this product and scene
+* The negative prompt must be direct keywords that specifically prevent the most likely errors
 
 ## OUTPUT FORMAT:
 Return ONLY valid JSON with no extra text, no markdown, no explanation:
