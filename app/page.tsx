@@ -1999,6 +1999,14 @@ export default function HomePage() {
     ? "trabalhando"
     : deriveWorkState(job);
 
+  // Bloqueio por tipo: foto ativa impede nova foto, vídeo ativo impede novo vídeo
+  // Mas foto + vídeo podem rodar juntos (servidores distintos)
+  const isPhotoJobActive = isGenerating;
+  const isVideoJobActive = videoSubmitting || narratedSubmitting || longVideoSubmitting
+    || (!!videoJob && !["done","failed","canceled"].includes(videoJob.status ?? ""))
+    || (!!narratedJob && !["done","failed","canceled"].includes(narratedJob.status ?? ""))
+    || (!!longVideoJob && !["done","failed","canceled"].includes(longVideoJob.status ?? ""));
+
   if (loading) return (
     <div style={styles.page} className="app-layout">
       <style>{`
@@ -2318,7 +2326,7 @@ export default function HomePage() {
         )}
 
         {/* PASSO 1: Menu de escolha de modo */}
-        {workState === "sem_trabalho" && !modeSelected && !videoMode && !narratedMode && !longVideoMode && (
+        {!modeSelected && !videoMode && !narratedMode && !longVideoMode && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
               <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
@@ -2339,7 +2347,7 @@ export default function HomePage() {
         )}
 
         {/* PASSO 2: Formulário após escolher o modo */}
-        {workState === "sem_trabalho" && modeSelected && !videoMode && !narratedMode && !longVideoMode && (
+        {modeSelected && !videoMode && !narratedMode && !longVideoMode && (
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
@@ -2886,6 +2894,15 @@ export default function HomePage() {
               {timeoutError && <div style={{ ...styles.error, borderColor: "rgba(251,191,36,0.4)", background: "rgba(251,191,36,0.08)", color: "#fbbf24" }}>{timeoutError}</div>}
               {formError && <div style={styles.error}>{formError}</div>}
 
+              {isPhotoJobActive ? (
+                <div
+                  onClick={() => setBotNavOpen(true)}
+                  style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 14, padding: "14px 16px", textAlign: "center" as const, cursor: "pointer" }}
+                >
+                  <div style={{ fontSize: 13, color: "#a5b4fc", fontWeight: 700, marginBottom: 4 }}>📸 Foto sendo criada...</div>
+                  <div style={{ fontSize: 12, color: "#4e5c72" }}>Toque para acompanhar no Tamo →</div>
+                </div>
+              ) : (
               <button
                 type="submit"
                 disabled={submitting || (creationMode !== "produto_exposto" && creationMode !== "simulacao" && !cenario.trim()) || (creationMode === "simulacao" && !produto.trim())}
@@ -2893,14 +2910,15 @@ export default function HomePage() {
               >
                 {submitting ? t("btn_generating") : t("btn_generate")}
               </button>
+              )}
               </>
               )}
             </form>
           </div>
         )}
 
-        {/* Gerando — blur animation estilo GPT */}
-        {workState === "trabalhando" && !videoMode && (
+        {/* Gerando — blur animation estilo GPT (só aparece se Tamo fechado) */}
+        {workState === "trabalhando" && !videoMode && !botNavOpen && (
           <div style={styles.card} className="generating-wrap">
             {/* Rate limit detectado durante o envio — mostra timer em vez de spinner */}
             {rateLimitedUntil && countdown > 0 ? (
@@ -2996,8 +3014,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Vídeo — gerando: barra no topo, igual à foto */}
-        {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && videoMode && (
+        {/* Vídeo — gerando (só aparece se Tamo fechado) */}
+        {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && videoMode && !botNavOpen && (
           <div style={styles.card} className="generating-wrap">
             <div className="generating-panel">
               <div style={styles.generatingTitle}>
@@ -3024,8 +3042,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Narração — gerando: barra no topo, igual ao vídeo */}
-        {narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status) && narratedMode && (
+        {/* Narração — gerando (só aparece se Tamo fechado) */}
+        {narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status) && narratedMode && !botNavOpen && (
           <div style={styles.card} className="generating-wrap">
             <div className="generating-panel">
               <div style={styles.generatingTitle}>
@@ -3065,8 +3083,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Narração — resultado */}
-        {narratedJob?.status === "done" && narratedJob.output_video_url && narratedMode && (
+        {/* Narração — resultado (só aparece se Tamo fechado) */}
+        {narratedJob?.status === "done" && narratedJob.output_video_url && narratedMode && !botNavOpen && (
           <div style={styles.card}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center", marginBottom: 14 }}>
               🎉 Seu vídeo com narração ficou pronto!
@@ -3139,8 +3157,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Vídeo longo — resultado */}
-        {longVideoJob?.status === "done" && longVideoJob.output_video_url && longVideoMode && (
+        {/* Vídeo longo — resultado (só aparece se Tamo fechado) */}
+        {longVideoJob?.status === "done" && longVideoJob.output_video_url && longVideoMode && !botNavOpen && (
           <div style={styles.card}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center", marginBottom: 14 }}>
               🎉 Seu vídeo longo ficou pronto!
@@ -3173,8 +3191,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Vídeo longo — erro */}
-        {longVideoJob?.status === "failed" && longVideoMode && (
+        {/* Vídeo longo — erro (só aparece se Tamo fechado) */}
+        {longVideoJob?.status === "failed" && longVideoMode && !botNavOpen && (
           <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 14, padding: "20px", textAlign: "center" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#eef2f9", marginBottom: 8 }}>Erro ao gerar vídeo longo</div>
             <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 16 }}>{longVideoJob.error_message ?? "Tente novamente."}</div>
@@ -3184,8 +3202,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Chat durante geração de vídeo (foto usa bloco unificado acima) */}
-        {((videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
+        {/* Chat durante geração de vídeo (só aparece se Tamo fechado) */}
+        {!botNavOpen && ((videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
           (narratedMode && narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status))) && (
           onboardingMode ? (
             <OnboardingChat />
@@ -3201,8 +3219,8 @@ export default function HomePage() {
           )
         )}
 
-        {/* Resultado */}
-        {workState === "terminado" && job && !videoMode && (
+        {/* Resultado (só aparece se Tamo fechado) */}
+        {workState === "terminado" && job && !videoMode && !botNavOpen && (
           <div style={styles.card} className="result-wrap">
             {/* Imagem — coluna esquerda no desktop */}
             <div className="result-image-col">
@@ -3463,8 +3481,8 @@ export default function HomePage() {
         )}
 
 
-        {/* Vídeo — form */}
-        {videoMode && !videoJob && job?.status === "done" && job.output_image_url && (
+        {/* Vídeo — form (só aparece se Tamo fechado) */}
+        {!botNavOpen && videoMode && !videoJob && job?.status === "done" && job.output_image_url && (
           plan !== "pro" ? (
             /* Free tentou abrir vídeo — redireciona para planos */
             <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
@@ -3528,8 +3546,8 @@ export default function HomePage() {
 
         {/* Vídeo gerando — renderizado antes do BotChat (acima) */}
 
-        {/* Vídeo — pronto */}
-        {videoJob?.status === "done" && videoJob.output_video_url && videoMode && (
+        {/* Vídeo — pronto (só aparece se Tamo fechado) */}
+        {videoJob?.status === "done" && videoJob.output_video_url && videoMode && !botNavOpen && (
           <div style={{ ...styles.card, padding: 0, overflow: "hidden", animation: "fadeIn 0.5s ease" }}>
             <video
               src={videoJob.output_video_url}
@@ -3573,8 +3591,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Vídeo — erro (só dentro do videoMode) */}
-        {videoJob?.status === "failed" && videoMode && (
+        {/* Vídeo — erro (só aparece se Tamo fechado) */}
+        {videoJob?.status === "failed" && videoMode && !botNavOpen && (
           <div style={styles.card}>
             <div style={styles.bigIcon}>😔</div>
             <h2 style={styles.centerTitle}>Ops, algo deu errado</h2>
@@ -3585,8 +3603,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Erro */}
-        {job?.status === "failed" && (
+        {/* Erro foto (só aparece se Tamo fechado) */}
+        {job?.status === "failed" && !botNavOpen && (
           <div style={styles.card}>
             <div style={styles.bigIcon}>😔</div>
             <h2 style={styles.centerTitle}>Ops, algo deu errado</h2>
@@ -3706,24 +3724,206 @@ export default function HomePage() {
           zIndex: 150,
           background: "#07080b",
           display: "flex", flexDirection: "column",
-          padding: "10px 16px 12px",
-          overflowY: "hidden",
+          overflowY: "auto",
         }}>
-          <button
-            onClick={() => setBotNavOpen(false)}
-            style={{ background: "none", border: "none", color: "#8394b0", fontSize: 14, cursor: "pointer", padding: "0 0 8px", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", fontWeight: 600, flexShrink: 0 }}
-          >
-            ← Voltar
-          </button>
-          <BotChat
-            workState={workState}
-            resultReady={false}
-            botActive={botActive}
-            visible={true}
-            navMode={true}
-            onActivate24h={activateBot}
-            triggerMessage={botTriggerMessage}
-          />
+          <div style={{ padding: "10px 16px 0", flexShrink: 0 }}>
+            <button
+              onClick={() => setBotNavOpen(false)}
+              style={{ background: "none", border: "none", color: "#8394b0", fontSize: 14, cursor: "pointer", padding: "0 0 8px", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", fontWeight: 600 }}
+            >
+              ← Voltar
+            </button>
+          </div>
+
+          {/* Foto — gerando */}
+          {workState === "trabalhando" && !videoMode && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={styles.card} className="generating-wrap">
+                {rateLimitedUntil && countdown > 0 ? (
+                  <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
+                ) : (
+                  <>
+                    <div className="generating-panel">
+                      {pendingResult ? (
+                        <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
+                          <div style={{ fontSize: 13, color: "#16c784", fontWeight: 700, marginBottom: 14 }}>
+                            🎉 Sua foto ficou pronta!
+                          </div>
+                          <button
+                            onClick={() => setPendingResult(false)}
+                            className="result-btn"
+                            style={{ width: "100%", background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)", border: "none", borderRadius: 14, padding: "16px 0", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 24px rgba(139,92,246,0.5)" }}
+                          >
+                            ✨ Ver Resultado
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
+                            <TamoMascot state="processing" size={80} label={lang === "en" ? "Working on it..." : lang === "es" ? "Trabajando en ello..." : "Tô trabalhando..."} />
+                          </div>
+                          <div style={styles.generatingTitle}>
+                            <span style={styles.shimmerText}>Transformando sua foto</span>
+                            <span style={styles.dots}>
+                              <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
+                              <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                              <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+                            </span>
+                          </div>
+                          {!submitting && (
+                            <div style={styles.progressBarBg}>
+                              <div style={{ ...styles.progressBarFill, width: `${displayProgress}%`, background: displayProgress > 80 ? "linear-gradient(90deg, #6366f1, #22c55e)" : "linear-gradient(90deg, #6366f1, #a855f7)" }} />
+                            </div>
+                          )}
+                          <NotifyButton onRequest={requestAndRegisterPush} />
+                          {showCancel && (
+                            <button onClick={async () => {
+                              setCanceling(true);
+                              const token = await getToken();
+                              if (job?.id) await fetch(`/api/image-jobs/${job.id}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+                              setCanceling(false);
+                              resetJob();
+                            }} disabled={canceling} style={styles.cancelBtn}>
+                              {canceling ? "Cancelando..." : "Cancelar"}
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    {!(rateLimitedUntil && countdown > 0) && (
+                      onboardingMode ? <OnboardingChat /> : (
+                        <BotChat workState={workState} resultReady={pendingResult} onViewResult={() => setPendingResult(false)} botActive={botActive} visible={true} onActivate24h={activateBot} embedded={true} />
+                      )
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Foto — resultado */}
+          {workState === "terminado" && job && !videoMode && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={styles.card} className="result-wrap">
+                <div className="result-image-col">
+                  <img src={editedImageUrl ?? job.output_image_url} alt="Foto gerada" style={{ ...styles.resultImg, marginBottom: 0 }} />
+                </div>
+                <div className="result-actions-col">
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                    <TamoMascot state="done" size={64} />
+                    <div>
+                      <h2 style={{ ...styles.centerTitle, textAlign: "left" as const, margin: 0, marginBottom: 2 }}>{t("result_ready")}</h2>
+                      <p style={{ fontSize: 13, color: "#8394b0", margin: 0 }}>Sua foto foi gerada com sucesso</p>
+                    </div>
+                  </div>
+                  <PhotoRating rating={photoRating} hover={ratingHover} feedbackText={feedbackText} sent={feedbackSent} loading={feedbackLoading}
+                    onHover={setRatingHover}
+                    onRate={(r) => { setPhotoRating(r); if (r >= 4) sendPhotoFeedback(r, ""); }}
+                    onFeedbackChange={setFeedbackText}
+                    onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
+                  />
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, marginBottom: 10 }}>
+                    <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>⬇ Baixar</button>
+                    <button onClick={() => { setEditorOpen(true); setBotNavOpen(false); }} style={{ ...styles.editBtn, flex: 1 }}>✏️ Editar</button>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, marginBottom: 10 }}>
+                    {plan === "pro" && (
+                      <button onClick={() => { setVideoMode(true); setBotNavOpen(false); }} style={{ ...styles.videoBtn, flex: 1 }}>🎬 {t("btn_generate_video")}</button>
+                    )}
+                    <button onClick={() => { setPromoOpen(true); setBotNavOpen(false); }} style={{ ...styles.promoBtn, flex: plan === "pro" ? 1 : undefined, width: plan === "pro" ? undefined : "100%" }}>🎨 Criar arte</button>
+                  </div>
+                  <button onClick={resetJob} style={{ ...styles.backBtn, width: "100%", textAlign: "center" as const }}>📷 Nova foto</button>
+                  {plan === "free" && (
+                    <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 14, padding: "12px 14px", marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.6 }}>
+                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos ilimitadas + vídeos animados
+                        <br />
+                        <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
+                          A partir de R$29/mês → Assinar agora
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Foto — erro */}
+          {job?.status === "failed" && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={styles.card}>
+                <div style={styles.bigIcon}>😔</div>
+                <h2 style={styles.centerTitle}>Ops, algo deu errado</h2>
+                <p style={styles.centerDesc}>Pode tentar novamente agora — é gratuito.</p>
+                <button onClick={resetJob} style={styles.submitBtn}>Tentar novamente</button>
+              </div>
+            </div>
+          )}
+
+          {/* Vídeo — gerando */}
+          {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && videoMode && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={styles.card} className="generating-wrap">
+                <div className="generating-panel">
+                  <div style={styles.generatingTitle}>
+                    <span style={styles.shimmerText}>{lang === "en" ? "Creating your video" : "Criando seu vídeo"}</span>
+                    <span style={styles.dots}>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite" }}>.</span>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+                    </span>
+                  </div>
+                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "#8394b0", textAlign: "center" as const }}>
+                    {lang === "en" ? "This takes 1–3 min..." : "Isso leva 1–3 min..."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Vídeo — pronto */}
+          {videoJob?.status === "done" && videoJob.output_video_url && videoMode && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={{ ...styles.card, padding: 0, overflow: "hidden" }}>
+                <video src={videoJob.output_video_url} controls autoPlay loop playsInline style={{ width: "100%", display: "block", maxHeight: "60vh", background: "#000", objectFit: "contain" }} />
+                <div style={{ padding: "16px 16px 20px" }}>
+                  <p style={{ margin: "0 0 14px", fontSize: 15, fontWeight: 700, color: "#eef2f9", textAlign: "center" }}>🎬 Seu vídeo está pronto!</p>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={async () => { try { const res = await fetch(videoJob!.output_video_url!); const blob = await res.blob(); await downloadBlob(blob, "video-ia.mp4"); } catch { window.open(videoJob!.output_video_url!, "_blank"); } }} style={{ flex: 1, background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 14, padding: "14px 0", color: "#fff", fontSize: 15, fontWeight: 700, textAlign: "center", display: "block", cursor: "pointer" }}>⬇ Baixar</button>
+                    <button onClick={resetAll} style={{ flex: 1, background: "#1a2535", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 0", color: "#8394b0", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>📷 Nova foto</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Vídeo — erro */}
+          {videoJob?.status === "failed" && videoMode && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={styles.card}>
+                <div style={styles.bigIcon}>😔</div>
+                <h2 style={styles.centerTitle}>Ops, algo deu errado</h2>
+                <p style={styles.centerDesc}>Pode tentar novamente agora.</p>
+                <button onClick={() => resetVideo()} style={styles.submitBtn}>Tentar novamente</button>
+              </div>
+            </div>
+          )}
+
+          {/* Sem job ativo — chat normal */}
+          {workState === "sem_trabalho" && !videoJob && !narratedJob && !longVideoJob && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 12px", minHeight: 0 }}>
+              <BotChat
+                workState={workState}
+                resultReady={false}
+                botActive={botActive}
+                visible={true}
+                navMode={true}
+                onActivate24h={activateBot}
+                triggerMessage={botTriggerMessage}
+              />
+            </div>
+          )}
         </div>
       )}
 

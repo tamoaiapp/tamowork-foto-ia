@@ -44,9 +44,6 @@ export default function AppHeader({ subtitle, back, onBack, rightExtra }: AppHea
             ←
           </button>
         )}
-        <div style={s.logoIcon}>
-          <img src="/icons/icon-192.png" alt="TamoWork" style={{ width: 34, height: 34, borderRadius: 9, display: "block", objectFit: "cover" }} />
-        </div>
         <div>
           <div style={s.logoText}>TamoWork</div>
           {subtitle && <div style={s.subtitle}>{subtitle}</div>}

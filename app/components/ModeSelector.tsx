@@ -211,7 +211,7 @@ export default function ModeSelector({ onChange }: Props) {
         .mode-card-img-wrap {
           aspect-ratio: 3 / 4;
         }
-        .mode-card-desc { display: none; }
+        .mode-card-desc { display: block; }
         .mode-card-footer { min-height: 56px; }
         .mode-card-footer button { min-height: 40px; }
 
