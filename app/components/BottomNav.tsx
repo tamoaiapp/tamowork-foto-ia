@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 
@@ -115,7 +116,7 @@ export default function BottomNav({ hasActiveJob = false, hasDoneJob = false, bo
     return pathname.startsWith(path);
   };
 
-  return (
+  const nav = (
     <nav style={s.nav} className="bottom-nav">
       <style>{`@keyframes pulseDone { 0%,100%{box-shadow:0 0 0 0 rgba(22,199,132,0.6)} 50%{box-shadow:0 0 0 4px rgba(22,199,132,0)} }`}</style>
       {/* Logo — visível apenas no desktop (sidebar) */}
@@ -157,7 +158,7 @@ export default function BottomNav({ hasActiveJob = false, hasDoneJob = false, bo
       })}
 
       {/* Tamo — sempre visível na nav */}
-      <button onClick={onOpenBot} style={s.tab} className="nav-tab">
+      <button onClick={onOpenBot} style={s.tab} className="nav-tab" aria-label="Abrir Tamo">
         <div style={{ position: "relative", flexShrink: 0, width: 28, height: 28 }}>
           <img
             src="/tamo/idle.png"
@@ -169,6 +170,11 @@ export default function BottomNav({ hasActiveJob = false, hasDoneJob = false, bo
       </button>
     </nav>
   );
+
+  // Portal: renderiza fora do .app-content para evitar bug de stacking context no iOS
+  // (position: fixed dentro de overflow: auto não funciona corretamente no iOS Safari)
+  if (typeof document === "undefined") return nav;
+  return createPortal(nav, document.body);
 }
 
 const s: Record<string, React.CSSProperties> = {

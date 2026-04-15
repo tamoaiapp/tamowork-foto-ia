@@ -20,8 +20,12 @@ export async function POST(req: NextRequest) {
   // BR → mensal R$79 (STRIPE_PRICE_ID_MONTHLY)
   // Não-BR → anual $100 (STRIPE_PRICE_ID_USD)
   const priceId = isMonthly
-    ? (process.env.STRIPE_PRICE_ID_MONTHLY ?? process.env.STRIPE_PRICE_ID_USD!)
-    : process.env.STRIPE_PRICE_ID_USD!;
+    ? process.env.STRIPE_PRICE_ID_MONTHLY
+    : process.env.STRIPE_PRICE_ID_USD;
+
+  if (!priceId) {
+    return NextResponse.json({ error: "Plano não configurado" }, { status: 503 });
+  }
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",

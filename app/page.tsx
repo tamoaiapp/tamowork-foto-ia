@@ -1671,6 +1671,9 @@ export default function HomePage() {
     setShowCancel(false);
     setJob(null);
     setPendingResult(false);
+    setProgressVal(0);
+    setDisplayProgress(0);
+    setBotNavOpen(false);
     setTimeoutError("");
     setFormError("");
     setProduto("");
