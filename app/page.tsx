@@ -1718,7 +1718,6 @@ export default function HomePage() {
       } catch { /* ignora */ }
 
       setIsBonusRetry(false);
-      setJob({ id: jobId, status: "queued" });
       setModeSelected(false);
       router.push("/tamo");
     } catch (err: unknown) {

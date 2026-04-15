@@ -9,7 +9,6 @@ interface Props {
   hasActiveJob?: boolean;
   hasDoneJob?: boolean;       // badge verde em Criações
   botActive?: boolean;
-  onOpenBot?: () => void;
   onCriarWhileBusy?: () => void; // callback quando Criar clicado durante job ativo
 }
 
@@ -83,7 +82,7 @@ function IconBot({ active }: { active: boolean }) {
   );
 }
 
-export default function BottomNav({ hasActiveJob = false, hasDoneJob = false, botActive = false, onOpenBot, onCriarWhileBusy }: Props) {
+export default function BottomNav({ hasActiveJob = false, hasDoneJob = false, botActive = false, onCriarWhileBusy }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useI18n();
