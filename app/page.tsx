@@ -1598,7 +1598,6 @@ export default function HomePage() {
 
       setJob({ id: jobId, status: "queued" });
       setTimeout(() => fetchJobStatus(jobId), 10_000);
-      // Abre Tamo automaticamente após submit
       setModeSelected(false);
       const photoTriggers = [
         `🦎 Estou transformando a foto de *${_produto || "seu produto"}*! Me fala o preço de venda — já preparo a legenda enquanto a foto fica pronta.`,
@@ -1606,7 +1605,6 @@ export default function HomePage() {
         `🔥 Foto de *${_produto || "produto"}* a caminho! Posso criar um texto de venda agora. Qual o preço?`,
       ];
       setBotTriggerMessage(photoTriggers[Math.floor(Math.random() * photoTriggers.length)]);
-      setBotNavOpen(true);
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Erro ao processar");
     } finally {
@@ -1784,7 +1782,6 @@ export default function HomePage() {
         `🎬 Vídeo a caminho! Posso criar hashtags ou uma legenda de venda agora. O que prefere?`,
       ];
       setBotTriggerMessage(videoTriggers[Math.floor(Math.random() * videoTriggers.length)]);
-      setBotNavOpen(true);
     } catch (err) {
       setVideoError(err instanceof Error ? err.message : "Erro");
     } finally {
@@ -1925,7 +1922,6 @@ export default function HomePage() {
         `🎙️ Criando seu vídeo narrado! Posso sugerir hashtags ou ajustar a legenda. O que prefere?`,
       ];
       setBotTriggerMessage(narratedTriggers[Math.floor(Math.random() * narratedTriggers.length)]);
-      setBotNavOpen(true);
       setNarratedDisplayProgress(0);
       setNarratedElapsed(0);
       setTimeout(async () => {
@@ -2002,7 +1998,6 @@ export default function HomePage() {
         setLongVideoMode(true);
         setModeSelected(false);
         setBotTriggerMessage(`🎬 Você já tem um vídeo longo em andamento! Acompanhe aqui. Posso ajudar com legenda enquanto espera.`);
-        setBotNavOpen(true);
         return;
       }
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error((d as { error?: string }).error ?? "Erro"); }
@@ -2016,7 +2011,6 @@ export default function HomePage() {
         `🎬 Gerando seu vídeo longo! Quer hashtags ou legenda de venda enquanto espera?`,
       ];
       setBotTriggerMessage(longTriggers[Math.floor(Math.random() * longTriggers.length)]);
-      setBotNavOpen(true);
       setLongVideoElapsed(0);
       // Poll a cada 30s (o agente roda a cada 5 min, não adianta poll frequente)
       longVideoPollRef.current = setInterval(async () => {
