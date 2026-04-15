@@ -6,13 +6,17 @@
  * Foca no vídeo como aspiração principal de conversão.
  */
 
+import { useEffect } from "react";
+
 interface Props {
   photoUrl: string;
   onAssinar: () => void;
   onCriar2aFoto: () => void;
+  onMount?: () => void;
 }
 
-export default function VideoHookScreen({ photoUrl, onAssinar, onCriar2aFoto }: Props) {
+export default function VideoHookScreen({ photoUrl, onAssinar, onCriar2aFoto, onMount }: Props) {
+  useEffect(() => { onMount?.(); }, []);
   const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
   return (
     <div style={s.overlay}>

@@ -1070,8 +1070,11 @@ export default function HomePage() {
 
   // Funil onboarding: quando foto fica pronta, mostra tela de conversão
   useEffect(() => {
-    if (onboardingMode && job?.status === "done" && job.output_image_url) {
+    if (!onboardingMode) return;
+    if (job?.status === "done" && job.output_image_url) {
       setShowConversion(true);
+    } else if (job?.status === "failed" || job?.status === "canceled") {
+      setOnboardingMode(false); // reseta se falhou — evita estado preso
     }
   }, [onboardingMode, job?.status, job?.output_image_url]);
 
@@ -3765,6 +3768,7 @@ export default function HomePage() {
       {showConversion && job?.output_image_url && (
         <ConversionScreen
           photoUrl={editedImageUrl ?? job.output_image_url}
+          onMount={() => { if (abVariant) trackABEvent("conversion_screen", abVariant); }}
           onAssinar={() => {
             setShowConversion(false);
             setOnboardingMode(false);
@@ -3781,6 +3785,7 @@ export default function HomePage() {
       {showVideoHook && job?.output_image_url && (
         <VideoHookScreen
           photoUrl={editedImageUrl ?? job.output_image_url}
+          onMount={() => { if (abVariant) trackABEvent("video_hook", abVariant); }}
           onAssinar={() => {
             setShowVideoHook(false);
             if (abVariant) trackABEvent("cta_clicked", abVariant);

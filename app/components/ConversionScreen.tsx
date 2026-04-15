@@ -1,13 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
+
 interface Props {
   photoUrl: string;
   onAssinar: () => void;
   onContinuar: () => void;
+  onMount?: () => void;
 }
 
-export default function ConversionScreen({ photoUrl, onAssinar, onContinuar }: Props) {
+export default function ConversionScreen({ photoUrl, onAssinar, onContinuar, onMount }: Props) {
   const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
+
+  useEffect(() => { onMount?.(); }, []);
 
   return (
     <div style={s.overlay}>
