@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildPromptResult } from "@/lib/promptuso/infer";
+import { generatePromptWithOllama } from "@/lib/promptuso/ollamaPrompt";
 
 /**
  * Traduz texto para inglês via MyMemory (gratuito, sem API key).
@@ -70,9 +71,25 @@ export async function POST(req: NextRequest) {
     ]);
 
     const visionDesc = visionDescRaw ? String(visionDescRaw).trim() : undefined;
+
+    // Tenta gerar via Ollama (qwen2.5:7b local no A40) — se falhar usa regras
+    const ollamaResult = await generatePromptWithOllama(produtoEN, cenarioEN, visionDesc);
+
+    if (ollamaResult) {
+      console.log("[prompt] gerado via Ollama qwen2.5:7b");
+      return NextResponse.json({
+        ok: true,
+        positive: ollamaResult.positive_prompt,
+        negative: ollamaResult.negative_prompt,
+        source: "ollama",
+      });
+    }
+
+    // Fallback: regras determinísticas locais
+    console.log("[prompt] fallback para regras locais (Ollama offline)");
     const result = buildPromptResult(produtoEN, cenarioEN, visionDesc);
 
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({ ok: true, ...result, source: "rules" });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: String((e as Error)?.message ?? e) },
