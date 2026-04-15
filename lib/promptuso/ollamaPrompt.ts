@@ -9,7 +9,7 @@
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const PROMPT_MODEL = process.env.OLLAMA_PROMPT_MODEL ?? "qwen2.5:7b";
-const TIMEOUT_MS = 30_000;
+const TIMEOUT_MS = 50_000;
 
 const SYSTEM_PROMPT = `You are a professional prompt engineer specialized in generating prompts for Qwen Image/Video models.
 

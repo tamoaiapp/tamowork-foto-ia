@@ -809,8 +809,10 @@ export default function HomePage() {
         }
 
         // Gatilho return_visit: já criou fotos antes mas não tem push ativo
+        // Não mostrar enquanto há job ativo para não interromper o fluxo
         const hasDoneJobs = jobs.some((j) => j.status === "done");
-        if (hasDoneJobs && typeof Notification !== "undefined" && Notification.permission === "default") {
+        const hasActiveJob = jobs.some((j) => ["queued","submitted","processing"].includes(j.status ?? ""));
+        if (hasDoneJobs && !hasActiveJob && typeof Notification !== "undefined" && Notification.permission === "default") {
           setTimeout(() => setPushTrigger("return_visit"), 5000);
         }
       }
@@ -1618,6 +1620,7 @@ export default function HomePage() {
     setModelPreview(null);
     setModeSelected(false); // volta para o menu
     setEditExpanded(false);
+    setEditedImageUrl(null); // limpa imagem editada para não vazar na próxima criação
     // Reseta rating
     setPhotoRating(null);
     setRatingHover(0);
@@ -3628,7 +3631,7 @@ export default function HomePage() {
         />
       )}
 
-      <PushConversionAgent
+      {workState !== "trabalhando" && <PushConversionAgent
         trigger={pushTrigger}
         onRequest={async () => {
           await requestAndRegisterPush();
@@ -3638,7 +3641,7 @@ export default function HomePage() {
           syncPushStatus("skipped");
           setPushTrigger(null);
         }}
-      />
+      />}
 
       {showConversion && job?.output_image_url && (
         <ConversionScreen
