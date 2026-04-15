@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { pickVideoComfyBase, uploadImageToVideoComfy, submitVideoWorkflow, buildVideoWorkflow, calcVideoScaleFactor } from "@/lib/comfyui/video-client";
+import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
 import { submitRunpodJob, RUNPOD_VIDEO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { ensureVideoPodRunning } from "@/lib/runpod/pods";
 
@@ -41,7 +42,7 @@ export async function submitVideoJob(jobId: string) {
     }
 
     const imageName = await uploadImageToVideoComfy(job.input_image_url, comfyBase, jobId);
-    const promptId = await submitVideoWorkflow(jobId, imageName, job.prompt ?? "", comfyBase, 6, 16, job.prompt_neg ?? undefined, job.input_image_url);
+    const promptId = await submitVideoWorkflow(jobId, imageName, job.prompt ?? "", comfyBase, 6, 16, job.prompt_neg ?? undefined, job.input_image_url, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
     externalJobId = `${comfyIndex}:${promptId}`;
     provider = "comfyui-direct";
   }

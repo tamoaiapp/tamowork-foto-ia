@@ -18,7 +18,8 @@ export class RateLimitError extends Error {
 export async function createImageJob(
   userId: string,
   prompt: string,
-  inputImageUrl: string
+  inputImageUrl: string,
+  format = "story",
 ) {
   const supabase = createServerClient();
 
@@ -69,6 +70,7 @@ export async function createImageJob(
       user_id: userId,
       prompt,
       input_image_url: inputImageUrl,
+      format,
       status: "queued",
     })
     .select()

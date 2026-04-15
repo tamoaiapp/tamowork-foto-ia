@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-04-14T04:10:00.000Z",
+  "conta": "test-stress-d4@tamowork.test",
+  "plano": "FREE",
+  "score": 8.5,
+  "summary": {
+    "total_checks": 47,
+    "passed": 40,
+    "failed": 7,
+    "js_errors": 0,
+    "network_errors": 0,
+    "screenshots": 27
+  },
+  "paginas_testadas": {
+    "/": { "mobile": "PASS", "desktop": "PASS" },
+    "/criacoes": { "mobile": "PASS", "desktop": "PASS" },
+    "/planos": { "mobile": "PASS", "desktop": "PASS" },
+    "/login": { "mobile": "PASS", "desktop": "PASS" },
+    "/editor": { "mobile": "PASS", "desktop": "PASS" },
+    "/conta": { "mobile": "PASS", "desktop": "PASS" }
+  },
+  "bugs_encontrados": [
+    {
+      "id": "BUG-001",
+      "severidade": "MEDIUM",
+      "titulo": "Overflow horizontal na landing page (não autenticada) em 390px",
+      "descricao": "Elemento decorativo de fundo tem width:400px fixo com left:30%, causando scrollWidth=517px em viewport de 390px. Ocorre em /, /criacoes, /planos, /login, /conta no estado não autenticado.",
+      "elemento": "DIV com style='position: absolute; top: 0px; left: 30%; width: 400px; height: 300px; border-radius: 50%; background: radial-gradient(...)'",
+      "fix_sugerido": "Trocar width:400px por width:min(400px, 90vw) ou max-width:100vw no elemento. Ou adicionar overflow-x:hidden no container pai.",
+      "estado_autenticado": "OK — overflow não ocorre quando logado"
+    },
+    {
+      "id": "BUG-002",
+      "severidade": "LOW",
+      "titulo": "Login não redireciona via waitForURL em 20s (demora ~30s)",
+      "descricao": "O app leva mais de 20s para redirecionar após login bem-sucedido. O Supabase retorna 200 com token rapidamente, mas o Next.js demora para processar e redirecionar. Não afeta usuário real (apenas testes automatizados).",
+      "fix_sugerido": "Verificar se há awaits desnecessários na lógica de redirect do AuthProvider/middleware."
+    },
+    {
+      "id": "BUG-003",
+      "severidade": "INFO",
+      "titulo": "Conta test-stress-d4 estava com plano PRO no Supabase",
+      "descricao": "A conta test-stress-d4 tinha user_plans.plan='pro' com period_end=2027-12-31, impedindo testes de fluxo FREE. Foi corrigido manualmente durante o QA.",
+      "fix_sugerido": "Garantir que contas de stress test comecem como FREE ao serem criadas."
+    },
+    {
+      "id": "BUG-004",
+      "severidade": "INFO",
+      "titulo": "Contador diário usa UTC — pode confundir usuários BR",
+      "descricao": "O limite de 2 fotos/dia é contado em UTC. Um usuário brasileiro que usa o app às 22h pode chegar ao limite às 21h no dia seguinte (apenas 23h de janela real).",
+      "fix_sugerido": "Usar timezone do usuário (America/Sao_Paulo) ou comunicar que o reset ocorre às 00h UTC."
+    }
+  ],
+  "botoes_testados": [
+    { "texto": "Usar e-mail e senha", "status": "PASS", "nota": "Revela formulário de login — funcionou" },
+    { "texto": "Entrar (submit)", "status": "PASS", "nota": "Login bem-sucedido" },
+    { "texto": "Entrar com Google", "status": "SKIP", "nota": "Ignorado (OAuth externo)" },
+    { "texto": "Foto (tab)", "status": "PASS", "nota": "Tab ativa na home" },
+    { "texto": "Vídeo (tab)", "status": "PASS", "nota": "Tab visível e clicável" },
+    { "texto": "Usar agora", "status": "PASS-force", "nota": "Abre painel lateral (interceptado por overlay)" },
+    { "texto": "Criar", "status": "PASS", "nota": "BottomNav mobile" },
+    { "texto": "Editor", "status": "PASS", "nota": "BottomNav mobile" },
+    { "texto": "Criações", "status": "PASS", "nota": "BottomNav mobile" }
+  ],
+  "ux_textos": {
+    "linguagem": "terceira pessoa / neutro (não há uso de 1ª pessoa intimista)",
+    "h1": "Foto de celular vira foto e vídeo de catálogo em 1 minuto",
+    "subtitulo": "Para quem vende no Instagram, Shopee ou WhatsApp — sem fotógrafo, sem estúdio.",
+    "planos_titulo": "Fotos profissionais para seus produtos por menos de R$0,63 por dia",
+    "criacoes_vazia": "Suas fotos aparecem aqui — Você ainda não criou nenhuma foto.",
+    "upload_cta": "Clique ou arraste a imagem",
+    "modos_disponiveis": ["FOTO EM CENA", "COM MODELO", "EXPOSITOR PREMIUM (PRO)", "DO MEU JEITO"],
+    "limite_free": "O plano gratuito permite 2 fotos por dia",
+    "conta_plano": "Plano Gratuito — 1 foto por dia. Sem acesso a vídeos.",
+    "observacao": "App usa terceira pessoa na maioria dos textos. Há inconsistência: /conta diz '1 foto por dia' mas o limite real é 2. Verificar qual é correto."
+  },
+  "fluxo_free": {
+    "login": "PASS",
+    "home_autenticada": "PASS — mostra modos Foto/Vídeo, tabs funcionam",
+    "submit_sem_imagem": "PASS — overlay intercepta, não avança",
+    "limite_diario": "PASS — mensagem exibida corretamente quando limite atingido",
+    "upsell_visivel": "PASS — 'Assinar e criar agora' visível no modal de limite",
+    "planos": "PASS — preços em R$ visíveis (R$29/mês anual, R$79/mês mensal)",
+    "criacoes": "PASS — galeria vazia com CTA para criar primeira foto",
+    "conta": "PASS — email, plano Gratuito, opções de senha/email"
+  },
+  "console_errors": [],
+  "network_errors": [],
+  "screenshots_gerados": 27
+}

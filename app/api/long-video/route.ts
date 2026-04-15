@@ -30,12 +30,13 @@ export async function POST(req: NextRequest) {
   const plan = await getUserPlan(user.id);
   if (plan !== "pro") return NextResponse.json({ error: "pro_required" }, { status: 403 });
 
-  let body: { input_image_url?: string; produto?: string };
+  let body: { input_image_url?: string; produto?: string; format?: string };
   try { body = await req.json(); } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
   const { input_image_url, produto } = body;
+  const validFormat = ["story","square","portrait","horizontal"].includes(body.format ?? "") ? body.format : "story";
   if (!input_image_url) return NextResponse.json({ error: "input_image_url obrigatório" }, { status: 400 });
   if (!produto?.trim()) return NextResponse.json({ error: "produto obrigatório" }, { status: 400 });
 
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       input_image_url,
       produto: produto.trim(),
+      format: validFormat,
       status: "queued",
     })
     .select("id, status")

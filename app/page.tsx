@@ -253,6 +253,56 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
 
 const RATED_KEY = "tw_has_rated";
 
+// ── Seletor de formato de saída ────────────────────────────────────────────────
+const FORMAT_OPTIONS = [
+  { id: "story",      label: "Story",      ratio: "9:16", icon: "📱" },
+  { id: "square",     label: "Quadrado",   ratio: "1:1",  icon: "⬜" },
+  { id: "portrait",   label: "Retrato",    ratio: "4:5",  icon: "🖼" },
+  { id: "horizontal", label: "Wide",       ratio: "16:9", icon: "🖥" },
+] as const;
+
+function FormatSelector({ value, onChange }: { value: string; onChange: (v: "story"|"square"|"portrait"|"horizontal") => void }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 11, color: "#4e5c72", fontWeight: 600, marginBottom: 8, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+        Formato de saída
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
+        {FORMAT_OPTIONS.map((f) => {
+          const active = value === f.id;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => onChange(f.id)}
+              style={{
+                flex: "1 1 auto",
+                minWidth: 70,
+                background: active ? "linear-gradient(135deg,#6366f1,#a855f7)" : "#1a2535",
+                border: active ? "none" : "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 10,
+                padding: "8px 6px",
+                color: active ? "#fff" : "#8394b0",
+                fontSize: 12,
+                fontWeight: active ? 700 : 500,
+                cursor: "pointer",
+                textAlign: "center" as const,
+                fontFamily: "Outfit, sans-serif",
+                transition: "all 0.15s",
+                lineHeight: 1.3,
+              }}
+            >
+              <div style={{ fontSize: 15, marginBottom: 2 }}>{f.icon}</div>
+              <div>{f.label}</div>
+              <div style={{ fontSize: 10, opacity: 0.7 }}>{f.ratio}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function PhotoRating({
   rating, hover, feedbackText, sent, loading,
   onHover, onRate, onFeedbackChange, onSubmit,
@@ -632,6 +682,9 @@ export default function HomePage() {
   const [editExpanded, setEditExpanded] = useState(false);
   const [editFreePopup, setEditFreePopup] = useState(false);
   const [removingResultBg, setRemovingResultBg] = useState(false);
+
+  // Formato de saída — compartilhado por todos os tipos de criação
+  const [photoFormat, setPhotoFormat] = useState<"story"|"square"|"portrait"|"horizontal">("story");
 
   // Video state
   const [videoMode, setVideoMode] = useState(false);
@@ -1542,7 +1595,7 @@ export default function HomePage() {
       const jobRes = await fetch("/api/image-jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt, input_image_url: imageUrl, mode: _mode }),
+        body: JSON.stringify({ prompt, input_image_url: imageUrl, mode: _mode, format: photoFormat }),
       });
 
       if (jobRes.status === 429) {
@@ -1735,7 +1788,7 @@ export default function HomePage() {
       const res = await fetch("/api/video-jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt: videoPrompt, input_image_url: imageUrl }),
+        body: JSON.stringify({ prompt: videoPrompt, input_image_url: imageUrl, format: photoFormat }),
       });
       if (res.status === 403) { setVideoError("Disponível apenas no plano Pro."); return; }
       if (res.status === 503) { setVideoError("queue_busy"); return; }
@@ -1873,6 +1926,7 @@ export default function HomePage() {
           voice: narratedVoice,
           scene_source: narratedSceneSource,
           scene_urls: narratedSceneSource === "existing" ? narratedSelectedScenes : undefined,
+          format: photoFormat,
         }),
       });
       if (res.status === 403) { setNarratedError("Disponível apenas no plano Pro."); return; }
@@ -1957,7 +2011,7 @@ export default function HomePage() {
       const res = await fetch("/api/long-video", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
-        body: JSON.stringify({ input_image_url: imageUrl, produto: produtoName }),
+        body: JSON.stringify({ input_image_url: imageUrl, produto: produtoName, format: photoFormat }),
       });
       if (res.status === 403) { setLongVideoError("Disponível apenas no plano Pro."); return; }
       if (res.status === 409) {
@@ -2445,6 +2499,8 @@ export default function HomePage() {
 
                   {longVideoError && <div style={styles.error}>{longVideoError}</div>}
 
+                  <FormatSelector value={photoFormat} onChange={setPhotoFormat} />
+
                   <button
                     type="button"
                     disabled={longVideoSubmitting || !imageFile || !produto.trim() || plan !== "pro"}
@@ -2714,6 +2770,8 @@ export default function HomePage() {
 
                       {narratedError && <div style={styles.error}>{narratedError}</div>}
 
+                      <FormatSelector value={photoFormat} onChange={setPhotoFormat} />
+
                       {plan !== "pro" ? (
                         <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>
                           ⚡ Assinar para criar vídeos
@@ -2775,6 +2833,8 @@ export default function HomePage() {
                         : videoError}
                     </div>
                   )}
+
+                  <FormatSelector value={photoFormat} onChange={setPhotoFormat} />
 
                   {plan !== "pro" ? (
                     <button
@@ -2924,6 +2984,8 @@ export default function HomePage() {
 
               {timeoutError && <div style={{ ...styles.error, borderColor: "rgba(251,191,36,0.4)", background: "rgba(251,191,36,0.08)", color: "#fbbf24" }}>{timeoutError}</div>}
               {formError && <div style={styles.error}>{formError}</div>}
+
+              <FormatSelector value={photoFormat} onChange={setPhotoFormat} />
 
               {isPhotoJobActive ? (
                 <div

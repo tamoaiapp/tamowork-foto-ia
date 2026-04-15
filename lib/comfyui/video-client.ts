@@ -1,4 +1,21 @@
 import videoTemplate from "./video-template.json";
+import { type PhotoFormat, VIDEO_DIMS, DEFAULT_FORMAT } from "@/lib/formats";
+
+/** Troca ImageScaleBy (relativo) por ImageScale (absoluto) com as dimensões do formato */
+function applyFormatToVideoWorkflow(workflow: Record<string, unknown>, format: PhotoFormat) {
+  const { w, h } = VIDEO_DIMS[format];
+  (workflow["100"] as { class_type: string; inputs: Record<string, unknown> }).class_type = "ImageScale";
+  const node100 = workflow["100"] as { inputs: Record<string, unknown> };
+  delete node100.inputs.scale_by;
+  delete node100.inputs.upscale_method;
+  node100.inputs = {
+    image: ["52", 0],
+    width: w,
+    height: h,
+    upscale_method: "lanczos",
+    crop: "center",
+  };
+}
 
 export const VIDEO_COMFY_BASES = (process.env.VIDEO_COMFY_BASES ?? "")
   .split(",")
@@ -72,7 +89,8 @@ export function buildVideoWorkflow(
   durationSec = 6,
   fps = 16,
   promptNeg?: string,
-  scaleFactor = 0.5
+  scaleFactor = 0.5,
+  format: PhotoFormat = DEFAULT_FORMAT,
 ): Record<string, unknown> {
   const workflow = JSON.parse(JSON.stringify(videoTemplate)) as Record<string, unknown>;
   const seed = Math.floor(Math.random() * 999_999_999);
@@ -85,8 +103,9 @@ export function buildVideoWorkflow(
   (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["57"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed;
   (workflow["58"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed + 1;
-  // Limita resolução: scale_by calculado para não passar de MAX_VIDEO_PX
+  // Fallback: mantém scale_by para compatibilidade com serverless; direto usa applyFormat
   (workflow["100"] as { inputs: { scale_by: number } }).inputs.scale_by = scaleFactor;
+  applyFormatToVideoWorkflow(workflow, format);
   return workflow;
 }
 
@@ -99,11 +118,9 @@ export async function submitVideoWorkflow(
   durationSec = 6,
   fps = 16,
   promptNeg?: string,
-  imageUrl?: string
+  imageUrl?: string,
+  format: PhotoFormat = DEFAULT_FORMAT,
 ): Promise<string> {
-  // Calcula scale_by dinâmico para limitar o lado maior a MAX_VIDEO_PX (512px)
-  const scaleFactor = imageUrl ? await calcVideoScaleFactor(imageUrl) : 0.5;
-
   const workflow = JSON.parse(JSON.stringify(videoTemplate)) as Record<string, unknown>;
   const seed = Math.floor(Math.random() * 999_999_999);
   const frames = Math.max(1, Math.floor(durationSec * fps));
@@ -116,7 +133,7 @@ export async function submitVideoWorkflow(
   (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["57"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed;
   (workflow["58"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed + 1;
-  (workflow["100"] as { inputs: { scale_by: number } }).inputs.scale_by = scaleFactor;
+  applyFormatToVideoWorkflow(workflow, format);
 
   const res = await fetch(`${comfyBase}/prompt`, {
     method: "POST",

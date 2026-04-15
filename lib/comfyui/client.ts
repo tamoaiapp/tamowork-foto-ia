@@ -5,6 +5,26 @@
 // 4. getComfyHistory → ComfyUI /history/{prompt_id} → outputUrl
 
 import templateJson from "./prompt_template.json";
+import { type PhotoFormat, PHOTO_DIMS, DEFAULT_FORMAT } from "@/lib/formats";
+
+/** Injeta nó ImageScale (168) antes do FluxKontextImageScale (160) para forçar as dimensões do formato */
+function applyFormatToFotoWorkflow(workflow: Record<string, unknown>, format: PhotoFormat) {
+  const { w, h } = PHOTO_DIMS[format];
+  // Adiciona nó de resize antes do FluxKontextImageScale
+  (workflow as Record<string, unknown>)["168"] = {
+    class_type: "ImageScale",
+    inputs: {
+      image: ["11", 0],
+      width: w,
+      height: h,
+      upscale_method: "lanczos",
+      crop: "center",
+    },
+    _meta: { title: `Format: ${format} ${w}x${h}` },
+  };
+  // FluxKontextImageScale passa a ler do resize em vez do LoadImage direto
+  (workflow["160"] as { inputs: { image: unknown } }).inputs.image = ["168", 0];
+}
 
 const PROMPTUSO_URL =
   process.env.COMFYUI_RUN_URL ||
@@ -135,7 +155,8 @@ export function buildFotoWorkflow(
   jobId: string,
   imageName: string,
   promptPos: string,
-  promptNeg: string
+  promptNeg: string,
+  format: PhotoFormat = DEFAULT_FORMAT,
 ): Record<string, unknown> {
   const workflow = JSON.parse(JSON.stringify(templateJson)) as Record<string, unknown>;
   (workflow["11"] as { inputs: { image: string } }).inputs.image = imageName;
@@ -143,6 +164,7 @@ export function buildFotoWorkflow(
   (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = mergeNegative(promptNeg);
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
+  applyFormatToFotoWorkflow(workflow, format);
   return workflow;
 }
 
@@ -152,7 +174,8 @@ export async function submitWorkflow(
   imageName: string,
   promptPos: string,
   promptNeg: string,
-  comfyBase: string
+  comfyBase: string,
+  format: PhotoFormat = DEFAULT_FORMAT,
 ): Promise<string> {
   // Deep clone do template
   const workflow = JSON.parse(JSON.stringify(templateJson)) as Record<string, unknown>;
@@ -163,6 +186,7 @@ export async function submitWorkflow(
   (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = mergeNegative(promptNeg);
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
+  applyFormatToFotoWorkflow(workflow, format);
 
   const res = await fetch(`${comfyBase}/prompt`, {
     method: "POST",

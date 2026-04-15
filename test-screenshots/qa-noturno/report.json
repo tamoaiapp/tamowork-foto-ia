@@ -1,0 +1,397 @@
+{
+  "timestamp": "2026-04-14T04:01:17.243Z",
+  "pageResults": [
+    {
+      "page": "/",
+      "viewport": "mobile",
+      "checks": [
+        {
+          "label": "/ carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/ sem overflow horizontal",
+          "status": "FAIL",
+          "detail": "scrollWidth=517"
+        },
+        {
+          "label": "/ scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/criacoes",
+      "viewport": "mobile",
+      "checks": [
+        {
+          "label": "/criacoes carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/criacoes sem overflow horizontal",
+          "status": "FAIL",
+          "detail": "scrollWidth=517"
+        },
+        {
+          "label": "/criacoes scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/planos",
+      "viewport": "mobile",
+      "checks": [
+        {
+          "label": "/planos carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/planos sem overflow horizontal",
+          "status": "FAIL",
+          "detail": "scrollWidth=517"
+        },
+        {
+          "label": "/planos scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/login",
+      "viewport": "mobile",
+      "checks": [
+        {
+          "label": "/login carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/login sem overflow horizontal",
+          "status": "FAIL",
+          "detail": "scrollWidth=517"
+        },
+        {
+          "label": "/login scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/editor",
+      "viewport": "mobile",
+      "checks": [
+        {
+          "label": "/editor carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/editor sem overflow horizontal",
+          "status": "PASS"
+        },
+        {
+          "label": "/editor scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/conta",
+      "viewport": "mobile",
+      "checks": [
+        {
+          "label": "/conta carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/conta sem overflow horizontal",
+          "status": "FAIL",
+          "detail": "scrollWidth=517"
+        },
+        {
+          "label": "/conta scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/",
+      "viewport": "desktop",
+      "checks": [
+        {
+          "label": "/ carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/ sem overflow horizontal",
+          "status": "PASS"
+        },
+        {
+          "label": "/ scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/criacoes",
+      "viewport": "desktop",
+      "checks": [
+        {
+          "label": "/criacoes carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/criacoes sem overflow horizontal",
+          "status": "PASS"
+        },
+        {
+          "label": "/criacoes scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/planos",
+      "viewport": "desktop",
+      "checks": [
+        {
+          "label": "/planos carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/planos sem overflow horizontal",
+          "status": "PASS"
+        },
+        {
+          "label": "/planos scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/login",
+      "viewport": "desktop",
+      "checks": [
+        {
+          "label": "/login carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/login sem overflow horizontal",
+          "status": "PASS"
+        },
+        {
+          "label": "/login scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/editor",
+      "viewport": "desktop",
+      "checks": [
+        {
+          "label": "/editor carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/editor sem overflow horizontal",
+          "status": "PASS"
+        },
+        {
+          "label": "/editor scroll ok",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "page": "/conta",
+      "viewport": "desktop",
+      "checks": [
+        {
+          "label": "/conta carregou",
+          "status": "PASS"
+        },
+        {
+          "label": "/conta sem overflow horizontal",
+          "status": "PASS"
+        },
+        {
+          "label": "/conta scroll ok",
+          "status": "PASS"
+        }
+      ]
+    }
+  ],
+  "jsErrors": [],
+  "networkErrors": [],
+  "buttons": [
+    {
+      "text": "🇧🇷 PT",
+      "enabled": true
+    },
+    {
+      "text": "Sign in with Google",
+      "enabled": true
+    },
+    {
+      "text": "Use email & password",
+      "enabled": true
+    }
+  ],
+  "uxTexts": [
+    {
+      "page": "/",
+      "selector": "button",
+      "text": "🇧🇷 PT",
+      "pessoa": "?"
+    },
+    {
+      "page": "/",
+      "selector": "button",
+      "text": "Entrar com Google",
+      "pessoa": "?"
+    },
+    {
+      "page": "/",
+      "selector": "button",
+      "text": "Usar e-mail e senha",
+      "pessoa": "?"
+    },
+    {
+      "page": "/",
+      "selector": "h1",
+      "text": "Foto de celular vira foto e vídeo de catálogo em 1 minuto",
+      "pessoa": "?"
+    },
+    {
+      "page": "/",
+      "selector": "p",
+      "text": "Para quem vende no Instagram, Shopee ou WhatsApp — sem fotógrafo, sem estúdio.",
+      "pessoa": "?"
+    },
+    {
+      "page": "/",
+      "selector": "p",
+      "text": "Ao entrar você concorda com nossos termos de uso.",
+      "pessoa": "?"
+    },
+    {
+      "page": "/planos",
+      "selector": "button",
+      "text": "🇧🇷 PT",
+      "pessoa": "?"
+    },
+    {
+      "page": "/planos",
+      "selector": "button",
+      "text": "Entrar com Google",
+      "pessoa": "?"
+    },
+    {
+      "page": "/planos",
+      "selector": "button",
+      "text": "Usar e-mail e senha",
+      "pessoa": "?"
+    },
+    {
+      "page": "/planos",
+      "selector": "h1",
+      "text": "Foto de celular vira foto e vídeo de catálogo em 1 minuto",
+      "pessoa": "?"
+    },
+    {
+      "page": "/planos",
+      "selector": "p",
+      "text": "Para quem vende no Instagram, Shopee ou WhatsApp — sem fotógrafo, sem estúdio.",
+      "pessoa": "?"
+    },
+    {
+      "page": "/planos",
+      "selector": "p",
+      "text": "Ao entrar você concorda com nossos termos de uso.",
+      "pessoa": "?"
+    },
+    {
+      "page": "/conta",
+      "selector": "button",
+      "text": "🇧🇷 PT",
+      "pessoa": "?"
+    },
+    {
+      "page": "/conta",
+      "selector": "button",
+      "text": "Entrar com Google",
+      "pessoa": "?"
+    },
+    {
+      "page": "/conta",
+      "selector": "button",
+      "text": "Usar e-mail e senha",
+      "pessoa": "?"
+    },
+    {
+      "page": "/conta",
+      "selector": "h1",
+      "text": "Foto de celular vira foto e vídeo de catálogo em 1 minuto",
+      "pessoa": "?"
+    },
+    {
+      "page": "/conta",
+      "selector": "p",
+      "text": "Para quem vende no Instagram, Shopee ou WhatsApp — sem fotógrafo, sem estúdio.",
+      "pessoa": "?"
+    },
+    {
+      "page": "/conta",
+      "selector": "p",
+      "text": "Ao entrar você concorda com nossos termos de uso.",
+      "pessoa": "?"
+    }
+  ],
+  "freeFlow": [
+    {
+      "label": "Login mantido pela sessão",
+      "status": "FAIL",
+      "detail": "https://tamowork.com/login"
+    },
+    {
+      "label": "Botão de gerar encontrado",
+      "status": "FAIL",
+      "detail": "botão não localizado"
+    },
+    {
+      "label": "Texto de limite FREE visível",
+      "status": "FAIL",
+      "detail": "não encontrado no body"
+    },
+    {
+      "label": "Botão de upgrade/planos visível",
+      "status": "FAIL",
+      "detail": ""
+    },
+    {
+      "label": "/planos exibe preços",
+      "status": "FAIL",
+      "detail": "sem R$, USD, mensal/anual"
+    },
+    {
+      "label": "/criacoes carregou conteúdo",
+      "status": "PASS"
+    },
+    {
+      "label": "/conta exibe dados do usuário",
+      "status": "FAIL",
+      "detail": ""
+    }
+  ],
+  "score": 7.4,
+  "summary": {
+    "total": 43,
+    "passed": 32,
+    "failed": 11,
+    "jsErrorCount": 0,
+    "networkErrorCount": 0,
+    "uxTextsFound": 18
+  }
+}

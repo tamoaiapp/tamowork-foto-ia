@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  let { prompt, input_image_url } = await req.json();
+  let { prompt, input_image_url, format } = await req.json();
   if (!input_image_url) return NextResponse.json({ error: "input_image_url obrigatório" }, { status: 400 });
 
   // Sanitiza URL: remove protocolo duplo malformado (ex: "https://htpps::https://..." → "https://...")
@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const job = await createVideoJob(user.id, prompt ?? "", input_image_url);
+    const validFormat = ["story","square","portrait","horizontal"].includes(format) ? format : "story";
+    const job = await createVideoJob(user.id, prompt ?? "", input_image_url, validFormat);
     return NextResponse.json({ jobId: job.id, status: job.status }, { status: 201 });
   } catch (err) {
     if (err instanceof ProRequiredError) {

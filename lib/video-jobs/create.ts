@@ -11,7 +11,8 @@ export class ProRequiredError extends Error {
 export async function createVideoJob(
   userId: string,
   prompt: string,
-  inputImageUrl: string
+  inputImageUrl: string,
+  format = "story",
 ) {
   const plan = await getUserPlan(userId);
   if (plan !== "pro") throw new ProRequiredError();
@@ -23,6 +24,7 @@ export async function createVideoJob(
       user_id: userId,
       prompt,
       input_image_url: inputImageUrl,
+      format,
       status: "queued",
     })
     .select()

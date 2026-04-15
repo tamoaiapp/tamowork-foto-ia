@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "pro_required" }, { status: 403 });
   }
 
-  let body: { input_image_url?: string; roteiro?: string; voice?: string; scene_source?: string; scene_urls?: string[] };
+  let body: { input_image_url?: string; roteiro?: string; voice?: string; scene_source?: string; scene_urls?: string[]; format?: string };
   try {
     body = await req.json();
   } catch {
@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
 
   const validVoice = voice === "masculino" ? "masculino" : "feminino";
 
+  const validFormat = ["story","square","portrait","horizontal"].includes(body.format ?? "") ? body.format : "story";
+
   const { data: job, error: insertErr } = await supabase
     .from("narrated_video_jobs")
     .insert({
@@ -62,6 +64,7 @@ export async function POST(req: NextRequest) {
       voice: validVoice,
       scene_source: validSceneSource,
       scene_urls: validSceneSource === "existing" ? scene_urls : null,
+      format: validFormat,
       status: "queued",
     })
     .select("id, status")

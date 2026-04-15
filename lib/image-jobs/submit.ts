@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
+import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
 import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/serverProductVision";
 import { detectDisplayCategory, buildDisplayPrompt } from "@/lib/promptuso/displayPrompt";
 
@@ -164,7 +165,7 @@ export async function submitImageJob(jobId: string) {
     const negativeEnhanced = `${negative} ${PROFESSIONAL_NEGATIVE_SUFFIX}`.trim();
 
     console.log(`[submit] job ${jobId} — produto_exposto categoria="${category}" produto="${enrichedProduto}"`);
-    promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase);
+    promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
   } else {
     const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined);
 
@@ -172,7 +173,7 @@ export async function submitImageJob(jobId: string) {
     const positiveEnhanced = `${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();
     const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${promptResult.negative}`.trim();
 
-    promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase);
+    promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
   }
 
   const externalJobId = `${comfyIndex}:${promptId}`;

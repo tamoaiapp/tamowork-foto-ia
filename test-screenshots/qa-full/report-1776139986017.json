@@ -1,0 +1,1905 @@
+{
+  "timestamp": "2026-04-14T04:13:06.017Z",
+  "score": 97,
+  "pass": 305,
+  "fail": 11,
+  "total": 316,
+  "results": [
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Linguagem de 1ª pessoa presente (PT)",
+      "ok": false,
+      "detail": "texto sem 'Manda'"
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Sem 'A IA' em 3ª pessoa (PT)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Linguagem de 1ª pessoa presente (PT)",
+      "ok": false,
+      "detail": "texto sem 'Manda'"
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Sem 'A IA' em 3ª pessoa (PT)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "R$"
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "$0"
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "$0"
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "R$"
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "Botões encontrados (21)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Botões encontrados (21)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "Botões encontrados (21)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Botões encontrados (21)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[2] DESKTOP | FREE | EN | test-qa-free-a2",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[3] DESKTOP | FREE | ES | test-qa-free-a3",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[1] DESKTOP | FREE | PT | test-qa-free-a1",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[4] DESKTOP | FREE | PT | test-qa-free-a4",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Linguagem de 1ª pessoa presente (PT)",
+      "ok": false,
+      "detail": "texto sem 'Manda'"
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Sem 'A IA' em 3ª pessoa (PT)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "/planos mostra preço",
+      "ok": false,
+      "detail": "sem preço"
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "/planos mostra preço",
+      "ok": false,
+      "detail": "sem preço"
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "$0"
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "R$"
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "Botões encontrados (5)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "Botões encontrados (5)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "Botões encontrados (13)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Botões encontrados (13)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[5] DESKTOP | FREE | EN | test-qa-free-a5",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[8] DESKTOP | PRO | ES | test-stress-m3",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[7] DESKTOP | PRO | EN | test-stress-d5",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[6] DESKTOP | PRO | PT | test-stress-d1",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Linguagem de 1ª pessoa presente (PT)",
+      "ok": false,
+      "detail": "texto sem 'Manda'"
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Sem 'A IA' em 3ª pessoa (PT)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Linguagem de 1ª pessoa presente (PT)",
+      "ok": false,
+      "detail": "texto sem 'Manda'"
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Sem 'A IA' em 3ª pessoa (PT)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "/planos mostra preço",
+      "ok": false,
+      "detail": "sem preço"
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "R$"
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "R$"
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "$0"
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Gratuito"
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "PRO"
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "Botões encontrados (5)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Botões encontrados (13)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Botões encontrados (21)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "Botões encontrados (21)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[11] SMARTPHONE | FREE | PT | test-stress-d4",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[12] SMARTPHONE | FREE | EN | test-qa-free-a1",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[10] DESKTOP | PRO | EN | test-stress-m5",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[9] DESKTOP | PRO | PT | test-stress-m4",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Linguagem de 1ª pessoa presente (PT)",
+      "ok": false,
+      "detail": "texto sem 'Manda'"
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Sem 'A IA' em 3ª pessoa (PT)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Linguagem de 1ª pessoa presente (PT)",
+      "ok": false,
+      "detail": "texto sem 'Manda'"
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Sem 'A IA' em 3ª pessoa (PT)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "$0"
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "$0"
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "R$"
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "R$"
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "free"
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "PRO"
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "free"
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "Botões encontrados (21)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Botões encontrados (13)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Botões encontrados (21)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "Botões encontrados (21)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "FREE vê CTA de upgrade",
+      "ok": true,
+      "detail": "CTA encontrado"
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[13] SMARTPHONE | FREE | ES | test-qa-free-a2",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[14] SMARTPHONE | FREE | PT | test-qa-free-a3",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[15] SMARTPHONE | FREE | EN | test-qa-free-a4",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[16] SMARTPHONE | PRO | PT | test-stress-d1",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Linguagem de 1ª pessoa presente (PT)",
+      "ok": false,
+      "detail": "texto sem 'Manda'"
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Sem 'A IA' em 3ª pessoa (PT)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "Sem overflow horizontal na home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "Scroll sem erros JS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "$0"
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "$0"
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "R$"
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "/planos carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "/planos mostra preço",
+      "ok": true,
+      "detail": "$0"
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "/criacoes carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "PRO"
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "Pro"
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "/conta carregou com plano",
+      "ok": true,
+      "detail": "PRO"
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "Botões encontrados (13)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "Botões encontrados (13)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Botões encontrados (13)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "Botões encontrados (13)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "ModeSelector visível",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "PRO não vê onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "Sem erros 5xx de rede",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "/editor carregou",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "Sem overflow em /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "Sem overflow em /planos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[17] SMARTPHONE | PRO | EN | test-stress-d5",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[19] SMARTPHONE | PRO | PT | test-stress-m4",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[18] SMARTPHONE | PRO | ES | test-stress-m3",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "Sem overflow em /criacoes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "label": "[20] SMARTPHONE | PRO | EN | test-stress-m5",
+      "check": "Sem erros JS críticos",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

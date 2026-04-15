@@ -10,6 +10,7 @@ import { uploadImageToComfy, COMFY_BASES } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/serverProductVision";
 import { buildPromptResult, inferSlot } from "@/lib/promptuso/infer";
+import { type PhotoFormat, PHOTO_DIMS, DEFAULT_FORMAT } from "@/lib/formats";
 
 // Cenários por tipo de produto — escolhidos para combinar com o slot
 const SLOT_CENARIOS: Record<string, string[]> = {
@@ -174,7 +175,8 @@ async function submitSceneVariation(
   promptNeg: string,
   jobId: string,
   sceneIndex: number,
-  comfyBase: string
+  comfyBase: string,
+  format: PhotoFormat = DEFAULT_FORMAT,
 ): Promise<string> {
   // Deep clone do template de foto existente mas com seed aleatório
   // Importa o template dinamicamente para não criar dependência circular
@@ -190,6 +192,13 @@ async function submitSceneVariation(
   (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = promptNeg;
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = prefix;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = seed;
+  // Aplica formato: injeta ImageScale (168) antes do FluxKontextImageScale (160)
+  const { w, h } = PHOTO_DIMS[format];
+  (workflow as Record<string, unknown>)["168"] = {
+    class_type: "ImageScale",
+    inputs: { image: ["11", 0], width: w, height: h, upscale_method: "lanczos", crop: "center" },
+  };
+  (workflow["160"] as { inputs: { image: unknown } }).inputs.image = ["168", 0];
 
   const res = await fetch(`${comfyBase}/prompt`, {
     method: "POST",
@@ -325,7 +334,8 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       const cenario = cenarios[i % cenarios.length];
       const { positive, negative } = buildPromptResult(productText, cenario);
       try {
-        const promptId = await submitSceneVariation(imageName, positive, negative, jobId, i, comfyBase);
+        const jobFormat = (job.format as PhotoFormat) ?? DEFAULT_FORMAT;
+        const promptId = await submitSceneVariation(imageName, positive, negative, jobId, i, comfyBase, jobFormat);
         scenePromptIds.push(promptId);
       } catch (err) {
         console.error(`[narrated] scene ${i} submit error:`, err);
