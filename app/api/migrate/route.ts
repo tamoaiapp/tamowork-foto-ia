@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 // Rota interna — só acessível com a service role key no header
 export async function POST(req: NextRequest) {
@@ -8,24 +7,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const sb = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
   const steps: { name: string; ok: boolean; error?: string }[] = [];
 
-  async function run(name: string, sql: string) {
-    const { error } = await sb.rpc("exec_sql", { sql }).catch(() => ({ error: { message: "rpc not available" } }));
-    if (error) {
-      // fallback: try raw query via REST
-      steps.push({ name, ok: false, error: error.message });
-    } else {
-      steps.push({ name, ok: true });
-    }
-  }
-
-  // Tenta via pg direto usando fetch para a management API
   const pgUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/exec_sql`;
 
   async function runSQL(name: string, sql: string) {
