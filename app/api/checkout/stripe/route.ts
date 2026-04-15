@@ -14,16 +14,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
+  // Plano mensal R$79 recorrente
+  const priceId = process.env.STRIPE_PRICE_ID_MONTHLY ?? process.env.STRIPE_PRICE_ID_USD!;
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
     customer_email: user.email,
-    line_items: [
-      {
-        price: process.env.STRIPE_PRICE_ID_USD!,
-        quantity: 1,
-      },
-    ],
+    line_items: [{ price: priceId, quantity: 1 }],
     metadata: { userId: user.id },
     subscription_data: { metadata: { userId: user.id } },
     success_url: `${process.env.APP_URL}/obrigado?source=stripe`,

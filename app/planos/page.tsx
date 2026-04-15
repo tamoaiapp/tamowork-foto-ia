@@ -16,7 +16,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#eef2f9",
   },
   inner: {
-    maxWidth: 860,
+    maxWidth: 520,
     margin: "0 auto",
   },
   backBtn: {
@@ -34,25 +34,25 @@ const styles: Record<string, React.CSSProperties> = {
   },
   hero: {
     textAlign: "center",
-    marginBottom: 48,
+    marginBottom: 40,
   },
   heroHeadline: {
-    fontSize: "clamp(26px, 4vw, 42px)",
+    fontSize: "clamp(24px, 4vw, 36px)",
     fontWeight: 800,
     lineHeight: 1.18,
     letterSpacing: "-0.02em",
     margin: "0 auto 16px",
-    maxWidth: 640,
+    maxWidth: 480,
     background: "linear-gradient(135deg, #eef2f9 30%, #a855f7)",
     WebkitBackgroundClip: "text",
     WebkitTextFillColor: "transparent",
     backgroundClip: "text",
   },
   heroSub: {
-    fontSize: 17,
+    fontSize: 16,
     color: "#8394b0",
-    margin: "0 auto 16px",
-    maxWidth: 520,
+    margin: "0 auto 20px",
+    maxWidth: 440,
     lineHeight: 1.6,
   },
   heroTrust: {
@@ -67,87 +67,60 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#16c784",
     fontWeight: 600,
   },
-  cardsRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 20,
-    marginBottom: 56,
-  },
-  cardAnnual: {
+  card: {
     background: "#111820",
     borderRadius: 22,
-    padding: "32px 28px 28px",
+    padding: "36px 32px 32px",
     display: "flex",
     flexDirection: "column",
     gap: 0,
-    boxShadow: "0 0 0 2px #8b5cf6, 0 8px 32px rgba(139,92,246,0.2)",
-    position: "relative",
-  },
-  cardMonthly: {
-    background: "#111820",
-    borderRadius: 22,
-    padding: "32px 28px 28px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 0,
-    border: "1px solid rgba(255,255,255,0.07)",
+    boxShadow: "0 0 0 2px #8b5cf6, 0 12px 40px rgba(139,92,246,0.25)",
+    marginBottom: 48,
   },
   badge: {
     display: "inline-block",
-    background: "rgba(22,199,132,0.15)",
-    color: "#16c784",
+    background: "rgba(168,85,247,0.15)",
+    color: "#c084fc",
     fontSize: 12,
     fontWeight: 800,
-    letterSpacing: "0.06em",
-    padding: "5px 12px",
-    borderRadius: 20,
-    marginBottom: 16,
-    alignSelf: "flex-start",
-  },
-  planLabel: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#8394b0",
-    textTransform: "uppercase" as const,
     letterSpacing: "0.08em",
-    marginBottom: 10,
+    padding: "5px 14px",
+    borderRadius: 20,
+    marginBottom: 20,
+    alignSelf: "center",
   },
   price: {
-    fontSize: 44,
+    fontSize: 56,
     fontWeight: 800,
     color: "#eef2f9",
     lineHeight: 1,
     marginBottom: 4,
     letterSpacing: "-0.03em",
+    textAlign: "center" as const,
   },
   pricePeriod: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 400,
     color: "#8394b0",
   },
-  priceBilled: {
-    fontSize: 13,
+  priceSub: {
+    fontSize: 14,
     color: "#4e5c72",
-    marginBottom: 6,
-  },
-  priceHighlight: {
-    fontSize: 16,
-    fontWeight: 800,
-    color: "#a855f7",
-    marginBottom: 24,
+    marginBottom: 28,
+    textAlign: "center" as const,
   },
   divider: {
     height: 1,
     background: "rgba(255,255,255,0.07)",
-    margin: "0 0 20px",
+    margin: "0 0 24px",
   },
   featureList: {
     listStyle: "none",
     padding: 0,
-    margin: "0 0 28px",
+    margin: "0 0 32px",
     display: "flex",
     flexDirection: "column",
-    gap: 12,
+    gap: 14,
     flexGrow: 1,
   },
   featureItem: {
@@ -160,7 +133,7 @@ const styles: Record<string, React.CSSProperties> = {
   featureCheck: {
     color: "#16c784",
     fontWeight: 700,
-    fontSize: 15,
+    fontSize: 16,
     flexShrink: 0,
   },
   btnPrimary: {
@@ -176,107 +149,66 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "inherit",
     letterSpacing: "-0.01em",
     transition: "opacity 0.15s, transform 0.1s",
-    marginBottom: 8,
+    marginBottom: 12,
     boxShadow: "0 4px 20px rgba(139,92,246,0.4)",
-  },
-  btnSecondary: {
-    width: "100%",
-    padding: "16px 0",
-    borderRadius: 14,
-    border: "1.5px solid rgba(139,92,246,0.4)",
-    background: "transparent",
-    color: "#a855f7",
-    fontSize: 16,
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    letterSpacing: "-0.01em",
-    transition: "border-color 0.15s, background 0.15s",
-    marginBottom: 8,
   },
   btnNote: {
     fontSize: 13,
     color: "#8394b0",
     textAlign: "center" as const,
   },
-  strikethrough: {
-    textDecoration: "line-through",
-    color: "#4e5c72",
-  },
-  savingsNote: {
-    fontSize: 13,
-    color: "#8394b0",
-    marginBottom: 24,
-  },
   valueSection: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
     gap: 16,
-    marginBottom: 0,
   },
   valueCard: {
     background: "#0c1018",
     borderRadius: 18,
-    padding: "24px 20px",
+    padding: "22px 18px",
     border: "1px solid rgba(255,255,255,0.07)",
   },
   valueIcon: {
-    fontSize: 28,
-    marginBottom: 12,
+    fontSize: 26,
+    marginBottom: 10,
     display: "block",
   },
   valueTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 700,
     color: "#eef2f9",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   valueDesc: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#8394b0",
     lineHeight: 1.55,
   },
 };
 
-const annualFeaturesPT = [
-  "Fotos ilimitadas — sem limite",
-  "Vídeos ilimitados para Reels e TikTok",
+const featuresPT = [
+  "Fotos ilimitadas de produto com IA",
+  "Vídeos animados para Reels e TikTok",
+  "Vídeo narrado com locução e cenas",
   "Foto pronta na hora, sem fila",
   "Alta qualidade, sem marca d'água",
-  "Novidades antes de todo mundo",
+  "Cancele quando quiser",
 ];
-const annualFeaturesEN = [
-  "Unlimited photos — no cap",
-  "Unlimited videos for Reels & TikTok",
+const featuresEN = [
+  "Unlimited AI product photos",
+  "Animated videos for Reels & TikTok",
+  "Narrated video with voiceover & scenes",
   "Photo ready instantly, no queue",
   "High quality, no watermark",
-  "Early access to new features",
+  "Cancel anytime",
 ];
-const annualFeaturesES = [
-  "Fotos ilimitadas — sin límite",
-  "Videos ilimitados para Reels y TikTok",
+const featuresES = [
+  "Fotos de producto ilimitadas con IA",
+  "Videos animados para Reels y TikTok",
+  "Video narrado con locución y escenas",
   "Foto lista al instante, sin cola",
   "Alta calidad, sin marca de agua",
-  "Novedades antes que nadie",
-];
-
-const monthlyFeaturesPT = [
-  "Fotos ilimitadas — sem limite",
-  "Vídeos ilimitados para Reels e TikTok",
-  "Foto pronta na hora, sem fila",
-  "Alta qualidade, sem marca d'água",
-];
-const monthlyFeaturesEN = [
-  "Unlimited photos — no cap",
-  "Unlimited videos for Reels & TikTok",
-  "Photo ready instantly, no queue",
-  "High quality, no watermark",
-];
-const monthlyFeaturesES = [
-  "Fotos ilimitadas — sin límite",
-  "Videos ilimitados para Reels y TikTok",
-  "Foto lista al instante, sin cola",
-  "Alta calidad, sin marca de agua",
+  "Cancela cuando quieras",
 ];
 
 export default function PlanosPage() {
@@ -285,53 +217,38 @@ export default function PlanosPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMP, setLoadingMP] = useState(false);
-  const [loadingMPMonthly, setLoadingMPMonthly] = useState(false);
   const [loadingStripe, setLoadingStripe] = useState(false);
   const [isBR, setIsBR] = useState(true);
 
-  const annualFeatures = lang === "es" ? annualFeaturesES : lang === "pt" ? annualFeaturesPT : annualFeaturesEN;
-  const monthlyFeatures = lang === "es" ? monthlyFeaturesES : lang === "pt" ? monthlyFeaturesPT : monthlyFeaturesEN;
+  const features = lang === "es" ? featuresES : lang === "pt" ? featuresPT : featuresEN;
 
   useEffect(() => {
-    const lang = (typeof navigator !== "undefined" ? navigator.language : "pt-BR") || "pt-BR";
-    setIsBR(lang.startsWith("pt"));
+    const l = (typeof navigator !== "undefined" ? navigator.language : "pt-BR") || "pt-BR";
+    setIsBR(l.startsWith("pt"));
   }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.replace("/login");
-      } else {
-        setUser(data.user);
-        setLoading(false);
-      }
+      if (!data.user) router.replace("/login");
+      else { setUser(data.user); setLoading(false); }
     });
   }, [router]);
 
-  async function handleMPMonthly() {
+  async function handleMP() {
     if (!user) return;
-    setLoadingMPMonthly(true);
+    setLoadingMP(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch("/api/checkout/mercadopago", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${session?.access_token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ plan: "monthly" }),
       });
       const json = await res.json();
-      if (json.init_point) {
-        window.location.href = json.init_point;
-      } else {
-        alert(lang === "en" ? "Payment error. Please try again." : lang === "es" ? "Error al iniciar el pago. Inténtalo de nuevo." : "Erro ao iniciar pagamento. Tente novamente.");
-      }
-    } catch {
-      alert(lang === "en" ? "Payment error. Please try again." : lang === "es" ? "Error al iniciar el pago. Inténtalo de nuevo." : "Erro ao iniciar pagamento. Tente novamente.");
-    } finally {
-      setLoadingMPMonthly(false);
-    }
+      if (json.init_point) window.location.href = json.init_point;
+      else alert("Erro ao iniciar pagamento. Tente novamente.");
+    } catch { alert("Erro ao iniciar pagamento. Tente novamente."); }
+    finally { setLoadingMP(false); }
   }
 
   async function handleStripe() {
@@ -344,39 +261,10 @@ export default function PlanosPage() {
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
       const json = await res.json();
-      if (json.url) {
-        window.location.href = json.url;
-      } else {
-        alert("Payment error. Please try again.");
-      }
-    } catch {
-      alert("Payment error. Please try again.");
-    } finally {
-      setLoadingStripe(false);
-    }
-  }
-
-  async function handleMercadoPago() {
-    if (!user) return;
-    setLoadingMP(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch("/api/checkout/mercadopago", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session?.access_token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: "annual" }),
-      });
-      const json = await res.json();
-      if (json.init_point) {
-        window.location.href = json.init_point;
-      } else {
-        alert(lang === "en" ? "Payment error. Please try again." : lang === "es" ? "Error al iniciar el pago. Inténtalo de nuevo." : "Erro ao iniciar pagamento. Tente novamente.");
-      }
-    } catch {
-      alert(lang === "en" ? "Payment error. Please try again." : lang === "es" ? "Error al iniciar el pago. Inténtalo de nuevo." : "Erro ao iniciar pagamento. Tente novamente.");
-    } finally {
-      setLoadingMP(false);
-    }
+      if (json.url) window.location.href = json.url;
+      else alert("Payment error. Please try again.");
+    } catch { alert("Payment error. Please try again."); }
+    finally { setLoadingStripe(false); }
   }
 
   if (loading) {
@@ -388,6 +276,8 @@ export default function PlanosPage() {
       </div>
     );
   }
+
+  const isLoading = isBR ? loadingMP : loadingStripe;
 
   return (
     <div style={styles.page} className="app-layout">
@@ -405,10 +295,10 @@ export default function PlanosPage() {
         <div style={styles.hero}>
           <h1 style={styles.heroHeadline}>
             {lang === "en"
-              ? "Professional product photos for less than $0.28 a day"
+              ? "Professional product photos with AI"
               : lang === "es"
-              ? "Fotos profesionales de productos por menos de $0.28 al día"
-              : "Fotos profissionais para seus produtos por menos de R$0,63 por dia"}
+              ? "Fotos profesionales de productos con IA"
+              : "Fotos profissionais dos seus produtos com IA"}
           </h1>
           <p style={styles.heroSub}>
             {lang === "en"
@@ -424,103 +314,52 @@ export default function PlanosPage() {
           </div>
         </div>
 
-        {/* Pricing Cards */}
-        <div style={styles.cardsRow}>
-          {/* Annual Card */}
-          <div style={styles.cardAnnual}>
-            <span style={styles.badge}>{isBR ? "MAIS POPULAR" : "MOST POPULAR"}</span>
-            <div style={styles.planLabel}>{isBR ? "Plano Anual" : "Annual Plan"}</div>
-            {isBR ? (
-              <>
-                <div style={styles.price}>R$29<span style={styles.pricePeriod}> /mês</span></div>
-                <div style={styles.priceBilled}>Cobrado R$348 por ano</div>
-                <div style={styles.priceHighlight}>Menos de R$0,96 por dia</div>
-              </>
-            ) : (
-              <>
-                <div style={styles.price}>$100<span style={styles.pricePeriod}> /year</span></div>
-                <div style={styles.priceBilled}>Billed $100 once a year</div>
-                <div style={styles.priceHighlight}>Less than $0.28 per day</div>
-              </>
-            )}
-            <div style={styles.divider} />
-            <ul style={styles.featureList}>
-              {annualFeatures.map((f) => (
-                <li key={f} style={styles.featureItem}>
-                  <span style={styles.featureCheck}>✓</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-            {isBR ? (
-              <button
-                style={{ ...styles.btnPrimary, opacity: loadingMP ? 0.7 : 1 }}
-                onClick={handleMercadoPago}
-                disabled={loadingMP}
-                onMouseEnter={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
-                onMouseLeave={(e) => { if (!loadingMP) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-              >
-                {loadingMP ? "Aguarde..." : "Quero assinar agora — R$348/ano"}
-              </button>
-            ) : (
-              <button
-                style={{ ...styles.btnPrimary, opacity: loadingStripe ? 0.7 : 1 }}
-                onClick={handleStripe}
-                disabled={loadingStripe}
-                onMouseEnter={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
-                onMouseLeave={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-              >
-                {loadingStripe ? "Loading..." : "Subscribe now — $100/year"}
-              </button>
-            )}
-            <div style={{ ...styles.btnNote, fontWeight: 700, color: "#16c784" }}>
-              {isBR ? "Economize R$600 comparado ao plano mensal" : "Save vs monthly billing"}
-            </div>
+        {/* Plan Card */}
+        <div style={styles.card}>
+          <span style={styles.badge}>PRO</span>
+
+          <div style={styles.price}>
+            R$79<span style={styles.pricePeriod}> /mês</span>
+          </div>
+          <div style={styles.priceSub}>
+            {lang === "en"
+              ? "Less than R$2.63 per day — cancel anytime"
+              : lang === "es"
+              ? "Menos de R$2,63 por día — cancela cuando quieras"
+              : "Menos de R$2,63 por dia — cancele quando quiser"}
           </div>
 
-          {/* Monthly Card — BR only */}
-          <div style={{ ...styles.cardMonthly, ...(isBR ? {} : { opacity: 0.45, pointerEvents: "none" }) }}>
-            <div style={{ height: 28, marginBottom: 16 }} />
-            <div style={styles.planLabel}>{isBR ? "Plano Mensal" : "Monthly Plan"}</div>
-            <div style={styles.price}>
-              R$79<span style={styles.pricePeriod}> /mês</span>
-            </div>
-            <div style={styles.priceBilled}>
-              <span style={styles.strikethrough}>R$948/ano</span>
-              {" "}→ {lang === "en" ? "annual saves R$600" : lang === "es" ? "el anual ahorra R$600" : "anual sai R$600 mais barato"}
-            </div>
-            <div style={{ marginBottom: 24 }} />
-            <div style={styles.divider} />
-            <ul style={styles.featureList}>
-              {monthlyFeatures.map((f) => (
-                <li key={f} style={styles.featureItem}>
-                  <span style={styles.featureCheck}>✓</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <button
-              style={{ ...styles.btnSecondary, opacity: loadingMPMonthly ? 0.7 : 1 }}
-              onClick={handleMPMonthly}
-              disabled={loadingMPMonthly}
-              onMouseEnter={(e) => {
-                if (!loadingMPMonthly) {
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(139,92,246,0.08)";
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = "#8b5cf6";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loadingMPMonthly) {
-                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(139,92,246,0.4)";
-                }
-              }}
-            >
-              {loadingMPMonthly ? "Aguarde..." : "Assinar por R$79/mês"}
-            </button>
-            <div style={styles.btnNote}>
-              {isBR ? "\u00a0" : "Brazil only (MercadoPago)"}
-            </div>
+          <div style={styles.divider} />
+
+          <ul style={styles.featureList}>
+            {features.map((f) => (
+              <li key={f} style={styles.featureItem}>
+                <span style={styles.featureCheck}>✓</span>
+                {f}
+              </li>
+            ))}
+          </ul>
+
+          <button
+            style={{ ...styles.btnPrimary, opacity: isLoading ? 0.7 : 1 }}
+            onClick={isBR ? handleMP : handleStripe}
+            disabled={isLoading}
+            onMouseEnter={(e) => { if (!isLoading) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+            onMouseLeave={(e) => { if (!isLoading) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+          >
+            {isLoading
+              ? (lang === "en" ? "Loading..." : lang === "es" ? "Cargando..." : "Aguarde...")
+              : lang === "en"
+              ? "Subscribe — R$79/month"
+              : lang === "es"
+              ? "Suscribirse — R$79/mes"
+              : "Assinar agora — R$79/mês"}
+          </button>
+
+          <div style={styles.btnNote}>
+            {isBR
+              ? "Pagamento seguro via MercadoPago • Cancele a qualquer momento"
+              : "Secure payment via Stripe • Cancel anytime"}
           </div>
         </div>
 
@@ -533,23 +372,23 @@ export default function PlanosPage() {
             </div>
             <div style={styles.valueDesc}>
               {lang === "en"
-                ? "No queue. Generate as many photos as you want, any time of day."
+                ? "No queue. Generate as many as you want, anytime."
                 : lang === "es"
-                ? "Sin cola. Genera las fotos que quieras, a cualquier hora del día."
-                : "Sem esperar na fila. Gere quantas fotos quiser, a qualquer hora do dia."}
+                ? "Sin cola. Genera las que quieras, a cualquier hora."
+                : "Sem fila. Gere quantas quiser, a qualquer hora."}
             </div>
           </div>
           <div style={styles.valueCard}>
             <span style={styles.valueIcon}>🎬</span>
             <div style={styles.valueTitle}>
-              {lang === "en" ? "Photo & video with AI" : lang === "es" ? "Foto y video con IA" : "Foto e vídeo com IA"}
+              {lang === "en" ? "Photo & video AI" : lang === "es" ? "Foto y video IA" : "Foto e vídeo com IA"}
             </div>
             <div style={styles.valueDesc}>
               {lang === "en"
-                ? "Create animated videos of your products to post on Reels and TikTok."
+                ? "Animated videos and narrated reels for your products."
                 : lang === "es"
-                ? "Crea videos animados de tus productos para publicar en Reels y TikTok."
-                : "Crie vídeos animados dos seus produtos para postar no Reels e TikTok."}
+                ? "Videos animados y reels narrados para tus productos."
+                : "Vídeos animados e reels narrados dos seus produtos."}
             </div>
           </div>
           <div style={styles.valueCard}>
@@ -559,10 +398,10 @@ export default function PlanosPage() {
             </div>
             <div style={styles.valueDesc}>
               {lang === "en"
-                ? "$0.28 per day. Less than a coffee to transform your business."
+                ? "R$2.63 per day to transform your business visuals."
                 : lang === "es"
-                ? "$0.28 por día. Menos que un café para transformar tu negocio."
-                : "R$0,63 por dia. Menos do que um cafezinho para transformar seu negócio."}
+                ? "R$2,63 por día para transformar tu negocio."
+                : "R$2,63 por dia para transformar as fotos do seu negócio."}
             </div>
           </div>
         </div>
