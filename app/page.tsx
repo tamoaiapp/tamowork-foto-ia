@@ -1225,7 +1225,7 @@ export default function HomePage() {
     try { localStorage.setItem(APP_RATED_KEY, "1"); } catch { /* ignora */ }
     setShowRateApp(false);
     // Abre Play Store na página do app (substitua pelo package name real)
-    window.open("market://details?id=app.tamowork.foto", "_blank");
+    window.open("market://details?id=com.tamowork.app", "_blank");
   }
 
   async function getToken() {
