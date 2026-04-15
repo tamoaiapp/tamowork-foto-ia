@@ -1567,6 +1567,13 @@ export default function HomePage() {
       setJob({ id: jobId, status: "queued" });
       setTimeout(() => fetchJobStatus(jobId), 10_000);
       // Abre Tamo automaticamente após submit
+      setModeSelected(false);
+      const photoTriggers = [
+        `🦎 Estou transformando a foto de *${_produto || "seu produto"}*! Me fala o preço de venda — já preparo a legenda enquanto a foto fica pronta.`,
+        `✨ Criando sua foto de *${_produto || "produto"}*! Quer que eu escreva uma legenda com hashtags enquanto espera?`,
+        `🔥 Foto de *${_produto || "produto"}* a caminho! Posso criar um texto de venda agora. Qual o preço?`,
+      ];
+      setBotTriggerMessage(photoTriggers[Math.floor(Math.random() * photoTriggers.length)]);
       setBotNavOpen(true);
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Erro ao processar");
@@ -1736,6 +1743,14 @@ export default function HomePage() {
       const { jobId } = await res.json();
       setVideoJob({ id: jobId, status: "queued" });
       setTimeout(() => fetchVideoStatus(jobId), 15_000);
+      setModeSelected(false);
+      const videoTriggers = [
+        `🎬 Vídeo sendo gerado! Quer que eu escreva uma legenda para o Reels enquanto aguarda?`,
+        `🎬 Criando o vídeo animado! Me fala o preço do produto — preparo um texto de venda para postar junto.`,
+        `🎬 Vídeo a caminho! Posso criar hashtags ou uma legenda de venda agora. O que prefere?`,
+      ];
+      setBotTriggerMessage(videoTriggers[Math.floor(Math.random() * videoTriggers.length)]);
+      setBotNavOpen(true);
     } catch (err) {
       setVideoError(err instanceof Error ? err.message : "Erro");
     } finally {
@@ -1869,6 +1884,13 @@ export default function HomePage() {
       setNarratedJob({ id: jobId, status: "queued" });
       setNarratedMode(true);
       setModeSelected(false);
+      const narratedTriggers = [
+        `🎙️ Vídeo com narração sendo criado! Quer que eu escreva uma legenda para postar junto no Instagram?`,
+        `🎙️ Narração em produção! Me fala o preço do produto — já preparo um texto de venda enquanto aguarda.`,
+        `🎙️ Criando seu vídeo narrado! Posso sugerir hashtags ou ajustar a legenda. O que prefere?`,
+      ];
+      setBotTriggerMessage(narratedTriggers[Math.floor(Math.random() * narratedTriggers.length)]);
+      setBotNavOpen(true);
       setNarratedDisplayProgress(0);
       setNarratedElapsed(0);
       setTimeout(async () => {
@@ -1944,6 +1966,8 @@ export default function HomePage() {
         setLongVideoJob({ id: d.jobId, status: "queued" });
         setLongVideoMode(true);
         setModeSelected(false);
+        setBotTriggerMessage(`🎬 Você já tem um vídeo longo em andamento! Acompanhe aqui. Posso ajudar com legenda enquanto espera.`);
+        setBotNavOpen(true);
         return;
       }
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error((d as { error?: string }).error ?? "Erro"); }
@@ -1951,6 +1975,13 @@ export default function HomePage() {
       setLongVideoJob({ id: jobId, status: "queued" });
       setLongVideoMode(true);
       setModeSelected(false);
+      const longTriggers = [
+        `🎬 Vídeo longo de *${produtoName}* em produção! Pode demorar 20-40 min. Posso criar legendas enquanto aguarda.`,
+        `🎬 Criando 4 cenas do *${produtoName}*! Me fala o preço — já preparo um texto de venda para cada cena.`,
+        `🎬 Gerando seu vídeo longo! Quer hashtags ou legenda de venda enquanto espera?`,
+      ];
+      setBotTriggerMessage(longTriggers[Math.floor(Math.random() * longTriggers.length)]);
+      setBotNavOpen(true);
       setLongVideoElapsed(0);
       // Poll a cada 30s (o agente roda a cada 5 min, não adianta poll frequente)
       longVideoPollRef.current = setInterval(async () => {
@@ -3907,6 +3938,94 @@ export default function HomePage() {
                 <p style={styles.centerDesc}>Pode tentar novamente agora.</p>
                 <button onClick={() => resetVideo()} style={styles.submitBtn}>Tentar novamente</button>
               </div>
+            </div>
+          )}
+
+          {/* Narração — gerando */}
+          {narratedJob && !["done","failed","canceled"].includes(narratedJob.status) && narratedMode && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={styles.card}>
+                <div style={{ textAlign: "center" as const, padding: "8px 0 12px" }}>
+                  <TamoMascot state="processing" size={64} label="Tô trabalhando..." />
+                  <div style={styles.generatingTitle}>
+                    <span style={styles.shimmerText}>Preparando seu vídeo</span>
+                    <span style={styles.dots}>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite" }}>.</span>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+                    </span>
+                  </div>
+                  <p style={{ margin: "10px 0 0", fontSize: 13, color: "#8394b0" }}>Pode demorar 3–5 min. Pode fechar — te avisamos quando ficar pronto. 🔔</p>
+                  <button type="button" onClick={resetNarrated} style={{ marginTop: 10, background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 20px", color: "#4e5c72", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Narração — pronta */}
+          {narratedJob?.status === "done" && narratedJob.output_video_url && narratedMode && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={styles.card}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center" as const, marginBottom: 14 }}>🎉 Seu vídeo com narração ficou pronto!</div>
+                <video src={narratedJob.output_video_url} controls autoPlay playsInline style={{ width: "100%", borderRadius: 14, background: "#000", maxHeight: 400, marginBottom: 14 }} />
+                <button type="button" onClick={async () => { try { const res = await fetch(narratedJob.output_video_url!); const blob = await res.blob(); await downloadBlob(blob, "video-narrado.mp4"); } catch { window.open(narratedJob.output_video_url!, "_blank"); } }} style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", width: "100%" }}>⬇ Baixar vídeo</button>
+                <button type="button" onClick={resetNarrated} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 13, cursor: "pointer", width: "100%", marginTop: 10 }}>Criar outro vídeo</button>
+              </div>
+            </div>
+          )}
+
+          {/* Vídeo longo — gerando */}
+          {longVideoJob && !["done","failed","canceled"].includes(longVideoJob.status) && longVideoMode && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={styles.card}>
+                <div style={{ textAlign: "center" as const, padding: "8px 0 12px" }}>
+                  <TamoMascot state="processing" size={64} label="Tô trabalhando..." />
+                  <div style={styles.generatingTitle}>
+                    <span style={styles.shimmerText}>Gerando vídeo longo</span>
+                    <span style={styles.dots}>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite" }}>.</span>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+                    </span>
+                  </div>
+                  <div style={styles.progressBarBg}>
+                    <div style={{ ...styles.progressBarFill, width: `${({ queued: 5, generating_photos: 30, generating_videos: 65, concatenating: 90 } as Record<string, number>)[longVideoJob.status] ?? 5}%` }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 8 }}>
+                    {longVideoJob.status === "queued" ? "1/4 — aguardando" : longVideoJob.status === "generating_photos" ? "2/4 — fotos" : longVideoJob.status === "generating_videos" ? "3/4 — vídeos" : "4/4 — finalizando"}
+                  </div>
+                  <p style={{ margin: "10px 0 0", fontSize: 13, color: "#8394b0" }}>Pode demorar 20–40 min. Pode fechar — te avisamos quando ficar pronto. 🔔</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Vídeo longo — pronto */}
+          {longVideoJob?.status === "done" && longVideoJob.output_video_url && longVideoMode && (
+            <div style={{ padding: "0 16px 12px" }}>
+              <div style={styles.card}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center" as const, marginBottom: 14 }}>🎉 Seu vídeo longo ficou pronto!</div>
+                <video src={longVideoJob.output_video_url} controls autoPlay playsInline style={{ width: "100%", borderRadius: 14, background: "#000", maxHeight: 400, marginBottom: 14 }} />
+                <button type="button" onClick={async () => { try { const res = await fetch(longVideoJob.output_video_url!); const blob = await res.blob(); await downloadBlob(blob, "video-longo.mp4"); } catch { window.open(longVideoJob.output_video_url!, "_blank"); } }} style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", width: "100%" }}>⬇ Baixar vídeo (~32s)</button>
+                <button type="button" onClick={resetLongVideo} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 13, cursor: "pointer", width: "100%", marginTop: 10 }}>Criar outro vídeo</button>
+              </div>
+            </div>
+          )}
+
+          {/* BotChat — sempre visível quando há job ativo (abaixo do status) ou quando sem job */}
+          {(workState === "trabalhando" || narratedMode || longVideoMode || videoMode) && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 12px", minHeight: 200 }}>
+              <BotChat
+                workState={workState}
+                resultReady={pendingResult}
+                onViewResult={() => setPendingResult(false)}
+                botActive={botActive}
+                visible={true}
+                navMode={true}
+                onActivate24h={activateBot}
+                triggerMessage={botTriggerMessage}
+                embedded={false}
+              />
             </div>
           )}
 
