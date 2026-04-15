@@ -25,17 +25,19 @@ export default function ConversionScreen({ photoUrl, onAssinar, onContinuar, onM
           <div style={s.photoBadge}>✨ Pronta!</div>
         </div>
 
-        <h2 style={s.headline}>Sua foto ficou incrível! 🎉</h2>
+        <h2 style={s.headline}>Foto profissional pronta em 30 segundos</h2>
         <p style={s.sub}>
-          Com o Pro, você gera fotos ilimitadas todo dia — sem esperar, sem limite.
+          Isso que você viu foi apenas 1 clique. Imagina quantas fotos você consegue pra vender mais no Instagram.
         </p>
 
         <div style={s.benefits}>
           {[
-            ["📸", "Fotos ilimitadas todos os dias"],
-            ["🎬", "Vídeos animados do produto"],
-            ["✂️", "Fundo branco automático"],
-            ["👗", "Catálogo com modelo virtual"],
+            ["📸", "Fotos ilimitadas — tire quantas precisar, todo dia"],
+            ["🎬", "Vídeos animados do produto direto para Reels"],
+            ["🎙️", "Vídeo narrado: IA roteiriza, narra e monta tudo"],
+            ["✏️", "Editor de foto: personalize, mude fundo, adicione texto"],
+            ["📱", "Todos os formatos: Stories, Reels, feed, anúncios"],
+            ["⚡", "Sem fila, sem esperar — tudo automático e pronto"],
           ].map(([icon, text]) => (
             <div key={text} style={s.benefitRow}>
               <span style={{ fontSize: 16 }}>{icon}</span>
@@ -44,33 +46,28 @@ export default function ConversionScreen({ photoUrl, onAssinar, onContinuar, onM
           ))}
         </div>
 
-        {/* Preço dinâmico por região */}
         <div style={s.priceRow}>
           <div>
-            <div style={s.priceLabel}>
-              {isBR ? "Plano mensal" : "Annual plan"}
-            </div>
+            <div style={s.priceLabel}>{isBR ? "Plano mensal" : "Annual plan"}</div>
             <div style={s.price}>
               <span style={s.priceNum}>{isBR ? "R$79" : "$100"}</span>
               <span style={s.pricePer}>{isBR ? "/mês" : "/year"}</span>
             </div>
             <div style={s.priceSub}>
               {isBR
-                ? "Cobrado todo mês · Cancele quando quiser"
-                : "Billed once a year · Cancel anytime"}
+                ? "Menos de R$2,63/dia · Cancele sem motivo"
+                : "Less than $0.28/day · Cancel anytime"}
             </div>
           </div>
-          <div style={s.saveBadge}>
-            {isBR ? "Sem fidelidade" : "Cancel anytime"}
-          </div>
+          <div style={s.saveBadge}>{isBR ? "0 reais de taxa" : "No commitment"}</div>
         </div>
 
         <button onClick={onAssinar} style={s.ctaBtn}>
-          {isBR ? "⚡ Assinar Pro agora · R$79/mês" : "⚡ Subscribe now · $100/year"}
+          {isBR ? "🚀 Liberar fotos ilimitadas — R$79/mês" : "🚀 Get unlimited photos — $100/year"}
         </button>
 
         <button onClick={onContinuar} style={s.skipBtn}>
-          Ver minha foto primeiro
+          {isBR ? "Ver minha foto primeiro" : "View photo first"}
         </button>
       </div>
     </div>
@@ -133,8 +130,8 @@ const s: Record<string, React.CSSProperties> = {
     padding: "14px 16px",
     display: "flex", flexDirection: "column", gap: 10,
   },
-  benefitRow: { display: "flex", alignItems: "center", gap: 10 },
-  benefitText: { fontSize: 13, color: "#b0bec9" },
+  benefitRow: { display: "flex", alignItems: "flex-start", gap: 10 },
+  benefitText: { fontSize: 13, color: "#b0bec9", lineHeight: 1.5 },
   priceRow: {
     background: "rgba(99,102,241,0.1)",
     border: "1px solid rgba(99,102,241,0.3)",

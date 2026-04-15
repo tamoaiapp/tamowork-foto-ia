@@ -15,11 +15,14 @@ export class RateLimitError extends Error {
   }
 }
 
+const MAX_BONUS_RETRIES_PER_DAY = 3;
+
 export async function createImageJob(
   userId: string,
   prompt: string,
   inputImageUrl: string,
   format = "story",
+  bonusRetry = false,
 ) {
   const supabase = createServerClient();
 
@@ -43,24 +46,39 @@ export async function createImageJob(
   }
 
   if (plan === "free") {
-    // Só desconta se a foto ficou pronta (status "done") — falhas não consomem o crédito
     const since = new Date(Date.now() - FREE_COOLDOWN_MS).toISOString();
-    const { data: recentJobs } = await supabase
-      .from("image_jobs")
-      .select("created_at")
-      .eq("user_id", userId)
-      .eq("status", "done")
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
-      .limit(FREE_DAILY_LIMIT);
 
-    if (recentJobs && recentJobs.length >= FREE_DAILY_LIMIT) {
-      // Libera 24h após a foto mais antiga do período
-      const oldest = recentJobs[recentJobs.length - 1];
-      const nextAvailableAt = new Date(
-        new Date(oldest.created_at).getTime() + FREE_COOLDOWN_MS
-      );
-      throw new RateLimitError(nextAvailableAt);
+    if (bonusRetry) {
+      // Bonus retry: verifica quantos bonus já usados hoje (máximo MAX_BONUS_RETRIES_PER_DAY)
+      const { count } = await supabase
+        .from("image_jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_bonus_retry", true)
+        .gte("created_at", since);
+
+      if ((count ?? 0) >= MAX_BONUS_RETRIES_PER_DAY) {
+        throw new RateLimitError(new Date(Date.now() + FREE_COOLDOWN_MS));
+      }
+      // Bonus aprovado — pula o rate limit normal
+    } else {
+      // Só desconta se a foto ficou pronta (status "done") — falhas não consomem o crédito
+      const { data: recentJobs } = await supabase
+        .from("image_jobs")
+        .select("created_at")
+        .eq("user_id", userId)
+        .eq("status", "done")
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(FREE_DAILY_LIMIT);
+
+      if (recentJobs && recentJobs.length >= FREE_DAILY_LIMIT) {
+        const oldest = recentJobs[recentJobs.length - 1];
+        const nextAvailableAt = new Date(
+          new Date(oldest.created_at).getTime() + FREE_COOLDOWN_MS
+        );
+        throw new RateLimitError(nextAvailableAt);
+      }
     }
   }
 
@@ -72,6 +90,7 @@ export async function createImageJob(
       input_image_url: inputImageUrl,
       format,
       status: "queued",
+      ...(bonusRetry ? { is_bonus_retry: true } : {}),
     })
     .select()
     .single();

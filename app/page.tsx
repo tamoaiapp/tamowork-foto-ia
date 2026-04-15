@@ -306,7 +306,7 @@ function FormatSelector({ value, onChange }: { value: string; onChange: (v: "sto
 
 function PhotoRating({
   rating, hover, feedbackText, sent, loading,
-  onHover, onRate, onFeedbackChange, onSubmit,
+  onHover, onRate, onFeedbackChange, onSubmit, onRetry, onRateApp, bonusLeft,
 }: {
   rating: number | null;
   hover: number;
@@ -314,6 +314,9 @@ function PhotoRating({
   sent: boolean;
   loading: boolean;
   onHover: (n: number) => void;
+  onRetry?: () => void;
+  onRateApp?: () => void;
+  bonusLeft?: number;
   onRate: (n: number) => void;
   onFeedbackChange: (s: string) => void;
   onSubmit: () => void;
@@ -332,12 +335,35 @@ function PhotoRating({
   }
 
   if (sent) {
+    const isGood = (rating ?? 0) >= 4;
+    const isBad = (rating ?? 0) <= 2 && (rating ?? 0) > 0;
     return (
-      <div style={{ background: "rgba(22,199,132,0.08)", border: "1px solid rgba(22,199,132,0.2)", borderRadius: 12, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-        <img src="/tamo/idle.png" alt="Tamo" style={{ width: 28, height: 28, objectFit: "contain" }} />
-        <span style={{ fontSize: 13, color: "#16c784", fontWeight: 600 }}>
-          {(rating ?? 0) >= 4 ? "Que bom! Isso me motiva a melhorar cada vez mais 🦎" : "Obrigado! Vou analisar e melhorar! 🦎"}
-        </span>
+      <div style={{ background: "rgba(22,199,132,0.06)", border: "1px solid rgba(22,199,132,0.15)", borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: (isGood && onRateApp) || (isBad && onRetry && (bonusLeft ?? 0) > 0) ? 10 : 0 }}>
+          <img src="/tamo/idle.png" alt="Tamo" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: "#16c784", fontWeight: 600 }}>
+            {isGood ? "Que bom! Isso me motiva a melhorar 🦎" : "Obrigado! Vou analisar e melhorar! 🦎"}
+          </span>
+        </div>
+        {/* Rating positivo (4-5★) → pede avaliação no app (só Android PWA) */}
+        {isGood && onRateApp && (
+          <button onClick={onRateApp} style={{ width: "100%", background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2))", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 10, padding: "10px 14px", color: "#c4b5fd", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <img src="/tamo/idle.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+            Me ajuda com uma avaliação de 5★ na loja?
+          </button>
+        )}
+        {/* Rating negativo (1-2★) → oferece foto bonus */}
+        {isBad && onRetry && (bonusLeft ?? 0) > 0 && (
+          <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10, padding: "10px 14px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <img src="/tamo/idle.png" alt="Tamo" style={{ width: 22, height: 22, objectFit: "contain" }} />
+              <span style={{ fontSize: 12, color: "#a5b4fc", fontWeight: 600 }}>Que pena 😔 Deixa eu tentar de novo pra você — de graça!</span>
+            </div>
+            <button onClick={onRetry} style={{ width: "100%", background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 10, padding: "11px", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}>
+              🔄 Refazer foto grátis ({bonusLeft} tentativa{(bonusLeft ?? 0) > 1 ? "s" : ""} restante{(bonusLeft ?? 0) > 1 ? "s" : ""})
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -711,6 +737,33 @@ export default function HomePage() {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+
+  // Bonus de retry por rating negativo — máx 3/dia, tracked no localStorage
+  const BONUS_KEY = "bonus_retry_v1";
+  const [bonusLeft, setBonusLeft] = useState(() => {
+    try {
+      const raw = localStorage.getItem(BONUS_KEY);
+      if (!raw) return 3;
+      const { count, date } = JSON.parse(raw);
+      const today = new Date().toDateString();
+      if (date !== today) return 3; // reseta diariamente
+      return Math.max(0, 3 - (count ?? 0));
+    } catch { return 3; }
+  });
+  const [isBonusRetry, setIsBonusRetry] = useState(false);
+
+  // Avaliação do app (Play Store) — só mostra uma vez
+  const APP_RATED_KEY = "app_store_rated";
+  const [showRateApp, setShowRateApp] = useState(false);
+  // Detecta se está no Android PWA (standalone)
+  useEffect(() => {
+    try {
+      const isAndroid = /android/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+      const alreadyRated = !!localStorage.getItem(APP_RATED_KEY);
+      if (isAndroid && isStandalone && !alreadyRated) setShowRateApp(true);
+    } catch { /* ignora */ }
+  }, []);
 
   // Upsell popup A/B
   const [showUpsell, setShowUpsell] = useState(false);
@@ -1153,6 +1206,28 @@ export default function HomePage() {
     }
   }
 
+  function handleBonusRetry() {
+    if (bonusLeft <= 0) return;
+    // Decrementa o contador no localStorage
+    try {
+      const today = new Date().toDateString();
+      const raw = localStorage.getItem(BONUS_KEY);
+      const prev = raw ? JSON.parse(raw) : { count: 0, date: today };
+      const used = prev.date === today ? (prev.count ?? 0) + 1 : 1;
+      localStorage.setItem(BONUS_KEY, JSON.stringify({ count: used, date: today }));
+      setBonusLeft(Math.max(0, 3 - used));
+    } catch { /* ignora */ }
+    setIsBonusRetry(true);
+    resetJob();
+  }
+
+  function handleRateApp() {
+    try { localStorage.setItem(APP_RATED_KEY, "1"); } catch { /* ignora */ }
+    setShowRateApp(false);
+    // Abre Play Store na página do app (substitua pelo package name real)
+    window.open("market://details?id=app.tamowork.foto", "_blank");
+  }
+
   async function getToken() {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token ?? "";
@@ -1578,7 +1653,7 @@ export default function HomePage() {
       const jobRes = await fetch("/api/image-jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt, input_image_url: imageUrl, mode: _mode, format: photoFormat }),
+        body: JSON.stringify({ prompt, input_image_url: imageUrl, mode: _mode, format: photoFormat, ...(isBonusRetry ? { bonus_retry: true } : {}) }),
       });
 
       if (jobRes.status === 429) {
@@ -1600,6 +1675,7 @@ export default function HomePage() {
       // Persiste o ID do job no sessionStorage para restaurar caso o usuário navegue para outra página
       try { sessionStorage.setItem("pending_job_id", jobId); } catch { /* ignora */ }
 
+      setIsBonusRetry(false);
       setJob({ id: jobId, status: "queued" });
       setTimeout(() => fetchJobStatus(jobId), 10_000);
       setModeSelected(false);
@@ -3337,6 +3413,9 @@ export default function HomePage() {
                 }}
                 onFeedbackChange={setFeedbackText}
                 onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
+                onRetry={plan === "free" ? handleBonusRetry : undefined}
+                onRateApp={showRateApp ? handleRateApp : undefined}
+                bonusLeft={bonusLeft}
               />
 
               {/* Baixar */}
@@ -3459,6 +3538,9 @@ export default function HomePage() {
                 }}
                 onFeedbackChange={setFeedbackText}
                 onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
+                onRetry={plan === "free" ? handleBonusRetry : undefined}
+                onRateApp={showRateApp ? handleRateApp : undefined}
+                bonusLeft={bonusLeft}
               />
 
               {/* Baixar */}
@@ -3839,6 +3921,9 @@ export default function HomePage() {
                     onRate={(r) => { setPhotoRating(r); if (r >= 4) sendPhotoFeedback(r, ""); }}
                     onFeedbackChange={setFeedbackText}
                     onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
+                    onRetry={plan === "free" ? handleBonusRetry : undefined}
+                    onRateApp={showRateApp ? handleRateApp : undefined}
+                    bonusLeft={bonusLeft}
                   />
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, marginBottom: 10 }}>
                     <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>⬇ Baixar</button>
