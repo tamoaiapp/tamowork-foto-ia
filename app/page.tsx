@@ -1221,7 +1221,7 @@ export default function HomePage() {
           body: JSON.stringify({
             prompt: basePrompt,
             input_image_url: job?.input_image_url,
-            format: job?.format ?? photoFormat,
+            format: photoFormat,
             bonus_retry: true,
           }),
         });
