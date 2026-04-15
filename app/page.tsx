@@ -251,6 +251,8 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
   );
 }
 
+const RATED_KEY = "tw_has_rated";
+
 function PhotoRating({
   rating, hover, feedbackText, sent, loading,
   onHover, onRate, onFeedbackChange, onSubmit,
@@ -266,6 +268,17 @@ function PhotoRating({
   onSubmit: () => void;
 }) {
   const active = hover || rating || 0;
+  const [hasRatedBefore, setHasRatedBefore] = useState(() =>
+    typeof window !== "undefined" ? !!localStorage.getItem(RATED_KEY) : true
+  );
+
+  function handleRate(n: number) {
+    if (!hasRatedBefore) {
+      localStorage.setItem(RATED_KEY, "1");
+      setHasRatedBefore(true);
+    }
+    onRate(n);
+  }
 
   if (sent) {
     return (
@@ -280,6 +293,15 @@ function PhotoRating({
 
   return (
     <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "10px 14px", marginBottom: 10 }}>
+      {/* Banner exclusividade — só antes da primeira avaliação */}
+      {!hasRatedBefore && (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10, padding: "9px 12px", marginBottom: 10 }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>✨</span>
+          <span style={{ fontSize: 12, color: "#a5b4fc", lineHeight: 1.55 }}>
+            Sua avaliação é o que diferencia você dos outros usuários. A IA aprende com cada foto que você cria e avalia — e esse aprendizado é 100% seu, nunca compartilhado.
+          </span>
+        </div>
+      )}
       {/* Linha de estrelas */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: rating !== null && rating <= 3 ? 8 : 0 }}>
         <img src="/tamo/idle.png" alt="Tamo" style={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }} />
@@ -289,7 +311,7 @@ function PhotoRating({
             <button
               key={n}
               onMouseEnter={() => onHover(n)}
-              onClick={() => onRate(n)}
+              onClick={() => handleRate(n)}
               style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 3px", fontSize: 18, lineHeight: 1, color: n <= active ? "#fbbf24" : "#4e5c72", transition: "color 0.1s, transform 0.1s", transform: n <= active ? "scale(1.15)" : "scale(1)" }}
             >★</button>
           ))}
