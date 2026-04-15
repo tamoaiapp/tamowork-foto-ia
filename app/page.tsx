@@ -738,7 +738,7 @@ export default function HomePage() {
         } else {
           // Restaura o job done mais recente (criado nas últimas 24h) para mostrar resultado
           // Ignora jobs que o usuário descartou explicitamente (clicou em "criar nova foto")
-          const dismissedIds: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+          const dismissedIds: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
           const recentDone = jobs.find(
             (j) => j.status === "done" && j.output_image_url &&
             !dismissedIds.includes(j.id) &&
@@ -827,7 +827,7 @@ export default function HomePage() {
           (v) => v.status !== "done" && v.status !== "failed" && v.status !== "canceled"
         );
         // Só restaura vídeo done se foi criado nas últimas 24h e não foi descartado pelo usuário
-        const dismissedVideoIds: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+        const dismissedVideoIds: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
         const doneVideo = vdata.find(
           (v) => v.status === "done" &&
           !dismissedVideoIds.includes(v.id) &&
@@ -847,7 +847,7 @@ export default function HomePage() {
       const nres = await fetch("/api/narrated-video", { headers: { Authorization: `Bearer ${token}` } });
       if (nres.ok) {
         const ndata: NarratedJob[] = await nres.json();
-        const dismissedNarrated: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+        const dismissedNarrated: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
         const activeNarrated = ndata.find((v) => !["done", "failed", "canceled"].includes(v.status));
         const doneNarrated = ndata.find(
           (v) => v.status === "done" && v.output_video_url &&
@@ -871,7 +871,7 @@ export default function HomePage() {
       const lres = await fetch("/api/long-video", { headers: { Authorization: `Bearer ${token}` } });
       if (lres.ok) {
         const ldata: LongVideoJob[] = await lres.json();
-        const dismissedLong: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+        const dismissedLong: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
         const activeLong = ldata.find((v) => !["done", "failed", "canceled"].includes(v.status));
         const doneLong = ldata.find(
           (v) => v.status === "done" && v.output_video_url &&
@@ -1594,10 +1594,10 @@ export default function HomePage() {
     // Marca o job atual como descartado para evitar restauração automática
     if (job?.id) {
       try {
-        const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+        const dismissed: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
         if (!dismissed.includes(job.id)) {
           dismissed.push(job.id);
-          sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed));
+          localStorage.setItem("dismissed_jobs", JSON.stringify(dismissed));
         }
       } catch { /* ignora */ }
     }
@@ -1879,10 +1879,10 @@ export default function HomePage() {
     // Marca o vídeo job atual como descartado para evitar restauração automática
     if (videoJob?.id) {
       try {
-        const dismissed: string[] = JSON.parse(sessionStorage.getItem("dismissed_jobs") ?? "[]");
+        const dismissed: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
         if (!dismissed.includes(videoJob.id)) {
           dismissed.push(videoJob.id);
-          sessionStorage.setItem("dismissed_jobs", JSON.stringify(dismissed));
+          localStorage.setItem("dismissed_jobs", JSON.stringify(dismissed));
         }
       } catch { /* ignora */ }
     }
@@ -3577,7 +3577,7 @@ export default function HomePage() {
         hasActiveJob={isGenerating}
         hasDoneJob={hasDoneJob}
         botActive={botActive}
-        onOpenBot={() => setBotNavOpen(true)}
+        onOpenBot={() => setBotNavOpen(prev => !prev)}
         onCriarWhileBusy={() => {
           setBotNavOpen(true);
           setBotTriggerMessage(`🦎 Ainda estou finalizando sua foto! Aguenta mais um minutinho.\n\nEnquanto isso, posso te ajudar com legenda, ideias de post ou qualquer outra coisa. O que precisa?`);
@@ -3679,9 +3679,9 @@ export default function HomePage() {
       {botNavOpen && (
         <div style={{
           position: "fixed",
-          top: 66, bottom: 70,
+          top: 66, bottom: "calc(70px + env(safe-area-inset-bottom, 0px))",
           left: 0, right: 0,
-          zIndex: 100,
+          zIndex: 150,
           background: "#07080b",
           display: "flex", flexDirection: "column",
           padding: "10px 16px 12px",

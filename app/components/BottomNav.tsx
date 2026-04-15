@@ -182,7 +182,7 @@ const s: Record<string, React.CSSProperties> = {
     background: "#0c1018",
     borderTop: "1px solid rgba(255,255,255,0.07)",
     display: "flex",
-    zIndex: 50,
+    zIndex: 200,
     paddingBottom: "env(safe-area-inset-bottom, 0px)",
   },
   brand: {
