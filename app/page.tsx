@@ -787,6 +787,7 @@ export default function HomePage() {
           setJob(active);
           if (active.input_image_url) setPreview(active.input_image_url);
           setModeSelected(true);
+          setBotNavOpen(true); // abre Tamo automaticamente ao restaurar job ativo
           // Job ativo encontrado — limpa pending_job_id do sessionStorage
           try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
         } else {
@@ -817,7 +818,7 @@ export default function HomePage() {
                     hasActivePhotoJob = pjob.status !== "done" && pjob.status !== "failed";
                     setJob(pjob);
                     if (pjob.input_image_url) setPreview(pjob.input_image_url);
-                    if (hasActivePhotoJob) setModeSelected(true);
+                    if (hasActivePhotoJob) { setModeSelected(true); setBotNavOpen(true); }
                   } else {
                     sessionStorage.removeItem("pending_job_id");
                   }
