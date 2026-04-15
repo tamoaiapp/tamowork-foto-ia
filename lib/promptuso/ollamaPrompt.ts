@@ -96,12 +96,56 @@ export interface OllamaPromptResult {
   negative_prompt: string;
 }
 
+export interface UserContext {
+  style?: {
+    lighting?: string;
+    background?: string;
+    stylePreference?: string;
+    extraContext?: string;
+  };
+  productCorrection?: string; // âncora específica pro produto atual
+}
+
+/**
+ * Monta os blocos de contexto do usuário para injetar no system prompt.
+ * Fica no TOPO do prompt, antes dos 6 steps — arquitetura base não muda.
+ */
+function buildUserContextBlock(ctx?: UserContext): string {
+  if (!ctx) return "";
+
+  const lines: string[] = [];
+
+  const hasStyle = ctx.style && Object.values(ctx.style).some(v => v && v.trim());
+  if (hasStyle) {
+    lines.push("## USER STYLE PREFERENCES (apply to all photos generated for this user):");
+    if (ctx.style?.lighting) lines.push(`* Lighting: ${ctx.style.lighting}`);
+    if (ctx.style?.background) lines.push(`* Background: ${ctx.style.background}`);
+    if (ctx.style?.stylePreference) lines.push(`* Style: ${ctx.style.stylePreference}`);
+    if (ctx.style?.extraContext) lines.push(`* Extra: ${ctx.style.extraContext}`);
+    lines.push("Incorporate these preferences naturally into the positive prompt.");
+  }
+
+  if (ctx.productCorrection?.trim()) {
+    lines.push("## PRODUCT ANCHOR CORRECTION (specific to this product type — OVERRIDE default anchor):");
+    lines.push(ctx.productCorrection.trim());
+    lines.push("This correction takes priority over STEP 3. Apply it exactly as described.");
+  }
+
+  return lines.length > 0 ? lines.join("\n") + "\n\n" : "";
+}
+
 export async function generatePromptWithOllama(
   produto: string,
   cenario: string,
-  visionDesc?: string
+  visionDesc?: string,
+  userContext?: UserContext
 ): Promise<OllamaPromptResult | null> {
   if (!OLLAMA_BASE) return null;
+
+  const contextBlock = buildUserContextBlock(userContext);
+  const systemPromptWithContext = contextBlock
+    ? contextBlock + SYSTEM_PROMPT
+    : SYSTEM_PROMPT;
 
   const userMessage = `Product Name: ${produto || "(not provided)"}
 Scene: ${cenario || "(not provided)"}
@@ -116,7 +160,7 @@ Vision Description: ${visionDesc || "(not provided)"}`;
         stream: false,
         options: { temperature: 0.3, num_predict: 600 },
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPromptWithContext },
           { role: "user", content: userMessage },
         ],
       }),

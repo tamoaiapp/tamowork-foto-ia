@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { buildPromptResult } from "@/lib/promptuso/infer";
 import { generatePromptWithOllama } from "@/lib/promptuso/ollamaPrompt";
+import { getUserContext } from "@/lib/promptuso/userContext";
 
 /**
  * Traduz texto para inglês via MyMemory (gratuito, sem API key).
@@ -32,6 +34,22 @@ async function translateToEnglish(text: string): Promise<string> {
     return translated;
   } catch {
     return text; // timeout ou erro de rede — usa o original
+  }
+}
+
+async function getUserId(req: NextRequest): Promise<string | null> {
+  try {
+    const auth = req.headers.get("authorization") ?? "";
+    const token = auth.replace("Bearer ", "").trim();
+    if (!token) return null;
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data } = await sb.auth.getUser(token);
+    return data.user?.id ?? null;
+  } catch {
+    return null;
   }
 }
 
@@ -72,8 +90,21 @@ export async function POST(req: NextRequest) {
 
     const visionDesc = visionDescRaw ? String(visionDescRaw).trim() : undefined;
 
+    // Busca contexto personalizado do usuário (estilo + correções de produto)
+    const userId = await getUserId(req);
+    const userContext = userId
+      ? await getUserContext(userId, produtoEN, cenarioEN).catch(() => undefined)
+      : undefined;
+
+    if (userContext?.productCorrection) {
+      console.log("[prompt] correção de âncora aplicada:", userContext.productCorrection.slice(0, 60));
+    }
+    if (userContext?.style) {
+      console.log("[prompt] estilo do usuário aplicado:", JSON.stringify(userContext.style).slice(0, 80));
+    }
+
     // Tenta gerar via Ollama (qwen2.5:7b local no A40) — se falhar usa regras
-    const ollamaResult = await generatePromptWithOllama(produtoEN, cenarioEN, visionDesc);
+    const ollamaResult = await generatePromptWithOllama(produtoEN, cenarioEN, visionDesc, userContext);
 
     if (ollamaResult) {
       console.log("[prompt] gerado via Ollama qwen2.5:7b");

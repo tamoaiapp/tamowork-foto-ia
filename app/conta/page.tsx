@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import JobProgress from "./JobProgress";
 import BottomNav from "@/app/components/BottomNav";
+import PromptProfileSection from "./PromptProfileSection";
 import { useI18n } from "@/lib/i18n";
 
 const VAPID_PUBLIC_KEY = "BOFpGK6deSOtMczLOppZ8RXLb8XbAP0cs4hDHOZtJrDsnLhvzdPQXeojc5CohPhnj0PvNkPd7B7HKLtUva03cGk";
@@ -414,6 +415,9 @@ export default function ContaPage() {
                 )}
               </div>
             </section>
+
+            {/* Estilo de prompt personalizado */}
+            <PromptProfileSection token={token} />
 
           </div>
         </div>
