@@ -8,6 +8,8 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { uploadImageToComfy, COMFY_BASES } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
+import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/serverProductVision";
+import { buildPromptResult } from "@/lib/promptuso/infer";
 
 const DEFAULT_SCENES = 4;
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
@@ -49,6 +51,7 @@ Roteiro: ${original}`,
 async function submitSceneVariation(
   imageName: string,
   promptPos: string,
+  promptNeg: string,
   jobId: string,
   sceneIndex: number,
   comfyBase: string
@@ -64,8 +67,7 @@ async function submitSceneVariation(
   (workflow["11"] as { inputs: { image: string } }).inputs.image = imageName;
   (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt =
     `${promptPos}\n#job:${prefix}\n`;
-  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt =
-    "blurry, low quality, text, watermark, distorted, ugly, deformed face, bad anatomy, extra limbs, white background, plain background, product only, no person";
+  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = promptNeg;
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = prefix;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = seed;
 
@@ -186,22 +188,26 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       uploadImageToComfy(job.input_image_url, comfyBase, `narr_${jobId.replace(/-/g, "").slice(0, 12)}`),
     ]);
 
-    // 4. Gera prompts de simulação de uso — pessoa usando o produto em cenas lifestyle variadas
-    const SCENE_PROMPTS = [
-      "beautiful brazilian woman wearing the product, outdoor lifestyle photo, natural sunlight, city street background, stylish casual look, high quality fashion photography",
-      "elegant woman wearing the product, indoor lifestyle scene, modern interior, soft natural light, fashion editorial style, professional photography",
-      "young woman wearing the product, park or garden background, golden hour lighting, lifestyle fashion photo, vibrant colors, sharp focus",
-      "fashion model wearing the product, shopping mall or cafe background, candid lifestyle moment, natural light, high quality photo",
-      "woman wearing the product, close up detail shot, showing fabric texture and fit, soft bokeh background, professional fashion photography",
-      "woman wearing the product, dynamic pose, urban background, street style fashion photo, natural daylight",
+    // 4. Visão do produto → gera prompts de simulação de uso iguais ao fluxo de foto normal
+    const visionDesc = await getProductVisionDescription(job.input_image_url, job.roteiro);
+    const productText = mergeProductTexts(job.roteiro, visionDesc);
+
+    const SCENE_CENARIOS = [
+      "outdoor lifestyle, natural sunlight, city street background",
+      "indoor lifestyle, modern interior, soft natural light",
+      "park or garden, golden hour lighting, vibrant colors",
+      "shopping mall or cafe, candid lifestyle moment, natural light",
+      "close up detail shot, soft bokeh background",
+      "urban background, street style, natural daylight",
     ];
 
     // 5. Submete N variações ao ComfyUI (dinâmico com base na duração do áudio)
     const scenePromptIds: string[] = [];
     for (let i = 0; i < scenesNeeded; i++) {
-      const promptPos = SCENE_PROMPTS[i % SCENE_PROMPTS.length];
+      const cenario = SCENE_CENARIOS[i % SCENE_CENARIOS.length];
+      const { positive, negative } = buildPromptResult(productText, cenario);
       try {
-        const promptId = await submitSceneVariation(imageName, promptPos, jobId, i, comfyBase);
+        const promptId = await submitSceneVariation(imageName, positive, negative, jobId, i, comfyBase);
         scenePromptIds.push(promptId);
       } catch (err) {
         console.error(`[narrated] scene ${i} submit error:`, err);
