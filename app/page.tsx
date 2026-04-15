@@ -800,6 +800,7 @@ export default function HomePage() {
           );
           if (recentDone) {
             setJob(recentDone);
+            setBotNavOpen(true); // resultado fica no Tamo, não no Criar
             try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
           } else {
             // Nenhum job ativo nem done recente — verifica se há um job pendente salvo no sessionStorage
@@ -1055,7 +1056,7 @@ export default function HomePage() {
   const toastFiredRef = useRef(false);
   useEffect(() => {
     if (job?.status === "done" && job.output_image_url && job.id !== "rate_limited") {
-      setBotNavOpen(false); // fecha o Tamo para mostrar o resultado automaticamente
+      // Resultado fica dentro do Tamo — não fecha automaticamente
       if (!toastFiredRef.current) {
         toastFiredRef.current = true;
         setToastMessage("Sua foto ficou pronta!");
