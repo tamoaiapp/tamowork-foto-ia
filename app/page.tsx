@@ -1051,11 +1051,12 @@ export default function HomePage() {
     }
   }, [job?.status, plan]);
 
-  // Quando foto fica pronta: mostra mini toast + badge em Criações + libera para criar novo
+  // Quando foto fica pronta: mostra mini toast + badge em Criações + fecha Tamo se aberto
   const toastFiredRef = useRef(false);
   useEffect(() => {
     if (job?.status === "done" && job.output_image_url && job.id !== "rate_limited") {
       setPendingResult(true);
+      setBotNavOpen(false); // fecha o Tamo para mostrar o resultado automaticamente
       if (!toastFiredRef.current) {
         toastFiredRef.current = true;
         setToastMessage("Sua foto ficou pronta!");
@@ -2060,7 +2061,7 @@ export default function HomePage() {
   const isGenerating = (submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled")) && job?.status !== "done";
   // State machine: sem_trabalho | trabalhando | terminado
   // submitting=true OU job ativo = tela "Trabalhando..." — não volta para formulário até ter resultado
-  const workState: WorkState = (submitting || pendingResult || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled" && job.status !== null))
+  const workState: WorkState = (submitting || (!!job && job.status !== "done" && job.status !== "failed" && job.status !== "canceled" && job.status !== null))
     ? "trabalhando"
     : deriveWorkState(job);
 
@@ -3000,35 +3001,7 @@ export default function HomePage() {
               <>
                 {/* Painel esquerdo: status */}
                 <div className="generating-panel">
-                  {pendingResult ? (
-                    /* Foto pronta — mostra botão "Ver Resultado" no lugar da barra */
-                    <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
-                      <div style={{ fontSize: 13, color: "#16c784", fontWeight: 700, marginBottom: 14, letterSpacing: "0.01em" }}>
-                        🎉 Sua foto ficou pronta!
-                      </div>
-                      <button
-                        onClick={() => setPendingResult(false)}
-                        className="result-btn"
-                        style={{
-                          width: "100%",
-                          background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
-                          border: "none",
-                          borderRadius: 14,
-                          padding: "16px 0",
-                          color: "#fff",
-                          fontSize: 16,
-                          fontWeight: 800,
-                          cursor: "pointer",
-                          letterSpacing: "-0.01em",
-                          boxShadow: "0 4px 24px rgba(139,92,246,0.5)",
-                        }}
-                      >
-                        ✨ Ver Resultado
-                      </button>
-                    </div>
-                  ) : (
-                    /* Foto ainda processando */
-                    <>
+                  <>
                       <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
                         <TamoMascot state="processing" size={80} label={lang === "en" ? "Working on it..." : lang === "es" ? "Trabajando en ello..." : "Tô trabalhando..."} />
                       </div>
@@ -3064,7 +3037,6 @@ export default function HomePage() {
                         </button>
                       )}
                     </>
-                  )}
                 </div>
               </>
             )}
@@ -3817,21 +3789,7 @@ export default function HomePage() {
                 ) : (
                   <>
                     <div className="generating-panel">
-                      {pendingResult ? (
-                        <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
-                          <div style={{ fontSize: 13, color: "#16c784", fontWeight: 700, marginBottom: 14 }}>
-                            🎉 Sua foto ficou pronta!
-                          </div>
-                          <button
-                            onClick={() => { setPendingResult(false); setBotNavOpen(false); }}
-                            className="result-btn"
-                            style={{ width: "100%", background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)", border: "none", borderRadius: 14, padding: "16px 0", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 24px rgba(139,92,246,0.5)" }}
-                          >
-                            ✨ Ver Resultado
-                          </button>
-                        </div>
-                      ) : (
-                        <>
+                      <>
                           <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
                             <TamoMascot state="processing" size={80} label={lang === "en" ? "Working on it..." : lang === "es" ? "Trabajando en ello..." : "Tô trabalhando..."} />
                           </div>
@@ -3861,7 +3819,6 @@ export default function HomePage() {
                             </button>
                           )}
                         </>
-                      )}
                     </div>
                     {!(rateLimitedUntil && countdown > 0) && (
                       onboardingMode ? <OnboardingChat /> : (
@@ -4055,7 +4012,7 @@ export default function HomePage() {
           )}
 
           {/* BotChat — visível quando há job em andamento (some quando foto pronta) */}
-          {!pendingResult && (workState === "trabalhando" ||
+          {(workState === "trabalhando" ||
             (narratedJob && !["done","failed","canceled"].includes(narratedJob.status)) ||
             (longVideoJob && !["done","failed","canceled"].includes(longVideoJob.status)) ||
             (videoJob && !["done","failed","canceled"].includes(videoJob.status ?? ""))) && (
