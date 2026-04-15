@@ -158,15 +158,16 @@ export default function BottomNav({ hasActiveJob = false, hasDoneJob = false, bo
       })}
 
       {/* Tamo — sempre visível na nav */}
-      <button onClick={onOpenBot} style={s.tab} className="nav-tab" aria-label="Abrir Tamo">
+      <button onClick={() => router.push('/tamo')} style={s.tab} className="nav-tab" aria-label="Abrir Tamo">
         <div style={{ position: "relative", flexShrink: 0, width: 28, height: 28 }}>
           <img
             src="/tamo/idle.png"
             alt="Tamo"
-            style={{ width: 28, height: 28, objectFit: "contain", objectPosition: "bottom" }}
+            style={{ width: 28, height: 28, objectFit: "contain", objectPosition: "bottom", opacity: pathname === "/tamo" ? 1 : 0.6 }}
           />
+          {hasActiveJob && <span style={s.activeDot} />}
         </div>
-        <span style={{ ...s.label, color: "#a855f7" }} className="nav-label">Tamo</span>
+        <span style={{ ...s.label, color: pathname === "/tamo" ? "#a855f7" : "#4e5c72" }} className="nav-label">Tamo</span>
       </button>
     </nav>
   );

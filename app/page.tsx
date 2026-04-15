@@ -1228,13 +1228,14 @@ export default function HomePage() {
 
         if (jobRes.ok) {
           const { jobId } = await jobRes.json();
-          try { sessionStorage.setItem("pending_job_id", jobId); } catch { /* ignora */ }
+          try {
+            sessionStorage.setItem("pending_job_id", jobId);
+            sessionStorage.setItem("tamo_active_job", JSON.stringify({ id: jobId, input_image_url: job?.input_image_url }));
+          } catch { /* ignora */ }
           setPhotoRating(null);
           setFeedbackText("");
           setRatingHover(0);
-          setJob({ id: jobId, status: "queued" });
-          setTimeout(() => fetchJobStatus(jobId), 10_000);
-          setFeedbackSent(true);
+          router.push("/tamo");
           return;
         }
       }
@@ -1710,20 +1711,16 @@ export default function HomePage() {
       }
       const { jobId } = await jobRes.json();
 
-      // Persiste o ID do job no sessionStorage para restaurar caso o usuário navegue para outra página
-      try { sessionStorage.setItem("pending_job_id", jobId); } catch { /* ignora */ }
+      // Persiste o ID do job no sessionStorage para restaurar na página /tamo
+      try {
+        sessionStorage.setItem("pending_job_id", jobId);
+        sessionStorage.setItem("tamo_active_job", JSON.stringify({ id: jobId, input_image_url: imageUrl }));
+      } catch { /* ignora */ }
 
       setIsBonusRetry(false);
       setJob({ id: jobId, status: "queued" });
-      setTimeout(() => fetchJobStatus(jobId), 10_000);
       setModeSelected(false);
-      const photoTriggers = [
-        `🦎 Estou transformando a foto de *${_produto || "seu produto"}*! Me fala o preço de venda — já preparo a legenda enquanto a foto fica pronta.`,
-        `✨ Criando sua foto de *${_produto || "produto"}*! Quer que eu escreva uma legenda com hashtags enquanto espera?`,
-        `🔥 Foto de *${_produto || "produto"}* a caminho! Posso criar um texto de venda agora. Qual o preço?`,
-      ];
-      setBotTriggerMessage(photoTriggers[Math.floor(Math.random() * photoTriggers.length)]);
-      setBotNavOpen(true);
+      router.push("/tamo");
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Erro ao processar");
     } finally {
@@ -3819,7 +3816,6 @@ export default function HomePage() {
         hasActiveJob={isGenerating}
         hasDoneJob={hasDoneJob}
         botActive={botActive}
-        onOpenBot={() => setBotNavOpen(prev => !prev)}
         onCriarWhileBusy={() => {
           setBotNavOpen(true);
           setBotTriggerMessage(`🦎 Ainda estou finalizando sua foto! Aguenta mais um minutinho.\n\nEnquanto isso, posso te ajudar com legenda, ideias de post ou qualquer outra coisa. O que precisa?`);
