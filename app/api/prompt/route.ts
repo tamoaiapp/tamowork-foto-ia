@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { buildPromptResult } from "@/lib/promptuso/infer";
+import { buildPromptResult, inferSlot } from "@/lib/promptuso/infer";
 import { generatePromptWithOllama } from "@/lib/promptuso/ollamaPrompt";
 import { getUserContext } from "@/lib/promptuso/userContext";
 
@@ -35,6 +35,44 @@ async function translateToEnglish(text: string): Promise<string> {
   } catch {
     return text; // timeout ou erro de rede — usa o original
   }
+}
+
+/** Cena padrão por tipo de slot — usada quando o usuário não enviou cenário */
+function autoScene(slot: string): string {
+  const scenes: Record<string, string> = {
+    wear_head_top:    "lifestyle portrait, natural outdoor lighting",
+    wear_head_face:   "lifestyle portrait, soft neutral background",
+    wear_head_ear:    "close-up portrait, soft bokeh background",
+    wear_neck:        "lifestyle portrait, soft neutral background",
+    wear_torso_upper: "lifestyle environment, natural light",
+    wear_torso_full:  "lifestyle environment, natural light, full body shot",
+    wear_waist_legs:  "lifestyle environment, street or studio",
+    wear_feet:        "walking or street scene, ground-level shot",
+    wear_wrist:       "close-up lifestyle, neutral background",
+    wear_finger:      "close-up of hand, elegant neutral background",
+    wear_back:        "lifestyle environment, person facing away or to the side",
+    wear_crossbody:   "lifestyle street environment",
+    hold_device:      "modern lifestyle setting, person using device naturally",
+    hold_bag_hand:    "lifestyle scene, street or cafe",
+    hold_tool_safe:   "workshop or home environment, tool in use",
+    hold_food_display:"clean kitchen or cafe countertop",
+    hold_sport_object:"sports environment, outdoors",
+    hold_beauty_product: "premium vanity or bathroom counter, elegant lighting",
+    hold_beverage:    "lifestyle setting, product held naturally",
+    hold_flower:      "natural light, outdoor or indoor lifestyle",
+    scene_tabletop:   "clean commercial tabletop, neutral background",
+    scene_home_indoor:"modern living room or home interior",
+    scene_floor:      "modern living room floor, clean environment",
+    scene_wall:       "clean interior wall, modern home",
+    scene_outdoor_ground: "outdoor natural environment, daylight",
+    scene_water_surface:  "pool or beach, bright daylight",
+    scene_sport_environment: "sports ground or gym, dynamic environment",
+    scene_store_shelf:"retail store shelf, clean display",
+    install_home_fixture:    "modern bathroom or home interior",
+    install_vehicle_fixture: "clean car dashboard or engine bay",
+    install_wall_fixed:      "clean interior wall, modern home",
+  };
+  return scenes[slot] ?? "clean commercial background, professional studio lighting";
 }
 
 async function getUserId(req: NextRequest): Promise<string | null> {
@@ -83,10 +121,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Traduz produto e cenário para inglês (se estiverem em PT/ES)
-    const [produtoEN, cenarioEN] = await Promise.all([
+    // Se cenário vazio, gera cena padrão baseada no tipo de produto (autoScene)
+    const [produtoEN, cenarioRaw_translated] = await Promise.all([
       translateToEnglish(String(produtoRaw)),
-      translateToEnglish(String(cenarioRaw)),
+      cenarioRaw ? translateToEnglish(String(cenarioRaw)) : Promise.resolve(""),
     ]);
+
+    const cenarioEN = cenarioRaw_translated || autoScene(inferSlot(produtoEN));
 
     const visionDesc = visionDescRaw ? String(visionDescRaw).trim() : undefined;
 

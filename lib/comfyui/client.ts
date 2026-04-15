@@ -1,5 +1,5 @@
-// Fluxo direto ao ComfyUI (sem clouda/cloudb/Firestore):
-// 1. criarPrompt  → promptuso (mantido no GCP)
+// Fluxo direto ao ComfyUI:
+// 1. criarPrompt  → /api/prompt (Vercel — sem dependência do Cloud Run)
 // 2. uploadImage  → ComfyUI /upload/image
 // 3. submitWorkflow → ComfyUI /prompt  → prompt_id
 // 4. getComfyHistory → ComfyUI /history/{prompt_id} → outputUrl
@@ -26,9 +26,8 @@ function applyFormatToFotoWorkflow(workflow: Record<string, unknown>, format: Ph
   (workflow["160"] as { inputs: { image: unknown } }).inputs.image = ["168", 0];
 }
 
-const PROMPTUSO_URL =
-  process.env.COMFYUI_RUN_URL ||
-  `${process.env.APP_URL ?? "http://localhost:3003"}/api/prompt`;
+// Sempre usa o /api/prompt interno (Vercel) — Cloud Run removido
+const PROMPTUSO_URL = `${process.env.APP_URL ?? "http://localhost:3003"}/api/prompt`;
 export const COMFY_BASES = (process.env.COMFY_BASES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 
 export interface PromptResult {
