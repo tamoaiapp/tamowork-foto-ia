@@ -9,23 +9,24 @@ interface Props {
 }
 
 // ─── A/B variants ──────────────────────────────────────────────────────────────
-// Each variant has: id, headline, subheadline, cta, badge, emoji, accentColor
 const VARIANTS = [
   {
     id: "v1_escassez",
     emoji: "⚡",
     headline: "Fotos profissionais ilimitadas",
-    subheadline: "Venda mais com imagens que vendem. Plano anual por apenas R$29/mês.",
-    cta: "Quero o plano anual",
+    subheadline: "Venda mais com imagens que vendem. Fotos e vídeos animados sem limite.",
+    cta_br: "Assinar por R$79/mês",
+    cta_en: "Subscribe — $100/year",
     badge: "🔥 Mais popular",
     accent: "#a855f7",
   },
   {
     id: "v2_economia",
     emoji: "💰",
-    headline: "Economize R$600 por ano",
-    subheadline: "Plano mensal sai R$948/ano. O anual, só R$348. A diferença paga um iPhone.",
-    cta: "Assinar por R$348/ano",
+    headline: "Menos de R$2,63 por dia",
+    subheadline: "Fotos de catálogo profissionais por menos do que um cafezinho. Cancele quando quiser.",
+    cta_br: "Assinar por R$79/mês",
+    cta_en: "Subscribe — $100/year",
     badge: "💸 Melhor custo-benefício",
     accent: "#16c784",
   },
@@ -33,8 +34,9 @@ const VARIANTS = [
     id: "v3_resultado",
     emoji: "📸",
     headline: "Sua foto de produto em 60 segundos",
-    subheadline: "Fotos ilimitadas, fundo branco, cenários profissionais e vídeos animados — tudo no anual.",
-    cta: "Começar agora — R$29/mês",
+    subheadline: "Fotos ilimitadas, fundo branco, cenários profissionais e vídeos animados.",
+    cta_br: "Começar agora — R$79/mês",
+    cta_en: "Get started — $100/year",
     badge: "✨ Resultado garantido",
     accent: "#6366f1",
   },
@@ -43,7 +45,8 @@ const VARIANTS = [
     emoji: "🚀",
     headline: "Desbloqueie tudo agora",
     subheadline: "Você está limitado a 2 fotos/dia. Com o Pro, são fotos ilimitadas todo dia.",
-    cta: "Desbloquear Pro",
+    cta_br: "Desbloquear Pro — R$79/mês",
+    cta_en: "Unlock Pro — $100/year",
     badge: "🔓 Sem limites",
     accent: "#f59e0b",
   },
@@ -52,7 +55,8 @@ const VARIANTS = [
     emoji: "⭐",
     headline: "Usado por +500 lojistas",
     subheadline: "Quem vende no Instagram e WhatsApp usa o TamoWork para ter fotos de catálogo sem fotógrafo.",
-    cta: "Fazer parte — R$29/mês",
+    cta_br: "Fazer parte — R$79/mês",
+    cta_en: "Join now — $100/year",
     badge: "👥 +500 usuários",
     accent: "#ec4899",
   },
@@ -61,34 +65,38 @@ const VARIANTS = [
     emoji: "😤",
     headline: "Chega de foto feia de produto",
     subheadline: "Fundo bagunçado, luz ruim, produto torto. Com o Pro, qualquer foto vira profissional.",
-    cta: "Transformar minhas fotos",
+    cta_br: "Transformar minhas fotos — R$79/mês",
+    cta_en: "Transform my photos — $100/year",
     badge: "✅ Resultados reais",
     accent: "#ef4444",
   },
   {
     id: "v7_simples",
     emoji: "🎯",
-    headline: "R$29 por mês. Fotos ilimitadas.",
+    headline: "R$79 por mês. Fotos ilimitadas.",
     subheadline: "Sem taxa de fotógrafo. Sem estúdio. Sem edição manual. Só você e a IA.",
-    cta: "Assinar o plano anual",
+    cta_br: "Assinar agora",
+    cta_en: "Subscribe — $100/year",
     badge: "🎯 Simples assim",
     accent: "#0ea5e9",
   },
   {
     id: "v8_comparacao",
     emoji: "📊",
-    headline: "Fotógrafo: R$300/sessão. TamoWork: R$29/mês",
+    headline: "Fotógrafo: R$300/sessão. TamoWork: R$79/mês",
     subheadline: "Fotos ilimitadas, entregues em segundos. Sem agendamento, sem deslocamento.",
-    cta: "Quero economizar agora",
+    cta_br: "Quero economizar agora",
+    cta_en: "Start saving now",
     badge: "💡 Compare e decida",
     accent: "#14b8a6",
   },
   {
     id: "v9_exclusivo",
     emoji: "👑",
-    headline: "Acesso Pro — plano exclusivo anual",
-    subheadline: "Fotos ilimitadas + vídeo animado + fundo branco + catálogo com modelo. Por R$348/ano.",
-    cta: "Quero acesso completo",
+    headline: "Acesso Pro completo",
+    subheadline: "Fotos ilimitadas + vídeo animado + fundo branco + catálogo com modelo. Tudo incluso.",
+    cta_br: "Quero acesso completo — R$79/mês",
+    cta_en: "Get full access — $100/year",
     badge: "👑 Tudo incluído",
     accent: "#8b5cf6",
   },
@@ -96,8 +104,9 @@ const VARIANTS = [
     id: "v10_primeiro_job",
     emoji: "🎉",
     headline: "Sua primeira foto ficou incrível!",
-    subheadline: "Imagina ter isso sem limite. Assine o anual por R$29/mês e gere fotos todo dia.",
-    cta: "Continuar sem limites",
+    subheadline: "Imagina ter isso sem limite. Assine e gere fotos profissionais todo dia.",
+    cta_br: "Continuar sem limites — R$79/mês",
+    cta_en: "Go unlimited — $100/year",
     badge: "🎉 Aproveite o momento",
     accent: "#f97316",
   },
@@ -109,7 +118,6 @@ const STORAGE_KEY = "upsell_variant";
 const SHOWN_KEY   = "upsell_shown_at";
 const DISMISS_KEY = "upsell_dismissed_until";
 
-/** Retorna ou sorteia a variante desta sessão */
 function getVariant(): Variant {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -117,7 +125,6 @@ function getVariant(): Variant {
       const found = VARIANTS.find(v => v.id === saved);
       if (found) return found;
     }
-    // Sorteia uma variante nova
     const v = VARIANTS[Math.floor(Math.random() * VARIANTS.length)];
     localStorage.setItem(STORAGE_KEY, v.id);
     return v;
@@ -126,7 +133,6 @@ function getVariant(): Variant {
   }
 }
 
-/** Registra impressão no banco via API (fire-and-forget) */
 function trackImpression(variantId: string) {
   try {
     fetch("/api/upsell-track", {
@@ -137,7 +143,6 @@ function trackImpression(variantId: string) {
   } catch { /* silencioso */ }
 }
 
-/** Registra clique no CTA */
 function trackClick(variantId: string) {
   try {
     fetch("/api/upsell-track", {
@@ -153,14 +158,14 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
   const [variant] = useState<Variant>(() => getVariant());
   const [closing, setClosing] = useState(false);
 
+  const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
+
   useEffect(() => {
-    // Registra horário em que foi exibido
     try { localStorage.setItem(SHOWN_KEY, Date.now().toString()); } catch { /* */ }
     trackImpression(variant.id);
   }, [variant.id]);
 
   function handleClose() {
-    // Suprime por 24h após fechar
     try { localStorage.setItem(DISMISS_KEY, String(Date.now() + 24 * 60 * 60 * 1000)); } catch { /* */ }
     setClosing(true);
     setTimeout(onClose, 280);
@@ -168,13 +173,7 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
 
   function handleCTA() {
     trackClick(variant.id);
-    onAssinar("annual");
-    handleClose();
-  }
-
-  function handleMonthly() {
-    trackClick(variant.id + "_monthly");
-    onAssinar("monthly");
+    onAssinar(isBR ? "monthly" : "annual");
     handleClose();
   }
 
@@ -241,14 +240,12 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
           }}>
             {variant.headline}
           </h2>
-          <p style={{
-            fontSize: 14, color: "#8394b0", lineHeight: 1.6, margin: 0,
-          }}>
+          <p style={{ fontSize: 14, color: "#8394b0", lineHeight: 1.6, margin: 0 }}>
             {variant.subheadline}
           </p>
         </div>
 
-        {/* Price highlight */}
+        {/* Price block — dinâmico por região */}
         <div style={{
           background: "#111820", borderRadius: 16,
           border: `1px solid ${acc}44`,
@@ -257,13 +254,21 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
         }}>
           <div>
             <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 4 }}>
-              {lang === "en" ? "Annual plan" : "Plano anual"}
+              {isBR ? "Plano mensal" : (lang === "en" ? "Annual plan" : "Plan anual")}
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-              <span style={{ fontSize: 32, fontWeight: 800, color: "#eef2f9" }}>R$29</span>
-              <span style={{ fontSize: 14, color: "#8394b0" }}>/mês</span>
+              <span style={{ fontSize: 32, fontWeight: 800, color: "#eef2f9" }}>
+                {isBR ? "R$79" : "$100"}
+              </span>
+              <span style={{ fontSize: 14, color: "#8394b0" }}>
+                {isBR ? "/mês" : "/year"}
+              </span>
             </div>
-            <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 2 }}>R$348 cobrado uma vez</div>
+            <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 2 }}>
+              {isBR
+                ? "Cancele quando quiser"
+                : (lang === "en" ? "Billed once a year" : "Facturado una vez al año")}
+            </div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{
@@ -271,7 +276,7 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
               borderRadius: 10, padding: "6px 12px",
               fontSize: 13, fontWeight: 700, color: "#16c784",
             }}>
-              {lang === "en" ? "Save R$600" : "Economize R$600"}
+              {isBR ? "Sem fidelidade" : (lang === "en" ? "Cancel anytime" : "Sin permanencia")}
             </div>
           </div>
         </div>
@@ -291,7 +296,7 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
           ))}
         </div>
 
-        {/* CTA principal */}
+        {/* CTA único */}
         <button
           onClick={handleCTA}
           style={{
@@ -303,19 +308,7 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
             boxShadow: `0 4px 20px ${acc}55`,
           }}
         >
-          {variant.cta}
-        </button>
-
-        {/* CTA secundário mensal */}
-        <button
-          onClick={handleMonthly}
-          style={{
-            background: "transparent", border: "1px solid rgba(255,255,255,.1)",
-            borderRadius: 12, padding: "12px", width: "100%",
-            color: "#8394b0", fontSize: 13, cursor: "pointer",
-          }}
-        >
-          {lang === "en" ? "Monthly plan — R$79/mo" : "Plano mensal — R$79/mês"}
+          {isBR ? variant.cta_br : variant.cta_en}
         </button>
 
         {/* Rodapé */}
@@ -329,11 +322,6 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
   );
 }
 
-/**
- * Verifica se o popup deve ser exibido para este usuário.
- * - Nunca exibe se já foi descartado nas últimas 24h
- * - Exibe 3s após o login
- */
 export function shouldShowUpsell(): boolean {
   try {
     const until = Number(localStorage.getItem(DISMISS_KEY) ?? 0);

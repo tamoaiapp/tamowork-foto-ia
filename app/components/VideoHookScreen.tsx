@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function VideoHookScreen({ photoUrl, onAssinar, onCriar2aFoto }: Props) {
+  const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
   return (
     <div style={s.overlay}>
       <div style={{ ...s.bgPhoto, backgroundImage: `url(${photoUrl})` }} />
@@ -51,7 +52,7 @@ export default function VideoHookScreen({ photoUrl, onAssinar, onCriar2aFoto }: 
           🎬 Criar vídeo animado — Assinar PRO
         </button>
 
-        <div style={s.price}>R$29/mês no plano anual · Cancele quando quiser</div>
+        <div style={s.price}>{isBR ? "R$79/mês · Cancele quando quiser" : "$100/year · Cancel anytime"}</div>
 
         <button onClick={onCriar2aFoto} style={s.skipBtn}>
           Criar mais uma foto grátis primeiro

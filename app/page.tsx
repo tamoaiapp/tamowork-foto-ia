@@ -392,7 +392,7 @@ function PhotoRating({
 }
 
 function ProUpsell({ onAssinar }: { onAssinar: (plan: "annual" | "monthly") => void }) {
-  const [selected, setSelected] = useState<"annual" | "monthly">("annual");
+  const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
 
   const BENEFITS = [
     { icon: "🎬", text: "Vídeo animado do produto" },
@@ -422,43 +422,21 @@ function ProUpsell({ onAssinar }: { onAssinar: (plan: "annual" | "monthly") => v
         ))}
       </div>
 
-      {/* Seletor de plano */}
-      <div style={pu.planGrid}>
-        {/* Anual — recomendado */}
-        <button
-          onClick={() => setSelected("annual")}
-          style={{ ...pu.planCard, ...(selected === "annual" ? pu.planCardActive : {}) }}
-        >
-          {selected === "annual" && (
-            <div style={pu.planBadge}>Recomendado</div>
-          )}
-          <div style={pu.planName}>Anual</div>
-          <div style={pu.planPrice}>
-            <span style={pu.planAmount}>R$29</span>
-            <span style={pu.planPer}>/mês</span>
-          </div>
-          <div style={pu.planBilled}>R$348 cobrado uma vez</div>
-          <div style={pu.planSave}>Economize R$600</div>
-        </button>
-
-        {/* Mensal */}
-        <button
-          onClick={() => setSelected("monthly")}
-          style={{ ...pu.planCard, ...(selected === "monthly" ? pu.planCardActive : {}) }}
-        >
-          <div style={pu.planName}>Mensal</div>
-          <div style={pu.planPrice}>
-            <span style={pu.planAmount}>R$79</span>
-            <span style={pu.planPer}>/mês</span>
-          </div>
-          <div style={pu.planBilled}>Cobrado todo mês · recorrente</div>
-          <div style={{ ...pu.planSave, color: "#4e5c72" }}>R$600 a mais/ano</div>
-        </button>
+      {/* Preço único */}
+      <div style={{ ...pu.planCard, ...pu.planCardActive, width: "100%", boxSizing: "border-box" }}>
+        <div style={pu.planName}>{isBR ? "Plano Mensal" : "Annual Plan"}</div>
+        <div style={pu.planPrice}>
+          <span style={pu.planAmount}>{isBR ? "R$79" : "$100"}</span>
+          <span style={pu.planPer}>{isBR ? "/mês" : "/year"}</span>
+        </div>
+        <div style={pu.planBilled}>
+          {isBR ? "Cobrado todo mês · cancele quando quiser" : "Billed once a year · cancel anytime"}
+        </div>
       </div>
 
       {/* CTA */}
-      <button onClick={() => onAssinar(selected)} style={pu.btn}>
-        {selected === "annual" ? "Assinar por R$348/ano" : "Assinar por R$79/mês"}
+      <button onClick={() => onAssinar(isBR ? "monthly" : "annual")} style={pu.btn}>
+        {isBR ? "Assinar por R$79/mês" : "Subscribe — $100/year"}
       </button>
       <div style={pu.guarantee}>Cancela quando quiser · Sem fidelidade</div>
     </div>
@@ -1635,20 +1613,22 @@ export default function HomePage() {
     }
   }
 
-  async function handleAssinarDireto(selectedPlan: "annual" | "monthly") {
+  async function handleAssinarDireto(_selectedPlan?: "annual" | "monthly") {
     // Rastreia clique de CTA no A/B test
     if (abVariant) trackABEvent("cta_clicked", abVariant);
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token ?? "";
-      const body = selectedPlan === "monthly" ? { plan: "monthly" } : {};
-      const res = await fetch("/api/checkout/mercadopago", {
+      // BR → mensal R$79 | não-BR → anual $100 (como na página de planos)
+      const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
+      const plan = isBR ? "monthly" : "annual";
+      const res = await fetch("/api/checkout/stripe", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ plan }),
       });
       const json = await res.json();
-      if (json.init_point) window.location.href = json.init_point;
+      if (json.url) window.location.href = json.url;
       else router.push("/planos");
     } catch {
       router.push("/planos");
@@ -3445,7 +3425,7 @@ export default function HomePage() {
                         Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos ilimitadas + vídeos animados
                         <br />
                         <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
-                          A partir de R$29/mês → Assinar agora
+                          Assinar Pro — R$79/mês
                         </button>
                       </div>
                     </div>
@@ -3562,7 +3542,7 @@ export default function HomePage() {
                         Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos ilimitadas + vídeos animados
                         <br />
                         <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
-                          A partir de R$29/mês → Assinar agora
+                          Assinar Pro — R$79/mês
                         </button>
                       </div>
                     </div>
@@ -3932,7 +3912,7 @@ export default function HomePage() {
                         Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos ilimitadas + vídeos animados
                         <br />
                         <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
-                          A partir de R$29/mês → Assinar agora
+                          Assinar Pro — R$79/mês
                         </button>
                       </div>
                     </div>

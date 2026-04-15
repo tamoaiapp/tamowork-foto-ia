@@ -7,14 +7,14 @@ interface Props {
 }
 
 export default function ConversionScreen({ photoUrl, onAssinar, onContinuar }: Props) {
+  const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
+
   return (
     <div style={s.overlay}>
-      {/* Foto desfocada ao fundo */}
       <div style={{ ...s.bgPhoto, backgroundImage: `url(${photoUrl})` }} />
       <div style={s.bgDim} />
 
       <div style={s.sheet}>
-        {/* Resultado em miniatura */}
         <div style={s.photoWrap}>
           <img src={photoUrl} alt="Foto gerada" style={s.photo} />
           <div style={s.photoBadge}>✨ Pronta!</div>
@@ -39,20 +39,29 @@ export default function ConversionScreen({ photoUrl, onAssinar, onContinuar }: P
           ))}
         </div>
 
+        {/* Preço dinâmico por região */}
         <div style={s.priceRow}>
           <div>
-            <div style={s.priceLabel}>Plano anual</div>
-            <div style={s.price}>
-              <span style={s.priceNum}>R$29</span>
-              <span style={s.pricePer}>/mês</span>
+            <div style={s.priceLabel}>
+              {isBR ? "Plano mensal" : "Annual plan"}
             </div>
-            <div style={s.priceSub}>R$348 cobrado uma vez · Cancele quando quiser</div>
+            <div style={s.price}>
+              <span style={s.priceNum}>{isBR ? "R$79" : "$100"}</span>
+              <span style={s.pricePer}>{isBR ? "/mês" : "/year"}</span>
+            </div>
+            <div style={s.priceSub}>
+              {isBR
+                ? "Cobrado todo mês · Cancele quando quiser"
+                : "Billed once a year · Cancel anytime"}
+            </div>
           </div>
-          <div style={s.saveBadge}>Economize R$600</div>
+          <div style={s.saveBadge}>
+            {isBR ? "Sem fidelidade" : "Cancel anytime"}
+          </div>
         </div>
 
         <button onClick={onAssinar} style={s.ctaBtn}>
-          ⚡ Assinar Pro agora · R$348/ano
+          {isBR ? "⚡ Assinar Pro agora · R$79/mês" : "⚡ Subscribe now · $100/year"}
         </button>
 
         <button onClick={onContinuar} style={s.skipBtn}>
@@ -108,8 +117,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   headline: {
     fontSize: 22, fontWeight: 800, color: "#eef2f9",
-    textAlign: "center", margin: "8px 0 0",
-    lineHeight: 1.3,
+    textAlign: "center", margin: "8px 0 0", lineHeight: 1.3,
   },
   sub: {
     fontSize: 14, color: "#8394b0", lineHeight: 1.6,
@@ -120,12 +128,8 @@ const s: Record<string, React.CSSProperties> = {
     padding: "14px 16px",
     display: "flex", flexDirection: "column", gap: 10,
   },
-  benefitRow: {
-    display: "flex", alignItems: "center", gap: 10,
-  },
-  benefitText: {
-    fontSize: 13, color: "#b0bec9",
-  },
+  benefitRow: { display: "flex", alignItems: "center", gap: 10 },
+  benefitText: { fontSize: 13, color: "#b0bec9" },
   priceRow: {
     background: "rgba(99,102,241,0.1)",
     border: "1px solid rgba(99,102,241,0.3)",
