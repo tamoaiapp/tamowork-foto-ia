@@ -43,7 +43,7 @@ self.addEventListener("push", (e) => {
       // Ícone da notificação — aparece no drawer de notificações
       icon: "/icons/icon-512.png",
       // Badge — ícone pequeno na barra de status do Android
-      badge: "/icons/badge-96.svg",
+      badge: "/icons/badge-96.png",
       tag: "job-done",
       renotify: true,
       // Vibração: padrão nativo Android
