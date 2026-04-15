@@ -704,7 +704,6 @@ export default function HomePage() {
 
   const countdown = useCountdown(rateLimitedUntil);
   const vision = useProductVision();
-  const [pendingResult, setPendingResult] = useState(false);
 
   // Rating de qualidade da foto gerada
   const [photoRating, setPhotoRating] = useState<number | null>(null);
@@ -894,7 +893,6 @@ export default function HomePage() {
         } else if (doneVideo) {
           setVideoJob(doneVideo);
           setVideoMode(true);
-          setPendingResult(false); // vídeo pronto — esconde "Ver Resultado" da foto
         }
       }
 
@@ -1057,7 +1055,6 @@ export default function HomePage() {
   const toastFiredRef = useRef(false);
   useEffect(() => {
     if (job?.status === "done" && job.output_image_url && job.id !== "rate_limited") {
-      setPendingResult(true);
       setBotNavOpen(false); // fecha o Tamo para mostrar o resultado automaticamente
       if (!toastFiredRef.current) {
         toastFiredRef.current = true;
@@ -1673,7 +1670,6 @@ export default function HomePage() {
     if (blurRef.current) clearInterval(blurRef.current);
     setShowCancel(false);
     setJob(null);
-    setPendingResult(false);
     setProgressVal(0);
     setDisplayProgress(0);
     setBotNavOpen(false);
@@ -1727,7 +1723,6 @@ export default function HomePage() {
           sendPushNotification("Seu vídeo está pronto! 🎬", "Toque para ver o vídeo gerado.");
         }
         setVideoMode(true); // garante que o resultado aparece
-        setPendingResult(false); // limpa "Ver Resultado" da foto
       }
       if (videoJob.status === "failed") {
         setVideoMode(false); // volta para o resultado da foto
@@ -3085,8 +3080,6 @@ export default function HomePage() {
               ) : (
                 <BotChat
                   workState={workState}
-                  resultReady={pendingResult}
-                  onViewResult={() => setPendingResult(false)}
                   botActive={botActive}
                   visible={true}
                   onActivate24h={activateBot}
@@ -3294,8 +3287,6 @@ export default function HomePage() {
           ) : (
             <BotChat
               workState={workState}
-              resultReady={pendingResult}
-              onViewResult={() => setPendingResult(false)}
               botActive={botActive}
               visible={true}
               onActivate24h={activateBot}
@@ -4003,8 +3994,6 @@ export default function HomePage() {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 12px", minHeight: 200 }}>
             <BotChat
               workState={workState}
-              resultReady={pendingResult}
-              onViewResult={() => setPendingResult(false)}
               botActive={botActive}
               visible={true}
               navMode={true}

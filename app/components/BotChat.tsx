@@ -61,8 +61,6 @@ export interface ActiveJobInfo {
 
 interface Props {
   workState: WorkState;
-  resultReady: boolean;
-  onViewResult?: () => void;
   onActivate24h?: () => void;
   botActive: boolean;
   visible: boolean;
@@ -72,7 +70,7 @@ interface Props {
   activeJobs?: ActiveJobInfo[]; // cards de status acima do chat
 }
 
-export default function BotChat({ workState, resultReady, onViewResult, onActivate24h, botActive, visible, navMode = false, embedded = false, triggerMessage, activeJobs = [] }: Props) {
+export default function BotChat({ workState, onActivate24h, botActive, visible, navMode = false, embedded = false, triggerMessage, activeJobs = [] }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -89,7 +87,6 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const resultReadyNotifiedRef = useRef(false);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
@@ -152,19 +149,6 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
     scrollToBottom();
   }, [triggerMessage, scrollToBottom]);
 
-  // Auto-mensagem no chat quando foto fica pronta
-  useEffect(() => {
-    if (!resultReady) {
-      resultReadyNotifiedRef.current = false;
-      return;
-    }
-    if (initialLoading || resultReadyNotifiedRef.current) return;
-    resultReadyNotifiedRef.current = true;
-    setMessages(prev => [...prev, {
-      role: "assistant" as const,
-      content: "🦎 *Ficou incrível!* Terminei sua foto aqui.\n\nClica aí embaixo pra ver como ficou!",
-    }]);
-  }, [resultReady, initialLoading]);
 
   async function handleSend(text?: string) {
     const msg = (text ?? input).trim();
@@ -356,14 +340,6 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
               </div>
             )}
           </>
-        )}
-        {/* Botão Ver Resultado — aparece no chat quando foto fica pronta */}
-        {resultReady && onViewResult && (
-          <div style={{ padding: "4px 0 8px" }}>
-            <button onClick={onViewResult} className="result-btn" style={s.resultBtn}>
-              ✨ Ver Resultado
-            </button>
-          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -608,19 +584,6 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: 11,
     color: "#8394b0",
     marginTop: 1,
-  },
-  resultBtn: {
-    width: "100%",
-    background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
-    border: "none",
-    borderRadius: 12,
-    padding: "13px 0",
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: 800,
-    cursor: "pointer",
-    letterSpacing: "-0.01em",
-    boxShadow: "0 4px 20px rgba(139,92,246,0.4)",
   },
   messages: {
     flex: 1,
