@@ -66,6 +66,8 @@ export default function ContaPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [canceling, setCanceling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [isBR, setIsBR] = useState(true);
   const [notifStatus, setNotifStatus] = useState<"unknown" | "granted" | "denied" | "dismissed">("unknown");
 
   // Change email
@@ -78,6 +80,10 @@ export default function ContaPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passMsg, setPassMsg] = useState("");
   const [passLoading, setPassLoading] = useState(false);
+
+  useEffect(() => {
+    setIsBR((typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt"));
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -140,12 +146,6 @@ export default function ContaPage() {
   }
 
   async function handleCancelStripe() {
-    const confirmMsg = lang === "en"
-      ? "Cancel subscription? You'll keep access until the end of the paid period."
-      : lang === "es"
-      ? "¿Cancelar suscripción? Mantendrás el acceso hasta el fin del período pagado."
-      : "Cancelar assinatura? Você continuará com acesso até o fim do período pago.";
-    if (!confirm(confirmMsg)) return;
     setCanceling(true);
     try {
       const { data } = await supabase.auth.getSession();
@@ -154,8 +154,8 @@ export default function ContaPage() {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setCancelDone(true);
-      else alert(lang === "en" ? "Error canceling. Please try again or contact us." : lang === "es" ? "Error al cancelar. Inténtalo de nuevo o contáctanos." : "Erro ao cancelar. Tente novamente ou entre em contato.");
+      if (res.ok) { setCancelDone(true); setConfirmCancel(false); }
+      else alert(lang === "en" ? "Error canceling. Please try again." : lang === "es" ? "Error al cancelar. Inténtalo de nuevo." : "Erro ao cancelar. Tente novamente.");
     } finally {
       setCanceling(false);
     }
@@ -215,9 +215,12 @@ export default function ContaPage() {
   }
 
   const isProActive = isPro();
-  const isMonthly = isProActive && !!planData?.stripe_subscription_id;
-  const isAnnual = isProActive && !!planData?.mp_subscription_id;
+  // Assinatura Stripe ativa (BR mensal ou não-BR anual — ambos via Stripe agora)
+  const isStripe = isProActive && !!planData?.stripe_subscription_id;
+  // Bônus/trial: Pro sem subscription_id
   const isTrial = isProActive && !planData?.stripe_subscription_id && !planData?.mp_subscription_id;
+  // Legado MP (não recebe novos usuários mas pode ter antigos)
+  const isLegacyMP = isProActive && !!planData?.mp_subscription_id;
 
   function daysLeft(isoDate?: string) {
     if (!isoDate) return null;
@@ -323,43 +326,96 @@ export default function ContaPage() {
                     </button>
                   </>
                 )}
-                {isMonthly && (
+                {isStripe && (
                   <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16c784", flexShrink: 0 }} />
-                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> {lang === "en" ? "Monthly — active" : lang === "es" ? "Mensual — activo" : "Mensal — ativo"}</div>
+                    {/* Status */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: cancelDone ? "#f59e0b" : "#16c784", flexShrink: 0 }} />
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}>
+                        <span style={styles.proBadge}>✦ Pro</span>
+                        {cancelDone
+                          ? (lang === "en" ? "Cancellation scheduled" : lang === "es" ? "Cancelación programada" : "Cancelamento agendado")
+                          : (lang === "en" ? "Active" : lang === "es" ? "Activo" : "Ativo")}
+                      </div>
                     </div>
-                    <div style={styles.daysBox}>
-                      <span style={styles.daysNum}>{daysLeft(planData?.period_end)}</span>
-                      <span style={styles.daysSub}>{lang === "en" ? "days left" : lang === "es" ? "días restantes" : "dias restantes"}</span>
+
+                    {/* Preço e vencimento */}
+                    <div style={styles.subInfoGrid}>
+                      <div style={styles.subInfoItem}>
+                        <div style={styles.subInfoLabel}>{lang === "en" ? "Price" : lang === "es" ? "Precio" : "Valor"}</div>
+                        <div style={styles.subInfoValue}>{isBR ? "R$79/mês" : "$100/ano"}</div>
+                      </div>
+                      <div style={styles.subInfoItem}>
+                        <div style={styles.subInfoLabel}>
+                          {cancelDone
+                            ? (lang === "en" ? "Access until" : lang === "es" ? "Acceso hasta" : "Acesso até")
+                            : (lang === "en" ? "Renews on" : lang === "es" ? "Renueva el" : "Renova em")}
+                        </div>
+                        <div style={styles.subInfoValue}>{formatDate(planData?.period_end)}</div>
+                      </div>
                     </div>
-                    <div style={styles.subDesc}>{lang === "en" ? `Next renewal: ${formatDate(planData?.period_end)}` : lang === "es" ? `Próxima renovación: ${formatDate(planData?.period_end)}` : `Próxima renovação: ${formatDate(planData?.period_end)}`}</div>
+
+                    {/* Cancelamento */}
                     {cancelDone ? (
                       <div style={styles.canceledMsg}>
-                        {lang === "en" ? `Cancellation scheduled — access kept until ${formatDate(planData?.period_end)}`
-                        : lang === "es" ? `Cancelación programada — acceso mantenido hasta ${formatDate(planData?.period_end)}`
-                        : `Cancelamento agendado — acesso mantido até ${formatDate(planData?.period_end)}`}
+                        {lang === "en"
+                          ? `Your plan will not renew. Access kept until ${formatDate(planData?.period_end)}.`
+                          : lang === "es"
+                          ? `Tu plan no se renovará. Acceso mantenido hasta ${formatDate(planData?.period_end)}.`
+                          : `Seu plano não vai renovar. Acesso mantido até ${formatDate(planData?.period_end)}.`}
+                      </div>
+                    ) : confirmCancel ? (
+                      <div style={styles.confirmBox}>
+                        <div style={{ fontSize: 13, color: "#eef2f9", fontWeight: 600, marginBottom: 6 }}>
+                          {lang === "en" ? "Confirm cancellation?" : lang === "es" ? "¿Confirmar cancelación?" : "Confirmar cancelamento?"}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 14, lineHeight: 1.5 }}>
+                          {lang === "en"
+                            ? `You'll keep Pro access until ${formatDate(planData?.period_end)}. After that, free plan.`
+                            : lang === "es"
+                            ? `Mantendrás el acceso Pro hasta ${formatDate(planData?.period_end)}. Luego, plan gratuito.`
+                            : `Você mantém acesso Pro até ${formatDate(planData?.period_end)}. Depois, plano gratuito.`}
+                        </div>
+                        <div style={{ display: "flex", gap: 10 }}>
+                          <button
+                            onClick={handleCancelStripe}
+                            disabled={canceling}
+                            style={{ ...styles.cancelBtn, flex: 1, textAlign: "center" as const }}
+                          >
+                            {canceling
+                              ? (lang === "en" ? "Canceling..." : lang === "es" ? "Cancelando..." : "Cancelando...")
+                              : (lang === "en" ? "Yes, cancel" : lang === "es" ? "Sí, cancelar" : "Sim, cancelar")}
+                          </button>
+                          <button
+                            onClick={() => setConfirmCancel(false)}
+                            style={styles.keepBtn}
+                          >
+                            {lang === "en" ? "Keep Pro" : lang === "es" ? "Mantener" : "Manter"}
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <button onClick={handleCancelStripe} disabled={canceling} style={styles.cancelBtn}>
-                        {canceling
-                          ? (lang === "en" ? "Canceling..." : lang === "es" ? "Cancelando..." : "Cancelando...")
-                          : (lang === "en" ? "Cancel subscription" : lang === "es" ? "Cancelar suscripción" : "Cancelar assinatura")}
+                      <button
+                        onClick={() => setConfirmCancel(true)}
+                        style={styles.cancelBtn}
+                      >
+                        {lang === "en" ? "Cancel subscription" : lang === "es" ? "Cancelar suscripción" : "Cancelar assinatura"}
                       </button>
                     )}
                   </>
                 )}
-                {isAnnual && (
+                {isLegacyMP && (
                   <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16c784", flexShrink: 0 }} />
-                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> {lang === "en" ? "Annual — active" : lang === "es" ? "Anual — activo" : "Anual — ativo"}</div>
+                      <div style={{ ...styles.subStatus, marginBottom: 0 }}><span style={styles.proBadge}>✦ Pro</span> {lang === "en" ? "Active" : lang === "es" ? "Activo" : "Ativo"}</div>
                     </div>
-                    <div style={styles.daysBox}>
-                      <span style={styles.daysNum}>{daysLeft(planData?.period_end)}</span>
-                      <span style={styles.daysSub}>{lang === "en" ? "days left" : lang === "es" ? "días restantes" : "dias restantes"}</span>
+                    <div style={styles.subInfoGrid}>
+                      <div style={styles.subInfoItem}>
+                        <div style={styles.subInfoLabel}>{lang === "en" ? "Access until" : lang === "es" ? "Acceso hasta" : "Acesso até"}</div>
+                        <div style={styles.subInfoValue}>{formatDate(planData?.period_end)}</div>
+                      </div>
                     </div>
-                    <div style={styles.subDesc}>{lang === "en" ? `Valid until ${formatDate(planData?.period_end)}` : lang === "es" ? `Válido hasta ${formatDate(planData?.period_end)}` : `Válido até ${formatDate(planData?.period_end)}`}</div>
                   </>
                 )}
               </div>
@@ -489,13 +545,32 @@ const styles: Record<string, React.CSSProperties> = {
   },
   daysNum: { fontSize: 32, fontWeight: 800, color: "#c4b5fd", lineHeight: 1 },
   daysSub: { fontSize: 13, color: "#8394b0", fontWeight: 500 },
+  subInfoGrid: {
+    display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16,
+  },
+  subInfoItem: {
+    background: "#0c1018", border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: 12, padding: "12px 14px",
+  },
+  subInfoLabel: { fontSize: 11, color: "#4e5c72", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.04em", marginBottom: 4 },
+  subInfoValue: { fontSize: 15, fontWeight: 700, color: "#eef2f9" },
   cancelBtn: {
-    background: "transparent", border: "1px solid rgba(239,68,68,0.4)",
-    borderRadius: 10, padding: "9px 18px", color: "#f87171", fontSize: 13, cursor: "pointer",
+    background: "transparent", border: "1px solid rgba(239,68,68,0.35)",
+    borderRadius: 12, padding: "11px 18px", color: "#f87171", fontSize: 13,
+    fontWeight: 600, cursor: "pointer", width: "100%",
+  },
+  keepBtn: {
+    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 12, padding: "11px 18px", color: "#8394b0", fontSize: 13,
+    fontWeight: 600, cursor: "pointer", flex: 1,
+  },
+  confirmBox: {
+    background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
+    borderRadius: 14, padding: "16px",
   },
   canceledMsg: {
-    background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
-    borderRadius: 10, padding: "10px 14px", color: "#f87171", fontSize: 13, lineHeight: 1.5,
+    background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+    borderRadius: 12, padding: "12px 14px", color: "#fbbf24", fontSize: 13, lineHeight: 1.5,
   },
 
   // Credentials
