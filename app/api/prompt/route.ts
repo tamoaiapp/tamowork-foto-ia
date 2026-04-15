@@ -76,6 +76,9 @@ export async function POST(req: NextRequest) {
     // Quando presente, é a fonte primária de verdade sobre o produto no prompt
     const visionDescRaw: string = body?.vision_desc ?? body?.vision ?? "";
 
+    // user_feedback: feedback textual do usuário sobre a foto anterior (para refine)
+    const userFeedbackRaw: string = body?.user_feedback ?? body?.feedback ?? "";
+
     if (!produtoRaw) {
       return NextResponse.json(
         { ok: false, error: "Missing produto/produto_frase/product" },
@@ -126,6 +129,7 @@ export async function POST(req: NextRequest) {
       product_name: produtoEN,
       scene_request: cenarioEN || undefined,
       vision_description: visionDesc,
+      user_feedback: userFeedbackRaw || undefined,
     });
 
     return NextResponse.json({

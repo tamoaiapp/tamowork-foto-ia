@@ -112,7 +112,9 @@ export async function submitImageJob(jobId: string) {
   }
 
   const [produto_frase, cenarioPart] = rawPrompt.split(" | cenário: ");
-  const cenario = cenarioPart ?? "";
+  const [cenarioRaw, correcaoPart] = (cenarioPart ?? "").split(" | correcao: ");
+  const cenario = cenarioRaw ?? "";
+  const userFeedback = correcaoPart?.trim() ?? undefined;
 
   const comfyIndex = 0;
   const comfyBase = COMFY_BASES[0];
@@ -167,7 +169,7 @@ export async function submitImageJob(jobId: string) {
     console.log(`[submit] job ${jobId} — produto_exposto categoria="${category}" produto="${enrichedProduto}"`);
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
   } else {
-    const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined);
+    const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined, userFeedback);
 
     // Injeta qualidade profissional (sombra + iluminação + K4 cinematic)
     const positiveEnhanced = `${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();

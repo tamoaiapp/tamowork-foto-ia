@@ -352,16 +352,11 @@ function PhotoRating({
             Me ajuda com uma avaliação de 5★ na loja?
           </button>
         )}
-        {/* Rating negativo (1-2★) → oferece foto bonus */}
-        {isBad && onRetry && (bonusLeft ?? 0) > 0 && (
-          <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10, padding: "10px 14px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <img src="/tamo/idle.png" alt="Tamo" style={{ width: 22, height: 22, objectFit: "contain" }} />
-              <span style={{ fontSize: 12, color: "#a5b4fc", fontWeight: 600 }}>Que pena 😔 Deixa eu tentar de novo pra você — de graça!</span>
-            </div>
-            <button onClick={onRetry} style={{ width: "100%", background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 10, padding: "11px", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}>
-              🔄 Refazer foto grátis ({bonusLeft} tentativa{(bonusLeft ?? 0) > 1 ? "s" : ""} restante{(bonusLeft ?? 0) > 1 ? "s" : ""})
-            </button>
+        {/* Rating negativo — já refez a foto automaticamente */}
+        {isBad && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <img src="/tamo/idle.png" alt="Tamo" style={{ width: 22, height: 22, objectFit: "contain" }} />
+            <span style={{ fontSize: 12, color: "#a5b4fc", fontWeight: 600 }}>Já estou corrigindo sua foto! 🔄</span>
           </div>
         )}
       </div>
@@ -401,7 +396,7 @@ function PhotoRating({
           <textarea
             value={feedbackText}
             onChange={e => onFeedbackChange(e.target.value)}
-            placeholder="O que ficou errado? Ex: 'o produto ficou na cabeça', 'imagem cortada', 'produto sumiu'..."
+            placeholder="Me fala o que não gostou que arrumo agora rapidinho 🦎"
             rows={2}
             style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 10px", color: "#eef2f9", fontSize: 12, fontFamily: "Outfit, sans-serif", resize: "none", boxSizing: "border-box" as const, outline: "none" }}
           />
@@ -410,7 +405,7 @@ function PhotoRating({
             disabled={loading || !feedbackText.trim()}
             style={{ marginTop: 6, background: feedbackText.trim() ? "#7c3aed" : "rgba(124,58,237,0.3)", border: "none", borderRadius: 8, padding: "7px 16px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: feedbackText.trim() ? "pointer" : "not-allowed", fontFamily: "Outfit, sans-serif" }}
           >
-            {loading ? "Enviando..." : "Enviar feedback"}
+            {loading ? "Corrigindo..." : "Arrumar agora →"}
           </button>
         </div>
       )}
@@ -1188,6 +1183,8 @@ export default function HomePage() {
     setFeedbackLoading(true);
     try {
       const token = await getToken();
+
+      // Salva feedback no banco (sempre)
       await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -1200,6 +1197,48 @@ export default function HomePage() {
           output_url: job?.output_image_url ?? null,
         }),
       });
+
+      // Nota ruim + feedback escrito + bonus disponível → refaz a foto já com a correção
+      if (rating <= 2 && text.trim() && bonusLeft > 0) {
+        // Decrementa bonus
+        try {
+          const today = new Date().toDateString();
+          const raw = localStorage.getItem(BONUS_KEY);
+          const prev = raw ? JSON.parse(raw) : { count: 0, date: today };
+          const used = prev.date === today ? (prev.count ?? 0) + 1 : 1;
+          localStorage.setItem(BONUS_KEY, JSON.stringify({ count: used, date: today }));
+          setBonusLeft(Math.max(0, 3 - used));
+        } catch { /* ignora */ }
+
+        // Monta prompt com a correção embutida
+        const basePrompt = cenario.trim()
+          ? `${produto} | cenário: ${cenario} | correcao: ${text.trim()}`
+          : `${produto} | correcao: ${text.trim()}`;
+
+        const jobRes = await fetch("/api/image-jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            prompt: basePrompt,
+            input_image_url: job?.input_image_url,
+            format: job?.format ?? photoFormat,
+            bonus_retry: true,
+          }),
+        });
+
+        if (jobRes.ok) {
+          const { jobId } = await jobRes.json();
+          try { sessionStorage.setItem("pending_job_id", jobId); } catch { /* ignora */ }
+          setPhotoRating(null);
+          setFeedbackText("");
+          setRatingHover(0);
+          setJob({ id: jobId, status: "queued" });
+          setTimeout(() => fetchJobStatus(jobId), 10_000);
+          setFeedbackSent(true);
+          return;
+        }
+      }
+
       setFeedbackSent(true);
     } catch { /* ignora erros silenciosamente */ } finally {
       setFeedbackLoading(false);
@@ -1208,7 +1247,6 @@ export default function HomePage() {
 
   function handleBonusRetry() {
     if (bonusLeft <= 0) return;
-    // Decrementa o contador no localStorage
     try {
       const today = new Date().toDateString();
       const raw = localStorage.getItem(BONUS_KEY);

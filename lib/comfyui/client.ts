@@ -43,11 +43,12 @@ export async function criarPrompt(
   produto_frase: string,
   cenario: string,
   vision_desc?: string,
+  user_feedback?: string,
 ): Promise<PromptResult> {
   const res = await fetch(PROMPTUSO_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ produto_frase, cenario, vision_desc }),
+    body: JSON.stringify({ produto_frase, cenario, vision_desc, user_feedback }),
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) throw new Error(`criarPrompt error: ${res.status}`);
