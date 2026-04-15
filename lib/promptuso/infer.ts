@@ -74,6 +74,10 @@ function looksLikeFeetClothing(t: string): boolean {
     "tenis", "sapato", "chinelo", "sandalia", "bota", "shoe", "shoes", "sneaker",
     "boot", "boots", "sandal", "sandals", "meia", "meias", "sock", "socks",
     "meiao", "pantufa", "slipper",
+    // Calçados esportivos e de futebol
+    "chuteira", "chuteiras", "football boot", "football boots", "soccer shoe", "soccer shoes",
+    "soccer cleat", "soccer cleats", "cleat", "cleats", "bota de futebol", "bota esportiva",
+    "sapatilha", "sapatilhas", "ballet flat", "loafer", "mocassim", "espadrille",
     // "tennis" = tradução de "tênis" (calçado) pelo MyMemory
     "tennis shoe", "tennis sneaker", "men's tennis", "women's tennis",
   ]);
@@ -170,6 +174,12 @@ export function inferSlot(produtoText: string): string {
       "shampoo", "condicionador", "conditioner", "mascara capilar",
       "oleo capilar", "hair oil", "leave-in", "queratina",
       "creme facial", "face cream", "toner", "micellar",
+      // Produtos capilares e de barbearia
+      "descolorante", "po descolorante", "oxidante", "tinta de cabelo", "coloracao capilar",
+      "tintura", "hair dye", "hair color", "bleach powder", "bleaching powder",
+      "pomada capilar", "gel capilar", "finalizador", "hair wax", "hair gel",
+      "relaxamento", "alisamento", "botox capilar", "progressiva",
+      "amigos barber", "barber product", "barbershop product",
     ])
   ) return "hold_beauty_product";
 
@@ -262,10 +272,13 @@ export function inferPersona(text: string, slot?: string): Persona {
   else if (isInherentlyFemale && !isMaleWord) gender = "female";
   else if (isInherentlyMale && !isFemaleWord) gender = "male";
 
+  const isPlusSize = hasAny(t, ["plus size", "plus-size", "plussize", "gordo", "gorda", "gordinha", "gordinho", "curvy", "curvilínea", "curvilinea", "size plus"]);
+
   let subject = "a person";
   if (age === "baby") subject = "a baby";
   else if (age === "child") subject = gender === "male" ? "a boy" : gender === "female" ? "a girl" : "a child";
   else if (age === "teen") subject = gender === "male" ? "a teenage boy" : gender === "female" ? "a teenage girl" : "a teenager";
+  else if (isPlusSize) subject = gender === "male" ? "a plus-size man" : gender === "female" ? "a plus-size woman" : "a plus-size person";
   else subject = gender === "male" ? "a man" : gender === "female" ? "a woman" : "a person";
 
   return { subject, age, gender };
@@ -287,6 +300,37 @@ function normalizeProductLabel(produtoText: string): string {
 function detectMannequin(text: string): boolean {
   const t = lower(text);
   return hasAny(t, ["manequim", "mannequin", "busto", "bust", "cabeca", "headform", "head form", "dummy", "display", "expositor", "suporte de exposicao"]);
+}
+
+/**
+ * Detecta quando o usuário quer o produto SEM modelo/pessoa.
+ * Palavras-chave explícitas no texto do produto ou cenário.
+ * Quando verdadeiro, o slot deve ser forçado para display (sem humano).
+ */
+function detectNoModel(text: string): boolean {
+  const t = lower(text);
+  return hasAny(t, [
+    "sem modelo", "sem pessoa", "sem pe ", "sem pe,", "sem pe.", "sem humano",
+    "so o produto", "so a sandalia", "so o calcado", "so o sapato", "so o tenis",
+    "so o chinelo", "so a bota", "so a chuteira", "so o cinto", "so a bolsa",
+    "sem modelo so", "produto sozinho", "produto isolado", "produto apenas",
+    "without model", "no model", "product only", "just the product",
+    "no person", "no people", "no human", "without person",
+    "sem pe de modelo", "so o item", "so o acessorio",
+  ]);
+}
+
+/**
+ * Detecta quando o usuário quer modelo SEGURANDO o produto na mão
+ * (mesmo que o produto normalmente seja worn — ex: sapato, sandália).
+ * Prioridade: cenário anula o slot de wear.
+ */
+function detectHoldInHand(text: string): boolean {
+  const t = lower(text);
+  return hasAny(t, [
+    "segurando", "segurando na mao", "na mao", "em maos", "holding",
+    "hold", "na mão", "em mãos", "segurar na mao",
+  ]);
 }
 
 function hasViolence(text: string): boolean {
@@ -352,6 +396,17 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDes
   const rawSlot = inferSlot(produto);
   let slot = rawSlot;
 
+  // ── Overrides de contexto — cenário anula a inferência do slot ────────────
+  // 1. Usuário pediu SEM modelo → força display sem humano
+  const combinedForOverride = `${produto} ${cenario}`.trim();
+  if (slot.startsWith("wear_") && detectNoModel(combinedForOverride)) {
+    slot = "scene_tabletop";
+  }
+  // 2. Usuário pediu SEGURANDO NA MÃO → calçado/acessório como hold_bag_hand
+  else if (slot === "wear_feet" && detectHoldInHand(cenario)) {
+    slot = "hold_bag_hand";
+  }
+
   // Fallback se não tem rule para o slot
   if (!loadRule(slot)) {
     if (slot.startsWith("wear_")) slot = "wear_torso_full";
@@ -361,7 +416,7 @@ export function buildPromptResult(produtoRaw: string, cenarioRaw = "", visionDes
   }
 
   const rule = loadRule(slot)!;
-  const combinedContext = `${produto} ${cenario}`.trim();
+  const combinedContext = combinedForOverride;
   const mannequinDetected = detectMannequin(combinedContext);
   const persona = inferPersona(combinedContext, slot);
 
