@@ -3767,7 +3767,7 @@ export default function HomePage() {
           </div>
 
           {/* Foto — gerando */}
-          {workState === "trabalhando" && !videoMode && (
+          {workState === "trabalhando" && (
             <div style={{ padding: "0 16px 12px" }}>
               <div style={styles.card} className="generating-wrap">
                 {rateLimitedUntil && countdown > 0 ? (
@@ -3781,7 +3781,7 @@ export default function HomePage() {
                             🎉 Sua foto ficou pronta!
                           </div>
                           <button
-                            onClick={() => setPendingResult(false)}
+                            onClick={() => { setPendingResult(false); setBotNavOpen(false); }}
                             className="result-btn"
                             style={{ width: "100%", background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)", border: "none", borderRadius: 14, padding: "16px 0", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 24px rgba(139,92,246,0.5)" }}
                           >
@@ -3833,7 +3833,7 @@ export default function HomePage() {
           )}
 
           {/* Foto — resultado */}
-          {workState === "terminado" && job && !videoMode && (
+          {workState === "terminado" && job && (
             <div style={{ padding: "0 16px 12px" }}>
               <div style={styles.card} className="result-wrap">
                 <div className="result-image-col">
@@ -3893,7 +3893,7 @@ export default function HomePage() {
           )}
 
           {/* Vídeo — gerando */}
-          {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && videoMode && (
+          {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && (
             <div style={{ padding: "0 16px 12px" }}>
               <div style={styles.card} className="generating-wrap">
                 <div className="generating-panel">
@@ -3914,7 +3914,7 @@ export default function HomePage() {
           )}
 
           {/* Vídeo — pronto */}
-          {videoJob?.status === "done" && videoJob.output_video_url && videoMode && (
+          {videoJob?.status === "done" && videoJob.output_video_url && (
             <div style={{ padding: "0 16px 12px" }}>
               <div style={{ ...styles.card, padding: 0, overflow: "hidden" }}>
                 <video src={videoJob.output_video_url} controls autoPlay loop playsInline style={{ width: "100%", display: "block", maxHeight: "60vh", background: "#000", objectFit: "contain" }} />
@@ -3930,7 +3930,7 @@ export default function HomePage() {
           )}
 
           {/* Vídeo — erro */}
-          {videoJob?.status === "failed" && videoMode && (
+          {videoJob?.status === "failed" && (
             <div style={{ padding: "0 16px 12px" }}>
               <div style={styles.card}>
                 <div style={styles.bigIcon}>😔</div>
@@ -4012,8 +4012,11 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* BotChat — sempre visível quando há job ativo (abaixo do status) ou quando sem job */}
-          {(workState === "trabalhando" || narratedMode || longVideoMode || videoMode) && (
+          {/* BotChat — visível quando há job em andamento (some quando foto pronta) */}
+          {!pendingResult && (workState === "trabalhando" ||
+            (narratedJob && !["done","failed","canceled"].includes(narratedJob.status)) ||
+            (longVideoJob && !["done","failed","canceled"].includes(longVideoJob.status)) ||
+            (videoJob && !["done","failed","canceled"].includes(videoJob.status ?? ""))) && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 12px", minHeight: 200 }}>
               <BotChat
                 workState={workState}
@@ -4029,8 +4032,8 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Sem job ativo — chat normal */}
-          {workState === "sem_trabalho" && !videoJob && !narratedJob && !longVideoJob && (
+          {/* Sem job ativo ou jobs terminados — chat normal */}
+          {(workState === "sem_trabalho" || workState === "terminado") && !videoJob?.status?.match(/^(queued|processing|pending)/) && !narratedJob?.status?.match(/^(queued|processing|pending)/) && !longVideoJob?.status?.match(/^(queued|processing|pending)/) && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 12px", minHeight: 0 }}>
               <BotChat
                 workState={workState}
