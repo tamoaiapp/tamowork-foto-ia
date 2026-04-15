@@ -1427,6 +1427,7 @@ export default function HomePage() {
     overrides?: { file?: File; produto?: string; cenario?: string; mode?: CreationMode }
   ) {
     e.preventDefault();
+    if (submitting) return; // guard contra double-submit
 
     const _mode    = overrides?.mode    ?? creationMode;
     const _file    = overrides?.file    ?? imageFile;
@@ -1668,8 +1669,10 @@ export default function HomePage() {
     if (pollRef.current) clearInterval(pollRef.current);
     if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
     if (blurRef.current) clearInterval(blurRef.current);
+    if (elapsedRef.current) clearInterval(elapsedRef.current);
     setShowCancel(false);
     setJob(null);
+    setElapsedSec(0);
     setProgressVal(0);
     setDisplayProgress(0);
     setBotNavOpen(false);
