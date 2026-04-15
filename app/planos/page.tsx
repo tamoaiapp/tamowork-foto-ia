@@ -73,7 +73,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "36px 32px 32px",
     display: "flex",
     flexDirection: "column",
-    gap: 0,
     boxShadow: "0 0 0 2px #8b5cf6, 0 12px 40px rgba(139,92,246,0.25)",
     marginBottom: 48,
   },
@@ -148,7 +147,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     fontFamily: "inherit",
     letterSpacing: "-0.01em",
-    transition: "opacity 0.15s, transform 0.1s",
+    transition: "opacity 0.15s",
     marginBottom: 12,
     boxShadow: "0 4px 20px rgba(139,92,246,0.4)",
   },
@@ -168,22 +167,9 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "22px 18px",
     border: "1px solid rgba(255,255,255,0.07)",
   },
-  valueIcon: {
-    fontSize: 26,
-    marginBottom: 10,
-    display: "block",
-  },
-  valueTitle: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#eef2f9",
-    marginBottom: 6,
-  },
-  valueDesc: {
-    fontSize: 13,
-    color: "#8394b0",
-    lineHeight: 1.55,
-  },
+  valueIcon: { fontSize: 26, marginBottom: 10, display: "block" },
+  valueTitle: { fontSize: 14, fontWeight: 700, color: "#eef2f9", marginBottom: 6 },
+  valueDesc: { fontSize: 13, color: "#8394b0", lineHeight: 1.55 },
 };
 
 const featuresPT = [
@@ -216,7 +202,6 @@ export default function PlanosPage() {
   const { lang } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingMP, setLoadingMP] = useState(false);
   const [loadingStripe, setLoadingStripe] = useState(false);
   const [isBR, setIsBR] = useState(true);
 
@@ -234,23 +219,6 @@ export default function PlanosPage() {
     });
   }, [router]);
 
-  async function handleMP() {
-    if (!user) return;
-    setLoadingMP(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch("/api/checkout/mercadopago", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session?.access_token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: "monthly" }),
-      });
-      const json = await res.json();
-      if (json.init_point) window.location.href = json.init_point;
-      else alert("Erro ao iniciar pagamento. Tente novamente.");
-    } catch { alert("Erro ao iniciar pagamento. Tente novamente."); }
-    finally { setLoadingMP(false); }
-  }
-
   async function handleStripe() {
     if (!user) return;
     setLoadingStripe(true);
@@ -258,13 +226,21 @@ export default function PlanosPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch("/api/checkout/stripe", {
         method: "POST",
-        headers: { Authorization: `Bearer ${session?.access_token}` },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json",
+        },
+        // BR = plano mensal R$79 | não-BR = plano anual $100 (como antes)
+        body: JSON.stringify({ plan: isBR ? "monthly" : "annual" }),
       });
       const json = await res.json();
       if (json.url) window.location.href = json.url;
-      else alert("Payment error. Please try again.");
-    } catch { alert("Payment error. Please try again."); }
-    finally { setLoadingStripe(false); }
+      else alert(lang === "pt" ? "Erro ao iniciar pagamento. Tente novamente." : "Payment error. Please try again.");
+    } catch {
+      alert(lang === "pt" ? "Erro ao iniciar pagamento. Tente novamente." : "Payment error. Please try again.");
+    } finally {
+      setLoadingStripe(false);
+    }
   }
 
   if (loading) {
@@ -276,8 +252,6 @@ export default function PlanosPage() {
       </div>
     );
   }
-
-  const isLoading = isBR ? loadingMP : loadingStripe;
 
   return (
     <div style={styles.page} className="app-layout">
@@ -318,16 +292,17 @@ export default function PlanosPage() {
         <div style={styles.card}>
           <span style={styles.badge}>PRO</span>
 
-          <div style={styles.price}>
-            R$79<span style={styles.pricePeriod}> /mês</span>
-          </div>
-          <div style={styles.priceSub}>
-            {lang === "en"
-              ? "Less than R$2.63 per day — cancel anytime"
-              : lang === "es"
-              ? "Menos de R$2,63 por día — cancela cuando quieras"
-              : "Menos de R$2,63 por dia — cancele quando quiser"}
-          </div>
+          {isBR ? (
+            <>
+              <div style={styles.price}>R$79<span style={styles.pricePeriod}> /mês</span></div>
+              <div style={styles.priceSub}>Menos de R$2,63 por dia • Cancele quando quiser</div>
+            </>
+          ) : (
+            <>
+              <div style={styles.price}>$100<span style={styles.pricePeriod}> /year</span></div>
+              <div style={styles.priceSub}>Less than $0.28 per day • Cancel anytime</div>
+            </>
+          )}
 
           <div style={styles.divider} />
 
@@ -341,24 +316,26 @@ export default function PlanosPage() {
           </ul>
 
           <button
-            style={{ ...styles.btnPrimary, opacity: isLoading ? 0.7 : 1 }}
-            onClick={isBR ? handleMP : handleStripe}
-            disabled={isLoading}
-            onMouseEnter={(e) => { if (!isLoading) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
-            onMouseLeave={(e) => { if (!isLoading) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+            style={{ ...styles.btnPrimary, opacity: loadingStripe ? 0.7 : 1 }}
+            onClick={handleStripe}
+            disabled={loadingStripe}
+            onMouseEnter={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+            onMouseLeave={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
           >
-            {isLoading
+            {loadingStripe
               ? (lang === "en" ? "Loading..." : lang === "es" ? "Cargando..." : "Aguarde...")
-              : lang === "en"
-              ? "Subscribe — R$79/month"
+              : isBR
+              ? "Assinar agora — R$79/mês"
               : lang === "es"
-              ? "Suscribirse — R$79/mes"
-              : "Assinar agora — R$79/mês"}
+              ? "Suscribirse — $100/año"
+              : "Subscribe now — $100/year"}
           </button>
 
           <div style={styles.btnNote}>
-            {isBR
-              ? "Pagamento seguro via MercadoPago • Cancele a qualquer momento"
+            {lang === "pt"
+              ? "Pagamento seguro via Stripe • Cancele a qualquer momento"
+              : lang === "es"
+              ? "Pago seguro vía Stripe • Cancela cuando quieras"
               : "Secure payment via Stripe • Cancel anytime"}
           </div>
         </div>
@@ -397,11 +374,11 @@ export default function PlanosPage() {
               {lang === "en" ? "Less than a coffee" : lang === "es" ? "Menos que un café" : "Menos que um café"}
             </div>
             <div style={styles.valueDesc}>
-              {lang === "en"
-                ? "R$2.63 per day to transform your business visuals."
+              {isBR
+                ? "R$2,63 por dia para transformar as fotos do seu negócio."
                 : lang === "es"
-                ? "R$2,63 por día para transformar tu negocio."
-                : "R$2,63 por dia para transformar as fotos do seu negócio."}
+                ? "$0.28 por día para transformar tu negocio."
+                : "$0.28 per day to transform your business visuals."}
             </div>
           </div>
         </div>
