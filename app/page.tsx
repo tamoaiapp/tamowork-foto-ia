@@ -13,6 +13,7 @@ import nextDynamic from "next/dynamic";
 import { useI18n, LangSelector } from "@/lib/i18n";
 import { useProductVision } from "@/lib/vision/useProductVision";
 import { CONVERSION } from "@/app/config/conversion";
+import type { ActiveJobInfo } from "@/app/components/BotChat";
 const PhotoEditor = nextDynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 const PromoCreator = nextDynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 const UpsellPopup = nextDynamic(() => import("@/app/components/UpsellPopup"), { ssr: false });
@@ -1605,6 +1606,7 @@ export default function HomePage() {
         `🔥 Foto de *${_produto || "produto"}* a caminho! Posso criar um texto de venda agora. Qual o preço?`,
       ];
       setBotTriggerMessage(photoTriggers[Math.floor(Math.random() * photoTriggers.length)]);
+      setBotNavOpen(true);
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Erro ao processar");
     } finally {
@@ -1785,6 +1787,7 @@ export default function HomePage() {
         `🎬 Vídeo a caminho! Posso criar hashtags ou uma legenda de venda agora. O que prefere?`,
       ];
       setBotTriggerMessage(videoTriggers[Math.floor(Math.random() * videoTriggers.length)]);
+      setBotNavOpen(true);
     } catch (err) {
       setVideoError(err instanceof Error ? err.message : "Erro");
     } finally {
@@ -1925,6 +1928,7 @@ export default function HomePage() {
         `🎙️ Criando seu vídeo narrado! Posso sugerir hashtags ou ajustar a legenda. O que prefere?`,
       ];
       setBotTriggerMessage(narratedTriggers[Math.floor(Math.random() * narratedTriggers.length)]);
+      setBotNavOpen(true);
       setNarratedDisplayProgress(0);
       setNarratedElapsed(0);
       setTimeout(async () => {
@@ -2014,6 +2018,7 @@ export default function HomePage() {
         `🎬 Gerando seu vídeo longo! Quer hashtags ou legenda de venda enquanto espera?`,
       ];
       setBotTriggerMessage(longTriggers[Math.floor(Math.random() * longTriggers.length)]);
+      setBotNavOpen(true);
       setLongVideoElapsed(0);
       // Poll a cada 30s (o agente roda a cada 5 min, não adianta poll frequente)
       longVideoPollRef.current = setInterval(async () => {
@@ -2065,6 +2070,41 @@ export default function HomePage() {
   // Bloqueio por tipo: foto ativa impede nova foto, vídeo ativo impede novo vídeo
   // Mas foto + vídeo podem rodar juntos (servidores distintos)
   const isPhotoJobActive = isGenerating;
+
+  // Cards de status para o BotChat (Tamo como hub de processamento)
+  const activeJobs: ActiveJobInfo[] = [
+    ...(workState === "trabalhando" ? [{
+      type: "photo" as const,
+      productName: produto || undefined,
+      status: job?.status ?? "queued",
+      progress: displayProgress,
+      onCancel: showCancel ? async () => {
+        setCanceling(true);
+        const tok = await getToken();
+        if (job?.id) await fetch(`/api/image-jobs/${job.id}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${tok}` } }).catch(() => {});
+        setCanceling(false);
+        resetJob();
+      } : undefined,
+    }] : []),
+    ...(videoJob && !["done","failed","canceled"].includes(videoJob.status ?? "") ? [{
+      type: "video" as const,
+      productName: produto || undefined,
+      status: videoJob.status ?? "queued",
+      progress: videoDisplayProgress,
+    }] : []),
+    ...(narratedJob && !["done","failed","canceled"].includes(narratedJob.status) ? [{
+      type: "narrated" as const,
+      productName: produto || undefined,
+      status: narratedJob.status,
+      progress: narratedDisplayProgress,
+    }] : []),
+    ...(longVideoJob && !["done","failed","canceled"].includes(longVideoJob.status) ? [{
+      type: "long_video" as const,
+      productName: produto || undefined,
+      status: longVideoJob.status,
+      progress: ({ queued: 5, generating_photos: 30, generating_videos: 65, concatenating: 90 } as Record<string, number>)[longVideoJob.status] ?? 5,
+    }] : []),
+  ];
   const isVideoJobActive = videoSubmitting || narratedSubmitting || longVideoSubmitting
     || (!!videoJob && !["done","failed","canceled"].includes(videoJob.status ?? ""))
     || (!!narratedJob && !["done","failed","canceled"].includes(narratedJob.status ?? ""))
@@ -3049,6 +3089,7 @@ export default function HomePage() {
                   botActive={botActive}
                   visible={true}
                   onActivate24h={activateBot}
+                  activeJobs={activeJobs}
                   embedded={true}
                 />
               )
@@ -3777,57 +3818,6 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* Foto — gerando */}
-          {workState === "trabalhando" && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={styles.card} className="generating-wrap">
-                {rateLimitedUntil && countdown > 0 ? (
-                  <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
-                ) : (
-                  <>
-                    <div className="generating-panel">
-                      <>
-                          <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
-                            <TamoMascot state="processing" size={80} label={lang === "en" ? "Working on it..." : lang === "es" ? "Trabajando en ello..." : "Tô trabalhando..."} />
-                          </div>
-                          <div style={styles.generatingTitle}>
-                            <span style={styles.shimmerText}>Transformando sua foto</span>
-                            <span style={styles.dots}>
-                              <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
-                              <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                              <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-                            </span>
-                          </div>
-                          {!submitting && (
-                            <div style={styles.progressBarBg}>
-                              <div style={{ ...styles.progressBarFill, width: `${displayProgress}%`, background: displayProgress > 80 ? "linear-gradient(90deg, #6366f1, #22c55e)" : "linear-gradient(90deg, #6366f1, #a855f7)" }} />
-                            </div>
-                          )}
-                          <NotifyButton onRequest={requestAndRegisterPush} />
-                          {showCancel && (
-                            <button onClick={async () => {
-                              setCanceling(true);
-                              const token = await getToken();
-                              if (job?.id) await fetch(`/api/image-jobs/${job.id}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
-                              setCanceling(false);
-                              resetJob();
-                            }} disabled={canceling} style={styles.cancelBtn}>
-                              {canceling ? "Cancelando..." : "Cancelar"}
-                            </button>
-                          )}
-                        </>
-                    </div>
-                    {!(rateLimitedUntil && countdown > 0) && (
-                      onboardingMode ? <OnboardingChat /> : (
-                        <BotChat workState={workState} resultReady={pendingResult} onViewResult={() => setPendingResult(false)} botActive={botActive} visible={true} onActivate24h={activateBot} embedded={true} />
-                      )
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Foto — resultado */}
           {workState === "terminado" && job && (
             <div style={{ padding: "0 16px 12px" }}>
@@ -4008,40 +3998,22 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* BotChat — visível quando há job em andamento (some quando foto pronta) */}
-          {(workState === "trabalhando" ||
-            (narratedJob && !["done","failed","canceled"].includes(narratedJob.status)) ||
-            (longVideoJob && !["done","failed","canceled"].includes(longVideoJob.status)) ||
-            (videoJob && !["done","failed","canceled"].includes(videoJob.status ?? ""))) && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 12px", minHeight: 200 }}>
-              <BotChat
-                workState={workState}
-                resultReady={pendingResult}
-                onViewResult={() => setPendingResult(false)}
-                botActive={botActive}
-                visible={true}
-                navMode={true}
-                onActivate24h={activateBot}
-                triggerMessage={botTriggerMessage}
-                embedded={false}
-              />
-            </div>
-          )}
+          {/* BotChat — hub de acompanhamento (sempre visível no overlay Tamo) */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 12px", minHeight: 200 }}>
+            <BotChat
+              workState={workState}
+              resultReady={pendingResult}
+              onViewResult={() => setPendingResult(false)}
+              botActive={botActive}
+              visible={true}
+              navMode={true}
+              onActivate24h={activateBot}
+              triggerMessage={botTriggerMessage}
+              activeJobs={activeJobs}
+              embedded={false}
+            />
+          </div>
 
-          {/* Sem job ativo ou jobs terminados — chat normal */}
-          {(workState === "sem_trabalho" || workState === "terminado") && !videoJob?.status?.match(/^(queued|processing|pending)/) && !narratedJob?.status?.match(/^(queued|processing|pending)/) && !longVideoJob?.status?.match(/^(queued|processing|pending)/) && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 12px", minHeight: 0 }}>
-              <BotChat
-                workState={workState}
-                resultReady={false}
-                botActive={botActive}
-                visible={true}
-                navMode={true}
-                onActivate24h={activateBot}
-                triggerMessage={botTriggerMessage}
-              />
-            </div>
-          )}
         </div>
       )}
 

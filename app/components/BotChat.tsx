@@ -51,6 +51,14 @@ const ONBOARDING_STEPS: { key: keyof OnboardingData; question: (name?: string) =
 
 type WorkState = "sem_trabalho" | "trabalhando" | "terminado";
 
+export interface ActiveJobInfo {
+  type: "photo" | "video" | "narrated" | "long_video";
+  productName?: string;
+  status: string;      // queued | submitted | processing | done | failed
+  progress: number;    // 0–100
+  onCancel?: () => void;
+}
+
 interface Props {
   workState: WorkState;
   resultReady: boolean;
@@ -60,10 +68,11 @@ interface Props {
   visible: boolean;
   navMode?: boolean;
   embedded?: boolean;
-  triggerMessage?: string; // quando muda, injeta como mensagem do assistente
+  triggerMessage?: string;
+  activeJobs?: ActiveJobInfo[]; // cards de status acima do chat
 }
 
-export default function BotChat({ workState, resultReady, onViewResult, onActivate24h, botActive, visible, navMode = false, embedded = false, triggerMessage }: Props) {
+export default function BotChat({ workState, resultReady, onViewResult, onActivate24h, botActive, visible, navMode = false, embedded = false, triggerMessage, activeJobs = [] }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -304,12 +313,23 @@ export default function BotChat({ workState, resultReady, onViewResult, onActiva
           <div style={s.headerSub}>
             {isOnboarding
               ? `Passo ${onboardingStep + 1} de ${ONBOARDING_STEPS.length}`
+              : activeJobs.length > 0
+              ? `${activeJobs.length} criação${activeJobs.length > 1 ? "ões" : ""} em andamento ✨`
               : workState === "trabalhando"
               ? "Converse enquanto sua foto é criada ✨"
               : "Seu parceiro de negócios"}
           </div>
         </div>
       </div>
+
+      {/* Cards de status — jobs em andamento */}
+      {activeJobs.length > 0 && (
+        <div style={{ padding: "10px 14px 0", display: "flex", flexDirection: "column", gap: 8 }}>
+          {activeJobs.map((job, i) => (
+            <JobStatusCard key={i} job={job} />
+          ))}
+        </div>
+      )}
 
       {/* Área de mensagens */}
       <div style={{ ...s.messages, ...(navMode ? { flex: 1, maxHeight: "none" } : {}) }} id="bot-messages-area">
@@ -449,6 +469,84 @@ function UserMessage({ content }: { content: string }) {
       }}>
         {content}
       </div>
+    </div>
+  );
+}
+
+function JobStatusCard({ job }: { job: ActiveJobInfo }) {
+  const icons: Record<string, string> = {
+    photo: "📸",
+    video: "🎬",
+    narrated: "🎙️",
+    long_video: "🎞️",
+  };
+  const labels: Record<string, string> = {
+    photo: "Foto",
+    video: "Vídeo animado",
+    narrated: "Vídeo narrado",
+    long_video: "Vídeo longo",
+  };
+  const statusLabels: Record<string, string> = {
+    queued: "Na fila...",
+    submitted: "Enviando...",
+    processing: "Processando...",
+    done: "Pronto!",
+    failed: "Falhou",
+  };
+  const isDone = job.status === "done";
+  const isFailed = job.status === "failed";
+  const barColor = isDone
+    ? "#16c784"
+    : isFailed
+    ? "#ef4444"
+    : job.progress > 80
+    ? "linear-gradient(90deg, #6366f1, #22c55e)"
+    : "linear-gradient(90deg, #6366f1, #a855f7)";
+
+  return (
+    <div style={{
+      background: "#111820",
+      border: `1px solid ${isDone ? "rgba(22,199,132,0.3)" : isFailed ? "rgba(239,68,68,0.3)" : "rgba(168,85,247,0.15)"}`,
+      borderRadius: 12,
+      padding: "10px 12px",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: isDone || isFailed ? 0 : 7 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span style={{ fontSize: 15 }}>{icons[job.type] ?? "✨"}</span>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#dde4f0", lineHeight: 1.2 }}>
+              {job.productName ? job.productName : labels[job.type] ?? "Criação"}
+            </div>
+            <div style={{ fontSize: 11, color: isDone ? "#16c784" : isFailed ? "#ef4444" : "#8394b0", marginTop: 1 }}>
+              {statusLabels[job.status] ?? job.status}
+            </div>
+          </div>
+        </div>
+        {!isDone && !isFailed && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#a855f7" }}>{Math.round(job.progress)}%</span>
+        )}
+        {isDone && <span style={{ fontSize: 15 }}>✅</span>}
+        {isFailed && <span style={{ fontSize: 15 }}>❌</span>}
+      </div>
+      {!isDone && !isFailed && (
+        <div style={{ height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{
+            height: "100%",
+            width: `${job.progress}%`,
+            background: barColor,
+            borderRadius: 4,
+            transition: "width 0.6s ease",
+          }} />
+        </div>
+      )}
+      {job.onCancel && !isDone && !isFailed && (
+        <button
+          onClick={job.onCancel}
+          style={{ marginTop: 7, background: "transparent", border: "none", color: "#4e5c72", fontSize: 11, cursor: "pointer", padding: 0, textDecoration: "underline" }}
+        >
+          Cancelar
+        </button>
+      )}
     </div>
   );
 }
