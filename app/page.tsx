@@ -912,19 +912,20 @@ export default function HomePage() {
         }
 
         // Todo usuário novo (qualquer plano) que não completou onboarding vai para /onboarding
-        // Migração automática: usuários legados com jobs históricos marcados como concluídos
+        // Fonte de verdade: jobs no banco (inclui failed/done). O flag localStorage pode
+        // pertencer a outro usuário no mesmo browser — não confiar como única fonte.
         const onboardingDone = (() => {
-          try {
-            const flag = localStorage.getItem("onboarding_completed") === "1";
-            if (!flag && jobs.length > 0) {
-              // Usuário já usou o app antes — não deve refazer onboarding
-              localStorage.setItem("onboarding_completed", "1");
-              return true;
-            }
-            return flag;
-          } catch { return false; }
+          if (jobs.length > 0) {
+            // Tem histórico de uso — atualiza flag para acelerar futuros carregamentos
+            try { localStorage.setItem("onboarding_completed", "1"); } catch {}
+            return true;
+          }
+          // Sem jobs: usuário novo (flag pode ser de outro usuário no mesmo device)
+          return false;
         })();
         if (!hasActivePhotoJob && !onboardingDone) {
+          // Garante tela escura durante redirect (evita flash se flag stale de outro usuário)
+          setOnboardingReady(false);
           router.push("/onboarding");
           return; // onboardingReady fica false — tela escura durante redirect
         }
@@ -3194,12 +3195,26 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Foto gerando — aviso simples (acompanhar no Tamo) */}
+        {/* Foto gerando — progresso em tempo real */}
         {workState === "trabalhando" && !videoMode && (
           <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
             <div style={{ fontSize: 40, marginBottom: 12, lineHeight: 1 }}>📸</div>
-            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 700, marginBottom: 6 }}>Sua foto está sendo criada</div>
-            <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 20, lineHeight: 1.5 }}>Acompanhe o andamento na aba Tamo</div>
+            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 700, marginBottom: 4 }}>Sua foto está sendo criada</div>
+            <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 14, lineHeight: 1.5 }}>
+              {statusLabel(job?.status ?? null, elapsedSec, job?.created_at, lang)}
+            </div>
+            {/* Barra de progresso real (ComfyUI polling) */}
+            <div style={{ width: "100%", height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden", marginBottom: 20 }}>
+              <div style={{
+                height: "100%",
+                width: `${displayProgress}%`,
+                borderRadius: 3,
+                background: displayProgress > 80
+                  ? "linear-gradient(90deg, #6366f1, #22c55e)"
+                  : "linear-gradient(90deg, #6366f1, #a855f7)",
+                transition: "width 0.4s ease",
+              }} />
+            </div>
             <button
               type="button"
               onClick={() => router.push("/tamo")}
