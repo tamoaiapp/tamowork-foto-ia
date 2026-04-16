@@ -4,6 +4,8 @@ import { generatePromptWithOllama } from "@/lib/promptuso/ollamaPrompt";
 import { getUserContext } from "@/lib/promptuso/userContext";
 import { generatePromptV2 } from "@/lib/promptuso/multiagent";
 
+export const maxDuration = 60;
+
 /**
  * Traduz texto para inglês via MyMemory (gratuito, sem API key).
  * Usa autodetect de idioma — funciona com PT, ES, e qualquer outro.
