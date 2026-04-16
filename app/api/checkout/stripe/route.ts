@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   // BR → mensal R$79 (BRL) | Não-BR → anual $100 (USD)
   const priceId = isMonthly
-    ? (process.env.STRIPE_PRICE_ID_MONTHLY ?? "price_1T02ysDn6tNmbP0N8w0c7g3o")
+    ? (process.env.STRIPE_PRICE_ID_MONTHLY ?? "price_1TMnqQDn6tNmbP0NqnSZeVmE")
     : (process.env.STRIPE_PRICE_ID_USD ?? "price_1TMndeDn6tNmbP0NJ45SlEOp");
 
   try {
