@@ -584,6 +584,59 @@ export function interpretFeedback(user_feedback = ""): FeedbackResult {
 
   if (!text) return result;
 
+  // ── display_source_not_removed (CRÍTICO) ────────────────────────────────────
+  // Manequim, expositor, loja, cabide, etiqueta ainda visíveis
+  if (containsAny(text, [
+    "manequim", "mannequin", "expositor", "display", "cabide", "hanger",
+    "araras", "araras", "arara", "rack", "prateleira de loja", "vitrine",
+    "etiqueta", "tag", "label", "store", "loja", "showroom",
+    "cara de loja", "parece loja", "ambiente de loja", "fundo de loja",
+    "dummy", "bust form", "display stand", "clothing rack",
+  ])) {
+    result.issue_types.push("display_source_not_removed");
+    result.allowed_changes.push("background", "human_presence", "environment");
+    result.extra_positive_notes.push(
+      "Remove mannequin completely and replace with a real person wearing the product naturally.",
+      "Remove all store elements: no clothing rack, no display stand, no store shelves, no price tags, no store background.",
+      "Show product in real-life usage — worn by a real person in a natural lifestyle environment.",
+    );
+    result.extra_negative_terms.push(
+      "mannequin", "dummy", "bust form", "clothing rack", "store display",
+      "retail background", "showroom", "store environment", "clothing hanger",
+      "price tag", "label", "tag", "store shelf", "display stand",
+    );
+  }
+
+  // ── wrong_usage_mode (ALTO) ──────────────────────────────────────────────────
+  // Roupa não está sendo usada / objeto parado sem interação
+  if (containsAny(text, [
+    "nao esta usando", "nao esta vestindo", "roupa nao vestida",
+    "nao esta sendo usado", "produto parado", "not wearing",
+    "not being used", "nao esta carregando", "nao segura",
+  ])) {
+    result.issue_types.push("wrong_usage_mode");
+    result.allowed_changes.push("usage_context", "human_presence");
+    result.extra_positive_notes.push(
+      "The product must be actively used: clothing worn on a real person, object actively held or interacted with.",
+      "Show realistic active usage — not product displayed statically.",
+    );
+    result.extra_negative_terms.push(
+      "product not worn", "clothing not in use", "static display", "no interaction",
+    );
+  }
+
+  // ── wrong_target_user (CRÍTICO) ──────────────────────────────────────────────
+  if (containsAny(text, [
+    "publico errado", "target errado", "infantil era adulto", "adulto era crianca",
+    "feminino era masculino", "masculino era feminino", "wrong audience",
+    "genero errado", "tamanho errado de modelo", "modelo errado de pessoa",
+  ])) {
+    result.issue_types.push("wrong_target_user");
+    result.allowed_changes.push("model_type", "target_audience");
+    result.extra_positive_notes.push("Ensure correct target audience: match age group, gender, and body type to the product description.");
+    result.extra_negative_terms.push("wrong age group", "wrong gender presentation", "wrong audience");
+  }
+
   if (containsAny(text, [
     "fundo ruim", "cenario ruim", "cenario feio", "ambiente ruim", "mais profissional",
     "background bad", "scene bad", "fundo feio", "cenário ruim", "fundo errado",

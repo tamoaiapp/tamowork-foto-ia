@@ -790,7 +790,13 @@ export default function HomePage() {
   // warmupVision desabilitado — carrega sob demanda ao subir foto
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    // Timeout de segurança: se auth não resolver em 9s, libera a tela (nunca trava infinito)
+    const safetyTimeout = setTimeout(() => {
+      setOnboardingReady(true);
+    }, 9_000);
+
+    const run = async (user: import("@supabase/supabase-js").User | null) => {
+      clearTimeout(safetyTimeout);
       if (!user) { router.push("/login"); return; }
       setUser(user);
 
@@ -1030,7 +1036,20 @@ export default function HomePage() {
 
       setOnboardingReady(true); // fallback: cobre casos onde res.ok === false ou vídeo apenas
       setLoading(false);
+    };
+
+    // Tenta obter sessão imediatamente
+    supabase.auth.getUser().then(({ data: { user } }) => run(user));
+
+    // Backup: onAuthStateChange captura sessão do magic link hash (chega depois do getUser)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) run(session.user);
     });
+
+    return () => {
+      clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   // Banner de app: detecta plataforma e decide se exibe
