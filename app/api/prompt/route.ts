@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fallback: motor multiagente V2 (Ollama offline)
-    console.log("[prompt] fallback para motor multiagente V2 (Ollama offline)");
+    console.log("[prompt] fallback multiagente V2 — OLLAMA_BASE:", process.env.OLLAMA_BASE ?? "(vazio)", "MODEL:", process.env.OLLAMA_PROMPT_MODEL ?? "(vazio)");
     const v2 = generatePromptV2({
       product_name: produtoEN,
       scene_request: cenarioEN || undefined,
