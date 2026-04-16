@@ -107,6 +107,32 @@ function DemoCarousel() {
   );
 }
 
+function translateError(msg: string, lang: string): string {
+  if (lang !== "pt") return msg; // EN/ES: mantém original do Supabase
+  const m = msg.toLowerCase();
+  if (m.includes("user already registered") || m.includes("already registered"))
+    return "Este e-mail já está cadastrado. Clique em 'Entrar' para acessar.";
+  if (m.includes("invalid login credentials") || m.includes("invalid credentials"))
+    return "E-mail ou senha incorretos.";
+  if (m.includes("email not confirmed"))
+    return "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.";
+  if (m.includes("password should be at least"))
+    return "A senha deve ter pelo menos 6 caracteres.";
+  if (m.includes("rate limit") || m.includes("too many requests") || m.includes("security purposes"))
+    return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+  if (m.includes("invalid email") || m.includes("unable to validate email"))
+    return "Formato de e-mail inválido.";
+  if (m.includes("user not found"))
+    return "Usuário não encontrado.";
+  if (m.includes("email already in use"))
+    return "Este e-mail já está em uso.";
+  if (m.includes("weak password") || m.includes("password is too"))
+    return "Escolha uma senha mais forte (mín. 6 caracteres).";
+  if (m.includes("network") || m.includes("fetch"))
+    return "Erro de conexão. Verifique sua internet.";
+  return msg; // fallback: mostra original
+}
+
 function AuthCard() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -126,7 +152,7 @@ function AuthCard() {
       provider: "google",
       options: { redirectTo: `${window.location.origin}/` },
     });
-    if (error) { setError(error.message); setGoogleLoading(false); }
+    if (error) { setError(translateError(error.message, lang)); setGoogleLoading(false); }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -134,11 +160,11 @@ function AuthCard() {
     setLoading(true); setError(""); setMsg("");
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError(error.message);
+      if (error) setError(translateError(error.message, lang));
       else router.push("/");
     } else {
       const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) setError(error.message);
+      if (error) setError(translateError(error.message, lang));
       else if (data.session) router.push("/");
       else setMsg(t("login_verify_email"));
     }

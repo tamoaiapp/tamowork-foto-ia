@@ -127,9 +127,9 @@ export default function DesktopSidebar() {
   };
 
   const navItems = [
-    { key: "criar", label: t("nav_criar"), path: "/", icon: (a: boolean) => <IconCriar active={a} /> },
-    { key: "editor", label: t("nav_editor"), path: "/editor", icon: (a: boolean) => <IconEditor active={a} /> },
-    { key: "criacoes", label: t("nav_criacoes"), path: "/criacoes", icon: (a: boolean) => <IconCriacoes active={a} /> },
+    { key: "criar",    label: t("nav_criar"),    path: "/",        icon: (a: boolean) => <IconCriar active={a} /> },
+    { key: "editor",   label: t("nav_editor"),   path: "/editor",  icon: (a: boolean) => <IconEditor active={a} /> },
+    { key: "criacoes", label: t("nav_criacoes"), path: "/criacoes",icon: (a: boolean) => <IconCriacoes active={a} /> },
   ];
 
   return (
@@ -176,6 +176,31 @@ export default function DesktopSidebar() {
           );
         })}
       </nav>
+
+      {/* Tamo — chat/status */}
+      <div style={{ padding: "4px 12px 12px" }}>
+        <div style={s.navSection}>Tamo</div>
+        <button
+          onClick={() => router.push("/tamo")}
+          style={{
+            ...s.navItem,
+            background: pathname === "/tamo" ? "rgba(168,85,247,0.12)" : "transparent",
+          }}
+          className="sidebar-nav-item"
+        >
+          <div style={{ position: "relative", width: 22, height: 22, flexShrink: 0 }}>
+            <img
+              src="/tamo/idle.png"
+              alt="Tamo"
+              style={{ width: 22, height: 22, objectFit: "contain", objectPosition: "bottom", opacity: pathname === "/tamo" ? 1 : 0.7 }}
+            />
+          </div>
+          <span style={{ ...s.navLabel, color: pathname === "/tamo" ? "#c4b5fd" : "#8394b0" }}>
+            {lang === "en" ? "Tamo AI" : "Tamo"}
+          </span>
+          {pathname === "/tamo" && <div style={s.activeBar} />}
+        </button>
+      </div>
 
       {/* Bottom */}
       <div style={s.bottom}>
