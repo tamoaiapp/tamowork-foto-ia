@@ -21,7 +21,10 @@ type Facilidade = "sim" | "medio" | "dificil";
 
 async function getToken() {
   const { data } = await supabase.auth.getSession();
-  return data.session?.access_token ?? "";
+  if (data.session?.access_token) return data.session.access_token;
+  // getSession() pode retornar null em mobile — tenta refresh
+  const { data: rd } = await supabase.auth.refreshSession();
+  return rd.session?.access_token ?? "";
 }
 
 function assignVariant(): Variant {
