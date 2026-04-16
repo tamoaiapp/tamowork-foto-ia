@@ -21,3 +21,5 @@ next-env.d.ts
 *.tmp
 
 .env*.local
+
+.env.vercel-prod
