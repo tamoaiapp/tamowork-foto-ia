@@ -425,11 +425,21 @@ export function inferShotType(agent: UsageAgent, mode: UsageMode): string {
 function baseNegativeTerms(): string[] {
   return [
     "floating", "duplicate product", "multiple instances",
-    "packaging", "barcode", "label", "product card",
+    "packaging", "barcode", "product card",
     "altered design", "wrong color", "wrong shape", "wrong material",
     "wrong proportions", "wrong position",
     "blurry", "low quality", "CGI", "cartoon", "watermark", "text",
-    "mannequin on product", "display stand",
+  ];
+}
+
+// Termos anti-manequim/expositor — aplicados SEMPRE em modos wearable/fashion
+function antiDisplayNegatives(): string[] {
+  return [
+    "mannequin", "dummy", "bust form", "headless mannequin",
+    "clothing rack", "display stand", "store display", "retail display",
+    "store background", "retail background", "showroom", "store environment",
+    "clothing hanger", "price tag", "label", "tag", "store shelf",
+    "flat lay on hanger", "product not worn", "clothing not on person",
   ];
 }
 
@@ -442,13 +452,25 @@ function agentNegativeTerms(agent: UsageAgent): string[] {
     case "jewelry_hand_agent":
       return ["deformed fingers", "bad hands", "wrong finger placement", "wrong wrist placement", "extra fingers"];
     case "footwear_agent":
-      return ["floating shoes", "shoes not worn", "wrong foot position", "deformed feet", "wrong scale shoes"];
+      return [
+        "floating shoes", "shoes not worn", "wrong foot position", "deformed feet", "wrong scale shoes",
+        ...antiDisplayNegatives(),
+      ];
     case "bag_agent":
-      return ["floating bag", "wrong straps", "extra pockets not in original", "altered hardware", "bag not worn"];
+      return [
+        "floating bag", "wrong straps", "extra pockets not in original", "altered hardware", "bag not worn",
+        ...antiDisplayNegatives(),
+      ];
     case "fashion_kids_wearable_agent":
-      return ["adult model", "adult proportions", "mannequin", "store background", "retail scene", "wrong age"];
+      return [
+        "adult model", "adult proportions", "wrong age",
+        ...antiDisplayNegatives(),
+      ];
     case "fashion_wearable_agent":
-      return ["mannequin", "flat clothing", "floating clothing", "clothing not worn", "wrong body proportions"];
+      return [
+        "flat clothing", "floating clothing", "clothing not worn", "wrong body proportions",
+        ...antiDisplayNegatives(),
+      ];
     case "handheld_use_agent":
       return ["floating object", "wrong hand pose", "deformed hands", "object not held", "extra hands"];
     case "placed_environment_agent":
@@ -495,7 +517,7 @@ export function buildPromptV2({
       : parsed.gender_presentation === "male" ? "male" : "";
     const sizeStr = parsed.usage_context === "plus_size_fashion" ? "plus-size " : "";
     const ageStr = parsed.target_user === "child" ? "child" : `${genderStr} ${sizeStr}person`.trim();
-    humanBlock = `A ${ageStr} is present to show the product worn naturally with correct body proportions.`;
+    humanBlock = `A real ${ageStr} is wearing the product naturally with correct body proportions.`;
   } else if (mode === "handheld_use") {
     humanBlock = "A person may be present only as needed to hold the product naturally in realistic use.";
   } else if (mode === "active_usage") {
@@ -503,6 +525,12 @@ export function buildPromptV2({
   } else {
     humanBlock = "No unnecessary person should appear in the scene. Product is the sole focus.";
   }
+
+  // Bloco anti-expositor — OBRIGATÓRIO para todo modo wearable/fashion
+  // O produto deve sempre sair em uso real, jamais em manequim ou expositor de loja
+  const antiDisplayBlock = (mode === "wearable_use" && !parsed.has_human_block)
+    ? "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom. Show the product in real-life use, worn naturally."
+    : "";
 
   const qualityBlock = [
     "High-quality realistic commercial photo.",
@@ -514,6 +542,7 @@ export function buildPromptV2({
     qualityBlock,
     `Product: ${vision_description || product_name || "product"}.`,
     buildIdentityBlock(),
+    antiDisplayBlock,
     `Physical placement: the product is ${physicalAnchor}.`,
     `Scene: ${scene}.`,
     `Framing: ${shotType}.`,
@@ -521,8 +550,14 @@ export function buildPromptV2({
     ...extra_positive_notes,
   ].filter(Boolean).join(" ");
 
+  // Para wearable_use sem bloqueio de humano: sempre injeta anti-display nos negativos
+  const modeAntiDisplay = (mode === "wearable_use" && !parsed.has_human_block)
+    ? antiDisplayNegatives()
+    : [];
+
   const neg = uniq([
     ...baseNegativeTerms(),
+    ...modeAntiDisplay,
     ...agentNegativeTerms(agent),
     ...extra_negative_terms,
   ]).join(", ");
