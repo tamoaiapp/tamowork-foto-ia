@@ -634,12 +634,6 @@ export default function HomePage() {
 
   useEffect(() => {
     try {
-      // Se tem job ativo no sessionStorage → vai direto para /tamo sem esperar auth
-      const pendingJobId = sessionStorage.getItem("pending_job_id");
-      if (pendingJobId) {
-        router.push("/tamo");
-        return; // onboardingReady fica false — tela escura durante redirect
-      }
       if (localStorage.getItem("onboarding_completed") === "1") {
         setOnboardingReady(true); // usuário já completou — libera imediatamente
       }
@@ -647,7 +641,7 @@ export default function HomePage() {
     } catch {
       setOnboardingReady(true); // erro de storage — libera para não travar
     }
-  }, [router]);
+  }, []);
 
   // Banner de app (Android / iOS)
   const [appBannerPlatform, setAppBannerPlatform] = useState<"android" | "ios" | null>(null);
@@ -852,13 +846,12 @@ export default function HomePage() {
         );
         if (active) {
           hasActivePhotoJob = true;
-          // Job ativo → vai direto para /tamo (não fica na página de criação)
+          setJob(active);
+          if (active.input_image_url) setPreview(active.input_image_url);
           try {
             sessionStorage.setItem("tamo_active_job", JSON.stringify({ id: active.id, input_image_url: active.input_image_url }));
             sessionStorage.setItem("pending_job_id", active.id);
           } catch { /* ignora */ }
-          router.push("/tamo");
-          return;
         } else {
           // Restaura o job done mais recente (criado nas últimas 24h) para mostrar resultado
           // Ignora jobs que o usuário descartou explicitamente (clicou em "criar nova foto")
@@ -869,17 +862,13 @@ export default function HomePage() {
             new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
           );
           if (recentDone) {
-            // Job done recente → vai para /tamo para ver resultado
-            try { sessionStorage.setItem("tamo_active_job", JSON.stringify({ id: recentDone.id, input_image_url: recentDone.input_image_url })); } catch { /* ignora */ }
-            router.push("/tamo");
-            return;
+            setJob(recentDone);
+            try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
           } else {
             // Nenhum job ativo nem done recente — verifica se há um job pendente salvo no sessionStorage
-            // (ocorre quando o usuário navega para outra página enquanto o job ainda estava sendo criado)
             try {
               const pendingJobId = sessionStorage.getItem("pending_job_id");
               if (pendingJobId && !dismissedIds.includes(pendingJobId)) {
-                // Busca esse job específico na API
                 const pres = await fetch(`/api/image-jobs/${pendingJobId}`, {
                   headers: { Authorization: `Bearer ${token}` },
                 });
@@ -887,11 +876,8 @@ export default function HomePage() {
                   const pjob = await pres.json();
                   if (pjob?.id && pjob.status !== "canceled") {
                     hasActivePhotoJob = pjob.status !== "done" && pjob.status !== "failed";
-                    if (hasActivePhotoJob) {
-                      // Job ainda ativo no sessionStorage → vai para /tamo
-                      router.push("/tamo");
-                      return;
-                    }
+                    setJob(pjob);
+                    if (pjob.input_image_url) setPreview(pjob.input_image_url);
                   } else {
                     sessionStorage.removeItem("pending_job_id");
                   }
@@ -3186,12 +3172,18 @@ export default function HomePage() {
               <FormatSelector value={photoFormat} onChange={setPhotoFormat} />
 
               {isPhotoJobActive ? (
-                <div
-                  onClick={() => router.push("/tamo")}
-                  style={{ background: "rgba(99,102,247,0.08)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 14, padding: "14px 16px", textAlign: "center" as const, cursor: "pointer" }}
-                >
-                  <div style={{ fontSize: 13, color: "#a5b4fc", fontWeight: 700, marginBottom: 4 }}>📸 Foto sendo criada...</div>
-                  <div style={{ fontSize: 12, color: "#4e5c72" }}>Toque para acompanhar no Tamo →</div>
+                <div style={{ borderRadius: 14, overflow: "hidden" }}>
+                  <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, padding: "14px 16px", textAlign: "center" as const }}>
+                    <div style={{ fontSize: 13, color: "#c4b5fd", fontWeight: 700, marginBottom: 4 }}>⏳ Sua foto ainda está sendo criada</div>
+                    <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 10 }}>Aguarde terminar antes de criar outra</div>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/tamo")}
+                      style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 8, padding: "6px 14px", color: "#c4b5fd", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      Ver andamento →
+                    </button>
+                  </div>
                 </div>
               ) : (
               <button
@@ -3745,6 +3737,21 @@ export default function HomePage() {
           </div>
         )}
 
+
+        {/* Vídeo ativo — bloqueia criação de outro vídeo */}
+        {!botNavOpen && videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "") && (
+          <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
+            <div style={{ fontSize: 13, color: "#c4b5fd", fontWeight: 700, marginBottom: 4 }}>⏳ Seu vídeo ainda está sendo criado</div>
+            <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 10 }}>Aguarde terminar antes de criar outro</div>
+            <button
+              type="button"
+              onClick={() => router.push("/tamo")}
+              style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 8, padding: "6px 14px", color: "#c4b5fd", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+            >
+              Ver andamento →
+            </button>
+          </div>
+        )}
 
         {/* Vídeo — form (só aparece se Tamo fechado) */}
         {!botNavOpen && videoMode && !videoJob && job?.status === "done" && job.output_image_url && (
