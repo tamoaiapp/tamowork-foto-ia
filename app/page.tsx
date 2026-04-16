@@ -846,12 +846,13 @@ export default function HomePage() {
         );
         if (active) {
           hasActivePhotoJob = true;
-          setJob(active);
-          if (active.input_image_url) setPreview(active.input_image_url);
-          setModeSelected(true);
-          setBotNavOpen(true); // abre Tamo automaticamente ao restaurar job ativo
-          // Job ativo encontrado — limpa pending_job_id do sessionStorage
-          try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
+          // Job ativo → vai direto para /tamo (não fica na página de criação)
+          try {
+            sessionStorage.setItem("tamo_active_job", JSON.stringify({ id: active.id, input_image_url: active.input_image_url }));
+            sessionStorage.setItem("pending_job_id", active.id);
+          } catch { /* ignora */ }
+          router.push("/tamo");
+          return;
         } else {
           // Restaura o job done mais recente (criado nas últimas 24h) para mostrar resultado
           // Ignora jobs que o usuário descartou explicitamente (clicou em "criar nova foto")
@@ -862,9 +863,10 @@ export default function HomePage() {
             new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
           );
           if (recentDone) {
-            setJob(recentDone);
-            setBotNavOpen(true); // resultado fica no Tamo, não no Criar
-            try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
+            // Job done recente → vai para /tamo para ver resultado
+            try { sessionStorage.setItem("tamo_active_job", JSON.stringify({ id: recentDone.id, input_image_url: recentDone.input_image_url })); } catch { /* ignora */ }
+            router.push("/tamo");
+            return;
           } else {
             // Nenhum job ativo nem done recente — verifica se há um job pendente salvo no sessionStorage
             // (ocorre quando o usuário navega para outra página enquanto o job ainda estava sendo criado)
@@ -879,9 +881,11 @@ export default function HomePage() {
                   const pjob = await pres.json();
                   if (pjob?.id && pjob.status !== "canceled") {
                     hasActivePhotoJob = pjob.status !== "done" && pjob.status !== "failed";
-                    setJob(pjob);
-                    if (pjob.input_image_url) setPreview(pjob.input_image_url);
-                    if (hasActivePhotoJob) { setModeSelected(true); setBotNavOpen(true); }
+                    if (hasActivePhotoJob) {
+                      // Job ainda ativo no sessionStorage → vai para /tamo
+                      router.push("/tamo");
+                      return;
+                    }
                   } else {
                     sessionStorage.removeItem("pending_job_id");
                   }
@@ -3177,8 +3181,8 @@ export default function HomePage() {
 
               {isPhotoJobActive ? (
                 <div
-                  onClick={() => setBotNavOpen(true)}
-                  style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 14, padding: "14px 16px", textAlign: "center" as const, cursor: "pointer" }}
+                  onClick={() => router.push("/tamo")}
+                  style={{ background: "rgba(99,102,247,0.08)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 14, padding: "14px 16px", textAlign: "center" as const, cursor: "pointer" }}
                 >
                   <div style={{ fontSize: 13, color: "#a5b4fc", fontWeight: 700, marginBottom: 4 }}>📸 Foto sendo criada...</div>
                   <div style={{ fontSize: 12, color: "#4e5c72" }}>Toque para acompanhar no Tamo →</div>
@@ -3872,10 +3876,7 @@ export default function HomePage() {
         hasActiveJob={isGenerating}
         hasDoneJob={hasDoneJob}
         botActive={botActive}
-        onCriarWhileBusy={() => {
-          setBotNavOpen(true);
-          setBotTriggerMessage(`🦎 Ainda estou finalizando sua foto! Aguenta mais um minutinho.\n\nEnquanto isso, posso te ajudar com legenda, ideias de post ou qualquer outra coisa. O que precisa?`);
-        }}
+        onCriarWhileBusy={() => router.push("/tamo")}
       />
 
       {/* Mini editor */}
