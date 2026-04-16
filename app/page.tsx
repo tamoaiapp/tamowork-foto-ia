@@ -821,7 +821,10 @@ export default function HomePage() {
       const res = await fetch("/api/image-jobs", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
+      if (!res.ok) {
+        // Falha na API de jobs — libera a tela sem redirecionar para não travar o usuário
+        setOnboardingReady(true);
+      } else if (res.ok) {
         const data = await res.json();
         // API retorna { jobs, plan }
         const jobs: Job[] = Array.isArray(data) ? data : (data.jobs ?? []);
