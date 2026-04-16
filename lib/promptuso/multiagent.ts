@@ -438,7 +438,8 @@ function antiDisplayNegatives(): string[] {
     "mannequin", "dummy", "bust form", "headless mannequin",
     "clothing rack", "display stand", "store display", "retail display",
     "store background", "retail background", "showroom", "store environment",
-    "clothing hanger", "price tag", "label", "tag", "store shelf",
+    "clothing hanger", "price tag", "hang tag", "swing tag", "clothing tag", "label", "tag", "store shelf",
+    "packaging", "box", "plastic bag", "polybag", "wrapper", "product bag",
     "flat lay on hanger", "product not worn", "clothing not on person",
   ];
 }
@@ -529,7 +530,7 @@ export function buildPromptV2({
   // Bloco anti-expositor — OBRIGATÓRIO para todo modo wearable/fashion
   // O produto deve sempre sair em uso real, jamais em manequim ou expositor de loja
   const antiDisplayBlock = (mode === "wearable_use" && !parsed.has_human_block)
-    ? "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom. Show the product in real-life use, worn naturally."
+    ? "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hang tags, no clothing labels, no hangers, no showroom, no packaging, no box, no plastic bag. Show the product in real-life use, worn naturally."
     : "";
 
   const qualityBlock = [
