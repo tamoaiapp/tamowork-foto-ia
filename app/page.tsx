@@ -936,20 +936,7 @@ export default function HomePage() {
         // Todo usuário novo (qualquer plano) que não completou onboarding vai para /onboarding
         // Fonte de verdade: jobs no banco (inclui failed/done). O flag localStorage pode
         // pertencer a outro usuário no mesmo browser — não confiar como única fonte.
-        const onboardingDone = (() => {
-          if (jobs.length > 0) {
-            try { localStorage.setItem("onboarding_completed", "1"); } catch {}
-            return true;
-          }
-          return false;
-        })();
-        console.log("[tamo] jobs:", jobs.length, "| hasActivePhotoJob:", hasActivePhotoJob, "| onboardingDone:", onboardingDone);
-        if (!hasActivePhotoJob && !onboardingDone) {
-          console.log("[tamo] → redirecionando para /onboarding");
-          router.push("/onboarding");
-          return;
-        }
-        console.log("[tamo] → ficando no app (jobs existem ou job ativo)");
+        console.log("[tamo] jobs:", jobs.length, "| hasActivePhotoJob:", hasActivePhotoJob);
 
         // Gatilho return_visit: já criou fotos antes mas não tem push ativo
         // Não mostrar enquanto há job ativo para não interromper o fluxo
