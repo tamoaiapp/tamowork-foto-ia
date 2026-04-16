@@ -805,10 +805,10 @@ export default function HomePage() {
       }
 
       // Usuário está logado: libera a tela IMEDIATAMENTE sem esperar dados
-      // O check de onboarding e carregamento de jobs acontece em background
       setUser(user);
       clearTimeout(safetyTimeout);
       setOnboardingReady(true);
+      console.log("[tamo] run() user:", user.id, user.email);
 
       try {
 
@@ -929,17 +929,18 @@ export default function HomePage() {
         // pertencer a outro usuário no mesmo browser — não confiar como única fonte.
         const onboardingDone = (() => {
           if (jobs.length > 0) {
-            // Tem histórico de uso — atualiza flag para acelerar futuros carregamentos
             try { localStorage.setItem("onboarding_completed", "1"); } catch {}
             return true;
           }
-          // Sem jobs: usuário novo (flag pode ser de outro usuário no mesmo device)
           return false;
         })();
+        console.log("[tamo] jobs:", jobs.length, "| hasActivePhotoJob:", hasActivePhotoJob, "| onboardingDone:", onboardingDone);
         if (!hasActivePhotoJob && !onboardingDone) {
+          console.log("[tamo] → redirecionando para /onboarding");
           router.push("/onboarding");
           return;
         }
+        console.log("[tamo] → ficando no app (jobs existem ou job ativo)");
 
         // Gatilho return_visit: já criou fotos antes mas não tem push ativo
         // Não mostrar enquanto há job ativo para não interromper o fluxo

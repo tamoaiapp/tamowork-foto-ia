@@ -74,7 +74,11 @@ function OnboardingPageInner() {
       if (!forcedVariant) {
         try {
           const uid = data.session.user.id;
-          if (localStorage.getItem(`onboarding_completed_${uid}`) === "1") {
+          const flagKey = `onboarding_completed_${uid}`;
+          const flagValue = localStorage.getItem(flagKey);
+          console.log("[onboarding] uid:", uid, "| flag:", flagKey, "=", flagValue);
+          if (flagValue === "1") {
+            console.log("[onboarding] → já completou, voltando para /");
             router.replace("/");
             return;
           }
