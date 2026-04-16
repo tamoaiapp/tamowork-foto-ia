@@ -901,8 +901,18 @@ export default function HomePage() {
         }
 
         // Todo usuário novo (qualquer plano) que não completou onboarding vai para /onboarding
-        // Exceção: se há job ativo, não bloqueia (sessão anterior em andamento)
-        const onboardingDone = (() => { try { return localStorage.getItem("onboarding_completed") === "1"; } catch { return false; } })();
+        // Migração automática: usuários legados com jobs históricos marcados como concluídos
+        const onboardingDone = (() => {
+          try {
+            const flag = localStorage.getItem("onboarding_completed") === "1";
+            if (!flag && jobs.length > 0) {
+              // Usuário já usou o app antes — não deve refazer onboarding
+              localStorage.setItem("onboarding_completed", "1");
+              return true;
+            }
+            return flag;
+          } catch { return false; }
+        })();
         if (!hasActivePhotoJob && !onboardingDone) {
           router.push("/onboarding");
           return;

@@ -163,7 +163,14 @@ export default function TamoPage() {
   }
 
   function handleNewPhoto() {
-    try { sessionStorage.removeItem("pending_job_id"); sessionStorage.removeItem("tamo_active_job"); } catch { /* ignora */ }
+    try {
+      sessionStorage.removeItem("pending_job_id");
+      sessionStorage.removeItem("tamo_active_job");
+      sessionStorage.removeItem("onboarding_mode");
+      sessionStorage.removeItem("ob_objetivo");
+      sessionStorage.removeItem("ob_facilidade");
+      sessionStorage.removeItem("ob_onde_usar");
+    } catch { /* ignora */ }
     setJob(null);
     router.push("/");
   }

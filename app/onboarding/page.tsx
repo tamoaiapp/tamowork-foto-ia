@@ -361,6 +361,7 @@ function UploadStep({ variant, file, preview, produto, cenario, error, submittin
       <div style={s.fieldGroup}>
         <label style={s.fieldLabel}>Nome do produto</label>
         <input
+          autoFocus
           style={s.input}
           placeholder="Ex: Tênis Nike, Bolsa de couro, Caneca..."
           value={produto}
