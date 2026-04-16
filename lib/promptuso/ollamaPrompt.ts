@@ -201,7 +201,10 @@ Vision Description: ${visionDesc || "(not provided)"}`;
       negative_prompt: String(parsed.negative_prompt).trim(),
     };
   } catch (e) {
-    console.warn("[ollamaPrompt] Erro:", (e as Error).message, "url=", url);
+    const msg = (e as Error).message ?? String(e);
+    console.warn("[ollamaPrompt] Erro:", msg, "url=", url);
+    // Temporário: expõe erro via módulo global para diagnóstico
+    (globalThis as Record<string, unknown>).__lastOllamaError = msg;
     return null;
   }
 }

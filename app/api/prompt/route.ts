@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
       negative: v2.negative_prompt,
       meta: v2.meta,
       source: "multiagent_v2",
-      _debug: { ollama_base: process.env.OLLAMA_BASE ?? null, model: process.env.OLLAMA_PROMPT_MODEL ?? null },
+      _debug: { ollama_base: process.env.OLLAMA_BASE ?? null, model: process.env.OLLAMA_PROMPT_MODEL ?? null, ollama_error: (globalThis as Record<string, unknown>).__lastOllamaError ?? null },
     });
   } catch (e) {
     return NextResponse.json(
