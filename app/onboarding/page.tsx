@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // ── Cenários sugeridos ──────────────────────────────────────────────────────
 const CENARIOS = [
@@ -32,6 +32,7 @@ function assignVariant(): Variant {
 // ── Componente principal ────────────────────────────────────────────────────
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [ready, setReady]         = useState(false);
@@ -58,23 +59,32 @@ export default function OnboardingPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { router.replace("/login"); return; }
 
-      // Já completou onboarding → vai para o app
-      try {
-        if (localStorage.getItem("onboarding_completed") === "1") {
-          router.replace("/");
-          return;
-        }
-      } catch { /* ignora */ }
+      // Já completou onboarding → vai para o app (ignora se ?v= presente para permitir teste)
+      const forcedVariant = searchParams.get("v")?.toUpperCase();
+      if (!forcedVariant) {
+        try {
+          if (localStorage.getItem("onboarding_completed") === "1") {
+            router.replace("/");
+            return;
+          }
+        } catch { /* ignora */ }
+      }
 
-      // Atribui ou restaura variante
+      // Atribui ou restaura variante — ?v=A/B/C força variante para testes
       try {
-        const saved = localStorage.getItem("onboarding_variant") as Variant | null;
-        if (saved && ["A", "B", "C"].includes(saved)) {
-          setVariant(saved);
+        const forced = searchParams.get("v")?.toUpperCase() as Variant | null;
+        if (forced && ["A", "B", "C"].includes(forced)) {
+          localStorage.setItem("onboarding_variant", forced);
+          setVariant(forced);
         } else {
-          const v = assignVariant();
-          localStorage.setItem("onboarding_variant", v);
-          setVariant(v);
+          const saved = localStorage.getItem("onboarding_variant") as Variant | null;
+          if (saved && ["A", "B", "C"].includes(saved)) {
+            setVariant(saved);
+          } else {
+            const v = assignVariant();
+            localStorage.setItem("onboarding_variant", v);
+            setVariant(v);
+          }
         }
       } catch {
         setVariant("A");
