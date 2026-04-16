@@ -12,6 +12,7 @@ interface AccountJob {
   id: string;
   status: string;
   type: "photo" | "video";
+  source?: "image_jobs" | "video_jobs" | "narrated_video_jobs" | "long_video_jobs";
   output_image_url?: string;
   output_video_url?: string;
   input_image_url?: string;
@@ -35,27 +36,51 @@ export default function CriacoesPage() {
   const [videoBlocked, setVideoBlocked] = useState<"photo" | "video" | null>(null);
   const { t, lang } = useI18n();
 
+  async function loadJobs(tok: string) {
+    const res = await fetch("/api/account", { headers: { Authorization: `Bearer ${tok}` } });
+    if (res.ok) {
+      const data = await res.json();
+      setJobs((data.jobs ?? []).filter((j: AccountJob) =>
+        j.status === "done" && (j.output_image_url || j.output_video_url)
+      ));
+    }
+  }
+
   useEffect(() => {
+    let savedToken = "";
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push("/login"); return; }
       const { data: session } = await supabase.auth.getSession();
-      const t = session.session?.access_token ?? "";
-      setToken(t);
-      const res = await fetch("/api/account", { headers: { Authorization: `Bearer ${t}` } });
-      if (res.ok) {
-        const data = await res.json();
-        setJobs((data.jobs ?? []).filter((j: AccountJob) =>
-          j.status === "done" && (j.output_image_url || j.output_video_url)
-        ));
-      }
+      savedToken = session.session?.access_token ?? "";
+      setToken(savedToken);
+      await loadJobs(savedToken);
       setLoading(false);
     });
-  }, [router]);
+
+    // Recarrega ao voltar para a aba (ex: depois de criar no Tamo)
+    function onVisibility() {
+      if (document.visibilityState === "visible" && savedToken) {
+        loadJobs(savedToken);
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function deleteEndpoint(job: AccountJob) {
+    switch (job.source) {
+      case "video_jobs": return `/api/video-jobs/${job.id}`;
+      case "narrated_video_jobs": return `/api/narrated-video/${job.id}`;
+      case "long_video_jobs": return `/api/long-video/${job.id}`;
+      default: return `/api/image-jobs/${job.id}`;
+    }
+  }
 
   async function handleDelete(id: string) {
-    if (!confirm(t("criacoes_confirm_delete"))) return;
+    const job = jobs.find((j) => j.id === id);
+    if (!job || !confirm(t("criacoes_confirm_delete"))) return;
     setDeletingId(id);
-    await fetch(`/api/image-jobs/${id}`, {
+    await fetch(deleteEndpoint(job), {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     }).catch(() => {});

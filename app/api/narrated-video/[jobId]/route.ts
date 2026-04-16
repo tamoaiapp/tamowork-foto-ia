@@ -23,7 +23,7 @@ export async function GET(
   return NextResponse.json(job);
 }
 
-// DELETE /api/narrated-video/[jobId] — cancela job
+// DELETE /api/narrated-video/[jobId] — cancela ou remove job
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
@@ -34,12 +34,26 @@ export async function DELETE(
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  await supabase
+  const { data: job } = await supabase
     .from("narrated_video_jobs")
-    .update({ status: "canceled", updated_at: new Date().toISOString() })
+    .select("status")
     .eq("id", jobId)
     .eq("user_id", user.id)
-    .in("status", ["queued", "submitting", "generating_scenes", "assembling"]);
+    .single();
+
+  if (!job) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+
+  if (job.status === "done") {
+    // Job finalizado — apaga o registro
+    await supabase.from("narrated_video_jobs").delete().eq("id", jobId).eq("user_id", user.id);
+  } else {
+    // Job em andamento — cancela
+    await supabase
+      .from("narrated_video_jobs")
+      .update({ status: "canceled", updated_at: new Date().toISOString() })
+      .eq("id", jobId)
+      .eq("user_id", user.id);
+  }
 
   return NextResponse.json({ ok: true });
 }

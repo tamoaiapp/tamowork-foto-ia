@@ -1917,15 +1917,12 @@ export default function HomePage() {
       if (!res.ok) throw new Error("Erro ao criar job de vídeo");
       const { jobId } = await res.json();
       setVideoJob({ id: jobId, status: "queued" });
-      setTimeout(() => fetchVideoStatus(jobId), 15_000);
       setModeSelected(false);
-      const videoTriggers = [
-        `🎬 Vídeo sendo gerado! Quer que eu escreva uma legenda para o Reels enquanto aguarda?`,
-        `🎬 Criando o vídeo animado! Me fala o preço do produto — preparo um texto de venda para postar junto.`,
-        `🎬 Vídeo a caminho! Posso criar hashtags ou uma legenda de venda agora. O que prefere?`,
-      ];
-      setBotTriggerMessage(videoTriggers[Math.floor(Math.random() * videoTriggers.length)]);
-      setBotNavOpen(true);
+      try {
+        sessionStorage.setItem("pending_video_job_id", jobId);
+        sessionStorage.setItem("pending_video_job_type", "video");
+      } catch { /* ignora */ }
+      router.push("/tamo");
     } catch (err) {
       setVideoError(err instanceof Error ? err.message : "Erro");
     } finally {
@@ -2060,20 +2057,11 @@ export default function HomePage() {
       setNarratedJob({ id: jobId, status: "queued" });
       setNarratedMode(true);
       setModeSelected(false);
-      const narratedTriggers = [
-        `🎙️ Vídeo com narração sendo criado! Quer que eu escreva uma legenda para postar junto no Instagram?`,
-        `🎙️ Narração em produção! Me fala o preço do produto — já preparo um texto de venda enquanto aguarda.`,
-        `🎙️ Criando seu vídeo narrado! Posso sugerir hashtags ou ajustar a legenda. O que prefere?`,
-      ];
-      setBotTriggerMessage(narratedTriggers[Math.floor(Math.random() * narratedTriggers.length)]);
-      setBotNavOpen(true);
-      setNarratedDisplayProgress(0);
-      setNarratedElapsed(0);
-      setTimeout(async () => {
-        const t = await getToken();
-        const r = await fetch(`/api/narrated-video/${jobId}`, { headers: { Authorization: `Bearer ${t}` } });
-        if (r.ok) setNarratedJob(await r.json());
-      }, 15_000);
+      try {
+        sessionStorage.setItem("pending_video_job_id", jobId);
+        sessionStorage.setItem("pending_video_job_type", "narrated");
+      } catch { /* ignora */ }
+      router.push("/tamo");
     } catch (err) {
       setNarratedError(err instanceof Error ? err.message : "Erro ao criar vídeo");
     } finally {
@@ -2155,8 +2143,11 @@ export default function HomePage() {
         `🎬 Criando 4 cenas do *${produtoName}*! Me fala o preço — já preparo um texto de venda para cada cena.`,
         `🎬 Gerando seu vídeo longo! Quer hashtags ou legenda de venda enquanto espera?`,
       ];
-      setBotTriggerMessage(longTriggers[Math.floor(Math.random() * longTriggers.length)]);
-      setBotNavOpen(true);
+      try {
+        sessionStorage.setItem("pending_video_job_id", jobId);
+        sessionStorage.setItem("pending_video_job_type", "long");
+      } catch { /* ignora */ }
+      router.push("/tamo");
       setLongVideoElapsed(0);
       // Poll a cada 30s (o agente roda a cada 5 min, não adianta poll frequente)
       longVideoPollRef.current = setInterval(async () => {
@@ -3203,274 +3194,36 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Gerando — blur animation estilo GPT (só aparece se Tamo fechado) */}
-        {workState === "trabalhando" && !videoMode && !botNavOpen && (
-          <div style={styles.card} className="generating-wrap">
-            {/* Rate limit detectado durante o envio — mostra timer em vez de spinner */}
-            {rateLimitedUntil && countdown > 0 ? (
-              <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
-            ) : (
-              <>
-                {/* Painel esquerdo: status */}
-                <div className="generating-panel">
-                  <>
-                      <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
-                        <TamoMascot state="processing" size={80} label={lang === "en" ? "Working on it..." : lang === "es" ? "Trabajando en ello..." : "Tô trabalhando..."} />
-                      </div>
-                      <div style={styles.generatingTitle}>
-                        <span style={styles.shimmerText}>Transformando sua foto</span>
-                        <span style={styles.dots}>
-                          <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
-                          <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                          <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-                        </span>
-                      </div>
-                      {!submitting && (
-                        <div style={styles.progressBarBg}>
-                          <div style={{
-                            ...styles.progressBarFill,
-                            width: `${displayProgress}%`,
-                            background: displayProgress > 80
-                              ? "linear-gradient(90deg, #6366f1, #22c55e)"
-                              : "linear-gradient(90deg, #6366f1, #a855f7)",
-                          }} />
-                        </div>
-                      )}
-                      <NotifyButton onRequest={requestAndRegisterPush} />
-                      {showCancel && (
-                        <button onClick={async () => {
-                          setCanceling(true);
-                          const token = await getToken();
-                          if (job?.id) await fetch(`/api/image-jobs/${job.id}/cancel`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
-                          setCanceling(false);
-                          resetJob();
-                        }} disabled={canceling} style={styles.cancelBtn}>
-                          {canceling ? "Cancelando..." : "Cancelar"}
-                        </button>
-                      )}
-                    </>
-                </div>
-              </>
-            )}
-            {/* Chat integrado no mesmo bloco — sem avatar duplicado */}
-            {!(rateLimitedUntil && countdown > 0) && (
-              onboardingMode ? (
-                <OnboardingChat />
-              ) : (
-                <BotChat
-                  workState={workState}
-                  botActive={botActive}
-                  visible={true}
-                  onActivate24h={activateBot}
-                  activeJobs={activeJobs}
-                  embedded={true}
-                />
-              )
-            )}
-          </div>
-        )}
-
-        {/* Vídeo — gerando (só aparece se Tamo fechado) */}
-        {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && videoMode && !botNavOpen && (
-          <div style={styles.card} className="generating-wrap">
-            <div className="generating-panel">
-              <div style={styles.generatingTitle}>
-                <span style={styles.shimmerText}>{lang === "en" ? "Creating your video" : lang === "es" ? "Creando tu video" : "Criando seu vídeo"}</span>
-                <span style={styles.dots}>
-                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
-                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-                </span>
-              </div>
-              <div style={styles.progressBarBg}>
-                <div style={{
-                  ...styles.progressBarFill,
-                  width: `${videoDisplayProgress}%`,
-                  background: videoDisplayProgress > 80
-                    ? "linear-gradient(90deg, #6366f1, #22c55e)"
-                    : "linear-gradient(90deg, #6366f1, #a855f7)",
-                }} />
-              </div>
-              <p style={{ margin: "10px 0 0", fontSize: 13, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.5 }}>
-                {lang === "en" ? "Videos take 3–5 min. You can close — we'll notify you. 🔔" : lang === "es" ? "Videos tardan 3–5 min. Puedes cerrar — te avisamos. 🔔" : "Vídeos levam 3–5 min. Pode fechar — te avisamos. 🔔"}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Narração — gerando (só aparece se Tamo fechado) */}
-        {narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status) && narratedMode && !botNavOpen && (
-          <div style={styles.card} className="generating-wrap">
-            <div className="generating-panel">
-              <div style={styles.generatingTitle}>
-                <span style={styles.shimmerText}>
-                  {narratedJob.status === "generating_scenes"
-                    ? "Gerando cenas com IA"
-                    : narratedJob.status === "assembling"
-                    ? "Montando vídeo com narração"
-                    : "Preparando seu vídeo"}
-                </span>
-                <span style={styles.dots}>
-                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0s" }}>.</span>
-                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                  <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-                </span>
-              </div>
-              <div style={styles.progressBarBg}>
-                <div style={{
-                  ...styles.progressBarFill,
-                  width: `${narratedDisplayProgress}%`,
-                  background: narratedDisplayProgress > 80
-                    ? "linear-gradient(90deg, #a855f7, #22c55e)"
-                    : "linear-gradient(90deg, #a855f7, #6366f1)",
-                }} />
-              </div>
-              <p style={{ margin: "10px 0 0", fontSize: 13, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.5 }}>
-                Pode demorar 3–5 min. Pode fechar — te avisamos quando ficar pronto. 🔔
-              </p>
-              <button
-                type="button"
-                onClick={resetNarrated}
-                style={{ marginTop: 8, background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 20px", color: "#4e5c72", fontSize: 13, cursor: "pointer" }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Narração — resultado (só aparece se Tamo fechado) */}
-        {narratedJob?.status === "done" && narratedJob.output_video_url && narratedMode && !botNavOpen && (
-          <div style={styles.card}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center", marginBottom: 14 }}>
-              🎉 Seu vídeo com narração ficou pronto!
-            </div>
-            <video
-              src={narratedJob.output_video_url}
-              controls
-              autoPlay
-              playsInline
-              style={{ width: "100%", borderRadius: 14, background: "#000", maxHeight: 500, marginBottom: 14 }}
-            />
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    const res = await fetch(narratedJob.output_video_url!);
-                    const blob = await res.blob();
-                    await downloadBlob(blob, "video-narrado.mp4");
-                  } catch { window.open(narratedJob.output_video_url!, "_blank"); }
-                }}
-                style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
-              >
-                ⬇ Baixar vídeo
-              </button>
-              <button
-                type="button"
-                onClick={resetNarrated}
-                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 13, cursor: "pointer" }}
-              >
-                Criar outro vídeo
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Vídeo longo — tela de progresso */}
-        {longVideoMode && longVideoJob && !["done", "failed", "canceled"].includes(longVideoJob.status) && (
-          <div style={styles.card}>
-            <div style={{ textAlign: "center", padding: "8px 0" }}>
-              <div style={{ fontSize: 44, marginBottom: 12 }}>🎬</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", marginBottom: 8 }}>
-                {{
-                  queued: "Na fila...",
-                  generating_photos: "Gerando 4 cenas diferentes com IA...",
-                  generating_videos: "Convertendo fotos em vídeos...",
-                  concatenating: "Juntando os clips em um vídeo único...",
-                }[longVideoJob.status] ?? "Processando..."}
-              </div>
-              <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 16, lineHeight: 1.6 }}>
-                ⏰ Este processo demora <strong style={{ color: "#eef2f9" }}>20-40 minutos</strong><br />
-                Pode fechar o app — te avisamos quando ficar pronto
-              </div>
-              {/* Barra de progresso por fase */}
-              <div style={{ width: "100%", height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, marginBottom: 8 }}>
-                <div style={{
-                  height: "100%",
-                  width: `${({ queued: 5, generating_photos: 30, generating_videos: 65, concatenating: 90 } as Record<string, number>)[longVideoJob.status] ?? 5}%`,
-                  background: "linear-gradient(90deg, #6366f1, #a855f7)",
-                  borderRadius: 99, transition: "width 1s ease",
-                }} />
-              </div>
-              <div style={{ fontSize: 11, color: "#4e5c72", marginBottom: 16 }}>
-                Fase: {longVideoJob.status === "queued" ? "1/4 — aguardando agente" : longVideoJob.status === "generating_photos" ? "2/4 — fotos" : longVideoJob.status === "generating_videos" ? "3/4 — vídeos" : "4/4 — concatenando"}
-              </div>
-              <button type="button" onClick={() => setLongVideoMode(false)} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 20px", color: "#4e5c72", fontSize: 13, cursor: "pointer" }}>
-                Continuar usando o app
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Vídeo longo — resultado (só aparece se Tamo fechado) */}
-        {longVideoJob?.status === "done" && longVideoJob.output_video_url && longVideoMode && !botNavOpen && (
-          <div style={styles.card}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center", marginBottom: 14 }}>
-              🎉 Seu vídeo longo ficou pronto!
-            </div>
-            <video
-              src={longVideoJob.output_video_url}
-              controls
-              autoPlay
-              playsInline
-              style={{ width: "100%", borderRadius: 14, background: "#000", maxHeight: 500, marginBottom: 14 }}
-            />
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    const res = await fetch(longVideoJob.output_video_url!);
-                    const blob = await res.blob();
-                    await downloadBlob(blob, "video-longo.mp4");
-                  } catch { window.open(longVideoJob.output_video_url!, "_blank"); }
-                }}
-                style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}
-              >
-                ⬇ Baixar vídeo (~32s)
-              </button>
-              <button type="button" onClick={resetLongVideo} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 13, cursor: "pointer" }}>
-                Criar outro vídeo longo
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Vídeo longo — erro (só aparece se Tamo fechado) */}
-        {longVideoJob?.status === "failed" && longVideoMode && !botNavOpen && (
-          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 14, padding: "20px", textAlign: "center" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#eef2f9", marginBottom: 8 }}>Erro ao gerar vídeo longo</div>
-            <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 16 }}>{longVideoJob.error_message ?? "Tente novamente."}</div>
-            <button onClick={resetLongVideo} style={{ background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)", borderRadius: 10, padding: "8px 16px", color: "#a78bfa", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-              Tentar novamente
+        {/* Foto gerando — aviso simples (acompanhar no Tamo) */}
+        {workState === "trabalhando" && !videoMode && (
+          <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
+            <div style={{ fontSize: 40, marginBottom: 12, lineHeight: 1 }}>📸</div>
+            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 700, marginBottom: 6 }}>Sua foto está sendo criada</div>
+            <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 20, lineHeight: 1.5 }}>Acompanhe o andamento na aba Tamo</div>
+            <button
+              type="button"
+              onClick={() => router.push("/tamo")}
+              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "13px 32px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", width: "100%" }}
+            >
+              Ver andamento no Tamo →
             </button>
           </div>
         )}
 
-        {/* Chat durante geração de vídeo (só aparece se Tamo fechado) */}
-        {!botNavOpen && ((videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
-          (narratedMode && narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status))) && (
-          onboardingMode ? (
-            <OnboardingChat />
-          ) : (
-            <BotChat
-              workState={workState}
-              botActive={botActive}
-              visible={true}
-              onActivate24h={activateBot}
-            />
-          )
+        {/* Vídeo ativo — aviso simples (redirecionar para Tamo) */}
+        {isVideoJobActive && videoMode && (
+          <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
+            <div style={{ fontSize: 40, marginBottom: 12, lineHeight: 1 }}>🎬</div>
+            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 700, marginBottom: 6 }}>Seu vídeo está sendo criado</div>
+            <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 20, lineHeight: 1.5 }}>Acompanhe o andamento na aba Tamo</div>
+            <button
+              type="button"
+              onClick={() => router.push("/tamo")}
+              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "13px 32px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", width: "100%" }}
+            >
+              Ver andamento no Tamo →
+            </button>
+          </div>
         )}
 
         {/* Resultado (só aparece se Tamo fechado) */}
@@ -3989,232 +3742,6 @@ export default function HomePage() {
         />
       )}
 
-      {/* Chat via ícone da nav — posicionado entre header e bottom nav */}
-      {botNavOpen && (
-        <div style={{
-          position: "fixed",
-          top: 66, bottom: "calc(70px + env(safe-area-inset-bottom, 0px))",
-          left: 0, right: 0,
-          zIndex: 150,
-          background: "#07080b",
-          display: "flex", flexDirection: "column",
-          overflowY: "auto",
-        }}>
-          <div style={{ padding: "10px 16px 0", flexShrink: 0 }}>
-            <button
-              onClick={() => setBotNavOpen(false)}
-              style={{ background: "none", border: "none", color: "#8394b0", fontSize: 14, cursor: "pointer", padding: "0 0 8px", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", fontWeight: 600 }}
-            >
-              ← Voltar
-            </button>
-          </div>
-
-          {/* Foto — resultado */}
-          {workState === "terminado" && job && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={styles.card} className="result-wrap">
-                <div className="result-image-col">
-                  <img src={editedImageUrl ?? job.output_image_url} alt="Foto gerada" style={{ ...styles.resultImg, marginBottom: 0 }} />
-                </div>
-                <div className="result-actions-col">
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                    <TamoMascot state="done" size={64} />
-                    <div>
-                      <h2 style={{ ...styles.centerTitle, textAlign: "left" as const, margin: 0, marginBottom: 2 }}>{t("result_ready")}</h2>
-                      <p style={{ fontSize: 13, color: "#8394b0", margin: 0 }}>Sua foto foi gerada com sucesso</p>
-                    </div>
-                  </div>
-                  <PhotoRating rating={photoRating} hover={ratingHover} feedbackText={feedbackText} sent={feedbackSent} loading={feedbackLoading}
-                    onHover={setRatingHover}
-                    onRate={(r) => { setPhotoRating(r); if (r >= 4) sendPhotoFeedback(r, ""); }}
-                    onFeedbackChange={setFeedbackText}
-                    onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
-                    onRetry={plan === "free" ? handleBonusRetry : undefined}
-                    onRateApp={showRateApp ? handleRateApp : undefined}
-                    bonusLeft={bonusLeft}
-                  />
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, marginBottom: 10 }}>
-                    <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, flex: 1 }}>⬇ Baixar</button>
-                    <button onClick={() => { setEditorOpen(true); setBotNavOpen(false); }} style={{ ...styles.editBtn, flex: 1 }}>✏️ Editar</button>
-                  </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, marginBottom: 10 }}>
-                    {plan === "pro" && (
-                      <button
-                        onClick={() => { if (!isVideoJobActive) { setVideoMode(true); setBotNavOpen(false); } }}
-                        disabled={isVideoJobActive}
-                        style={{ ...styles.videoBtn, flex: 1, opacity: isVideoJobActive ? 0.5 : 1 }}
-                        title={isVideoJobActive ? "Aguarde seu vídeo terminar" : undefined}
-                      >
-                        🎬 {isVideoJobActive ? "Vídeo em andamento..." : t("btn_generate_video")}
-                      </button>
-                    )}
-                    <button onClick={() => { setPromoOpen(true); setBotNavOpen(false); }} style={{ ...styles.promoBtn, flex: plan === "pro" ? 1 : undefined, width: plan === "pro" ? undefined : "100%" }}>🎨 Criar arte</button>
-                  </div>
-                  <button onClick={resetJob} style={{ ...styles.backBtn, width: "100%", textAlign: "center" as const }}>📷 Nova foto</button>
-                  {plan === "free" && (
-                    <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 14, padding: "12px 14px", marginTop: 4 }}>
-                      <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.6 }}>
-                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos ilimitadas + vídeos animados
-                        <br />
-                        <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
-                          Assinar Pro — R$79/mês
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Foto — erro */}
-          {job?.status === "failed" && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={styles.card}>
-                <div style={styles.bigIcon}>😔</div>
-                <h2 style={styles.centerTitle}>Ops, algo deu errado</h2>
-                <p style={styles.centerDesc}>Pode tentar novamente agora — é gratuito.</p>
-                <button onClick={resetJob} style={styles.submitBtn}>Tentar novamente</button>
-              </div>
-            </div>
-          )}
-
-          {/* Vídeo — gerando */}
-          {videoJob && !["done", "failed"].includes(videoJob.status ?? "") && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={styles.card} className="generating-wrap">
-                <div className="generating-panel">
-                  <div style={styles.generatingTitle}>
-                    <span style={styles.shimmerText}>{lang === "en" ? "Creating your video" : "Criando seu vídeo"}</span>
-                    <span style={styles.dots}>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite" }}>.</span>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-                    </span>
-                  </div>
-                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "#8394b0", textAlign: "center" as const }}>
-                    {lang === "en" ? "This takes 1–3 min..." : "Isso leva 1–3 min..."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Vídeo — pronto */}
-          {videoJob?.status === "done" && videoJob.output_video_url && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={{ ...styles.card, padding: 0, overflow: "hidden" }}>
-                <video src={videoJob.output_video_url} controls autoPlay loop playsInline style={{ width: "100%", display: "block", maxHeight: "60vh", background: "#000", objectFit: "contain" }} />
-                <div style={{ padding: "16px 16px 20px" }}>
-                  <p style={{ margin: "0 0 14px", fontSize: 15, fontWeight: 700, color: "#eef2f9", textAlign: "center" }}>🎬 Seu vídeo está pronto!</p>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button onClick={async () => { try { const res = await fetch(videoJob!.output_video_url!); const blob = await res.blob(); await downloadBlob(blob, "video-ia.mp4"); } catch { window.open(videoJob!.output_video_url!, "_blank"); } }} style={{ flex: 1, background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 14, padding: "14px 0", color: "#fff", fontSize: 15, fontWeight: 700, textAlign: "center", display: "block", cursor: "pointer" }}>⬇ Baixar</button>
-                    <button onClick={resetAll} style={{ flex: 1, background: "#1a2535", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 0", color: "#8394b0", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>📷 Nova foto</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Vídeo — erro */}
-          {videoJob?.status === "failed" && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={styles.card}>
-                <div style={styles.bigIcon}>😔</div>
-                <h2 style={styles.centerTitle}>Ops, algo deu errado</h2>
-                <p style={styles.centerDesc}>Pode tentar novamente agora.</p>
-                <button onClick={() => resetVideo()} style={styles.submitBtn}>Tentar novamente</button>
-              </div>
-            </div>
-          )}
-
-          {/* Narração — gerando */}
-          {narratedJob && !["done","failed","canceled"].includes(narratedJob.status) && narratedMode && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={styles.card}>
-                <div style={{ textAlign: "center" as const, padding: "8px 0 12px" }}>
-                  <TamoMascot state="processing" size={64} label="Tô trabalhando..." />
-                  <div style={styles.generatingTitle}>
-                    <span style={styles.shimmerText}>Preparando seu vídeo</span>
-                    <span style={styles.dots}>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite" }}>.</span>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-                    </span>
-                  </div>
-                  <p style={{ margin: "10px 0 0", fontSize: 13, color: "#8394b0" }}>Pode demorar 3–5 min. Pode fechar — te avisamos quando ficar pronto. 🔔</p>
-                  <button type="button" onClick={resetNarrated} style={{ marginTop: 10, background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 20px", color: "#4e5c72", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Narração — pronta */}
-          {narratedJob?.status === "done" && narratedJob.output_video_url && narratedMode && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={styles.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center" as const, marginBottom: 14 }}>🎉 Seu vídeo com narração ficou pronto!</div>
-                <video src={narratedJob.output_video_url} controls autoPlay playsInline style={{ width: "100%", borderRadius: 14, background: "#000", maxHeight: 400, marginBottom: 14 }} />
-                <button type="button" onClick={async () => { try { const res = await fetch(narratedJob.output_video_url!); const blob = await res.blob(); await downloadBlob(blob, "video-narrado.mp4"); } catch { window.open(narratedJob.output_video_url!, "_blank"); } }} style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", width: "100%" }}>⬇ Baixar vídeo</button>
-                <button type="button" onClick={resetNarrated} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 13, cursor: "pointer", width: "100%", marginTop: 10 }}>Criar outro vídeo</button>
-              </div>
-            </div>
-          )}
-
-          {/* Vídeo longo — gerando */}
-          {longVideoJob && !["done","failed","canceled"].includes(longVideoJob.status) && longVideoMode && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={styles.card}>
-                <div style={{ textAlign: "center" as const, padding: "8px 0 12px" }}>
-                  <TamoMascot state="processing" size={64} label="Tô trabalhando..." />
-                  <div style={styles.generatingTitle}>
-                    <span style={styles.shimmerText}>Gerando vídeo longo</span>
-                    <span style={styles.dots}>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite" }}>.</span>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
-                      <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
-                    </span>
-                  </div>
-                  <div style={styles.progressBarBg}>
-                    <div style={{ ...styles.progressBarFill, width: `${({ queued: 5, generating_photos: 30, generating_videos: 65, concatenating: 90 } as Record<string, number>)[longVideoJob.status] ?? 5}%` }} />
-                  </div>
-                  <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 8 }}>
-                    {longVideoJob.status === "queued" ? "1/4 — aguardando" : longVideoJob.status === "generating_photos" ? "2/4 — fotos" : longVideoJob.status === "generating_videos" ? "3/4 — vídeos" : "4/4 — finalizando"}
-                  </div>
-                  <p style={{ margin: "10px 0 0", fontSize: 13, color: "#8394b0" }}>Pode demorar 20–40 min. Pode fechar — te avisamos quando ficar pronto. 🔔</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Vídeo longo — pronto */}
-          {longVideoJob?.status === "done" && longVideoJob.output_video_url && longVideoMode && (
-            <div style={{ padding: "0 16px 12px" }}>
-              <div style={styles.card}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#16c784", textAlign: "center" as const, marginBottom: 14 }}>🎉 Seu vídeo longo ficou pronto!</div>
-                <video src={longVideoJob.output_video_url} controls autoPlay playsInline style={{ width: "100%", borderRadius: 14, background: "#000", maxHeight: 400, marginBottom: 14 }} />
-                <button type="button" onClick={async () => { try { const res = await fetch(longVideoJob.output_video_url!); const blob = await res.blob(); await downloadBlob(blob, "video-longo.mp4"); } catch { window.open(longVideoJob.output_video_url!, "_blank"); } }} style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", width: "100%" }}>⬇ Baixar vídeo (~32s)</button>
-                <button type="button" onClick={resetLongVideo} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px", color: "#8394b0", fontSize: 13, cursor: "pointer", width: "100%", marginTop: 10 }}>Criar outro vídeo</button>
-              </div>
-            </div>
-          )}
-
-          {/* BotChat — hub de acompanhamento (sempre visível no overlay Tamo) */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "0 16px 12px", minHeight: 200 }}>
-            <BotChat
-              workState={workState}
-              botActive={botActive}
-              visible={true}
-              navMode={true}
-              onActivate24h={activateBot}
-              triggerMessage={botTriggerMessage}
-              activeJobs={activeJobs}
-              embedded={false}
-            />
-          </div>
-
-        </div>
-      )}
 
       {/* Mini toast — foto/vídeo pronto */}
       {showToast && (

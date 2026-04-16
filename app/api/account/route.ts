@@ -41,10 +41,10 @@ export async function GET(req: NextRequest) {
 
   // Combina fotos e vídeos, marcando o tipo, ordena por data desc
   type AnyJob = Record<string, unknown> & { created_at: string };
-  const photos = (jobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "photo" as const }));
-  const videos = (videoJobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "video" as const }));
-  const narrated = (narratedJobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "video" as const, prompt: j.roteiro }));
-  const longVideos = (longJobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "video" as const, prompt: j.produto }));
+  const photos = (jobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "photo" as const, source: "image_jobs" as const }));
+  const videos = (videoJobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "video" as const, source: "video_jobs" as const }));
+  const narrated = (narratedJobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "video" as const, source: "narrated_video_jobs" as const, prompt: j.roteiro }));
+  const longVideos = (longJobsRes.data ?? []).map((j: AnyJob) => ({ ...j, type: "video" as const, source: "long_video_jobs" as const, prompt: j.produto }));
   const allJobs = [...photos, ...videos, ...narrated, ...longVideos].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );

@@ -58,3 +58,33 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   return NextResponse.json(data);
 }
+
+// DELETE /api/video-jobs/:id — remove um job de vídeo
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = createServerClient();
+  const token = req.headers.get("authorization")?.replace("Bearer ", "") ?? "";
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+
+  const { id } = await params;
+  const { data: job } = await supabase
+    .from("video_jobs")
+    .select("output_video_url")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!job) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+
+  // Apaga do storage se for URL do Supabase
+  if (job.output_video_url?.includes("/storage/v1/object/")) {
+    const path = job.output_video_url.split("/storage/v1/object/public/")[1];
+    if (path) {
+      const [bucket, ...rest] = path.split("/");
+      await supabase.storage.from(bucket).remove([rest.join("/")]);
+    }
+  }
+
+  await supabase.from("video_jobs").delete().eq("id", id).eq("user_id", user.id);
+  return NextResponse.json({ ok: true });
+}

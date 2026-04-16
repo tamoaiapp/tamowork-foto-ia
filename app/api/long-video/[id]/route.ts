@@ -23,7 +23,7 @@ export async function GET(
   return NextResponse.json(job);
 }
 
-// DELETE /api/long-video/[id] — cancela job
+// DELETE /api/long-video/[id] — cancela ou remove job
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -34,12 +34,24 @@ export async function DELETE(
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  await supabase
+  const { data: job } = await supabase
     .from("long_video_jobs")
-    .update({ status: "canceled", updated_at: new Date().toISOString() })
+    .select("status")
     .eq("id", id)
     .eq("user_id", user.id)
-    .in("status", ["queued"]);
+    .single();
+
+  if (!job) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+
+  if (job.status === "done") {
+    await supabase.from("long_video_jobs").delete().eq("id", id).eq("user_id", user.id);
+  } else {
+    await supabase
+      .from("long_video_jobs")
+      .update({ status: "canceled", updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("user_id", user.id);
+  }
 
   return NextResponse.json({ ok: true });
 }

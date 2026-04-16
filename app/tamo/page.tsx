@@ -12,6 +12,7 @@ import TamoMascot from "@/app/components/TamoMascot";
 const BotChat = dynamic_next(() => import("@/app/components/BotChat"), { ssr: false });
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
+type VideoJobType = "video" | "narrated" | "long";
 
 interface ActiveJob {
   id: string;
@@ -22,6 +23,15 @@ interface ActiveJob {
   created_at?: string;
 }
 
+interface ActiveVideoJob {
+  id: string;
+  type: VideoJobType;
+  status: string;
+  output_video_url?: string;
+  input_image_url?: string;
+  error_message?: string;
+}
+
 async function getToken() {
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token ?? "";
@@ -29,19 +39,34 @@ async function getToken() {
 
 type OnboardingVariant = "A" | "B" | "C" | null;
 
+function videoApiPath(type: VideoJobType, id: string) {
+  if (type === "narrated") return `/api/narrated-video/${id}`;
+  if (type === "long") return `/api/long-video/${id}`;
+  return `/api/video-jobs/${id}`;
+}
+
 export default function TamoPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
+
+  // ── Foto job ────────────────────────────────────────────────────────────────
   const [job, setJob] = useState<ActiveJob | null>(null);
   const [progressVal, setProgressVal] = useState(0);
   const [displayProgress, setDisplayProgress] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
-  const [botActive, setBotActive] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const notifiedRef = useRef<Set<string>>(new Set());
 
-  // Onboarding mode — lido do sessionStorage para mostrar conteúdo extra
+  // ── Vídeo job ───────────────────────────────────────────────────────────────
+  const [videoJob, setVideoJob] = useState<ActiveVideoJob | null>(null);
+  const [videoElapsedSec, setVideoElapsedSec] = useState(0);
+  const videoPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [botActive, setBotActive] = useState(false);
+
+  // Onboarding mode
   const [obVariant, setObVariant] = useState<OnboardingVariant>(null);
   const [obObjetivo, setObObjetivo] = useState<string | null>(null);
   const [obOndeUsar, setObOndeUsar] = useState<string | null>(null);
@@ -61,7 +86,6 @@ export default function TamoPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { router.push("/login"); return; }
-      // Garante que usuário completou onboarding (acesso direto via URL)
       try {
         if (localStorage.getItem("onboarding_completed") !== "1") {
           router.push("/onboarding"); return;
@@ -76,7 +100,7 @@ export default function TamoPage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  // Smooth progress
+  // Smooth progress para foto
   useEffect(() => {
     const id = setInterval(() => {
       setDisplayProgress(prev => {
@@ -87,7 +111,7 @@ export default function TamoPage() {
     return () => clearInterval(id);
   }, [progressVal]);
 
-  // Carrega job ativo do sessionStorage + polling
+  // ── Carrega foto job do sessionStorage + polling ────────────────────────────
   useEffect(() => {
     if (!user) return;
 
@@ -96,7 +120,6 @@ export default function TamoPage() {
         try { return sessionStorage.getItem("pending_job_id") ?? ""; } catch { return ""; }
       })();
 
-      // Fallback: se não há pending_job_id, consulta a API para encontrar job ativo
       if (!jobId) {
         try {
           const token = await getToken();
@@ -109,7 +132,6 @@ export default function TamoPage() {
               jobId = active.id;
               try { sessionStorage.setItem("pending_job_id", active.id); } catch { /* ignora */ }
             } else {
-              // Sem job ativo — verifica done recente (últimas 24h)
               const recent = jobs.find(j => j.status === "done" && j.output_image_url &&
                 new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000);
               if (recent) setJob(recent);
@@ -121,37 +143,36 @@ export default function TamoPage() {
       }
 
       async function fetchStatus() {
-      if (!jobId) return;
-      try {
-        const token = await getToken();
-        const res = await fetch(`/api/image-jobs/${jobId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data: ActiveJob = await res.json();
-        setJob(data);
-
-        if (data.status === "done" || data.status === "failed" || data.status === "canceled") {
-          if (pollRef.current) clearInterval(pollRef.current);
-          if (elapsedRef.current) clearInterval(elapsedRef.current);
-          if (data.status === "done" && !notifiedRef.current.has(jobId)) {
-            notifiedRef.current.add(jobId);
-          }
-          return;
-        }
-
-        // Progresso
+        if (!jobId) return;
         try {
-          const pr = await fetch(`/api/image-jobs/${jobId}/progress`, {
+          const token = await getToken();
+          const res = await fetch(`/api/image-jobs/${jobId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          if (pr.ok) {
-            const pd = await pr.json();
-            setProgressVal(pd.progress ?? 0);
+          if (!res.ok) return;
+          const data: ActiveJob = await res.json();
+          setJob(data);
+
+          if (data.status === "done" || data.status === "failed" || data.status === "canceled") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            if (elapsedRef.current) clearInterval(elapsedRef.current);
+            if (data.status === "done" && !notifiedRef.current.has(jobId)) {
+              notifiedRef.current.add(jobId);
+            }
+            return;
           }
+
+          try {
+            const pr = await fetch(`/api/image-jobs/${jobId}/progress`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (pr.ok) {
+              const pd = await pr.json();
+              setProgressVal(pd.progress ?? 0);
+            }
+          } catch { /* ignora */ }
         } catch { /* ignora */ }
-      } catch { /* ignora */ }
-    }
+      }
 
       fetchStatus();
       pollRef.current = setInterval(fetchStatus, 10_000);
@@ -170,7 +191,77 @@ export default function TamoPage() {
     };
   }, [user]);
 
-  // Lê input_image_url do sessionStorage para mostrar durante geração
+  // ── Carrega vídeo job do sessionStorage + polling ───────────────────────────
+  useEffect(() => {
+    if (!user) return;
+
+    async function initVideo() {
+      let videoJobId = "";
+      let videoJobType: VideoJobType = "video";
+      try {
+        videoJobId = sessionStorage.getItem("pending_video_job_id") ?? "";
+        videoJobType = (sessionStorage.getItem("pending_video_job_type") as VideoJobType) ?? "video";
+      } catch { /* ignora */ }
+
+      if (!videoJobId) {
+        // Tenta encontrar vídeo ativo via API
+        try {
+          const token = await getToken();
+          const res = await fetch("/api/video-jobs", { headers: { Authorization: `Bearer ${token}` } });
+          if (res.ok) {
+            const data = await res.json();
+            const jobs = Array.isArray(data) ? data : [];
+            const active = jobs.find((j: ActiveVideoJob) => j.status && !["done", "failed", "canceled"].includes(j.status));
+            if (active) {
+              videoJobId = active.id;
+              videoJobType = "video";
+              try { sessionStorage.setItem("pending_video_job_id", active.id); } catch { /* ignora */ }
+            }
+          }
+        } catch { /* ignora */ }
+        if (!videoJobId) return;
+      }
+
+      async function fetchVideoStatus() {
+        if (!videoJobId) return;
+        try {
+          const token = await getToken();
+          const res = await fetch(videoApiPath(videoJobType, videoJobId), {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) return;
+          const data = await res.json();
+          setVideoJob({ id: videoJobId, type: videoJobType, ...data });
+
+          if (["done", "failed", "canceled"].includes(data.status)) {
+            if (videoPollRef.current) clearInterval(videoPollRef.current);
+            if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
+            if (data.status !== "done") {
+              // Limpa sessionStorage em caso de falha/cancel
+              try { sessionStorage.removeItem("pending_video_job_id"); sessionStorage.removeItem("pending_video_job_type"); } catch { /* ignora */ }
+            }
+          }
+        } catch { /* ignora */ }
+      }
+
+      fetchVideoStatus();
+      videoPollRef.current = setInterval(fetchVideoStatus, 15_000);
+
+      setVideoElapsedSec(0);
+      videoElapsedRef.current = setInterval(() => {
+        if (document.visibilityState !== "hidden") setVideoElapsedSec(s => s + 1);
+      }, 1000);
+    }
+
+    initVideo();
+
+    return () => {
+      if (videoPollRef.current) clearInterval(videoPollRef.current);
+      if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
+    };
+  }, [user]);
+
+  // Lê preview do input do sessionStorage
   const [inputPreview, setInputPreview] = useState<string | null>(null);
   useEffect(() => {
     try {
@@ -187,13 +278,30 @@ export default function TamoPage() {
   const isFailed = job?.status === "failed";
   const isCanceled = job?.status === "canceled";
 
+  const isVideoActive = videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "");
+  const isVideoDone = videoJob?.status === "done";
+  const isVideoFailed = videoJob?.status === "failed";
+
   const workState = isDone ? "terminado" : isActive ? "trabalhando" : "sem_trabalho";
+
+  const hasAnything = !!job || !!videoJob;
 
   function handleDownload(url: string) {
     const a = document.createElement("a");
     a.href = url;
     a.download = `tamowork-foto-${Date.now()}.jpg`;
     a.click();
+  }
+
+  async function handleDownloadVideo(url: string) {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `tamowork-video-${Date.now()}.mp4`;
+      a.click();
+    } catch { window.open(url, "_blank"); }
   }
 
   function handleNewPhoto() {
@@ -209,14 +317,29 @@ export default function TamoPage() {
     router.push("/");
   }
 
+  function handleNewVideo() {
+    try {
+      sessionStorage.removeItem("pending_video_job_id");
+      sessionStorage.removeItem("pending_video_job_type");
+    } catch { /* ignora */ }
+    setVideoJob(null);
+    router.push("/");
+  }
+
+  function videoTypeLabel(type: VideoJobType) {
+    if (type === "narrated") return "narrado";
+    if (type === "long") return "longo";
+    return "animado";
+  }
+
   return (
     <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", flexDirection: "column" }}>
       <AppHeader />
 
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 100px" }}>
 
-        {/* ── SEM JOB ATIVO — idle ─────────────────────────────────────────── */}
-        {!job && (
+        {/* ── SEM JOB ATIVO ───────────────────────────────────────────────────── */}
+        {!hasAnything && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 24 }}>
             <div style={{ background: "#0c1018", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 22, padding: "36px 28px", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, width: "100%", maxWidth: 340 }}>
               <TamoMascot state="idle" size={110} label="Olá! Sou o Tamo 🦎" />
@@ -233,10 +356,9 @@ export default function TamoPage() {
           </div>
         )}
 
-        {/* ── JOB ATIVO — processando ──────────────────────────────────────── */}
+        {/* ── FOTO: JOB ATIVO ─────────────────────────────────────────────────── */}
         {isActive && (
           <div style={{ background: "#0c1018", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", marginBottom: 16 }}>
-            {/* Preview com blur */}
             {inputPreview && (
               <div style={{ position: "relative", height: 220, overflow: "hidden" }}>
                 <img
@@ -262,7 +384,6 @@ export default function TamoPage() {
                 </span>
               </div>
 
-              {/* Barra de progresso */}
               <div style={{ width: "100%", height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
                 <div style={{
                   height: "100%",
@@ -283,7 +404,7 @@ export default function TamoPage() {
           </div>
         )}
 
-        {/* ── ONBOARDING EXTRA — Variante B (engajamento) ──────────────────── */}
+        {/* ── ONBOARDING EXTRA — Variante B ───────────────────────────────────── */}
         {isActive && obVariant === "B" && (
           <div style={{ background: "#0c1018", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16, marginBottom: 12, display: "flex", flexDirection: "column", gap: 12 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: "#eef2f9", margin: 0 }}>
@@ -302,7 +423,7 @@ export default function TamoPage() {
           </div>
         )}
 
-        {/* ── ONBOARDING EXTRA — Variante C (conversão) ────────────────────── */}
+        {/* ── ONBOARDING EXTRA — Variante C ───────────────────────────────────── */}
         {isActive && obVariant === "C" && (
           <div style={{ background: "rgba(168,85,247,0.07)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 16, padding: 16, marginBottom: 12 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: "#c4b5fd", margin: "0 0 8px" }}>
@@ -327,7 +448,7 @@ export default function TamoPage() {
           </div>
         )}
 
-        {/* ── RESULTADO ────────────────────────────────────────────────────── */}
+        {/* ── FOTO: RESULTADO ─────────────────────────────────────────────────── */}
         {isDone && job?.output_image_url && (
           <div style={{ background: "#0c1018", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", marginBottom: 16 }}>
             <img
@@ -352,7 +473,7 @@ export default function TamoPage() {
                   ⬇ Baixar foto
                 </button>
                 <button
-                  onClick={() => router.push("/editor")}
+                  onClick={() => { try { sessionStorage.setItem("editor_image", job.output_image_url!); } catch { /* ignora */ } router.push("/editor"); }}
                   style={{ flex: 1, background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 12, padding: "12px", color: "#a5b4fc", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}
                 >
                   ✏️ Editar
@@ -376,7 +497,7 @@ export default function TamoPage() {
           </div>
         )}
 
-        {/* ── FALHOU ───────────────────────────────────────────────────────── */}
+        {/* ── FOTO: FALHOU ────────────────────────────────────────────────────── */}
         {isFailed && (
           <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 16 }}>
             <TamoMascot state="error" size={64} />
@@ -391,7 +512,7 @@ export default function TamoPage() {
           </div>
         )}
 
-        {/* ── CANCELADO ────────────────────────────────────────────────────── */}
+        {/* ── FOTO: CANCELADA ─────────────────────────────────────────────────── */}
         {isCanceled && (
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 16 }}>
             <TamoMascot state="idle" size={64} />
@@ -406,7 +527,98 @@ export default function TamoPage() {
           </div>
         )}
 
-        {/* ── Chat do Tamo ─────────────────────────────────────────────────── */}
+        {/* ── VÍDEO: EM ANDAMENTO ─────────────────────────────────────────────── */}
+        {isVideoActive && (
+          <div style={{ background: "#0c1018", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 20, padding: "24px 20px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+            <div style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 10, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: "#818cf8", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Vídeo {videoTypeLabel(videoJob!.type)}
+            </div>
+
+            <TamoMascot state="processing" size={80} label="Criando vídeo..." />
+
+            <div style={{ textAlign: "center" }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9" }}>
+                Criando seu vídeo
+              </span>
+              <span style={{ color: "#6366f1", fontSize: 15 }}>
+                <span style={{ animation: "pulse 1.2s ease-in-out infinite" }}>.</span>
+                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.2s" }}>.</span>
+                <span style={{ animation: "pulse 1.2s ease-in-out infinite", animationDelay: "0.4s" }}>.</span>
+              </span>
+              <p style={{ fontSize: 12, color: "#4e5c72", margin: "6px 0 0" }}>
+                {videoJob!.type === "long" ? "Isso pode levar 20–40 min..." : "Isso leva 1–3 min..."}
+                {videoElapsedSec > 0 && ` • ${videoElapsedSec}s`}
+              </p>
+            </div>
+
+            <div style={{ width: "100%", height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{
+                height: "100%",
+                width: videoJob!.status === "queued" ? "15%" : videoJob!.status === "submitted" ? "35%" : "65%",
+                background: "linear-gradient(90deg, #6366f1, #a855f7)",
+                borderRadius: 2,
+                transition: "width 1s ease",
+              }} />
+            </div>
+          </div>
+        )}
+
+        {/* ── VÍDEO: PRONTO ───────────────────────────────────────────────────── */}
+        {isVideoDone && videoJob?.output_video_url && (
+          <div style={{ background: "#0c1018", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 20, overflow: "hidden", marginBottom: 16 }}>
+            <video
+              src={videoJob.output_video_url}
+              controls
+              autoPlay
+              loop
+              playsInline
+              muted
+              style={{ width: "100%", display: "block", maxHeight: "60vh", background: "#000", objectFit: "contain" }}
+            />
+            <div style={{ padding: "16px" }}>
+              <p style={{ fontSize: 15, fontWeight: 800, color: "#eef2f9", textAlign: "center", margin: "0 0 14px" }}>
+                🎬 Seu vídeo está pronto!
+              </p>
+              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                <button
+                  onClick={() => handleDownloadVideo(videoJob.output_video_url!)}
+                  style={{ flex: 1, background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}
+                >
+                  ⬇ Baixar vídeo
+                </button>
+                <button
+                  onClick={() => router.push("/criacoes")}
+                  style={{ flex: 1, background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 12, padding: "12px", color: "#818cf8", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}
+                >
+                  🖼 Ver criações
+                </button>
+              </div>
+              <button
+                onClick={handleNewVideo}
+                style={{ width: "100%", background: "transparent", border: "none", color: "#4e5c72", fontSize: 13, cursor: "pointer", fontFamily: "Outfit, sans-serif", padding: "8px 0" }}
+              >
+                📷 Nova foto ou vídeo
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── VÍDEO: FALHOU ───────────────────────────────────────────────────── */}
+        {isVideoFailed && (
+          <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 16 }}>
+            <TamoMascot state="error" size={64} />
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", margin: "12px 0 4px" }}>Vídeo não pôde ser criado 😔</p>
+            <p style={{ fontSize: 13, color: "#8394b0", margin: "0 0 16px" }}>Pode tentar novamente agora.</p>
+            <button
+              onClick={handleNewVideo}
+              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "12px 28px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {/* ── Chat do Tamo ─────────────────────────────────────────────────────── */}
         <BotChat
           workState={workState as "sem_trabalho" | "trabalhando" | "terminado"}
           botActive={botActive}
@@ -417,7 +629,7 @@ export default function TamoPage() {
 
       </div>
 
-      <BottomNav hasActiveJob={!!isActive} hasDoneJob={!!isDone} />
+      <BottomNav hasActiveJob={!!(isActive || isVideoActive)} hasDoneJob={!!(isDone || isVideoDone)} />
 
       <style>{`
         @keyframes pulse {
