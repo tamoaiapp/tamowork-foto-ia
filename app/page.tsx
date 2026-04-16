@@ -629,19 +629,9 @@ export default function HomePage() {
   const [plan, setPlan] = useState<Plan>("free");
 
   // Bloqueia render completo até resolver o check de onboarding
-  // Previne flash do app para usuários novos antes do redirect
+  // Fonte de verdade: jobs do banco (auth useEffect) — evita conflito entre usuários no mesmo device
+  // Não usar localStorage aqui pois o flag pode ser de outro usuário que usou o mesmo browser
   const [onboardingReady, setOnboardingReady] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem("onboarding_completed") === "1") {
-        setOnboardingReady(true); // usuário já completou — libera imediatamente
-      }
-      // caso contrário: aguarda auth+jobs para decidir (migração de legados ou redirect)
-    } catch {
-      setOnboardingReady(true); // erro de storage — libera para não travar
-    }
-  }, []);
 
   // Banner de app (Android / iOS)
   const [appBannerPlatform, setAppBannerPlatform] = useState<"android" | "ios" | null>(null);
