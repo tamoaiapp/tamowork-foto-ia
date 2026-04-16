@@ -795,10 +795,15 @@ export default function HomePage() {
       setOnboardingReady(true);
     }, 9_000);
 
+    let ran = false; // evita double-run: getUser + onAuthStateChange chegam juntos
+
     const run = async (user: import("@supabase/supabase-js").User | null) => {
-      clearTimeout(safetyTimeout);
+      // Nota: NÃO cancela safetyTimeout aqui — ele é o último recurso se tudo travar.
+      // É cancelado apenas no cleanup (unmount) ou quando o componente navega para fora.
       if (!user) { router.push("/login"); return; }
       setUser(user);
+
+      try {
 
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token ?? "";
@@ -1036,14 +1041,26 @@ export default function HomePage() {
 
       setOnboardingReady(true); // fallback: cobre casos onde res.ok === false ou vídeo apenas
       setLoading(false);
+
+      } catch {
+        // Qualquer erro inesperado (rede, exceção, etc.) libera a tela — nunca trava o usuário
+        setOnboardingReady(true);
+        setLoading(false);
+      }
     };
 
     // Tenta obter sessão imediatamente
-    supabase.auth.getUser().then(({ data: { user } }) => run(user));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (ran) return; ran = true;
+      run(user);
+    });
 
     // Backup: onAuthStateChange captura sessão do magic link hash (chega depois do getUser)
+    // O flag `ran` evita que rode duas vezes em paralelo
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) run(session.user);
+      if (!session?.user) return;
+      if (ran) return; ran = true;
+      run(session.user);
     });
 
     return () => {
