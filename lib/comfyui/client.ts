@@ -49,7 +49,7 @@ export async function criarPrompt(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ produto_frase, cenario, vision_desc, user_feedback }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(55_000),
   });
   if (!res.ok) throw new Error(`criarPrompt error: ${res.status}`);
   return res.json();
