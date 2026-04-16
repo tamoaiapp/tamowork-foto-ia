@@ -9,6 +9,9 @@
     "app/api/white-bg/route.ts": {
       "maxDuration": 60,
       "memory": 3008
+    },
+    "app/api/prompt/route.ts": {
+      "maxDuration": 60
     }
   }
 }

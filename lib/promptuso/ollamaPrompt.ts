@@ -9,7 +9,7 @@
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const PROMPT_MODEL = process.env.OLLAMA_PROMPT_MODEL ?? "qwen2.5:7b";
-const TIMEOUT_MS = 50_000;
+const TIMEOUT_MS = 40_000;
 
 const SYSTEM_PROMPT = `You are a professional prompt engineer specialized in generating prompts for Qwen Image/Video models.
 
@@ -157,7 +157,6 @@ Scene: ${cenario || "(not provided)"}
 Vision Description: ${visionDesc || "(not provided)"}`;
 
   const url = `${OLLAMA_BASE}/api/chat`;
-  console.log(`[ollamaPrompt] chamando ${url} model=${JSON.stringify(PROMPT_MODEL)}`);
 
   try {
     const res = await fetch(url, {
@@ -166,7 +165,7 @@ Vision Description: ${visionDesc || "(not provided)"}`;
       body: JSON.stringify({
         model: PROMPT_MODEL,
         stream: false,
-        options: { temperature: 0.3, num_predict: 600 },
+        options: { temperature: 0.3, num_predict: 350 },
         messages: [
           { role: "system", content: systemPromptWithContext },
           { role: "user", content: userMessage },
@@ -176,7 +175,7 @@ Vision Description: ${visionDesc || "(not provided)"}`;
     });
 
     if (!res.ok) {
-      console.warn(`[ollamaPrompt] Ollama retornou ${res.status} url=${url}`);
+      console.warn(`[ollamaPrompt] Ollama retornou ${res.status}`);
       return null;
     }
 
@@ -201,10 +200,7 @@ Vision Description: ${visionDesc || "(not provided)"}`;
       negative_prompt: String(parsed.negative_prompt).trim(),
     };
   } catch (e) {
-    const msg = (e as Error).message ?? String(e);
-    console.warn("[ollamaPrompt] Erro:", msg, "url=", url);
-    // Temporário: expõe erro via módulo global para diagnóstico
-    (globalThis as Record<string, unknown>).__lastOllamaError = msg;
+    console.warn("[ollamaPrompt] Erro:", (e as Error).message);
     return null;
   }
 }

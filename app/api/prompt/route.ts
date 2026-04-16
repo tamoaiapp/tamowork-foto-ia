@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fallback: motor multiagente V2 (Ollama offline)
-    console.log("[prompt] fallback multiagente V2 — OLLAMA_BASE:", process.env.OLLAMA_BASE ?? "(vazio)", "MODEL:", process.env.OLLAMA_PROMPT_MODEL ?? "(vazio)");
+    console.log("[prompt] fallback para motor multiagente V2 (Ollama offline)");
     const v2 = generatePromptV2({
       product_name: produtoEN,
       scene_request: cenarioEN || undefined,
@@ -138,7 +138,6 @@ export async function POST(req: NextRequest) {
       negative: v2.negative_prompt,
       meta: v2.meta,
       source: "multiagent_v2",
-      _debug: { ollama_base: process.env.OLLAMA_BASE ?? null, model: process.env.OLLAMA_PROMPT_MODEL ?? null, ollama_error: (globalThis as Record<string, unknown>).__lastOllamaError ?? null },
     });
   } catch (e) {
     return NextResponse.json(
