@@ -156,8 +156,11 @@ export async function generatePromptWithOllama(
 Scene: ${cenario || "(not provided)"}
 Vision Description: ${visionDesc || "(not provided)"}`;
 
+  const url = `${OLLAMA_BASE}/api/chat`;
+  console.log(`[ollamaPrompt] chamando ${url} model=${JSON.stringify(PROMPT_MODEL)}`);
+
   try {
-    const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -173,7 +176,7 @@ Vision Description: ${visionDesc || "(not provided)"}`;
     });
 
     if (!res.ok) {
-      console.warn(`[ollamaPrompt] Ollama retornou ${res.status}`);
+      console.warn(`[ollamaPrompt] Ollama retornou ${res.status} url=${url}`);
       return null;
     }
 
@@ -198,7 +201,7 @@ Vision Description: ${visionDesc || "(not provided)"}`;
       negative_prompt: String(parsed.negative_prompt).trim(),
     };
   } catch (e) {
-    console.warn("[ollamaPrompt] Erro:", (e as Error).message);
+    console.warn("[ollamaPrompt] Erro:", (e as Error).message, "url=", url);
     return null;
   }
 }
