@@ -2611,7 +2611,7 @@ export default function HomePage() {
         )}
 
         {/* PASSO 2: Formulário após escolher o modo */}
-        {modeSelected && !videoMode && !narratedMode && !longVideoMode && (
+        {modeSelected && !videoMode && !narratedMode && !longVideoMode && workState !== "trabalhando" && (
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
