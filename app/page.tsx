@@ -1567,6 +1567,7 @@ export default function HomePage() {
   ) {
     e.preventDefault();
     if (submitting) return; // guard contra double-submit
+    if (isPhotoJobActive) return; // guard contra foto dupla (Enter no teclado)
 
     const _mode    = overrides?.mode    ?? creationMode;
     const _file    = overrides?.file    ?? imageFile;
@@ -1799,7 +1800,10 @@ export default function HomePage() {
       } catch { /* ignora */ }
     }
     // Limpa job pendente salvo no sessionStorage
-    try { sessionStorage.removeItem("pending_job_id"); } catch { /* ignora */ }
+    try {
+      sessionStorage.removeItem("pending_job_id");
+      sessionStorage.removeItem("tamo_active_job");
+    } catch { /* ignora */ }
     vision.reset();
     if (pollRef.current) clearInterval(pollRef.current);
     if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
@@ -3172,18 +3176,17 @@ export default function HomePage() {
               <FormatSelector value={photoFormat} onChange={setPhotoFormat} />
 
               {isPhotoJobActive ? (
-                <div style={{ borderRadius: 14, overflow: "hidden" }}>
-                  <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, padding: "14px 16px", textAlign: "center" as const }}>
-                    <div style={{ fontSize: 13, color: "#c4b5fd", fontWeight: 700, marginBottom: 4 }}>⏳ Sua foto ainda está sendo criada</div>
-                    <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 10 }}>Aguarde terminar antes de criar outra</div>
-                    <button
-                      type="button"
-                      onClick={() => router.push("/tamo")}
-                      style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 8, padding: "6px 14px", color: "#c4b5fd", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
-                    >
-                      Ver andamento →
-                    </button>
-                  </div>
+                <div style={{ ...styles.card, textAlign: "center" as const, padding: "28px 24px" }}>
+                  <div style={{ fontSize: 34, marginBottom: 10, lineHeight: 1 }}>📸</div>
+                  <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 700, marginBottom: 6 }}>Sua foto ainda está sendo criada</div>
+                  <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 18, lineHeight: 1.5 }}>Aguarde terminar antes de criar outra</div>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/tamo")}
+                    style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.35)", borderRadius: 10, padding: "12px 24px", color: "#c4b5fd", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minHeight: 44, width: "100%" }}
+                  >
+                    Ver andamento →
+                  </button>
                 </div>
               ) : (
               <button
@@ -3738,23 +3741,24 @@ export default function HomePage() {
         )}
 
 
-        {/* Vídeo ativo — bloqueia criação de outro vídeo */}
-        {!botNavOpen && videoMode && videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "") && (
-          <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
-            <div style={{ fontSize: 13, color: "#c4b5fd", fontWeight: 700, marginBottom: 4 }}>⏳ Seu vídeo ainda está sendo criado</div>
-            <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 10 }}>Aguarde terminar antes de criar outro</div>
+        {/* Vídeo ativo — bloqueia criação de outro vídeo (qualquer tipo: regular, narrado, longo) */}
+        {!botNavOpen && videoMode && isVideoJobActive && (
+          <div style={{ ...styles.card, textAlign: "center" as const, padding: "28px 24px" }}>
+            <div style={{ fontSize: 34, marginBottom: 10, lineHeight: 1 }}>🎬</div>
+            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 700, marginBottom: 6 }}>Seu vídeo ainda está sendo criado</div>
+            <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 18, lineHeight: 1.5 }}>Aguarde terminar antes de criar outro</div>
             <button
               type="button"
               onClick={() => router.push("/tamo")}
-              style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 8, padding: "6px 14px", color: "#c4b5fd", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+              style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.35)", borderRadius: 10, padding: "12px 24px", color: "#c4b5fd", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minHeight: 44, width: "100%" }}
             >
               Ver andamento →
             </button>
           </div>
         )}
 
-        {/* Vídeo — form (só aparece se Tamo fechado) */}
-        {!botNavOpen && videoMode && !videoJob && job?.status === "done" && job.output_image_url && (
+        {/* Vídeo — form (só aparece se Tamo fechado e sem vídeo ativo) */}
+        {!botNavOpen && videoMode && !isVideoJobActive && !videoJob && job?.status === "done" && job.output_image_url && (
           plan !== "pro" ? (
             /* Free tentou abrir vídeo — redireciona para planos */
             <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
@@ -4035,7 +4039,14 @@ export default function HomePage() {
                   </div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const, marginBottom: 10 }}>
                     {plan === "pro" && (
-                      <button onClick={() => { setVideoMode(true); setBotNavOpen(false); }} style={{ ...styles.videoBtn, flex: 1 }}>🎬 {t("btn_generate_video")}</button>
+                      <button
+                        onClick={() => { if (!isVideoJobActive) { setVideoMode(true); setBotNavOpen(false); } }}
+                        disabled={isVideoJobActive}
+                        style={{ ...styles.videoBtn, flex: 1, opacity: isVideoJobActive ? 0.5 : 1 }}
+                        title={isVideoJobActive ? "Aguarde seu vídeo terminar" : undefined}
+                      >
+                        🎬 {isVideoJobActive ? "Vídeo em andamento..." : t("btn_generate_video")}
+                      </button>
                     )}
                     <button onClick={() => { setPromoOpen(true); setBotNavOpen(false); }} style={{ ...styles.promoBtn, flex: plan === "pro" ? 1 : undefined, width: plan === "pro" ? undefined : "100%" }}>🎨 Criar arte</button>
                   </div>

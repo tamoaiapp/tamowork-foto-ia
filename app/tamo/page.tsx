@@ -90,11 +90,35 @@ export default function TamoPage() {
   useEffect(() => {
     if (!user) return;
 
-    const jobId = (() => {
+    let jobId = (() => {
       try { return sessionStorage.getItem("pending_job_id") ?? ""; } catch { return ""; }
     })();
 
-    if (!jobId) return;
+    // Fallback: se não há pending_job_id, consulta a API para encontrar job ativo
+    if (!jobId) {
+      try {
+        const token = await getToken();
+        const listRes = await fetch("/api/image-jobs", { headers: { Authorization: `Bearer ${token}` } });
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          const jobs: ActiveJob[] = Array.isArray(listData) ? listData : (listData.jobs ?? []);
+          const active = jobs.find(j => j.status && !["done", "failed", "canceled"].includes(j.status));
+          if (active) {
+            jobId = active.id;
+            try { sessionStorage.setItem("pending_job_id", active.id); } catch { /* ignora */ }
+          } else {
+            // Sem job ativo — verifica done recente (últimas 24h)
+            const recent = jobs.find(j => j.status === "done" && j.output_image_url &&
+              new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000);
+            if (recent) {
+              setJob(recent);
+            }
+            return;
+          }
+        }
+      } catch { /* ignora */ }
+      if (!jobId) return;
+    }
 
     async function fetchStatus() {
       if (!jobId) return;
@@ -158,6 +182,7 @@ export default function TamoPage() {
   const isActive = job && job.status && !["done", "failed", "canceled"].includes(job.status);
   const isDone = job?.status === "done";
   const isFailed = job?.status === "failed";
+  const isCanceled = job?.status === "canceled";
 
   const workState = isDone ? "terminado" : isActive ? "trabalhando" : "sem_trabalho";
 
@@ -189,18 +214,19 @@ export default function TamoPage() {
 
         {/* ── SEM JOB ATIVO — idle ─────────────────────────────────────────── */}
         {!job && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 20 }}>
-            <TamoMascot state="idle" size={100} />
-            <div style={{ textAlign: "center" }}>
-              <p style={{ fontSize: 18, fontWeight: 700, color: "#eef2f9", margin: 0 }}>Olá! Sou o Tamo 🦎</p>
-              <p style={{ fontSize: 14, color: "#8394b0", margin: "8px 0 0" }}>Crie uma foto para ver o andamento aqui.</p>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", gap: 24 }}>
+            <div style={{ background: "#0c1018", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 22, padding: "36px 28px", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, width: "100%", maxWidth: 340 }}>
+              <TamoMascot state="idle" size={110} label="Olá! Sou o Tamo 🦎" />
+              <p style={{ fontSize: 14, color: "#8394b0", margin: 0, textAlign: "center", lineHeight: 1.5 }}>
+                Crie uma foto profissional para ver o andamento aqui.
+              </p>
+              <button
+                onClick={() => router.push("/")}
+                style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 10, padding: "13px 32px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%", boxShadow: "0 4px 18px rgba(139,92,246,0.35)" }}
+              >
+                + Criar foto
+              </button>
             </div>
-            <button
-              onClick={() => router.push("/")}
-              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "13px 32px", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}
-            >
-              + Criar foto
-            </button>
           </div>
         )}
 
@@ -307,11 +333,11 @@ export default function TamoPage() {
               style={{ width: "100%", display: "block", maxHeight: 500, objectFit: "contain", background: "#07080b" }}
             />
             <div style={{ padding: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <TamoMascot state="done" size={52} />
-                <div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", margin: 0 }}>Pronto! Ficou assim 🎉</p>
-                  <p style={{ fontSize: 12, color: "#8394b0", margin: "2px 0 0" }}>Sua foto foi gerada com sucesso</p>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                <TamoMascot state="done" size={110} resultImage={job.output_image_url} />
+                <div style={{ textAlign: "center" }}>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: "#eef2f9", margin: 0 }}>Pronto! Ficou assim 🎉</p>
+                  <p style={{ fontSize: 13, color: "#8394b0", margin: "4px 0 0" }}>Sua foto foi gerada com sucesso</p>
                 </div>
               </div>
 
@@ -350,7 +376,7 @@ export default function TamoPage() {
         {/* ── FALHOU ───────────────────────────────────────────────────────── */}
         {isFailed && (
           <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 16 }}>
-            <TamoMascot state="idle" size={64} />
+            <TamoMascot state="error" size={64} />
             <p style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", margin: "12px 0 4px" }}>Ops, algo deu errado 😔</p>
             <p style={{ fontSize: 13, color: "#8394b0", margin: "0 0 16px" }}>{job?.error_message ?? "Tente criar a foto novamente."}</p>
             <button
@@ -358,6 +384,21 @@ export default function TamoPage() {
               style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "12px 28px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}
             >
               Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {/* ── CANCELADO ────────────────────────────────────────────────────── */}
+        {isCanceled && (
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 16 }}>
+            <TamoMascot state="idle" size={64} />
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", margin: "12px 0 4px" }}>Criação cancelada</p>
+            <p style={{ fontSize: 13, color: "#8394b0", margin: "0 0 16px" }}>Que tal tentar com uma foto ou descrição diferente?</p>
+            <button
+              onClick={handleNewPhoto}
+              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "12px 28px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}
+            >
+              Criar nova foto
             </button>
           </div>
         )}
