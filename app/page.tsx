@@ -628,15 +628,20 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<Plan>("free");
 
-  // Check síncrono: redireciona para /onboarding antes da auth carregar
-  // Garante que usuários novos nunca vejam o app sem completar o onboarding
+  // Bloqueia render completo até resolver o check de onboarding
+  // Previne flash do app para usuários novos antes do redirect
+  const [onboardingReady, setOnboardingReady] = useState(false);
+
   useEffect(() => {
     try {
-      if (localStorage.getItem("onboarding_completed") !== "1") {
-        router.push("/onboarding");
+      if (localStorage.getItem("onboarding_completed") === "1") {
+        setOnboardingReady(true); // usuário já completou — libera imediatamente
       }
-    } catch { /* ignora */ }
-  }, [router]);
+      // caso contrário: aguarda auth+jobs para decidir (migração de legados ou redirect)
+    } catch {
+      setOnboardingReady(true); // erro de localStorage — libera para não travar
+    }
+  }, []);
 
   // Banner de app (Android / iOS)
   const [appBannerPlatform, setAppBannerPlatform] = useState<"android" | "ios" | null>(null);
@@ -925,8 +930,10 @@ export default function HomePage() {
         })();
         if (!hasActivePhotoJob && !onboardingDone) {
           router.push("/onboarding");
-          return;
+          return; // onboardingReady fica false — tela escura durante redirect
         }
+        // Onboarding OK (ou migração de legado) — libera render
+        setOnboardingReady(true);
 
         // Gatilho return_visit: já criou fotos antes mas não tem push ativo
         // Não mostrar enquanto há job ativo para não interromper o fluxo
@@ -1031,6 +1038,7 @@ export default function HomePage() {
         sessionStorage.removeItem("video_from_job");
       }
 
+      setOnboardingReady(true); // fallback: cobre casos onde res.ok === false ou vídeo apenas
       setLoading(false);
     });
   }, [router]);
@@ -2239,6 +2247,9 @@ export default function HomePage() {
     || (!!videoJob && !["done","failed","canceled"].includes(videoJob.status ?? ""))
     || (!!narratedJob && !["done","failed","canceled"].includes(narratedJob.status ?? ""))
     || (!!longVideoJob && !["done","failed","canceled"].includes(longVideoJob.status ?? ""));
+
+  // Bloqueia render até resolver check de onboarding — evita flash do app para novos usuários
+  if (!onboardingReady) return <div style={{ minHeight: "100dvh", background: "#07080b" }} />;
 
   if (loading) return (
     <div style={styles.page} className="app-layout">
