@@ -803,7 +803,12 @@ export default function HomePage() {
         router.push("/login");
         return;
       }
+
+      // Usuário está logado: libera a tela IMEDIATAMENTE sem esperar dados
+      // O check de onboarding e carregamento de jobs acontece em background
       setUser(user);
+      clearTimeout(safetyTimeout);
+      setOnboardingReady(true);
 
       try {
 
@@ -838,9 +843,7 @@ export default function HomePage() {
         signal: AbortSignal.timeout(6_000),
       });
       if (!res.ok) {
-        // Falha na API de jobs — libera tela para não travar o usuário
-        clearTimeout(safetyTimeout);
-        setOnboardingReady(true);
+        // Falha na API de jobs — apenas finaliza loading (tela já está visível)
       } else if (res.ok) {
         const data = await res.json();
         // API retorna { jobs, plan }
@@ -934,14 +937,9 @@ export default function HomePage() {
           return false;
         })();
         if (!hasActivePhotoJob && !onboardingDone) {
-          clearTimeout(safetyTimeout);
-          setOnboardingReady(false);
           router.push("/onboarding");
           return;
         }
-        // Onboarding OK — libera render
-        clearTimeout(safetyTimeout);
-        setOnboardingReady(true);
 
         // Gatilho return_visit: já criou fotos antes mas não tem push ativo
         // Não mostrar enquanto há job ativo para não interromper o fluxo
@@ -1046,14 +1044,10 @@ export default function HomePage() {
         sessionStorage.removeItem("video_from_job");
       }
 
-      clearTimeout(safetyTimeout);
-      setOnboardingReady(true); // fallback: cobre casos onde res.ok === false ou vídeo apenas
       setLoading(false);
 
       } catch {
-        // Qualquer erro inesperado (rede, timeout, exceção) libera a tela
-        clearTimeout(safetyTimeout);
-        setOnboardingReady(true);
+        // Erro/timeout — tela já está visível, só finaliza loading
         setLoading(false);
       }
     };
