@@ -226,26 +226,15 @@ export default function PlanosPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const tok = session?.access_token ?? "";
 
-      if (isBR) {
-        // BR → MercadoPago (assinatura recorrente R$79/mês)
-        const res = await fetch("/api/checkout/mercadopago", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
-        });
-        const json = await res.json();
-        if (json.init_point) { window.location.href = json.init_point; return; }
-        throw new Error(json.error ?? "Sem URL");
-      } else {
-        // Não-BR → Stripe (anual $100)
-        const res = await fetch("/api/checkout/stripe", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: "annual" }),
-        });
-        const json = await res.json();
-        if (json.url) { window.location.href = json.url; return; }
-        throw new Error(json.error ?? "Sem URL");
-      }
+      // BR → Stripe mensal R$79 | Não-BR → Stripe anual $100
+      const res = await fetch("/api/checkout/stripe", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: isBR ? "monthly" : "annual" }),
+      });
+      const json = await res.json();
+      if (json.url) { window.location.href = json.url; return; }
+      throw new Error(json.error ?? "Sem URL");
     } catch {
       alert(lang === "pt" ? "Erro ao iniciar pagamento. Tente novamente." : "Payment error. Please try again.");
     } finally {

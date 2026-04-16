@@ -17,10 +17,9 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const isMonthly = body.plan === "monthly";
 
-  // BR → mensal R$79 (STRIPE_PRICE_ID_MONTHLY)
-  // Não-BR → anual $100 (STRIPE_PRICE_ID_USD)
+  // BR → mensal R$79 | Não-BR → anual $100
   const priceId = isMonthly
-    ? process.env.STRIPE_PRICE_ID_MONTHLY
+    ? (process.env.STRIPE_PRICE_ID_MONTHLY ?? "price_1T02ysDn6tNmbP0N8w0c7g3o")
     : process.env.STRIPE_PRICE_ID_USD;
 
   if (!priceId) {
