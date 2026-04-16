@@ -628,6 +628,16 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<Plan>("free");
 
+  // Check síncrono: redireciona para /onboarding antes da auth carregar
+  // Garante que usuários novos nunca vejam o app sem completar o onboarding
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("onboarding_completed") !== "1") {
+        router.push("/onboarding");
+      }
+    } catch { /* ignora */ }
+  }, [router]);
+
   // Banner de app (Android / iOS)
   const [appBannerPlatform, setAppBannerPlatform] = useState<"android" | "ios" | null>(null);
   const [appBannerDismissed, setAppBannerDismissed] = useState(false);
