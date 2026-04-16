@@ -100,7 +100,7 @@ async function callOllama(
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        model: "llama3.2:3b",
+        model: process.env.OLLAMA_PROMPT_MODEL ?? "qwen2.5:7b",
         messages,
         stream: false,
         options: { num_predict: 600, temperature: 0.7 },

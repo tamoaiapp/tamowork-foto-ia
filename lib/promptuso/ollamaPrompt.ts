@@ -70,12 +70,17 @@ This clause PREVENTS the model from adding any alternative interactions.
 PART D — Quality (MANDATORY, always include):
 "Natural shadow beneath the product. Kodak Portra 400 film style. Soft natural lighting adapted to the scene. Realistic skin texture. Premium product photography. High realism."
 
+## STEP 5B — ANTI-DISPLAY RULE (MANDATORY for all wearable products)
+If the product is wearable (clothing, shoes, bags, jewelry, accessories), you MUST:
+- The positive prompt MUST contain: "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hang tags, no clothing labels, no hangers, no showroom, no packaging, no box, no plastic bag. Show the product in real-life use, worn naturally."
+- This rule applies even if the user did not mention mannequins — assume the source image may have mannequins and enforce removal.
+
 ## STEP 6 — BUILD NEGATIVE PROMPT
 CRITICAL RULE: The negative prompt must be SHORT KEYWORDS ONLY. No sentences. No "not", no "is", no verbs.
 Format: comma-separated keywords, each 1-3 words maximum.
 
 Always include: floating, wrong placement, distorted product, altered design, wrong color, wrong material, blurry, low quality, CGI, cartoon, watermark, text
-For wearable: also include: hand, hands, fingers, finger, holding, touching, adjusting earring, touching jewelry, hand near ear, fingers near product, product on finger, misplaced product, floating product
+For wearable: also include: mannequin, dummy, bust form, headless mannequin, clothing rack, display stand, store display, retail display, store background, retail background, showroom, store environment, clothing hanger, price tag, hang tag, swing tag, label, store shelf, packaging, box, plastic bag, polybag, product not worn, clothing not on person, hand, hands, fingers, finger, holding, touching, misplaced product, floating product
 For surface: also include: floating object, no contact, tilted object, midair, hand touching product
 For environment: also include: wrong scale, unrealistic placement, misplaced object, hand in scene
 
