@@ -60,6 +60,12 @@ export default function TamoPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { router.push("/login"); return; }
+      // Garante que usuário completou onboarding (acesso direto via URL)
+      try {
+        if (localStorage.getItem("onboarding_completed") !== "1") {
+          router.push("/onboarding"); return;
+        }
+      } catch { /* ignora */ }
       setUser({ id: data.session.user.id });
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {

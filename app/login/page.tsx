@@ -165,7 +165,7 @@ function AuthCard() {
     } else {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) setError(translateError(error.message, lang));
-      else if (data.session) router.push("/");
+      else if (data.session) router.push("/onboarding");
       else setMsg(t("login_verify_email"));
     }
     setLoading(false);
