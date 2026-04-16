@@ -292,7 +292,7 @@ export default function ContaPage() {
                       borderRadius: 14, padding: "16px", marginBottom: 14,
                     }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#eef2f9", marginBottom: 4 }}>
-                        {lang === "en" ? "Unlimited photos for less than $0.28/day" : lang === "es" ? "Fotos ilimitadas por menos de $0.28/día" : "Fotos ilimitadas por R$0,63/dia"}
+                        {lang === "en" ? "Unlimited photos for less than $0.28/day" : lang === "es" ? "Fotos ilimitadas por menos de $0.28/día" : "Fotos ilimitadas por R$2,63/dia"}
                       </div>
                       <div style={{ fontSize: 13, color: "#8394b0", lineHeight: 1.5 }}>
                         {lang === "en" ? "No usage limit, no queue, no photographer." : lang === "es" ? "Sin límite de uso, sin cola de espera, sin fotógrafo." : "Sem limite de uso, sem fila de espera, sem fotógrafo."}

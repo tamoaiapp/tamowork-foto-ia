@@ -219,23 +219,33 @@ export default function PlanosPage() {
     });
   }, [router]);
 
-  async function handleStripe() {
-    if (!user) return;
+  async function handleCheckout() {
+    if (!user || loadingStripe) return;
     setLoadingStripe(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch("/api/checkout/stripe", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json",
-        },
-        // BR = plano mensal R$79 | não-BR = plano anual $100 (como antes)
-        body: JSON.stringify({ plan: isBR ? "monthly" : "annual" }),
-      });
-      const json = await res.json();
-      if (json.url) window.location.href = json.url;
-      else alert(lang === "pt" ? "Erro ao iniciar pagamento. Tente novamente." : "Payment error. Please try again.");
+      const tok = session?.access_token ?? "";
+
+      if (isBR) {
+        // BR → MercadoPago (assinatura recorrente R$79/mês)
+        const res = await fetch("/api/checkout/mercadopago", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
+        });
+        const json = await res.json();
+        if (json.init_point) { window.location.href = json.init_point; return; }
+        throw new Error(json.error ?? "Sem URL");
+      } else {
+        // Não-BR → Stripe (anual $100)
+        const res = await fetch("/api/checkout/stripe", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: "annual" }),
+        });
+        const json = await res.json();
+        if (json.url) { window.location.href = json.url; return; }
+        throw new Error(json.error ?? "Sem URL");
+      }
     } catch {
       alert(lang === "pt" ? "Erro ao iniciar pagamento. Tente novamente." : "Payment error. Please try again.");
     } finally {
@@ -317,18 +327,18 @@ export default function PlanosPage() {
 
           <button
             style={{ ...styles.btnPrimary, opacity: loadingStripe ? 0.7 : 1 }}
-            onClick={handleStripe}
+            onClick={handleCheckout}
             disabled={loadingStripe}
             onMouseEnter={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
             onMouseLeave={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
           >
             {loadingStripe
-              ? (lang === "en" ? "Loading..." : lang === "es" ? "Cargando..." : "Aguarde...")
+              ? (lang === "en" ? "Redirecting..." : lang === "es" ? "Redirigiendo..." : "Redirecionando...")
               : isBR
-              ? "Assinar agora — R$79/mês"
+              ? "🔥 Assinar agora — R$79/mês"
               : lang === "es"
-              ? "Suscribirse — $100/año"
-              : "Subscribe now — $100/year"}
+              ? "🔥 Suscribirse — $100/año"
+              : "🔥 Subscribe now — $100/year"}
           </button>
 
           <div style={styles.btnNote}>
