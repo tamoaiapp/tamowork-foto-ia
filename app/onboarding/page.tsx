@@ -65,18 +65,18 @@ function OnboardingPageInner() {
 
   // ── Auth + init ─────────────────────────────────────────────────────────
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) { router.replace("/login"); return; }
+    // getUser() faz validação server-side — funciona em mobile, magic link, token refresh
+    // getSession() lê apenas localStorage e falha em vários cenários mobile
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { router.replace("/login"); return; }
 
       // Já completou onboarding → vai para o app (ignora se ?v= presente para permitir teste)
-      // Usa chave por userId para evitar flag stale de outro usuário no mesmo device
       const forcedVariant = searchParams.get("v")?.toUpperCase();
       if (!forcedVariant) {
         try {
-          const uid = data.session.user.id;
-          const flagKey = `onboarding_completed_${uid}`;
+          const flagKey = `onboarding_completed_${user.id}`;
           const flagValue = localStorage.getItem(flagKey);
-          console.log("[onboarding] uid:", uid, "| flag:", flagKey, "=", flagValue);
+          console.log("[onboarding] uid:", user.id, "| flag:", flagKey, "=", flagValue);
           if (flagValue === "1") {
             console.log("[onboarding] → já completou, voltando para /");
             router.replace("/");
@@ -85,7 +85,7 @@ function OnboardingPageInner() {
         } catch { /* ignora */ }
       }
 
-      setUserId(data.session.user.id);
+      setUserId(user.id);
 
       // Atribui ou restaura variante — ?v=A/B/C força variante para testes
       try {
