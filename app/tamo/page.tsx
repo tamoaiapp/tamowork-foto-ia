@@ -26,6 +26,8 @@ async function getToken() {
   return data.session?.access_token ?? "";
 }
 
+type OnboardingVariant = "A" | "B" | "C" | null;
+
 export default function TamoPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
@@ -37,6 +39,22 @@ export default function TamoPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const notifiedRef = useRef<Set<string>>(new Set());
+
+  // Onboarding mode — lido do sessionStorage para mostrar conteúdo extra
+  const [obVariant, setObVariant] = useState<OnboardingVariant>(null);
+  const [obObjetivo, setObObjetivo] = useState<string | null>(null);
+  const [obOndeUsar, setObOndeUsar] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const mode = sessionStorage.getItem("onboarding_mode") as OnboardingVariant;
+      if (mode && ["A","B","C"].includes(mode)) {
+        setObVariant(mode);
+        setObObjetivo(sessionStorage.getItem("ob_objetivo"));
+        setObOndeUsar(sessionStorage.getItem("ob_onde_usar"));
+      }
+    } catch { /* ignora */ }
+  }, []);
 
   // Auth
   useEffect(() => {
@@ -220,6 +238,50 @@ export default function TamoPage() {
                 {elapsedSec > 0 && ` • ${elapsedSec}s`}
               </span>
             </div>
+          </div>
+        )}
+
+        {/* ── ONBOARDING EXTRA — Variante B (engajamento) ──────────────────── */}
+        {isActive && obVariant === "B" && (
+          <div style={{ background: "#0c1018", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16, marginBottom: 12, display: "flex", flexDirection: "column", gap: 12 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#eef2f9", margin: 0 }}>
+              🦎 Enquanto crio sua foto...
+            </p>
+            {obObjetivo && (
+              <p style={{ fontSize: 12, color: "#8394b0", margin: 0 }}>
+                Ótimo! Vou focar em ajudar você a <strong style={{ color: "#c4b5fd" }}>
+                  {obObjetivo === "vender" ? "vender mais" : obObjetivo === "melhorar" ? "melhorar suas fotos" : obObjetivo === "anuncios" ? "criar anúncios" : "explorar o app"}
+                </strong>.
+              </p>
+            )}
+            <p style={{ fontSize: 12, color: "#8394b0", margin: 0 }}>
+              Depois da foto, posso escrever a <strong style={{ color: "#c4b5fd" }}>legenda</strong> e sugerir <strong style={{ color: "#c4b5fd" }}>hashtags</strong> para você.
+            </p>
+          </div>
+        )}
+
+        {/* ── ONBOARDING EXTRA — Variante C (conversão) ────────────────────── */}
+        {isActive && obVariant === "C" && (
+          <div style={{ background: "rgba(168,85,247,0.07)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 16, padding: 16, marginBottom: 12 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#c4b5fd", margin: "0 0 8px" }}>
+              🦎 Isso é só o começo...
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                { icon: "🎬", text: "Transformar essa foto em vídeo" },
+                { icon: "✍️", text: "Criar legenda e hashtags" },
+                { icon: "📣", text: "Montar anúncio pronto para publicar" },
+              ].map(({ icon, text }) => (
+                <div key={text} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#8394b0" }}>
+                  <span>{icon}</span><span>{text}</span>
+                </div>
+              ))}
+            </div>
+            {obOndeUsar && (
+              <p style={{ fontSize: 11, color: "#4e5c72", margin: "10px 0 0" }}>
+                Otimizando para {obOndeUsar === "instagram" ? "Instagram" : obOndeUsar === "whatsapp" ? "WhatsApp" : "loja online"} 🎯
+              </p>
+            )}
           </div>
         )}
 

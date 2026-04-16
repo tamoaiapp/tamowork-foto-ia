@@ -900,14 +900,16 @@ export default function HomePage() {
           }
         }
 
-        // Mostra onboarding direto se usuário FREE não tem trabalho ativo nem resultado recente
+        // Redireciona para /onboarding se FREE sem fotos recentes e ainda não completou onboarding
         if (!hasActivePhotoJob && userPlan === "free") {
           const hasRecentResult = jobs.some(
             (j) => j.status === "done" && j.output_image_url &&
             new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
           );
-          if (!hasRecentResult) {
-            setTimeout(() => setShowOnboarding(true), 600);
+          const onboardingDone = (() => { try { return localStorage.getItem("onboarding_completed") === "1"; } catch { return false; } })();
+          if (!hasRecentResult && !onboardingDone) {
+            router.push("/onboarding");
+            return;
           }
         }
 
