@@ -2249,7 +2249,36 @@ export default function HomePage() {
     || (!!longVideoJob && !["done","failed","canceled"].includes(longVideoJob.status ?? ""));
 
   // Bloqueia render até resolver check de onboarding — evita flash do app para novos usuários
-  if (!onboardingReady) return <div style={{ minHeight: "100dvh", background: "#07080b" }} />;
+  if (!onboardingReady) return (
+    <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <style>{`
+        @keyframes tamoJump {
+          0%, 100% { transform: translateY(0px); }
+          40% { transform: translateY(-18px); }
+          60% { transform: translateY(-14px); }
+        }
+        @keyframes tamoShadow {
+          0%, 100% { transform: scaleX(1); opacity: 0.3; }
+          40% { transform: scaleX(0.55); opacity: 0.12; }
+          60% { transform: scaleX(0.65); opacity: 0.16; }
+        }
+        .tamo-jump { animation: tamoJump 0.75s ease-in-out infinite; }
+        .tamo-shadow { animation: tamoShadow 0.75s ease-in-out infinite; }
+      `}</style>
+      <div style={{ position: "relative", width: 90, height: 110 }}>
+        <img
+          src="/tamo/idle.png"
+          alt="Tamo"
+          className="tamo-jump"
+          style={{ width: 90, objectFit: "contain", objectPosition: "bottom", display: "block" }}
+        />
+      </div>
+      <div
+        className="tamo-shadow"
+        style={{ width: 48, height: 8, borderRadius: "50%", background: "rgba(168,85,247,0.35)", marginTop: 2, filter: "blur(3px)" }}
+      />
+    </div>
+  );
 
   if (loading) return (
     <div style={styles.page} className="app-layout">
