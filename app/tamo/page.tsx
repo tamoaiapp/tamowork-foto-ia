@@ -19,6 +19,7 @@ interface ActiveJob {
   output_image_url?: string;
   input_image_url?: string;
   error_message?: string;
+  created_at?: string;
 }
 
 async function getToken() {
@@ -90,37 +91,36 @@ export default function TamoPage() {
   useEffect(() => {
     if (!user) return;
 
-    let jobId = (() => {
-      try { return sessionStorage.getItem("pending_job_id") ?? ""; } catch { return ""; }
-    })();
+    async function init() {
+      let jobId = (() => {
+        try { return sessionStorage.getItem("pending_job_id") ?? ""; } catch { return ""; }
+      })();
 
-    // Fallback: se não há pending_job_id, consulta a API para encontrar job ativo
-    if (!jobId) {
-      try {
-        const token = await getToken();
-        const listRes = await fetch("/api/image-jobs", { headers: { Authorization: `Bearer ${token}` } });
-        if (listRes.ok) {
-          const listData = await listRes.json();
-          const jobs: ActiveJob[] = Array.isArray(listData) ? listData : (listData.jobs ?? []);
-          const active = jobs.find(j => j.status && !["done", "failed", "canceled"].includes(j.status));
-          if (active) {
-            jobId = active.id;
-            try { sessionStorage.setItem("pending_job_id", active.id); } catch { /* ignora */ }
-          } else {
-            // Sem job ativo — verifica done recente (últimas 24h)
-            const recent = jobs.find(j => j.status === "done" && j.output_image_url &&
-              new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000);
-            if (recent) {
-              setJob(recent);
+      // Fallback: se não há pending_job_id, consulta a API para encontrar job ativo
+      if (!jobId) {
+        try {
+          const token = await getToken();
+          const listRes = await fetch("/api/image-jobs", { headers: { Authorization: `Bearer ${token}` } });
+          if (listRes.ok) {
+            const listData = await listRes.json();
+            const jobs: ActiveJob[] = Array.isArray(listData) ? listData : (listData.jobs ?? []);
+            const active = jobs.find(j => j.status && !["done", "failed", "canceled"].includes(j.status ?? ""));
+            if (active) {
+              jobId = active.id;
+              try { sessionStorage.setItem("pending_job_id", active.id); } catch { /* ignora */ }
+            } else {
+              // Sem job ativo — verifica done recente (últimas 24h)
+              const recent = jobs.find(j => j.status === "done" && j.output_image_url &&
+                new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000);
+              if (recent) setJob(recent);
+              return;
             }
-            return;
           }
-        }
-      } catch { /* ignora */ }
-      if (!jobId) return;
-    }
+        } catch { /* ignora */ }
+        if (!jobId) return;
+      }
 
-    async function fetchStatus() {
+      async function fetchStatus() {
       if (!jobId) return;
       try {
         const token = await getToken();
@@ -153,13 +153,16 @@ export default function TamoPage() {
       } catch { /* ignora */ }
     }
 
-    fetchStatus();
-    pollRef.current = setInterval(fetchStatus, 10_000);
+      fetchStatus();
+      pollRef.current = setInterval(fetchStatus, 10_000);
 
-    setElapsedSec(0);
-    elapsedRef.current = setInterval(() => {
-      if (document.visibilityState !== "hidden") setElapsedSec(s => s + 1);
-    }, 1000);
+      setElapsedSec(0);
+      elapsedRef.current = setInterval(() => {
+        if (document.visibilityState !== "hidden") setElapsedSec(s => s + 1);
+      }, 1000);
+    }
+
+    init();
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
