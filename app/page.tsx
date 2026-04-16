@@ -900,17 +900,12 @@ export default function HomePage() {
           }
         }
 
-        // Redireciona para /onboarding se FREE sem fotos recentes e ainda não completou onboarding
-        if (!hasActivePhotoJob && userPlan === "free") {
-          const hasRecentResult = jobs.some(
-            (j) => j.status === "done" && j.output_image_url &&
-            new Date(j.created_at ?? 0).getTime() > Date.now() - 24 * 60 * 60 * 1000
-          );
-          const onboardingDone = (() => { try { return localStorage.getItem("onboarding_completed") === "1"; } catch { return false; } })();
-          if (!hasRecentResult && !onboardingDone) {
-            router.push("/onboarding");
-            return;
-          }
+        // Todo usuário novo (qualquer plano) que não completou onboarding vai para /onboarding
+        // Exceção: se há job ativo, não bloqueia (sessão anterior em andamento)
+        const onboardingDone = (() => { try { return localStorage.getItem("onboarding_completed") === "1"; } catch { return false; } })();
+        if (!hasActivePhotoJob && !onboardingDone) {
+          router.push("/onboarding");
+          return;
         }
 
         // Gatilho return_visit: já criou fotos antes mas não tem push ativo

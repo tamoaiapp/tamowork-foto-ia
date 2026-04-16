@@ -179,7 +179,6 @@ export default function OnboardingPage() {
         {/* Cabeçalho */}
         <div style={s.header}>
           <span style={s.logo}>TamoWork</span>
-          <button onClick={() => router.replace("/")} style={s.skipBtn}>Pular</button>
         </div>
 
         {/* Barra de progresso */}
