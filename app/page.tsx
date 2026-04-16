@@ -634,14 +634,20 @@ export default function HomePage() {
 
   useEffect(() => {
     try {
+      // Se tem job ativo no sessionStorage → vai direto para /tamo sem esperar auth
+      const pendingJobId = sessionStorage.getItem("pending_job_id");
+      if (pendingJobId) {
+        router.push("/tamo");
+        return; // onboardingReady fica false — tela escura durante redirect
+      }
       if (localStorage.getItem("onboarding_completed") === "1") {
         setOnboardingReady(true); // usuário já completou — libera imediatamente
       }
       // caso contrário: aguarda auth+jobs para decidir (migração de legados ou redirect)
     } catch {
-      setOnboardingReady(true); // erro de localStorage — libera para não travar
+      setOnboardingReady(true); // erro de storage — libera para não travar
     }
-  }, []);
+  }, [router]);
 
   // Banner de app (Android / iOS)
   const [appBannerPlatform, setAppBannerPlatform] = useState<"android" | "ios" | null>(null);
