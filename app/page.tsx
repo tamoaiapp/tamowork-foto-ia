@@ -797,7 +797,7 @@ export default function HomePage() {
 
     let ran = false;
 
-    const run = async (user: import("@supabase/supabase-js").User | null) => {
+    const run = async (user: import("@supabase/supabase-js").User | null, accessToken?: string) => {
       if (!user) {
         clearTimeout(safetyTimeout);
         router.push("/login");
@@ -812,9 +812,18 @@ export default function HomePage() {
 
       try {
 
-      // getSession() é síncrono do localStorage — token disponível imediatamente
-      const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token ?? "";
+      // Usa o token recebido diretamente (onAuthStateChange já tem a sessão)
+      // Fallback: getSession() para o caso do getUser() backup
+      let token = accessToken ?? "";
+      if (!token) {
+        const { data: sd } = await supabase.auth.getSession();
+        token = sd.session?.access_token ?? "";
+      }
+      // Se ainda sem token, tenta refresh
+      if (!token) {
+        const { data: rd } = await supabase.auth.refreshSession();
+        token = rd.session?.access_token ?? "";
+      }
       let resolvedPlan: Plan = "free";
       let hasActivePhotoJob = false;
 
@@ -1053,19 +1062,17 @@ export default function HomePage() {
       }
     };
 
-    // PRIMARY: onAuthStateChange dispara para TODOS os casos — desktop, mobile, magic link,
-    // token expirado, token refresh. É o mecanismo mais confiável do Supabase.
+    // PRIMARY: onAuthStateChange — passa token direto para evitar getSession() null
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) return; // null tratado pelo getUser() abaixo
+      if (!session?.user) return;
       if (ran) return; ran = true;
-      run(session.user);
+      run(session.user, session.access_token); // token direto da sessão
     });
 
-    // BACKUP: getUser() faz validação server-side e cobre o caso "sem sessão → login"
-    // Em mobile onde onAuthStateChange pode não disparar INITIAL_SESSION imediatamente
+    // BACKUP: getUser() server-side — cobre mobile e "sem sessão → login"
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (ran) return; ran = true;
-      run(user); // null aqui → router.push("/login")
+      run(user); // sem token → run() vai fazer refresh
     });
 
     return () => {
