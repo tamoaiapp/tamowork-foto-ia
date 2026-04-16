@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -29,8 +29,16 @@ function assignVariant(): Variant {
   return r < 0.33 ? "A" : r < 0.66 ? "B" : "C";
 }
 
-// ── Componente principal ────────────────────────────────────────────────────
+// ── Wrapper com Suspense (obrigatório para useSearchParams no Next.js 14+) ──
 export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingPageInner />
+    </Suspense>
+  );
+}
+
+function OnboardingPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fileRef = useRef<HTMLInputElement>(null);
