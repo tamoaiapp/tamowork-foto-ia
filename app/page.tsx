@@ -790,21 +790,24 @@ export default function HomePage() {
   // warmupVision desabilitado — carrega sob demanda ao subir foto
 
   useEffect(() => {
-    // Timeout de segurança: se auth não resolver em 9s, libera a tela (nunca trava infinito)
+    // Safety timeout reduzido para 5s — último recurso se tudo travar
     const safetyTimeout = setTimeout(() => {
       setOnboardingReady(true);
-    }, 9_000);
+    }, 5_000);
 
-    let ran = false; // evita double-run: getUser + onAuthStateChange chegam juntos
+    let ran = false; // evita double-run: getSession + onAuthStateChange chegam juntos
 
     const run = async (user: import("@supabase/supabase-js").User | null) => {
-      // Nota: NÃO cancela safetyTimeout aqui — ele é o último recurso se tudo travar.
-      // É cancelado apenas no cleanup (unmount) ou quando o componente navega para fora.
-      if (!user) { router.push("/login"); return; }
+      if (!user) {
+        clearTimeout(safetyTimeout);
+        router.push("/login");
+        return;
+      }
       setUser(user);
 
       try {
 
+      // getSession() é síncrono do localStorage — token disponível imediatamente
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token ?? "";
       let resolvedPlan: Plan = "free";
@@ -829,11 +832,14 @@ export default function HomePage() {
         }
       }
 
+      // Timeout de 6s na chamada de jobs — não pode ficar pendurado infinitamente
       const res = await fetch("/api/image-jobs", {
         headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(6_000),
       });
       if (!res.ok) {
-        // Falha na API de jobs — libera a tela sem redirecionar para não travar o usuário
+        // Falha na API de jobs — libera tela para não travar o usuário
+        clearTimeout(safetyTimeout);
         setOnboardingReady(true);
       } else if (res.ok) {
         const data = await res.json();
@@ -928,12 +934,13 @@ export default function HomePage() {
           return false;
         })();
         if (!hasActivePhotoJob && !onboardingDone) {
-          // Garante tela escura durante redirect (evita flash se flag stale de outro usuário)
+          clearTimeout(safetyTimeout);
           setOnboardingReady(false);
           router.push("/onboarding");
-          return; // onboardingReady fica false — tela escura durante redirect
+          return;
         }
-        // Onboarding OK (ou migração de legado) — libera render
+        // Onboarding OK — libera render
+        clearTimeout(safetyTimeout);
         setOnboardingReady(true);
 
         // Gatilho return_visit: já criou fotos antes mas não tem push ativo
@@ -1039,24 +1046,25 @@ export default function HomePage() {
         sessionStorage.removeItem("video_from_job");
       }
 
+      clearTimeout(safetyTimeout);
       setOnboardingReady(true); // fallback: cobre casos onde res.ok === false ou vídeo apenas
       setLoading(false);
 
       } catch {
-        // Qualquer erro inesperado (rede, exceção, etc.) libera a tela — nunca trava o usuário
+        // Qualquer erro inesperado (rede, timeout, exceção) libera a tela
+        clearTimeout(safetyTimeout);
         setOnboardingReady(true);
         setLoading(false);
       }
     };
 
-    // Tenta obter sessão imediatamente
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // getSession() lê do localStorage — síncrono, sem chamada de rede → auth check instantâneo
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (ran) return; ran = true;
-      run(user);
+      run(session?.user ?? null);
     });
 
-    // Backup: onAuthStateChange captura sessão do magic link hash (chega depois do getUser)
-    // O flag `ran` evita que rode duas vezes em paralelo
+    // Backup: onAuthStateChange captura sessão de magic link (hash processado assincronamente)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session?.user) return;
       if (ran) return; ran = true;

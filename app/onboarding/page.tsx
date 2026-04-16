@@ -44,6 +44,7 @@ function OnboardingPageInner() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [ready, setReady]         = useState(false);
+  const [userId, setUserId]       = useState("");
   const [variant, setVariant]     = useState<Variant>("A");
   const [step, setStep]           = useState(1);
 
@@ -68,15 +69,19 @@ function OnboardingPageInner() {
       if (!data.session) { router.replace("/login"); return; }
 
       // Já completou onboarding → vai para o app (ignora se ?v= presente para permitir teste)
+      // Usa chave por userId para evitar flag stale de outro usuário no mesmo device
       const forcedVariant = searchParams.get("v")?.toUpperCase();
       if (!forcedVariant) {
         try {
-          if (localStorage.getItem("onboarding_completed") === "1") {
+          const uid = data.session.user.id;
+          if (localStorage.getItem(`onboarding_completed_${uid}`) === "1") {
             router.replace("/");
             return;
           }
         } catch { /* ignora */ }
       }
+
+      setUserId(data.session.user.id);
 
       // Atribui ou restaura variante — ?v=A/B/C força variante para testes
       try {
@@ -155,8 +160,11 @@ function OnboardingPageInner() {
         if (variant === "C" && ondeUsar)  sessionStorage.setItem("ob_onde_usar", ondeUsar);
       } catch { /* ignora */ }
 
-      // Marca onboarding como concluído
-      try { localStorage.setItem("onboarding_completed", "1"); } catch { /* ignora */ }
+      // Marca onboarding como concluído (chave por usuário para evitar cross-user bug)
+      try {
+        localStorage.setItem("onboarding_completed", "1"); // legado
+        if (userId) localStorage.setItem(`onboarding_completed_${userId}`, "1");
+      } catch { /* ignora */ }
 
       router.push("/tamo");
     } catch (err) {
