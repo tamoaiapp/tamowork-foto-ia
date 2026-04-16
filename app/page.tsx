@@ -950,6 +950,7 @@ export default function HomePage() {
       // Restaura estado de vídeo ao recarregar a página
       const vres = await fetch("/api/video-jobs", {
         headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(6_000),
       });
       if (vres.ok) {
         const vdata: VideoJob[] = await vres.json();
@@ -973,7 +974,7 @@ export default function HomePage() {
       }
 
       // Restaura vídeo narrado ativo/recente
-      const nres = await fetch("/api/narrated-video", { headers: { Authorization: `Bearer ${token}` } });
+      const nres = await fetch("/api/narrated-video", { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6_000) });
       if (nres.ok) {
         const ndata: NarratedJob[] = await nres.json();
         const dismissedNarrated: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
@@ -997,7 +998,7 @@ export default function HomePage() {
       }
 
       // Restaura vídeo longo ativo/recente
-      const lres = await fetch("/api/long-video", { headers: { Authorization: `Bearer ${token}` } });
+      const lres = await fetch("/api/long-video", { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6_000) });
       if (lres.ok) {
         const ldata: LongVideoJob[] = await lres.json();
         const dismissedLong: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
