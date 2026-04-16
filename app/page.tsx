@@ -795,7 +795,7 @@ export default function HomePage() {
       setOnboardingReady(true);
     }, 5_000);
 
-    let ran = false; // evita double-run: getSession + onAuthStateChange chegam juntos
+    let ran = false;
 
     const run = async (user: import("@supabase/supabase-js").User | null) => {
       if (!user) {
@@ -804,7 +804,7 @@ export default function HomePage() {
         return;
       }
 
-      // Usuário está logado: libera a tela IMEDIATAMENTE sem esperar dados
+      // Usuário confirmado: libera tela imediatamente, dados carregam em background
       setUser(user);
       clearTimeout(safetyTimeout);
       setOnboardingReady(true);
@@ -1053,17 +1053,19 @@ export default function HomePage() {
       }
     };
 
-    // getSession() lê do localStorage — síncrono, sem chamada de rede → auth check instantâneo
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (ran) return; ran = true;
-      run(session?.user ?? null);
-    });
-
-    // Backup: onAuthStateChange captura sessão de magic link (hash processado assincronamente)
+    // PRIMARY: onAuthStateChange dispara para TODOS os casos — desktop, mobile, magic link,
+    // token expirado, token refresh. É o mecanismo mais confiável do Supabase.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) return;
+      if (!session?.user) return; // null tratado pelo getUser() abaixo
       if (ran) return; ran = true;
       run(session.user);
+    });
+
+    // BACKUP: getUser() faz validação server-side e cobre o caso "sem sessão → login"
+    // Em mobile onde onAuthStateChange pode não disparar INITIAL_SESSION imediatamente
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (ran) return; ran = true;
+      run(user); // null aqui → router.push("/login")
     });
 
     return () => {
