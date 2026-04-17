@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { createVideoJob, VideoRateLimitError } from "@/lib/video-jobs/create";
+import { createVideoJob, ProRequiredError } from "@/lib/video-jobs/create";
 
 export async function GET(req: NextRequest) {
   const supabase = createServerClient();
@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
     const job = await createVideoJob(user.id, prompt ?? "", input_image_url, validFormat);
     return NextResponse.json({ jobId: job.id, status: job.status }, { status: 201 });
   } catch (err) {
-    if (err instanceof VideoRateLimitError) {
-      return NextResponse.json({ error: "rate_limited", nextAvailableAt: err.nextAvailableAt.toISOString() }, { status: 429 });
+    if (err instanceof ProRequiredError) {
+      return NextResponse.json({ error: "pro_required" }, { status: 403 });
     }
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
