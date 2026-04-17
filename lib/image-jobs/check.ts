@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { COMFY_BASES, getComfyHistory } from "@/lib/comfyui/client";
+import { COMFY_BASES, getComfyHistory, freeComfyMemory } from "@/lib/comfyui/client";
 import { checkRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { finalizeImageJob } from "@/lib/image-jobs/finalize";
 
@@ -99,6 +99,11 @@ export async function checkImageJob(jobId: string) {
   if (result.status === "done" && result.outputUrl) {
     await finalizeImageJob(jobId, result.outputUrl);
   } else if (result.status === "failed") {
+    // OOM: libera VRAM antes de re-enfileirar para o retry ter GPU limpa
+    if (result.isOOM) {
+      console.log(`[check] job ${jobId} — OOM detectado, liberando VRAM via /free`);
+      await freeComfyMemory(comfyBase);
+    }
     if (newAttempts <= 2) {
       await supabase
         .from("image_jobs")

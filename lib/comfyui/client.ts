@@ -234,14 +234,17 @@ export async function submitCatalogWorkflow(
 export async function getComfyHistory(
   promptId: string,
   comfyBase: string
-): Promise<{ outputUrl: string | null; status: "done" | "failed" | "pending" }> {
+): Promise<{ outputUrl: string | null; status: "done" | "failed" | "pending"; isOOM?: boolean }> {
   const res = await fetch(`${comfyBase}/history/${promptId}`, { signal: AbortSignal.timeout(15_000) });
   if (!res.ok) return { outputUrl: null, status: "pending" };
 
   const history = await res.json() as Record<string, unknown>;
   const entry = history[promptId] as {
     outputs?: Record<string, { images?: { filename: string; subfolder: string; type: string }[] }>;
-    status?: { status_str?: string };
+    status?: {
+      status_str?: string;
+      messages?: unknown[][];
+    };
   } | undefined;
 
   if (!entry) return { outputUrl: null, status: "pending" };
@@ -254,10 +257,35 @@ export async function getComfyHistory(
     return { outputUrl, status: "done" };
   }
 
-  // Falha
+  // Falha — detecta OOM para liberar VRAM antes do retry
   if (entry.status?.status_str === "error") {
-    return { outputUrl: null, status: "failed" };
+    const msgs = entry.status.messages ?? [];
+    const isOOM = msgs.some(m => {
+      const errMsg = (m as { exception_message?: string; exception_type?: string })?.exception_message ?? "";
+      const errType = (m as { exception_type?: string })?.exception_type ?? "";
+      return (
+        errType.includes("OutOfMemoryError") ||
+        errMsg.toLowerCase().includes("out of memory") ||
+        errMsg.toLowerCase().includes("allocation on device")
+      );
+    });
+    return { outputUrl: null, status: "failed", isOOM };
   }
 
   return { outputUrl: null, status: "pending" };
+}
+
+// Libera modelos da VRAM do ComfyUI — chama após OOM para limpar antes do retry
+export async function freeComfyMemory(comfyBase: string): Promise<void> {
+  try {
+    await fetch(`${comfyBase}/free`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ unload_models: true, free_memory: true }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    console.log(`[comfy] VRAM liberada via /free em ${comfyBase}`);
+  } catch (e) {
+    console.warn(`[comfy] /free falhou (não crítico):`, e);
+  }
 }
