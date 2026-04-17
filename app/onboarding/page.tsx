@@ -272,21 +272,21 @@ function OnboardingPageInner() {
 function WelcomeStep({ variant, onNext }: { variant: Variant; onNext: () => void }) {
   const configs = {
     A: {
-      headline: "Sua primeira foto profissional — grátis",
-      sub: "Em ~2 minutos a IA transforma qualquer foto de produto em algo digno de vitrine. Sem edição, sem designer.",
-      cta: "Criar minha primeira foto →",
+      headline: "Seu primeiro conteúdo em vídeo começa com 1 foto",
+      sub: "Em ~2 minutos eu transformo a foto do seu produto em criativo pronto. Depois você pode gerar vídeo animado e narrado.",
+      cta: "Começar agora →",
       badge: "⚡ Entrega em ~2 min",
     },
     B: {
-      headline: "Vamos criar sua primeira foto juntos",
-      sub: "Envie a foto do seu produto e eu coloco num cenário profissional. Leva ~2 minutos.",
-      cta: "Começar agora →",
+      headline: "Vamos criar seu criativo para vender mais",
+      sub: "Manda a foto do produto e eu monto cena profissional. Em seguida você já pode subir para vídeo com narração.",
+      cta: "Criar meu primeiro criativo →",
       badge: "🎁 Grátis para começar",
     },
     C: {
-      headline: "Crie sua foto profissional grátis",
-      sub: "A IA transforma a foto do seu produto em conteúdo pronto para vender — em ~2 minutos.",
-      cta: "Criar foto grátis →",
+      headline: "Vídeo vende mais — vamos preparar o seu",
+      sub: "Começa com uma foto, eu cuido da parte pesada e te entrego conteúdo pronto para Reels e anúncios.",
+      cta: "Preparar meu vídeo →",
       badge: "✨ Sem cartão de crédito",
     },
   }[variant];

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getUserPlan } from "@/lib/plans";
 
+const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const FREE_NARRATED_DAILY_LIMIT = 2;
+
 // GET /api/narrated-video — lista jobs do usuário
 export async function GET(req: NextRequest) {
   const supabase = createServerClient();
@@ -27,10 +30,27 @@ export async function POST(req: NextRequest) {
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  // Requer plano Pro
+  // Limite de vídeos narrados para plano free: 2 por 24h
   const plan = await getUserPlan(user.id);
   if (plan !== "pro") {
-    return NextResponse.json({ error: "pro_required" }, { status: 403 });
+    const since = new Date(Date.now() - FREE_COOLDOWN_MS).toISOString();
+    const { data: recentDone } = await supabase
+      .from("narrated_video_jobs")
+      .select("created_at")
+      .eq("user_id", user.id)
+      .eq("status", "done")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(FREE_NARRATED_DAILY_LIMIT);
+
+    if (recentDone && recentDone.length >= FREE_NARRATED_DAILY_LIMIT) {
+      const oldest = recentDone[recentDone.length - 1];
+      const nextAvailableAt = new Date(new Date(oldest.created_at).getTime() + FREE_COOLDOWN_MS);
+      return NextResponse.json(
+        { error: "rate_limited", nextAvailableAt: nextAvailableAt.toISOString() },
+        { status: 429 }
+      );
+    }
   }
 
   let body: { input_image_url?: string; roteiro?: string; voice?: string; scene_source?: string; scene_urls?: string[]; format?: string };

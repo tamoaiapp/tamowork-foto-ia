@@ -677,7 +677,7 @@ export default function HomePage() {
   const [displayProgress, setDisplayProgress] = useState(0);
 
   // Creation mode
-  const [creationMode, setCreationMode] = useState<CreationMode>("simulacao");
+  const [creationMode, setCreationMode] = useState<CreationMode>("video_narrado");
   const [modeSelected, setModeSelected] = useState(false); // true = mostra form, false = mostra menu
 
   // Photo editor
@@ -1942,8 +1942,17 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ prompt: videoPrompt, input_image_url: imageUrl, format: photoFormat }),
       });
-      if (res.status === 403) { setVideoError("Disponível apenas no plano Pro."); return; }
       if (res.status === 503) { setVideoError("queue_busy"); return; }
+      if (res.status === 429) {
+        const err = await res.json().catch(() => ({}));
+        const nextAt = err.nextAvailableAt ? new Date(err.nextAvailableAt) : null;
+        const validAt = nextAt && !isNaN(nextAt.getTime()) && nextAt > new Date()
+          ? nextAt
+          : new Date(Date.now() + 24 * 60 * 60 * 1000);
+        setRateLimitedUntil(validAt);
+        setVideoError("Você já usou os 2 vídeos grátis nas últimas 24h.");
+        return;
+      }
       if (!res.ok) throw new Error("Erro ao criar job de vídeo");
       const { jobId } = await res.json();
       setVideoJob({ id: jobId, status: "queued" });
@@ -2078,7 +2087,16 @@ export default function HomePage() {
           format: photoFormat,
         }),
       });
-      if (res.status === 403) { setNarratedError("Disponível apenas no plano Pro."); return; }
+      if (res.status === 429) {
+        const err = await res.json().catch(() => ({}));
+        const nextAt = err.nextAvailableAt ? new Date(err.nextAvailableAt) : null;
+        const validAt = nextAt && !isNaN(nextAt.getTime()) && nextAt > new Date()
+          ? nextAt
+          : new Date(Date.now() + 24 * 60 * 60 * 1000);
+        setRateLimitedUntil(validAt);
+        setNarratedError("Você já usou os 2 vídeos narrados grátis nas últimas 24h.");
+        return;
+      }
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error((errData as { error?: string }).error ?? "Erro ao criar job");
@@ -2969,32 +2987,23 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      {plan !== "pro" && (
-                        <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 4 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#c4b5fd", marginBottom: 4 }}>🔒 Disponível no plano Pro</div>
-                          <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 12 }}>Vídeos com narração de IA a partir de R$0,61/dia</div>
-                          <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>✨ Assinar agora</button>
-                        </div>
-                      )}
+                      <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 14, padding: "12px 14px", marginBottom: 4 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#a5b4fc", marginBottom: 4 }}>🎙️ Créditos grátis</div>
+                        <div style={{ fontSize: 12, color: "#8394b0" }}>Você tem 2 vídeos narrados grátis a cada 24 horas.</div>
+                      </div>
 
                       {narratedError && <div style={styles.error}>{narratedError}</div>}
 
                       <FormatSelector value={photoFormat} onChange={setPhotoFormat} />
 
-                      {plan !== "pro" ? (
-                        <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>
-                          ⚡ Assinar para criar vídeos
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || !narratedRoteiro.trim()}
-                          onClick={handleNarratedSubmit}
-                          style={{ ...styles.submitBtn, opacity: (narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || !narratedRoteiro.trim()) ? 0.5 : 1 }}
-                        >
-                          {narratedSubmitting ? "Enviando..." : "🎙️ Criar vídeo com narração"}
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        disabled={narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || !narratedRoteiro.trim()}
+                        onClick={handleNarratedSubmit}
+                        style={{ ...styles.submitBtn, opacity: (narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || !narratedRoteiro.trim()) ? 0.5 : 1 }}
+                      >
+                        {narratedSubmitting ? "Enviando..." : "🎙️ Criar vídeo com narração"}
+                      </button>
                     </>
                   )}
                 </>
@@ -3027,13 +3036,10 @@ export default function HomePage() {
                     />
                   </div>
 
-                  {plan !== "pro" && (
-                    <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 4 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#c4b5fd", marginBottom: 4 }}>🔒 Disponível no plano Pro</div>
-                      <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 12 }}>Vídeos com IA a partir de R$0,61/dia</div>
-                      <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>✨ Assinar agora</button>
-                    </div>
-                  )}
+                  <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 14, padding: "12px 14px", marginBottom: 4 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#a5b4fc", marginBottom: 4 }}>🎬 Créditos grátis</div>
+                    <div style={{ fontSize: 12, color: "#8394b0" }}>Você tem 2 vídeos grátis a cada 24 horas.</div>
+                  </div>
 
                   {videoError && (
                     <div style={styles.error}>
@@ -3045,23 +3051,13 @@ export default function HomePage() {
 
                   <FormatSelector value={photoFormat} onChange={setPhotoFormat} />
 
-                  {plan !== "pro" ? (
-                    <button
-                      type="button"
-                      onClick={() => router.push("/planos")}
-                      style={styles.unlockBtn}
-                    >
-                      ⚡ {lang === "en" ? "Subscribe to create videos" : lang === "es" ? "Suscribirse para crear videos" : "Assinar para criar vídeos"}
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={videoSubmitting || !imageFile}
-                      style={{ ...styles.submitBtn, opacity: (videoSubmitting || !imageFile) ? 0.5 : 1 }}
-                    >
-                      {videoSubmitting ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : t("btn_generate_video")}
-                    </button>
-                  )}
+                  <button
+                    type="submit"
+                    disabled={videoSubmitting || !imageFile}
+                    style={{ ...styles.submitBtn, opacity: (videoSubmitting || !imageFile) ? 0.5 : 1 }}
+                  >
+                    {videoSubmitting ? (lang === "en" ? "Sending..." : lang === "es" ? "Enviando..." : "Enviando...") : t("btn_generate_video")}
+                  </button>
                 </>
               ) : (
               <>
@@ -3368,7 +3364,7 @@ export default function HomePage() {
               </div>
 
               {/* Criar vídeo — 100% largura */}
-              {plan === "pro" ? (() => {
+              {(() => {
                 const videoInProgress =
                   (videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
                   (narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status));
@@ -3385,11 +3381,7 @@ export default function HomePage() {
                     {t("result_create_video")}
                   </button>
                 );
-              })() : (
-                <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc" }}>
-                  🎬 Vídeo animado — exclusivo PRO ✨
-                </button>
-              )}
+              })()}
 
               {/* Upsell PRO — só para free */}
               {plan === "free" && (
@@ -3492,7 +3484,7 @@ export default function HomePage() {
               </div>
 
               {/* Criar vídeo — 100% largura */}
-              {plan === "pro" ? (() => {
+              {(() => {
                 const videoInProgress =
                   (videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
                   (narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status));
@@ -3506,11 +3498,7 @@ export default function HomePage() {
                 ) : (
                   <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>{t("result_create_video")}</button>
                 );
-              })() : (
-                <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc", fontSize: 12 }}>
-                  🎬 Vídeo animado — exclusivo PRO ✨
-                </button>
-              )}
+              })()}
 
               {/* Upsell PRO — só para free */}
               {plan === "free" && (
