@@ -1465,6 +1465,29 @@ export default function HomePage() {
     });
   }
 
+  // Faz upload de imagem via base64 JSON — mais confiável no iOS Safari
+  // (FormData+File via fetch falha silenciosamente no WebKit com "Load failed")
+  async function uploadImage(file: File, token: string): Promise<string> {
+    const fileToUpload = await convertToJpegIfNeeded(file);
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
+      reader.readAsDataURL(fileToUpload);
+    });
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ data_url: dataUrl, name: fileToUpload.name }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { error?: string }).error ?? `Falha ao enviar imagem (${res.status})`);
+    }
+    const { url } = await res.json();
+    return url as string;
+  }
+
   async function handleSubmit(
     e: React.FormEvent,
     overrides?: { file?: File; produto?: string; cenario?: string; mode?: CreationMode }
@@ -1489,15 +1512,7 @@ export default function HomePage() {
       setVideoSubmitting(true);
       try {
         const token = await getToken();
-        const fileToUpload = await convertToJpegIfNeeded(_file);
-        const form = new FormData();
-        form.append("file", fileToUpload);
-        const uploadRes = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
-        if (!uploadRes.ok) {
-          const errBody = await uploadRes.json().catch(() => ({}));
-          throw new Error(errBody?.error || `Falha ao enviar imagem (${uploadRes.status})`);
-        }
-        const { url: imageUrl } = await uploadRes.json();
+        const imageUrl = await uploadImage(_file, token);
         await handleVideoSubmit(imageUrl);
         setVideoMode(true);
       } catch (err) {
@@ -1524,38 +1539,19 @@ export default function HomePage() {
     try {
       const token = await getToken();
 
-      // Upload da imagem do produto (converte HEIC/HEIF para JPEG)
-      const fileToUpload = await convertToJpegIfNeeded(_file!);
-      const form = new FormData();
-      form.append("file", fileToUpload);
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-      });
-      if (!uploadRes.ok) {
-        const errData = await uploadRes.json().catch(() => ({}));
-        throw new Error(errData.error ?? "Falha ao enviar imagem");
-      }
-      const { url: imageUrl } = await uploadRes.json();
+      // Upload da imagem do produto
+      const imageUrl = await uploadImage(_file!, token);
 
       // Fundo branco: processa no browser (WebAssembly), depois registra job
       if (_mode === "fundo_branco") {
         const prompt = `${_produto} | fundo branco`;
 
-        // 1. Processa no browser — remove fundo + adiciona branco
+        // 1. Converte para JPEG e processa no browser — remove fundo + adiciona branco
+        const fileToUpload = await convertToJpegIfNeeded(_file!);
         const processedFile = await processWhiteBackground(fileToUpload);
 
         // 2. Faz upload da imagem já processada
-        const pfForm = new FormData();
-        pfForm.append("file", processedFile);
-        const pfRes = await fetch("/api/upload", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: pfForm,
-        });
-        if (!pfRes.ok) throw new Error("Falha ao enviar imagem processada");
-        const { url: outputUrl } = await pfRes.json();
+        const outputUrl = await uploadImage(processedFile, token);
 
         // 3. Registra job como "done" (rate limit + job creation no servidor)
         const res = await fetch("/api/white-bg", {
@@ -1589,16 +1585,7 @@ export default function HomePage() {
         // Modelo do catálogo — usa URL diretamente
         modelImageUrl = modelPreview;
       } else if (_mode === "catalogo" && modelFile) {
-        const mform = new FormData();
-        mform.append("file", modelFile);
-        const mres = await fetch("/api/upload", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: mform,
-        });
-        if (!mres.ok) throw new Error("Falha ao enviar foto do modelo");
-        const { url } = await mres.json();
-        modelImageUrl = url;
+        modelImageUrl = await uploadImage(modelFile, token);
       }
 
       // Monta prompt — cada modo tem seu formato
@@ -1818,13 +1805,7 @@ export default function HomePage() {
       let imageUrl: string | undefined;
       if (narratedSceneSource === "generate") {
         // Upload da imagem para gerar cenas no ComfyUI
-        const fileToUpload = await convertToJpegIfNeeded(imageFile!);
-        const form = new FormData();
-        form.append("file", fileToUpload);
-        const uploadRes = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
-        if (!uploadRes.ok) throw new Error("Falha ao enviar imagem");
-        const uploaded = await uploadRes.json();
-        imageUrl = uploaded.url;
+        imageUrl = await uploadImage(imageFile!, token);
       }
       // Cria job
       const res = await fetch("/api/narrated-video", {
@@ -2452,12 +2433,7 @@ export default function HomePage() {
                       setLongVideoError("");
                       try {
                         const tok = await getToken();
-                        const fileToUpload = await convertToJpegIfNeeded(imageFile);
-                        const form = new FormData();
-                        form.append("file", fileToUpload);
-                        const up = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${tok}` }, body: form });
-                        if (!up.ok) throw new Error("Falha ao enviar imagem");
-                        const { url: imageUrl } = await up.json();
+                        const imageUrl = await uploadImage(imageFile, tok);
                         await handleLongVideoSubmit(imageUrl, produto);
                       } catch (err) {
                         setLongVideoError(err instanceof Error ? err.message : "Erro");

@@ -12,23 +12,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const formData = await req.formData();
-  const file = formData.get("file") as File | null;
+  // Aceita tanto JSON com base64 (iOS Safari) quanto FormData (outros navegadores)
+  let buffer: ArrayBuffer;
+  let ext = "jpg";
+  let contentType = "image/jpeg";
 
-  if (!file) {
-    return NextResponse.json({ error: "Arquivo obrigatório" }, { status: 400 });
+  const ct = req.headers.get("content-type") ?? "";
+  if (ct.includes("application/json")) {
+    let body: { data_url?: string; name?: string };
+    try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON inválido" }, { status: 400 }); }
+    if (!body.data_url) return NextResponse.json({ error: "data_url obrigatório" }, { status: 400 });
+    const match = body.data_url.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) return NextResponse.json({ error: "data_url inválido" }, { status: 400 });
+    contentType = match[1];
+    const rawBytes = Buffer.from(match[2], "base64");
+    buffer = rawBytes.buffer.slice(rawBytes.byteOffset, rawBytes.byteOffset + rawBytes.byteLength);
+    const nameExt = (body.name ?? "").split(".").pop()?.toLowerCase() ?? "";
+    ext = ["jpg", "jpeg", "png", "webp"].includes(nameExt) ? nameExt : "jpg";
+  } else {
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+    if (!file) return NextResponse.json({ error: "Arquivo obrigatório" }, { status: 400 });
+    if (file.size > 15 * 1024 * 1024) return NextResponse.json({ error: "Imagem muito grande. Use uma foto menor que 15MB." }, { status: 400 });
+    const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";
+    ext = ["jpg", "jpeg", "png", "webp"].includes(rawExt) ? rawExt : "jpg";
+    contentType = file.type || (ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg");
+    buffer = await file.arrayBuffer();
   }
 
-  // Tamanho máximo: 15MB
-  if (file.size > 15 * 1024 * 1024) {
+  // Validação de tamanho (15MB)
+  if (buffer.byteLength > 15 * 1024 * 1024) {
     return NextResponse.json({ error: "Imagem muito grande. Use uma foto menor que 15MB." }, { status: 400 });
   }
 
-  const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";
-  const ext = ["jpg", "jpeg", "png", "webp"].includes(rawExt) ? rawExt : "jpg";
-  const contentType = file.type || (ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg");
   const fileName = `${user.id}/${Date.now()}.${ext}`;
-  const buffer = await file.arrayBuffer();
 
   const { error: uploadError } = await supabase.storage
     .from("input-images")
