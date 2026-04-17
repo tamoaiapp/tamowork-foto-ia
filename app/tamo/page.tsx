@@ -87,7 +87,8 @@ export default function TamoPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { router.push("/login"); return; }
       try {
-        if (localStorage.getItem("onboarding_completed") !== "1") {
+        const hasPendingJob = !!sessionStorage.getItem("pending_job_id") || !!sessionStorage.getItem("pending_video_job_id");
+        if (localStorage.getItem("onboarding_completed") !== "1" && !hasPendingJob) {
           router.push("/onboarding"); return;
         }
       } catch { /* ignora */ }
