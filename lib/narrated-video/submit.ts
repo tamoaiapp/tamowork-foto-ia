@@ -151,31 +151,63 @@ export interface ScenePlan {
 
 // ─── Melhoria do roteiro via Ollama ───────────────────────────────────────────
 
+function normalizeScript(text: string): string {
+  const cleaned = text
+    .replace(/^["'`]+|["'`]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const words = cleaned.split(" ").filter(Boolean);
+  if (words.length <= 95) return cleaned;
+  return `${words.slice(0, 95).join(" ")}...`;
+}
+
+function ensurePersuasiveFallback(original: string, improved?: string): string {
+  const base = normalizeScript(improved || original);
+  const originalWords = normalizeScript(original).split(" ").filter(Boolean).length;
+  const improvedWords = base.split(" ").filter(Boolean).length;
+
+  // Se o texto ficou curto demais ou muito parecido com o original, força estrutura persuasiva.
+  if (improvedWords >= Math.max(18, Math.floor(originalWords * 0.7))) {
+    return base;
+  }
+
+  return normalizeScript(
+    `Quer ${original.replace(/\.$/, "")}? Vou te mostrar em segundos. ` +
+    `Esse produto resolve uma dor real do dia a dia com praticidade e resultado visível. ` +
+    `Se fizer sentido pra você, aproveita agora e garante o seu antes de acabar o lote.`
+  );
+}
+
 async function improveRoteiro(original: string): Promise<string> {
-  if (!OLLAMA_BASE) return original;
+  if (!OLLAMA_BASE) return ensurePersuasiveFallback(original);
   try {
     const res = await fetch(`${OLLAMA_BASE}/api/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "llama3.2:3b",
-        prompt: `Você é especialista em roteiros de vídeo para redes sociais.
-Melhore este roteiro para narração de vídeo de produto (Instagram/TikTok).
-Mantenha natural, conversacional e direto. Máximo 100 palavras.
-Responda APENAS com o roteiro melhorado, sem explicações ou aspas.
+        prompt: `Você é copywriter sênior de vídeos curtos para vendas (Instagram/TikTok).
+Reescreva o roteiro abaixo para ficar MAIS persuasivo e humano, mantendo o mesmo produto/ideia.
+Objetivo: prender atenção nos primeiros 2 segundos, mostrar benefício claro, reduzir objeção e fechar com CTA leve.
+Regras:
+- Português do Brasil, tom natural e conversacional.
+- Sem promessas absurdas, sem clickbait exagerado.
+- 45 a 95 palavras.
+- Responda APENAS com o texto final, sem título, sem aspas, sem explicações.
 
 Roteiro: ${original}`,
         stream: false,
-        options: { num_predict: 250, temperature: 0.6 },
+        options: { num_predict: 280, temperature: 0.75, top_p: 0.9 },
       }),
       signal: AbortSignal.timeout(25_000),
     });
-    if (!res.ok) return original;
+    if (!res.ok) return ensurePersuasiveFallback(original);
     const json = await res.json() as { response?: string };
-    return json.response?.trim() || original;
+    return ensurePersuasiveFallback(original, json.response?.trim());
   } catch {
     // Ollama indisponível — usa original
-    return original;
+    return ensurePersuasiveFallback(original);
   }
 }
 

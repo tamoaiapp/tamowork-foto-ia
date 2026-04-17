@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n";
 export type CreationMode = "simulacao" | "fundo_branco" | "catalogo" | "personalizado" | "video" | "promo" | "video_narrado" | "video_longo" | "produto_exposto";
 
 const FOTO_MODES: CreationMode[] = ["simulacao", "catalogo", "produto_exposto", "fundo_branco", "personalizado"];
-const VIDEO_MODES: CreationMode[] = ["video", "video_narrado", "video_longo"];
+const VIDEO_MODES: CreationMode[] = ["video_narrado", "video", "video_longo"];
 
 const BASE = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/examples";
 
@@ -24,8 +24,8 @@ function getModes(lang: string): ModeData[] {
   if (lang === "en") return [
     { id: "simulacao",     name: "Lifestyle scene",   title: "Product in real setting",  desc: "Place your product in a beautiful, real-world scene.", img: `${BASE}/simulacao.jpg`, badge: "Most used" },
     { id: "catalogo",      name: "With model",         title: "AI-dressed model",         desc: "Virtual model wears your item — no photographer needed.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video",         name: "Animated video",     title: "Photo that moves",         desc: "Turn your photo into a video ready for Reels.", img: "", badge: "PRO" },
-    { id: "video_narrado", name: "Narrated video",     title: "Photo + voiceover",        desc: "Your product photo becomes a video with AI narration. Write the script, AI reads it.", img: "", badge: "PRO" },
+    { id: "video",         name: "Animated video",     title: "Photo that moves",         desc: "Turn your photo into a video ready for Reels.", img: "", badge: "2 free / 24h" },
+    { id: "video_narrado", name: "Narrated video",     title: "Photo + voiceover",        desc: "Your product photo becomes a video with AI narration. Write the script, AI reads it.", img: "", badge: "Most used" },
     { id: "video_longo",   name: "Long video",         title: "~32 second video",         desc: "AI generates 4 different scenes and joins them. Takes 20-40 min. PRO exclusive.", img: "", badge: "PRO" },
     { id: "produto_exposto", name: "Store display",      title: "Premium store display",    desc: "AI places your product on a mannequin, bust, counter or pedestal. No typing needed — AI reads the photo.", img: "", badge: "PRO" },
     { id: "personalizado", name: "Custom",             title: "You choose the scene",     desc: "Describe what you want and the AI creates it your way.", img: `${BASE}/produto.jpg` },
@@ -33,8 +33,8 @@ function getModes(lang: string): ModeData[] {
   if (lang === "es") return [
     { id: "simulacao",     name: "Foto en escena",     title: "Producto en ambiente real", desc: "Pon tu producto en una escena bonita y real.", img: `${BASE}/simulacao.jpg`, badge: "Más usado" },
     { id: "catalogo",      name: "Con modelo",          title: "Ropa vestida por IA",       desc: "Modelo virtual usa tu prenda sin necesitar fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video",         name: "Video animado",       title: "Foto que se mueve",         desc: "Transforma tu foto en un video listo para Reels.", img: "", badge: "PRO" },
-    { id: "video_narrado", name: "Video narrado",       title: "Foto + narración",          desc: "Tu foto se convierte en video con narración de IA. Escribe el guión, la IA lo lee.", img: "", badge: "PRO" },
+    { id: "video",         name: "Video animado",       title: "Foto que se mueve",         desc: "Transforma tu foto en un video listo para Reels.", img: "", badge: "2 gratis / 24h" },
+    { id: "video_narrado", name: "Video narrado",       title: "Foto + narración",          desc: "Tu foto se convierte en video con narración de IA. Escribe el guión, la IA lo lee.", img: "", badge: "Más usado" },
     { id: "video_longo",   name: "Video largo",         title: "Video de ~32 segundos",     desc: "IA genera 4 escenas distintas y las une. Tarda 20-40 min. Solo PRO.", img: "", badge: "PRO" },
     { id: "produto_exposto", name: "Expositor premium", title: "Display de loja premium",  desc: "IA coloca seu produto em manequim, busto, bancada ou pedestal. Sem digitar nada — IA lê a foto.", img: `${BASE}/expositor.jpg`, badge: "PRO" },
     { id: "personalizado", name: "A mi manera",         title: "Tú eliges la escena",       desc: "Describe lo que quieres y la IA lo crea a tu manera.", img: `${BASE}/produto.jpg` },
@@ -42,8 +42,8 @@ function getModes(lang: string): ModeData[] {
   return [
     { id: "simulacao",     name: "Foto em cena",       title: "Produto em ambiente real",  desc: "Coloca seu produto numa cena bonita e real.", img: `${BASE}/simulacao.jpg`, badge: "Mais usado" },
     { id: "catalogo",      name: "Com modelo",          title: "Roupa vestida por IA",      desc: "Modelo virtual usa sua peça sem precisar de fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video",         name: "Vídeo animado",       title: "Foto que se mexe",          desc: "Transforma sua foto num vídeo pronto para Reels.", img: "", badge: "PRO" },
-    { id: "video_narrado", name: "Vídeo com narração",  title: "Foto + voz narrada",        desc: "Sua foto vira vídeo com narração de IA. Você escreve o roteiro, a IA fala.", img: "", badge: "PRO" },
+    { id: "video",         name: "Vídeo animado",       title: "Foto que se mexe",          desc: "Transforma sua foto num vídeo pronto para Reels.", img: "", badge: "2 grátis / 24h" },
+    { id: "video_narrado", name: "Vídeo com narração",  title: "Foto + voz narrada",        desc: "Sua foto vira vídeo com narração de IA. Você escreve o roteiro, a IA fala.", img: "", badge: "Mais usado" },
     { id: "video_longo",   name: "Vídeo longo",         title: "Vídeo de ~32 segundos",     desc: "IA gera 4 cenas diferentes e junta num vídeo só. Demora 20-40 min. Exclusivo PRO.", img: "", badge: "PRO" },
     { id: "produto_exposto", name: "Expositor premium", title: "Display de loja premium",  desc: "IA coloca seu produto em manequim, busto, bancada ou pedestal. Sem digitar nada — IA lê a foto.", img: "", badge: "PRO" },
     { id: "personalizado", name: "Do meu jeito",        title: "Você escolhe a cena",       desc: "Descreva o que quer e a IA cria do seu jeito.", img: `${BASE}/produto.jpg` },
