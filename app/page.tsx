@@ -4,6 +4,14 @@ export const dynamic = "force-dynamic";
 import { useEffect, useRef, useState } from "react";
 import { downloadBlob } from "@/lib/downloadBlob";
 import { supabase } from "@/lib/supabase/client";
+import { getToken } from "@/lib/auth/getToken";
+import { useAppBanner } from "@/app/hooks/useAppBanner";
+import { useProgressBar } from "@/app/hooks/useProgressBar";
+import { useRateLimit } from "@/app/hooks/useRateLimit";
+import { usePhotoPolling } from "@/app/hooks/usePhotoPolling";
+import { useVideoJob } from "@/app/hooks/useVideoJob";
+import { useNarratedVideo } from "@/app/hooks/useNarratedVideo";
+import { useLongVideo } from "@/app/hooks/useLongVideo";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import BottomNav from "@/app/components/BottomNav";
@@ -634,8 +642,7 @@ export default function HomePage() {
   const [onboardingReady, setOnboardingReady] = useState(false);
 
   // Banner de app (Android / iOS)
-  const [appBannerPlatform, setAppBannerPlatform] = useState<"android" | "ios" | null>(null);
-  const [appBannerDismissed, setAppBannerDismissed] = useState(false);
+  const { appBannerPlatform, setAppBannerPlatform, appBannerDismissed, setAppBannerDismissed } = useAppBanner();
 
   // Form
   const [produto, setProduto] = useState("");
@@ -652,29 +659,21 @@ export default function HomePage() {
   const [job, setJob] = useState<Job | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [canceling, setCanceling] = useState(false);
-  const [showCancel, setShowCancel] = useState(false);
   const [formError, setFormError] = useState("");
   const [timeoutError, setTimeoutError] = useState("");
-  const [rateLimitedUntil, setRateLimitedUntil] = useState<Date | null>(null);
   const [photosToday, setPhotosToday] = useState(0);
   const [pushTrigger, setPushTrigger] = useState<"photo_done" | "rate_limit" | "return_visit" | null>(null);
   const [abVariant, setAbVariant] = useState<"A" | "B" | "C" | null>(null);
   const [showVideoHook, setShowVideoHook] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notifiedJobsRef = useRef<Set<string>>(new Set());
 
-  // Blur animation: decreases from 40px to 8px over ~90s
-  const [blurPx, setBlurPx] = useState(40);
-  const blurRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Tempo decorrido desde início da geração
-  const [elapsedSec, setElapsedSec] = useState(0);
-  const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Photo polling: blur, elapsed, cancel timer — gerenciados pelo hook
+  const { blurPx, elapsedSec, showCancel, setShowCancel, resetPolling } = usePhotoPolling({
+    job, user, fetchJobStatus, resetJob, setTimeoutError,
+  });
 
   // Progress bar
-  const [progressVal, setProgressVal] = useState(0);
-  const [displayProgress, setDisplayProgress] = useState(0);
+  const { progressVal, displayProgress, resetProgress } = useProgressBar(job?.id, job?.status ?? undefined);
 
   // Creation mode
   const [creationMode, setCreationMode] = useState<CreationMode>("simulacao");
@@ -692,43 +691,47 @@ export default function HomePage() {
   const [photoFormat, setPhotoFormat] = useState<"story"|"square"|"portrait"|"horizontal">("story");
 
   // Video state
-  const [videoMode, setVideoMode] = useState(false);
-  const [videoJob, setVideoJob] = useState<VideoJob | null>(null);
   const [videoPrompt, setVideoPrompt] = useState("");
-  const [videoSubmitting, setVideoSubmitting] = useState(false);
-  const [videoError, setVideoError] = useState("");
-  const videoPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [videoElapsedSec, setVideoElapsedSec] = useState(0);
-  const [videoDisplayProgress, setVideoDisplayProgress] = useState(0);
-  const videoElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const {
+    videoJob, setVideoJob,
+    videoElapsedSec,
+    videoDisplayProgress,
+    videoMode, setVideoMode,
+    videoError, setVideoError,
+    videoSubmitting, setVideoSubmitting,
+    fetchVideoStatus,
+    resetVideoJob,
+  } = useVideoJob({ user, notifiedJobsRef });
 
   // Narrated video state
   type NarratedJob = { id: string; status: string; output_video_url?: string; error_message?: string; created_at?: string };
-  const [narratedJob, setNarratedJob] = useState<NarratedJob | null>(null);
-  const [narratedRoteiro, setNarratedRoteiro] = useState("");
-  const [narratedSubmitting, setNarratedSubmitting] = useState(false);
-  const [narratedError, setNarratedError] = useState("");
-  const narratedPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [narratedElapsed, setNarratedElapsed] = useState(0);
-  const narratedElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [narratedVoice, setNarratedVoice] = useState<"feminino" | "masculino">("feminino");
-  const [narratedMode, setNarratedMode] = useState(false);
-  const [narratedDisplayProgress, setNarratedDisplayProgress] = useState(0);
-  const [narratedSceneSource, setNarratedSceneSource] = useState<"generate" | "existing">("generate");
-  const [narratedDonePhotos, setNarratedDonePhotos] = useState<{ id: string; output_image_url: string }[]>([]);
-  const [narratedSelectedScenes, setNarratedSelectedScenes] = useState<string[]>([]);
+  const {
+    narratedJob, setNarratedJob,
+    narratedRoteiro, setNarratedRoteiro,
+    narratedSubmitting, setNarratedSubmitting,
+    narratedError, setNarratedError,
+    narratedElapsed,
+    narratedVoice, setNarratedVoice,
+    narratedMode, setNarratedMode,
+    narratedDisplayProgress,
+    narratedSceneSource, setNarratedSceneSource,
+    narratedDonePhotos, setNarratedDonePhotos,
+    narratedSelectedScenes, setNarratedSelectedScenes,
+    resetNarratedVideo,
+  } = useNarratedVideo({ user });
 
   // Long video state
   type LongVideoJob = { id: string; status: string; output_video_url?: string; clip_urls?: string[]; error_message?: string; created_at?: string };
-  const [longVideoJob, setLongVideoJob] = useState<LongVideoJob | null>(null);
-  const [longVideoMode, setLongVideoMode] = useState(false);
-  const [longVideoSubmitting, setLongVideoSubmitting] = useState(false);
-  const [longVideoError, setLongVideoError] = useState("");
-  const longVideoPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [longVideoElapsed, setLongVideoElapsed] = useState(0);
-  const longVideoElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const {
+    longVideoJob, setLongVideoJob,
+    longVideoMode, setLongVideoMode,
+    longVideoSubmitting, setLongVideoSubmitting,
+    longVideoError, setLongVideoError,
+    longVideoElapsed,
+    resetLongVideoJob,
+  } = useLongVideo({ user });
 
-  const countdown = useCountdown(rateLimitedUntil);
+  const { rateLimitedUntil, setRateLimitedUntil, countdown } = useRateLimit(plan, job);
   const vision = useProductVision();
 
   // Rating de qualidade da foto gerada
@@ -1069,88 +1072,6 @@ export default function HomePage() {
     };
   }, [router]);
 
-  // Banner de app: detecta plataforma e decide se exibe
-  useEffect(() => {
-    if (typeof navigator === "undefined") return;
-    const ua = navigator.userAgent.toLowerCase();
-    const isAndroid = /android/.test(ua);
-    const isIOS = /iphone|ipad|ipod/.test(ua);
-    const isStandalone =
-      (window.navigator as { standalone?: boolean }).standalone === true ||
-      window.matchMedia("(display-mode: standalone)").matches;
-
-    if (isStandalone) return; // já está como PWA instalado — não mostra banner
-
-    if (isAndroid) {
-      const dismissed = localStorage.getItem("app_banner_dismissed_android");
-      if (!dismissed) setAppBannerPlatform("android");
-    } else if (isIOS) {
-      // Mostra se o usuário nunca visitou /app (nunca viu as instruções de instalação)
-      const visited = localStorage.getItem("ios_app_visited");
-      if (!visited) setAppBannerPlatform("ios");
-    }
-  }, []);
-
-  // Polling a cada 10s enquanto job estiver ativo
-  useEffect(() => {
-    if (!job || !user) return;
-    if (job.status === "done" || job.status === "failed" || job.status === "canceled") {
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
-      if (blurRef.current) clearInterval(blurRef.current);
-      if (elapsedRef.current) clearInterval(elapsedRef.current);
-      setShowCancel(false);
-      // Se falhou, reseta automaticamente para o formulário com mensagem de erro
-      if (job.status === "failed") {
-        setTimeoutError("Algo deu errado na geração. Tenta novamente.");
-        resetJob();
-      }
-      return;
-    }
-
-    pollRef.current = setInterval(() => {
-      if (document.visibilityState !== "hidden") fetchJobStatus(job.id);
-    }, 10_000);
-    setShowCancel(false);
-    cancelTimerRef.current = setTimeout(() => setShowCancel(true), 30_000);
-
-    // Tempo decorrido — só atualiza quando tab está visível (evita crash iOS em background)
-    setElapsedSec(0);
-    elapsedRef.current = setInterval(() => {
-      if (document.visibilityState !== "hidden") setElapsedSec((s) => s + 1);
-    }, 1000);
-
-    // Animação de blur: começa em 40px, reduz ~0.35px/s → chega ~8px em ~90s
-    setBlurPx(40);
-    blurRef.current = setInterval(() => {
-      if (document.visibilityState !== "hidden") setBlurPx((prev) => Math.max(8, prev - 0.35));
-    }, 1000);
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
-      if (blurRef.current) clearInterval(blurRef.current);
-      if (elapsedRef.current) clearInterval(elapsedRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [job?.id, job?.status, user]);
-
-  // Countdown: quando chegar a 0 E o prazo já passou de fato, limpar rate limit
-  useEffect(() => {
-    if (rateLimitedUntil && countdown === 0 && rateLimitedUntil.getTime() <= Date.now()) {
-      setRateLimitedUntil(null);
-    }
-  }, [countdown, rateLimitedUntil]);
-
-  // Quando job termina (done) no plano free, ativa cooldown de 24h automaticamente
-  useEffect(() => {
-    if (plan === "free" && job?.status === "done" && job.id !== "rate_limited") {
-      const jobTime = job.created_at ? new Date(job.created_at).getTime() : Date.now();
-      const next = new Date(jobTime + 24 * 60 * 60 * 1000);
-      if (next > new Date()) setRateLimitedUntil(next);
-    }
-  }, [job?.status, plan]);
-
   // Quando foto fica pronta: mostra mini toast + badge em Criações + fecha Tamo se aberto
   const toastFiredRef = useRef(false);
   useEffect(() => {
@@ -1318,22 +1239,6 @@ export default function HomePage() {
     window.open("market://details?id=com.tamowork.app", "_blank");
   }
 
-  async function getToken() {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token ?? "";
-    // Se token expirou (exp no passado), forçar refresh
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        if (payload.exp && payload.exp * 1000 < Date.now() + 60_000) {
-          const { data: r } = await supabase.auth.refreshSession();
-          return r.session?.access_token ?? token;
-        }
-      } catch { /* ignora erro de parse */ }
-    }
-    return token;
-  }
-
   // Registra subscription de Web Push no Service Worker
   async function registerPushSubscription(tok: string) {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
@@ -1473,37 +1378,6 @@ export default function HomePage() {
     }
     setJob(data);
   }
-
-  async function fetchProgress(jobId: string) {
-    const token = await getToken();
-    const res = await fetch(`/api/image-jobs/${jobId}/progress`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    setProgressVal(data.progress ?? 0);
-  }
-
-  // Poll progress
-  useEffect(() => {
-    const activeStatuses = ["queued", "submitted", "processing"];
-    if (!job?.id || !activeStatuses.includes(job.status ?? "")) return;
-    fetchProgress(job.id);
-    const iv = setInterval(() => fetchProgress(job.id), 4000);
-    return () => clearInterval(iv);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [job?.id, job?.status]);
-
-  // Smooth progress animation
-  useEffect(() => {
-    const iv = setInterval(() => {
-      setDisplayProgress((prev) => {
-        if (Math.abs(prev - progressVal) < 1) return progressVal;
-        return prev + (progressVal - prev) * 0.12;
-      });
-    }, 50);
-    return () => clearInterval(iv);
-  }, [progressVal]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
@@ -1835,15 +1709,9 @@ export default function HomePage() {
       sessionStorage.removeItem("tamo_active_job");
     } catch { /* ignora */ }
     vision.reset();
-    if (pollRef.current) clearInterval(pollRef.current);
-    if (cancelTimerRef.current) clearTimeout(cancelTimerRef.current);
-    if (blurRef.current) clearInterval(blurRef.current);
-    if (elapsedRef.current) clearInterval(elapsedRef.current);
-    setShowCancel(false);
+    resetPolling();
+    resetProgress();
     setJob(null);
-    setElapsedSec(0);
-    setProgressVal(0);
-    setDisplayProgress(0);
     setBotNavOpen(false);
     setTimeoutError("");
     setFormError("");
@@ -1883,49 +1751,6 @@ export default function HomePage() {
     }
   }
 
-  // Polling de vídeo a cada 15s
-  useEffect(() => {
-    if (!videoJob || !user) return;
-    if (["done", "failed", "canceled"].includes(videoJob.status ?? "")) {
-      if (videoPollRef.current) clearInterval(videoPollRef.current);
-      if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
-      if (videoJob.status === "done") {
-        if (!notifiedJobsRef.current.has(videoJob.id)) {
-          notifiedJobsRef.current.add(videoJob.id);
-          sendPushNotification("Seu vídeo está pronto! 🎬", "Toque para ver o vídeo gerado.");
-        }
-        setVideoMode(true); // garante que o resultado aparece
-      }
-      if (videoJob.status === "failed") {
-        setVideoMode(false); // volta para o resultado da foto
-      }
-      return;
-    }
-    // Timer de tempo decorrido para barra de progresso
-    setVideoElapsedSec(0);
-    videoElapsedRef.current = setInterval(() => setVideoElapsedSec((s) => s + 1), 1000);
-    videoPollRef.current = setInterval(() => fetchVideoStatus(videoJob.id), 15_000);
-    return () => {
-      if (videoPollRef.current) clearInterval(videoPollRef.current);
-      if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoJob?.id, videoJob?.status, user]);
-
-  // Animação suave da barra de vídeo (máx 90% em ~4min)
-  useEffect(() => {
-    const MAX_SEC = 240;
-    const target = Math.min(90, Math.round((videoElapsedSec / MAX_SEC) * 90));
-    setVideoDisplayProgress((prev) => prev + (target - prev) * 0.08);
-  }, [videoElapsedSec]);
-
-  async function fetchVideoStatus(jobId: string) {
-    const token = await getToken();
-    const res = await fetch(`/api/video-jobs/${jobId}`, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) return;
-    setVideoJob(await res.json());
-  }
-
   async function handleVideoSubmit(rawImageUrl: string) {
     // Sanitiza URL malformada (ex: "https://htpps::https://storage...")
     let imageUrl = String(rawImageUrl).trim();
@@ -1959,70 +1784,6 @@ export default function HomePage() {
       setVideoSubmitting(false);
     }
   }
-
-  // ── Narrated video polling ───────────────────────────────────────────────────
-  useEffect(() => {
-    if (!narratedJob || !user) return;
-    if (["done", "failed", "canceled"].includes(narratedJob.status)) {
-      if (narratedPollRef.current) clearInterval(narratedPollRef.current);
-      if (narratedElapsedRef.current) clearInterval(narratedElapsedRef.current);
-      if (narratedJob.status === "done") {
-        sendPushNotification("Seu vídeo com narração está pronto! 🎙️", "Toque para ver o vídeo.");
-        setNarratedMode(true);
-      }
-      if (narratedJob.status === "failed") {
-        setNarratedMode(false);
-      }
-      return;
-    }
-    setNarratedElapsed(0);
-    narratedElapsedRef.current = setInterval(() => setNarratedElapsed(s => s + 1), 1000);
-    narratedPollRef.current = setInterval(async () => {
-      const token = await getToken();
-      const res = await fetch(`/api/narrated-video/${narratedJob.id}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) setNarratedJob(await res.json());
-    }, 15_000);
-    return () => {
-      if (narratedPollRef.current) clearInterval(narratedPollRef.current);
-      if (narratedElapsedRef.current) clearInterval(narratedElapsedRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [narratedJob?.id, narratedJob?.status, user]);
-
-  // ── Long video polling (inclui restauração ao navegar) ───────────────────────
-  useEffect(() => {
-    if (!longVideoJob || !user) return;
-    if (["done", "failed", "canceled"].includes(longVideoJob.status)) {
-      if (longVideoPollRef.current) clearInterval(longVideoPollRef.current);
-      if (longVideoElapsedRef.current) clearInterval(longVideoElapsedRef.current);
-      if (longVideoJob.status === "done") {
-        sendPushNotification("Seu vídeo longo está pronto! 🎬", "Toque para ver o vídeo.");
-        setLongVideoMode(true);
-      }
-      if (longVideoJob.status === "failed") setLongVideoMode(false);
-      return;
-    }
-    longVideoElapsedRef.current = setInterval(() => setLongVideoElapsed((s) => s + 1), 1000);
-    longVideoPollRef.current = setInterval(async () => {
-      const t = await getToken();
-      const r = await fetch(`/api/long-video/${longVideoJob.id}`, { headers: { Authorization: `Bearer ${t}` } });
-      if (!r.ok) return;
-      const d = await r.json() as LongVideoJob;
-      setLongVideoJob(d);
-    }, 30_000);
-    return () => {
-      if (longVideoPollRef.current) clearInterval(longVideoPollRef.current);
-      if (longVideoElapsedRef.current) clearInterval(longVideoElapsedRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [longVideoJob?.id, longVideoJob?.status, user]);
-
-  // Animação da barra de narração (máx 90% em ~5min)
-  useEffect(() => {
-    const MAX_SEC = 300;
-    const target = Math.min(90, Math.round((narratedElapsed / MAX_SEC) * 90));
-    setNarratedDisplayProgress((prev) => prev + (target - prev) * 0.08);
-  }, [narratedElapsed]);
 
   async function loadNarratedDonePhotos() {
     try {
@@ -2100,17 +1861,7 @@ export default function HomePage() {
   }
 
   function resetNarrated() {
-    if (narratedPollRef.current) clearInterval(narratedPollRef.current);
-    if (narratedElapsedRef.current) clearInterval(narratedElapsedRef.current);
-    setNarratedJob(null);
-    setNarratedRoteiro("");
-    setNarratedError("");
-    setNarratedElapsed(0);
-    setNarratedDisplayProgress(0);
-    setNarratedMode(false);
-    setNarratedVoice("feminino");
-    setNarratedSceneSource("generate");
-    setNarratedSelectedScenes([]);
+    resetNarratedVideo();
   }
 
   function resetVideo() {
@@ -2124,23 +1875,12 @@ export default function HomePage() {
         }
       } catch { /* ignora */ }
     }
-    if (videoPollRef.current) clearInterval(videoPollRef.current);
-    if (videoElapsedRef.current) clearInterval(videoElapsedRef.current);
-    setVideoMode(false);
-    setVideoJob(null);
+    resetVideoJob();
     setVideoPrompt("");
-    setVideoError("");
-    setVideoDisplayProgress(0);
-    setVideoElapsedSec(0);
   }
 
   function resetLongVideo() {
-    if (longVideoPollRef.current) clearInterval(longVideoPollRef.current);
-    if (longVideoElapsedRef.current) clearInterval(longVideoElapsedRef.current);
-    setLongVideoJob(null);
-    setLongVideoMode(false);
-    setLongVideoError("");
-    setLongVideoElapsed(0);
+    resetLongVideoJob();
   }
 
   async function handleLongVideoSubmit(imageUrl: string, produtoName: string) {
@@ -2178,20 +1918,7 @@ export default function HomePage() {
         sessionStorage.setItem("pending_video_job_type", "long");
       } catch { /* ignora */ }
       router.push("/tamo");
-      setLongVideoElapsed(0);
-      // Poll a cada 30s (o agente roda a cada 5 min, não adianta poll frequente)
-      longVideoPollRef.current = setInterval(async () => {
-        const t = await getToken();
-        const r = await fetch(`/api/long-video/${jobId}`, { headers: { Authorization: `Bearer ${t}` } });
-        if (!r.ok) return;
-        const d = await r.json() as LongVideoJob;
-        setLongVideoJob(d);
-        if (["done", "failed", "canceled"].includes(d.status)) {
-          if (longVideoPollRef.current) clearInterval(longVideoPollRef.current);
-          if (longVideoElapsedRef.current) clearInterval(longVideoElapsedRef.current);
-        }
-      }, 30_000);
-      longVideoElapsedRef.current = setInterval(() => setLongVideoElapsed(s => s + 1), 1000);
+      // Polling e elapsed gerenciados pelo useLongVideo hook (via useEffect)
     } catch (err) {
       setLongVideoError(err instanceof Error ? err.message : "Erro ao criar vídeo longo");
     } finally {
