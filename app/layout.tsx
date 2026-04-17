@@ -1,11 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n";
 import DesktopSidebar from "@/app/components/DesktopSidebar";
 import ReviewPopup from "@/app/components/ReviewPopup";
 import "./globals.css";
-
-const outfit = Outfit({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -39,7 +36,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={outfit.className} style={{ background: "#07080b", color: "#eef2f9", margin: 0 }}>
+      <body
+        style={{
+          background: "#07080b",
+          color: "#eef2f9",
+          margin: 0,
+          fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        }}
+      >
         <I18nProvider>
           {/* Sidebar — visível só no desktop via CSS */}
           <DesktopSidebar />

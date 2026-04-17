@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createServerClient } from "@/lib/supabase/server";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 function getToken(req: NextRequest) {
   return (req.headers.get("authorization") ?? "").replace("Bearer ", "");
@@ -28,6 +23,7 @@ Regras de resposta:
 - Você se chama Tamo. Se alguém perguntar quem é você, fale que é o mascote do TamoWork e parceiro de negócios deles.`;
 
 export async function POST(req: NextRequest) {
+  const supabaseAdmin = createSupabaseAdminClient();
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser(getToken(req));
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
