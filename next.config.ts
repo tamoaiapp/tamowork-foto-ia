@@ -9,9 +9,7 @@ const nextConfig: NextConfig = {
     },
   },
   async redirects() {
-    return [
-      { source: "/onboarding", destination: "/", permanent: false },
-    ];
+    return [];
   },
   async rewrites() {
     return [
