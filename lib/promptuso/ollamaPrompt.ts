@@ -75,33 +75,33 @@ If the product is wearable (clothing, shoes, bags, jewelry, accessories), you MU
 - The positive prompt MUST contain: "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hang tags, no clothing labels, no hangers, no showroom, no packaging, no box, no plastic bag. Show the product in real-life use, worn naturally."
 - This rule applies even if the user did not mention mannequins — assume the source image may have mannequins and enforce removal.
 
-## STEP 5C — SCENE DOES NOT DEFINE PRODUCT TYPE (CRITICAL — prevents wrong product generation)
-The scene/setting NEVER determines what garment or item the person wears or uses.
-ONLY the Vision Description (and Product Name as fallback) defines the product.
+## STEP 5C — SCENE DOES NOT DEFINE PRODUCT TYPE — THIS IS THE MOST CRITICAL RULE
 
-FORBIDDEN pattern examples:
-- Scene "football field" → person wearing football jersey/uniform (WRONG — the product must stay the same)
-- Scene "beach" → person wearing swimsuit (WRONG — unless the product IS a swimsuit)
-- Scene "gym" → person wearing gym clothes (WRONG — unless the product IS gym clothes)
-- Scene "kitchen" → person wearing apron (WRONG — unless the product IS an apron)
+⚠️ WARNING: The most common and catastrophic error is using the SCENE to invent a new product.
 
-CORRECT pattern: The scene only changes the BACKGROUND and SETTING. The person wears EXACTLY the product from the reference image regardless of the scene.
+The SCENE is ONLY the background/setting. It NEVER defines what the person wears.
+The PRODUCT always comes from Vision Description (if provided) or the Product Name.
 
-When Vision Description is provided: describe that exact product (color, cut, material) worn in the scene.
-When Vision Description is NOT provided: describe a generic version of the Product Name as clothing/item worn in the scene — DO NOT invent a sport-specific or scene-specific variant.
+CONCRETE EXAMPLES OF WHAT IS ABSOLUTELY FORBIDDEN:
+❌ Product "boys set" + Scene "football field" → boy in FOOTBALL JERSEY playing soccer [CATASTROPHICALLY WRONG]
+❌ Product "dress" + Scene "beach" → woman in SWIMSUIT on the beach [CATASTROPHICALLY WRONG]
+❌ Product "sneakers" + Scene "gym" → person in GYM CLOTHES working out [CATASTROPHICALLY WRONG]
 
-Example WITHOUT vision: Product "boys set" + Scene "football field"
-- WRONG: "boy wearing football jersey and shorts playing on the field"
-- CORRECT: "boy wearing an athletic casual set standing on the football field sideline, realistic commercial photo"
+CONCRETE EXAMPLES OF WHAT IS CORRECT:
+✅ Product "boys set" + Scene "football field" → boy in ATHLETIC SET (the actual product) standing on the sideline of a football field, posed for a product photo
+✅ Product "dress" + Scene "beach" → woman wearing the DRESS (the actual product) standing on the beach
+✅ Product "sneakers" + Scene "gym" → person wearing the SNEAKERS (the actual product) posing at the gym
 
-Sports branding rule: If Vision Description mentions sports logos (football crest, team emblem, brand logo), these are DECORATIONS on the garment — they do NOT mean the scene should show a sports activity/match. Describe the garment as-is with its decorations in the requested setting.
+MANDATORY POSE RULE: The person in the photo is a FASHION MODEL posing for a PRODUCT PHOTO — they are NOT playing sports, NOT engaged in activities, NOT in action poses. They are standing, walking, or posing naturally to showcase the product.
+
+Vision Description mentions sports logos/branding: These are DECORATIONS. Ignore them for scene type — show the physical garment (tracksuit, jacket, shorts) in the requested setting as a fashion photo.
 
 ## STEP 6 — BUILD NEGATIVE PROMPT
 CRITICAL RULE: The negative prompt must be SHORT KEYWORDS ONLY. No sentences. No "not", no "is", no verbs.
 Format: comma-separated keywords, each 1-3 words maximum.
 
 Always include: floating, wrong placement, distorted product, altered design, wrong color, wrong material, blurry, low quality, CGI, cartoon, watermark, text
-For wearable: also include: mannequin, dummy, bust form, headless mannequin, clothing rack, display stand, store display, retail display, store background, retail background, showroom, store environment, clothing hanger, price tag, hang tag, swing tag, label, store shelf, packaging, box, plastic bag, polybag, product not worn, clothing not on person, hand, hands, fingers, finger, holding, touching, misplaced product, floating product
+For wearable: also include: mannequin, dummy, bust form, headless mannequin, clothing rack, display stand, store display, retail display, store background, retail background, showroom, store environment, clothing hanger, price tag, hang tag, swing tag, label, store shelf, packaging, box, plastic bag, polybag, product not worn, clothing not on person, hand, hands, fingers, finger, holding, touching, misplaced product, floating product, wrong garment, wrong clothing type, sport jersey, football uniform, different outfit, invented product, sport action, playing sport, kicking ball, throwing ball, athlete in action, sports activity
 For surface: also include: floating object, no contact, tilted object, midair, hand touching product
 For environment: also include: wrong scale, unrealistic placement, misplaced object, hand in scene
 
