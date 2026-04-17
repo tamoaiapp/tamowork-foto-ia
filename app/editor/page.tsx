@@ -8,6 +8,7 @@ import BottomNav from "@/app/components/BottomNav";
 import AppHeader from "@/app/components/AppHeader";
 import { useI18n } from "@/lib/i18n";
 import { downloadDataUrl } from "@/lib/downloadBlob";
+import { createBrowserClient } from "@supabase/ssr";
 const PromoCreator = nextDynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 
 type EditorAction = "promo" | "remove_bg" | "personalizar" | null;
@@ -58,7 +59,23 @@ const RATIOS: Record<CropRatio, number | null> = {
 export default function EditorPage() {
   const router = useRouter();
   const { t, lang } = useI18n();
+  const [ready, setReady] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Auth guard — redirect to /login if not authenticated
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        router.replace("/login");
+      } else {
+        setReady(true);
+      }
+    });
+  }, [router]);
   const logoRef = useRef<HTMLInputElement>(null);
   const addImgRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -345,6 +362,13 @@ export default function EditorPage() {
   }
 
   const filterStyle = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+
+  if (!ready) return (
+    <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid rgba(168,85,247,0.3)", borderTopColor: "#a855f7", animation: "spin 0.8s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   // ── Tela de escolha: qual ação o usuário quer fazer ───────────────────────
   if (!action) {

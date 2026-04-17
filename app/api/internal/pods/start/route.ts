@@ -8,7 +8,7 @@ const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization") ?? "";
   const internal = req.headers.get("x-internal-secret") ?? "";
-  if (auth !== `Bearer ${process.env.CRON_SECRET}` && internal !== INTERNAL_SECRET) {
+  if (auth !== `Bearer ${process.env.CRON_SECRET}` && (!INTERNAL_SECRET || internal !== INTERNAL_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

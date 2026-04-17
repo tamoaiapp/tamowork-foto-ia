@@ -4,7 +4,7 @@ import { checkVideoJob } from "@/lib/video-jobs/check";
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 
 export async function POST(req: NextRequest) {
-  if (req.headers.get("x-internal-secret") !== INTERNAL_SECRET) {
+  if (!INTERNAL_SECRET || req.headers.get("x-internal-secret") !== INTERNAL_SECRET) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { jobId } = await req.json();
