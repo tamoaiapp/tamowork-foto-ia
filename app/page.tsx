@@ -1854,7 +1854,13 @@ export default function HomePage() {
       } catch { /* ignora */ }
       router.push("/tamo");
     } catch (err) {
-      setNarratedError(err instanceof Error ? err.message : "Erro ao criar vídeo");
+      const msg = err instanceof Error ? err.message : "";
+      // iOS Safari lança "Load failed" para erros de rede — traduz para pt-BR
+      if (!msg || msg === "Load failed" || msg === "Failed to fetch" || msg === "NetworkError when attempting to fetch resource.") {
+        setNarratedError("Falha na conexão. Verifique sua internet e tente novamente.");
+      } else {
+        setNarratedError(msg || "Erro ao criar vídeo");
+      }
     } finally {
       setNarratedSubmitting(false);
     }

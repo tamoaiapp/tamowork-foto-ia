@@ -467,12 +467,9 @@ export default function TamoPage() {
               style={{ width: "100%", display: "block", maxHeight: 500, objectFit: "contain", background: "#07080b" }}
             />
             <div style={{ padding: "16px" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <TamoMascot state="done" size={110} resultImage={job.output_image_url} />
-                <div style={{ textAlign: "center" }}>
-                  <p style={{ fontSize: 16, fontWeight: 800, color: "#eef2f9", margin: 0 }}>Pronto! Ficou assim 🎉</p>
-                  <p style={{ fontSize: 13, color: "#8394b0", margin: "4px 0 0" }}>Sua foto foi gerada com sucesso</p>
-                </div>
+              <div style={{ textAlign: "center", marginBottom: 16 }}>
+                <p style={{ fontSize: 16, fontWeight: 800, color: "#eef2f9", margin: 0 }}>Pronto! Ficou assim 🎉</p>
+                <p style={{ fontSize: 13, color: "#8394b0", margin: "4px 0 0" }}>Sua foto foi gerada com sucesso</p>
               </div>
 
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
