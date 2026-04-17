@@ -2885,17 +2885,12 @@ export default function HomePage() {
                     {creationMode === "personalizado"
                       ? (lang === "en" ? "Describe the result you want" : lang === "es" ? "Describe el resultado que quieres" : "Descreva o resultado que quer")
                       : t("field_scene")}
-                    {creationMode === "simulacao" && (
-                      <span style={{ fontWeight: 400, color: "#4e5c72", marginLeft: 6, fontSize: 11 }}>
-                        {lang === "en" ? "(optional)" : "(opcional)"}
-                      </span>
-                    )}
                   </label>
                   <input
                     type="text"
                     placeholder={
                       creationMode === "simulacao"
-                        ? (lang === "en" ? "Leave empty — I'll choose automatically" : lang === "es" ? "Deja vacío — yo elijo automáticamente" : "Deixe vazio — eu escolho o cenário")
+                        ? (lang === "en" ? "Ex: kitchen counter, coffee shop, beach, bedroom shelf…" : lang === "es" ? "Ej: encimera de cocina, café, playa, estante de habitación…" : "Ex: bancada da cozinha, café, praia, prateleira do quarto…")
                         : creationMode === "catalogo"
                         ? (lang === "en" ? "Ex: streets of Paris, upscale café, modern urban setting" : lang === "es" ? "Ej: calle de París, café sofisticado, ambiente urbano moderno" : "Ex: rua de Paris, café sofisticado, ambiente urbano moderno")
                         : (lang === "en" ? "Freely describe what I should create" : lang === "es" ? "Describe libremente lo que voy a crear" : "Descreva livremente o que eu vou criar")
