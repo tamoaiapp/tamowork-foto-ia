@@ -8,7 +8,7 @@ import BottomNav from "@/app/components/BottomNav";
 import AppHeader from "@/app/components/AppHeader";
 import { useI18n } from "@/lib/i18n";
 import { downloadDataUrl } from "@/lib/downloadBlob";
-import { createBrowserClient } from "@supabase/ssr";
+import { supabase } from "@/lib/supabase/client";
 const PromoCreator = nextDynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
 
 type EditorAction = "promo" | "remove_bg" | "personalizar" | null;
@@ -64,11 +64,7 @@ export default function EditorPage() {
 
   // Auth guard — redirect to /login if not authenticated
   useEffect(() => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: { session: unknown } }) => {
       if (!data.session) {
         router.replace("/login");
       } else {
