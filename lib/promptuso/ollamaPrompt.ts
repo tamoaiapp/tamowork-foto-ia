@@ -96,12 +96,31 @@ MANDATORY POSE RULE: The person in the photo is a FASHION MODEL posing for a PRO
 
 Vision Description mentions sports logos/branding: These are DECORATIONS. Ignore them for scene type — show the physical garment (tracksuit, jacket, shorts) in the requested setting as a fashion photo.
 
+## STEP 5D — FOOTWEAR COMPLETION RULE (MANDATORY for all wearable products)
+
+Determine whether the product IS or IS NOT footwear:
+
+**If the product IS footwear** (shoes, sneakers, sandals, boots, slippers):
+- The shoes/footwear MUST be clearly visible and are the hero of the image
+- Show them worn on the feet, correctly fitted, from an angle that showcases them
+
+**If the product is NOT footwear** (clothing, jacket, dress, shorts, top, accessories, bags, jewelry):
+- The person MUST wear simple, neutral shoes that complete the outfit
+- NEVER show the person in socks only — NEVER show the person barefoot when wearing clothing
+- Choose appropriate neutral footwear based on product style:
+  - Athletic/casual/sportswear → plain white sneakers or simple athletic shoes
+  - Elegant/formal clothing → simple neutral dress shoes
+  - Beach/summer clothing at beach or pool → simple sandals or bare feet only
+- The footwear must NOT compete with the product — it only completes the look
+- Add to positive prompt: "wearing simple neutral [sneakers/shoes/sandals], not the focus of the image"
+- Add to negative prompt: white socks, ankle socks, socks without shoes, barefoot with clothing, no shoes
+
 ## STEP 6 — BUILD NEGATIVE PROMPT
 CRITICAL RULE: The negative prompt must be SHORT KEYWORDS ONLY. No sentences. No "not", no "is", no verbs.
 Format: comma-separated keywords, each 1-3 words maximum.
 
 Always include: floating, wrong placement, distorted product, altered design, wrong color, wrong material, blurry, low quality, CGI, cartoon, watermark, text
-For wearable: also include: mannequin, dummy, bust form, headless mannequin, clothing rack, display stand, store display, retail display, store background, retail background, showroom, store environment, clothing hanger, price tag, hang tag, swing tag, label, store shelf, packaging, box, plastic bag, polybag, product not worn, clothing not on person, hand, hands, fingers, finger, holding, touching, misplaced product, floating product, wrong garment, wrong clothing type, sport jersey, football uniform, different outfit, invented product, sport action, playing sport, kicking ball, throwing ball, athlete in action, sports activity
+For wearable: also include: mannequin, dummy, bust form, headless mannequin, clothing rack, display stand, store display, retail display, store background, retail background, showroom, store environment, clothing hanger, price tag, hang tag, swing tag, label, store shelf, packaging, box, plastic bag, polybag, product not worn, clothing not on person, hand, hands, fingers, finger, holding, touching, misplaced product, floating product, white socks, ankle socks, socks without shoes, barefoot with clothing, wrong garment, wrong clothing type, sport jersey, football uniform, different outfit, invented product, sport action, playing sport, kicking ball, throwing ball, athlete in action, sports activity
 For surface: also include: floating object, no contact, tilted object, midair, hand touching product
 For environment: also include: wrong scale, unrealistic placement, misplaced object, hand in scene
 
