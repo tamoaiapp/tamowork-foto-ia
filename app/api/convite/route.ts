@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { checkLegacyStripeSubscription } from "@/lib/stripe-legacy";
 import { setUserPro, setUserTrial } from "@/lib/plans";
 
-// Admin client — pode criar usuários
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(req: NextRequest) {
+  const supabaseAdmin = createSupabaseAdminClient();
   const secret = req.headers.get("x-convite-secret");
   if (!secret || secret !== process.env.CONVITE_SECRET) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
