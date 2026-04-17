@@ -205,6 +205,34 @@ function OnboardingPageInner() {
     </div>
   );
 
+  // ── Tela de loading durante submissão ────────────────────────────────────
+  if (submitting) return (
+    <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: "100%", maxWidth: 360, padding: "0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+        <div style={{ position: "relative", width: 80, height: 80 }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "4px solid rgba(168,85,247,0.15)", borderTopColor: "#a855f7", animation: "spin 0.9s linear infinite" }} />
+          <img src="/tamo/idle.png" alt="Tamo" style={{ position: "absolute", inset: 8, objectFit: "contain" }} />
+        </div>
+        <div style={{ textAlign: "center" as const }}>
+          <p style={{ fontSize: 18, fontWeight: 800, color: "#eef2f9", margin: "0 0 8px" }}>Criando sua foto...</p>
+          <p style={{ fontSize: 13, color: "#8394b0", margin: 0 }}>A IA está trabalhando. Pode levar até 2 minutos.</p>
+        </div>
+        <div style={{ width: "100%", height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
+          <div style={{ height: "100%", background: "linear-gradient(90deg, #6366f1, #a855f7)", borderRadius: 2, animation: "loading-bar 2s ease-in-out infinite" }} />
+        </div>
+        <p style={{ fontSize: 12, color: "#4e5c72", margin: 0 }}>✨ Analisando produto e montando a cena</p>
+      </div>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes loading-bar {
+          0%   { width: 0%;   margin-left: 0; }
+          50%  { width: 70%;  margin-left: 15%; }
+          100% { width: 0%;   margin-left: 100%; }
+        }
+      `}</style>
+    </div>
+  );
+
   return (
     <div style={s.page}>
       <div style={s.container}>

@@ -48,6 +48,7 @@ function videoApiPath(type: VideoJobType, id: string) {
 export default function TamoPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: string } | null>(null);
+  const [ready, setReady] = useState(false);
 
   // ── Foto job ────────────────────────────────────────────────────────────────
   const [job, setJob] = useState<ActiveJob | null>(null);
@@ -93,6 +94,7 @@ export default function TamoPage() {
         }
       } catch { /* ignora */ }
       setUser({ id: data.session.user.id });
+      setReady(true);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {
       if (!session) router.push("/login");
@@ -333,6 +335,13 @@ export default function TamoPage() {
     return "animado";
   }
 
+  if (!ready) return (
+    <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid rgba(168,85,247,0.3)", borderTopColor: "#a855f7", animation: "spin 0.8s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+
   return (
     <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", flexDirection: "column" }}>
       <AppHeader />
@@ -502,13 +511,19 @@ export default function TamoPage() {
         {isFailed && (
           <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 16 }}>
             <TamoMascot state="error" size={64} />
-            <p style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", margin: "12px 0 4px" }}>Ops, algo deu errado 😔</p>
-            <p style={{ fontSize: 13, color: "#8394b0", margin: "0 0 16px" }}>{job?.error_message ?? "Tente criar a foto novamente."}</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#eef2f9", margin: "12px 0 4px" }}>
+              {obVariant ? "Não consegui gerar a foto 😔" : "Ops, algo deu errado 😔"}
+            </p>
+            <p style={{ fontSize: 13, color: "#8394b0", margin: "0 0 20px" }}>
+              {obVariant
+                ? "Aconteceu um problema técnico. Mas não precisa começar do zero — clique para tentar de novo."
+                : (job?.error_message ?? "Tente criar a foto novamente.")}
+            </p>
             <button
               onClick={handleNewPhoto}
-              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "12px 28px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}
+              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "13px 32px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%" }}
             >
-              Tentar novamente
+              {obVariant ? "📷 Criar foto novamente" : "Tentar novamente"}
             </button>
           </div>
         )}
