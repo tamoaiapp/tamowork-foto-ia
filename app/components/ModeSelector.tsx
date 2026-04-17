@@ -27,7 +27,7 @@ function getModes(lang: string): ModeData[] {
     { id: "video",         name: "Animated video",     title: "Photo that moves",         desc: "Turn your photo into a video ready for Reels.", img: "", badge: "PRO" },
     { id: "video_narrado", name: "Narrated video",     title: "Photo + voiceover",        desc: "Your product photo becomes a video with AI narration. Write the script, AI reads it.", img: "", badge: "PRO" },
     { id: "video_longo",   name: "Long video",         title: "~32 second video",         desc: "AI generates 4 different scenes and joins them. Takes 20-40 min. PRO exclusive.", img: "", badge: "PRO" },
-    { id: "produto_exposto", name: "Store display",      title: "Premium store display",    desc: "AI places your product on a mannequin, bust, counter or pedestal. No typing needed — AI reads the photo.", img: `${BASE}/simulacao.jpg`, badge: "PRO" },
+    { id: "produto_exposto", name: "Store display",      title: "Premium store display",    desc: "AI places your product on a mannequin, bust, counter or pedestal. No typing needed — AI reads the photo.", img: "", badge: "PRO" },
     { id: "personalizado", name: "Custom",             title: "You choose the scene",     desc: "Describe what you want and the AI creates it your way.", img: `${BASE}/produto.jpg` },
   ];
   if (lang === "es") return [
@@ -36,7 +36,7 @@ function getModes(lang: string): ModeData[] {
     { id: "video",         name: "Video animado",       title: "Foto que se mueve",         desc: "Transforma tu foto en un video listo para Reels.", img: "", badge: "PRO" },
     { id: "video_narrado", name: "Video narrado",       title: "Foto + narración",          desc: "Tu foto se convierte en video con narración de IA. Escribe el guión, la IA lo lee.", img: "", badge: "PRO" },
     { id: "video_longo",   name: "Video largo",         title: "Video de ~32 segundos",     desc: "IA genera 4 escenas distintas y las une. Tarda 20-40 min. Solo PRO.", img: "", badge: "PRO" },
-    { id: "produto_exposto", name: "Expositor premium", title: "Display de loja premium",  desc: "IA coloca seu produto em manequim, busto, bancada ou pedestal. Sem digitar nada — IA lê a foto.", img: `${BASE}/simulacao.jpg`, badge: "PRO" },
+    { id: "produto_exposto", name: "Expositor premium", title: "Display de loja premium",  desc: "IA coloca seu produto em manequim, busto, bancada ou pedestal. Sem digitar nada — IA lê a foto.", img: `${BASE}/expositor.jpg`, badge: "PRO" },
     { id: "personalizado", name: "A mi manera",         title: "Tú eliges la escena",       desc: "Describe lo que quieres y la IA lo crea a tu manera.", img: `${BASE}/produto.jpg` },
   ];
   return [
@@ -45,7 +45,7 @@ function getModes(lang: string): ModeData[] {
     { id: "video",         name: "Vídeo animado",       title: "Foto que se mexe",          desc: "Transforma sua foto num vídeo pronto para Reels.", img: "", badge: "PRO" },
     { id: "video_narrado", name: "Vídeo com narração",  title: "Foto + voz narrada",        desc: "Sua foto vira vídeo com narração de IA. Você escreve o roteiro, a IA fala.", img: "", badge: "PRO" },
     { id: "video_longo",   name: "Vídeo longo",         title: "Vídeo de ~32 segundos",     desc: "IA gera 4 cenas diferentes e junta num vídeo só. Demora 20-40 min. Exclusivo PRO.", img: "", badge: "PRO" },
-    { id: "produto_exposto", name: "Expositor premium", title: "Display de loja premium",  desc: "IA coloca seu produto em manequim, busto, bancada ou pedestal. Sem digitar nada — IA lê a foto.", img: `${BASE}/simulacao.jpg`, badge: "PRO" },
+    { id: "produto_exposto", name: "Expositor premium", title: "Display de loja premium",  desc: "IA coloca seu produto em manequim, busto, bancada ou pedestal. Sem digitar nada — IA lê a foto.", img: "", badge: "PRO" },
     { id: "personalizado", name: "Do meu jeito",        title: "Você escolhe a cena",       desc: "Descreva o que quer e a IA cria do seu jeito.", img: `${BASE}/produto.jpg` },
   ];
 }
@@ -138,7 +138,7 @@ function ModeCard({ name, title, desc, badge, onClick, media, img, btnLabel }: {
         {badge && (
           <div style={{
             position: "absolute", top: 10, right: 10,
-            background: badge === "Mais usado"
+            background: ["Mais usado", "Most used", "Más usado"].includes(badge)
               ? "linear-gradient(135deg, #16c784, #0ea86a)"
               : "linear-gradient(135deg, #6366f1, #a855f7)",
             borderRadius: 6, padding: "4px 10px",
@@ -147,23 +147,23 @@ function ModeCard({ name, title, desc, badge, onClick, media, img, btnLabel }: {
         )}
         {/* Overlay text */}
         <div style={{ position: "absolute", bottom: 10, left: 12, right: 12 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(196,181,253,0.8)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(196,181,253,0.9)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>
             {name}
           </div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1.25, letterSpacing: "-0.01em" }}>
             {title}
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div style={{ padding: "12px 12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minHeight: 64 }} className="mode-card-footer">
-        <span style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.4 }} className="mode-card-desc">{desc}</span>
+      <div style={{ padding: "12px 12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, minHeight: 64 }} className="mode-card-footer">
+        <span style={{ fontSize: 12.5, color: "#8394b0", lineHeight: 1.45, fontWeight: 400 }} className="mode-card-desc">{desc}</span>
         <button
           style={{
             background: hovered ? "rgba(168,85,247,0.25)" : "rgba(168,85,247,0.1)",
-            border: "1px solid rgba(168,85,247,0.35)",
-            borderRadius: 10, padding: "10px 16px",
+            border: "1px solid rgba(168,85,247,0.4)",
+            borderRadius: 10, padding: "10px 14px",
             color: "#c4b5fd", fontSize: 13, fontWeight: 700,
             cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
             transition: "background 0.15s",
@@ -367,6 +367,43 @@ export default function ModeSelector({ onChange }: Props) {
                 }
                 onClick={() => onChange("video_longo")}
                 btnLabel={btnLabel}
+              />
+            );
+          }
+          if (mode.id === "produto_exposto") {
+            return (
+              <ModeCard
+                key="produto_exposto"
+                name={mode.name}
+                title={mode.title}
+                desc={mode.desc}
+                badge={mode.badge}
+                onClick={() => onChange("produto_exposto")}
+                btnLabel={btnLabel}
+                media={
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    background: "linear-gradient(135deg, #0e1a12 0%, #1a1a0e 40%, #0f0d1a 100%)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexDirection: "column", gap: 6,
+                  }}>
+                    <div style={{ fontSize: 46, lineHeight: 1 }}>🪆</div>
+                    <div style={{ fontSize: 11, color: "rgba(196,181,253,0.7)", fontWeight: 600, letterSpacing: "0.07em" }}>
+                      MANEQUIM · BUSTO · PEDESTAL
+                    </div>
+                    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginTop: 4 }}>
+                      {[14, 20, 28, 22, 16].map((h, i) => (
+                        <div key={i} style={{
+                          width: 4, height: h,
+                          background: "linear-gradient(to top, #16c784, #a855f7)",
+                          borderRadius: 3, opacity: 0.75,
+                          animation: "pulse 1.6s ease-in-out infinite",
+                          animationDelay: `${i * 0.2}s`,
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                }
               />
             );
           }
