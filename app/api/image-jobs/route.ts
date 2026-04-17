@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { createImageJob, RateLimitError } from "@/lib/image-jobs/create";
-import { getUserPlan } from "@/lib/plans";
+import { getUserPlan, checkAndApplyPendingBonus } from "@/lib/plans";
 
 // GET /api/image-jobs — lista jobs + plano do usuário autenticado
 export async function GET(req: NextRequest) {
@@ -13,6 +13,9 @@ export async function GET(req: NextRequest) {
   if (authError || !user) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
+
+  // Aplica bônus pendente automaticamente (fire-and-forget, não atrasa resposta)
+  checkAndApplyPendingBonus(user.id, user.email ?? "").catch(() => {});
 
   const [jobsResult, plan] = await Promise.all([
     supabase
