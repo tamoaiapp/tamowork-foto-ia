@@ -38,10 +38,18 @@ const TAMO_RESULT: Record<Variant, string> = {
   C: "Você acabou de testar uma forma mais rápida de produzir conteúdo.",
 };
 
-const QUICK_REPLIES = [
-  { label: "Ficou bom pra anúncio?", answer: "Esse estilo tem mais apelo em anúncios pagos. Tende a converter bem." },
-  { label: "Depois faz legenda também", answer: "Combinado! Posso criar legenda e hashtags depois que terminar." },
-  { label: "Quero vídeo também", answer: "Posso criar vídeo animado do resultado. Primeiro vamos ver a foto pronta." },
+// Chips durante o processamento — perguntas enquanto espera
+const CHIPS_PROCESSING = [
+  { label: "Quanto tempo demora?", answer: "Menos de 2 minutos normalmente. Estou trabalhando nisso agora." },
+  { label: "Qual cenário vai usar?", answer: "Vou escolher o mais adequado para o seu produto automaticamente." },
+  { label: "Funciona com qualquer foto?", answer: "Sim! Funciona com foto de celular, fundo bagunçado, qualquer resolução." },
+];
+
+// Chips após a foto ficar pronta — reações ao resultado
+const CHIPS_DONE = [
+  { label: "Ficou bom pra anúncio?", answer: "Esse estilo tem muito mais apelo em anúncios pagos. Tende a converter bem." },
+  { label: "Quero vídeo também", answer: "Posso criar um vídeo narrado desse produto. Assine o PRO para desbloquear." },
+  { label: "Depois faz legenda também", answer: "Combinado! Com o PRO crio legenda e hashtags prontas para postar." },
 ];
 
 interface PaywallCopy {
@@ -284,7 +292,8 @@ function ExperienciaPageInner() {
   }
 
   const pw = PAYWALL[variant];
-  const availableChips = QUICK_REPLIES.filter(c => !usedReplies.has(c.label));
+  const chips = phase === "processing" ? CHIPS_PROCESSING : CHIPS_DONE;
+  const availableChips = chips.filter(c => !usedReplies.has(c.label));
 
   if (!ready) return (
     <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -294,7 +303,8 @@ function ExperienciaPageInner() {
   );
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", flexDirection: "column", alignItems: "center", padding: "0 0 80px" }}>
+    <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", justifyContent: "center" }}>
+    <div style={{ width: "100%", maxWidth: 480, display: "flex", flexDirection: "column", padding: "0 0 80px" }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
@@ -311,7 +321,7 @@ function ExperienciaPageInner() {
       `}</style>
 
       {/* Header TAMO */}
-      <div style={{ width: "100%", maxWidth: 480, padding: "20px 20px 0", display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ padding: "20px 20px 0", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#a855f7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
             <img src={phase === "processing" ? "/tamo/processing.png" : "/tamo/idle.png"} alt="TAMO" style={{ width: 34, height: 34, objectFit: "contain" }} />
           </div>
@@ -319,14 +329,14 @@ function ExperienciaPageInner() {
           <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 15 }}>TAMO</div>
           <div style={{ color: "#16c784", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#16c784", display: "inline-block" }} />
-            processando sua foto
+            {phase === "processing" ? "processando sua foto..." : "foto pronta ✓"}
           </div>
         </div>
       </div>
 
       {/* Progress bar */}
       {phase === "processing" && (
-        <div style={{ width: "100%", maxWidth: 480, padding: "16px 20px 0" }}>
+        <div style={{ padding: "16px 20px 0" }}>
           <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg,#6366f1,#a855f7)", borderRadius: 2, transition: "width 0.5s ease" }} />
           </div>
@@ -336,7 +346,7 @@ function ExperienciaPageInner() {
 
       {/* Image preview (blurred during processing, clear when done) */}
       {(inputPreview || inputImageUrl) && (
-        <div style={{ width: "100%", maxWidth: 480, padding: "16px 20px 0" }}>
+        <div style={{ padding: "16px 20px 0" }}>
           <div style={{ borderRadius: 18, overflow: "hidden", position: "relative", background: "#111820" }}>
             {phase === "processing" ? (
               <div style={{ position: "relative" }}>
@@ -371,7 +381,7 @@ function ExperienciaPageInner() {
 
       {/* Error state */}
       {jobError && (
-        <div style={{ width: "100%", maxWidth: 480, padding: "16px 20px 0" }}>
+        <div style={{ padding: "16px 20px 0" }}>
           <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, padding: 16, color: "#fca5a5", fontSize: 14 }}>
             {jobError}
           </div>
@@ -379,7 +389,7 @@ function ExperienciaPageInner() {
       )}
 
       {/* Chat messages */}
-      <div style={{ width: "100%", maxWidth: 480, padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: 10 }}>
         {messages.map(msg => (
           <div key={msg.id} className="msg-bubble" style={{ display: "flex", justifyContent: msg.from === "user" ? "flex-end" : "flex-start" }}>
             {msg.from === "tamo" && (
@@ -395,9 +405,9 @@ function ExperienciaPageInner() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Quick reply chips — show only during processing */}
-      {phase === "processing" && availableChips.length > 0 && (
-        <div style={{ width: "100%", maxWidth: 480, padding: "12px 20px 0" }}>
+      {/* Quick reply chips — diferentes por fase */}
+      {availableChips.length > 0 && !showPaywall && (
+        <div style={{ padding: "12px 20px 0" }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {availableChips.map(chip => (
               <button key={chip.label} className="chip-btn" onClick={() => handleQuickReply(chip)}>
@@ -410,7 +420,7 @@ function ExperienciaPageInner() {
 
       {/* Paywall — shown after result */}
       {showPaywall && (
-        <div style={{ width: "100%", maxWidth: 480, padding: "24px 20px 0" }}>
+        <div style={{ padding: "24px 20px 0" }}>
           <div style={{ background: "#111820", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 22, padding: "24px 20px", textAlign: "center" }}>
             {/* Sparkle icon */}
             <div style={{ fontSize: 36, marginBottom: 12 }}>✨</div>
@@ -443,6 +453,7 @@ function ExperienciaPageInner() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
