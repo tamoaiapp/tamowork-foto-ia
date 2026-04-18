@@ -129,7 +129,7 @@ function OnboardingPageInner() {
       const jobRes = await fetch("/api/image-jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt, input_image_url: imageUrl, source: `onboarding_${variant}` }),
+        body: JSON.stringify({ prompt, input_image_url: imageUrl, source: `onboarding_${variant}`, format: "square" }),
       });
       if (!jobRes.ok) throw new Error("Falha ao criar foto");
       const { jobId } = await jobRes.json();

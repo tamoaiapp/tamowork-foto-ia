@@ -336,14 +336,14 @@ function ExperienciaPageInner() {
                 </div>
               </div>
             ) : outputUrl ? (
-              /* Before/After when done */
+              /* Before/After when done — square 1:1 contain, sem corte */
               <div style={{ display: "flex", gap: 2 }}>
-                <div style={{ flex: 1, position: "relative" }}>
-                  <img src={inputPreview || inputImageUrl} alt="antes" style={{ width: "100%", aspectRatio: "1", objectFit: "cover", display: "block" }} />
+                <div style={{ flex: 1, position: "relative", aspectRatio: "1", background: "#0c1018", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  <img src={inputPreview || inputImageUrl} alt="antes" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
                   <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(0,0,0,0.7)", color: "#8394b0", fontSize: 11, padding: "3px 8px", borderRadius: 6 }}>Antes</div>
                 </div>
-                <div style={{ flex: 1, position: "relative" }}>
-                  <img src={outputUrl} alt="depois" style={{ width: "100%", aspectRatio: "1", objectFit: "cover", display: "block" }} />
+                <div style={{ flex: 1, position: "relative", aspectRatio: "1", background: "#0c1018", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  <img src={outputUrl} alt="depois" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
                   <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(99,102,241,0.9)", color: "#fff", fontSize: 11, padding: "3px 8px", borderRadius: 6 }}>Depois</div>
                 </div>
               </div>
