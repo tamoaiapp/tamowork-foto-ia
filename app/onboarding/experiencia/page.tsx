@@ -254,10 +254,27 @@ function ExperienciaPageInner() {
     } catch { /* ignore */ }
   }
 
-  function goToPro() {
+  async function goToPro() {
     setNavigating(true);
-    completeOnboarding();
-    router.push("/planos");
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/checkout/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ plan: "monthly" }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        completeOnboarding();
+        window.location.href = data.url;
+      } else {
+        completeOnboarding();
+        router.push("/planos");
+      }
+    } catch {
+      completeOnboarding();
+      router.push("/planos");
+    }
   }
 
   function goToFree() {
