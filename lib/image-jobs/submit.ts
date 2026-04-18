@@ -11,8 +11,8 @@ import { detectDisplayCategory, buildDisplayPrompt } from "@/lib/promptuso/displ
 const PROFESSIONAL_QUALITY_SUFFIX = [
   // Iluminação genérica — respeita a cena (outdoor, estúdio, lifestyle, etc.)
   "Professional photography lighting perfectly matched to the scene environment, well-balanced exposure, no harsh shadows on subject, soft and flattering light.",
-  // Sombra realista — sempre presente, adapta-se à direção da luz da cena
-  "Subtle natural drop shadow beneath the product consistent with scene lighting direction, soft ground contact shadow, realistic shadow opacity.",
+  // Sombra gerada pela iluminação da cena — não adicionar sombra artificial separada
+  "Natural cast shadow from scene lighting only, no separate artificial contact shadow.",
   // Estilo K4 — cinematic Kodak Portra 400 film look (pós-processamento, não conflita com cena)
   "Cinematic Kodak Portra 400 color grade: warm tones, rich mid-tone contrast, slight filmic desaturation in highlights, deep natural blacks.",
   // Qualidade técnica
@@ -20,7 +20,7 @@ const PROFESSIONAL_QUALITY_SUFFIX = [
 ].join(" ");
 
 const PROFESSIONAL_NEGATIVE_SUFFIX = [
-  "flat lighting, harsh direct flash, overexposed highlights, underexposed shadows, no shadow at all, floating product with no ground shadow,",
+  "flat lighting, harsh direct flash, overexposed highlights, underexposed shadows, artificial drop shadow, circular shadow, oval contact shadow, fake vignette shadow, double shadow,",
   "amateur snapshot, phone camera, grainy, noisy, low resolution, blurry, out of focus, pixelated,",
   "oversaturated colors, neon colors, unnatural color cast, cold white balance,",
 ].join(" ");
