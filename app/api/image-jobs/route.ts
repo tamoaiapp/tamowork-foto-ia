@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const validFormat = ["story","square","portrait","horizontal"].includes(format) ? format : "story";
-    const validSource = ["onboarding","app","bubble","editor"].includes(source) ? source : "app";
+    const validSource = ["onboarding","onboarding_A","onboarding_B","onboarding_C","app","bubble","editor"].includes(source) ? source : "app";
     const job = await createImageJob(user.id, prompt, input_image_url, validFormat, !!bonus_retry, validSource);
     return NextResponse.json({ jobId: job.id, status: job.status }, { status: 201 });
   } catch (err: unknown) {
