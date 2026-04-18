@@ -206,6 +206,28 @@ function buildUserContextBlock(ctx?: UserContext): string {
   return lines.length > 0 ? lines.join("\n") + "\n\n" : "";
 }
 
+// Detecta tipo de acessório pelo texto do produto + vision
+function detectAccessoryType(produto: string, visionDesc?: string): string | null {
+  const text = `${produto} ${visionDesc ?? ""}`.toLowerCase();
+
+  if (/\b(sunglass|spectacl|eyewear|glasses|óculos|lunette|oculos)\b/.test(text)) return "eyewear";
+  if (/\b(earring|brinco|argola|ear cuff|ear ring)\b/.test(text)) return "earring";
+  if (/\b(necklace|colar|corrente|pendant|chain|pingente)\b/.test(text)) return "necklace";
+  if (/\b(ring|anel)\b/.test(text)) return "ring";
+  if (/\b(bracelet|pulseira|bangle|wristband)\b/.test(text)) return "bracelet";
+  if (/\b(hat|cap|boné|chapéu|beanie|gorro|bone)\b/.test(text)) return "hat";
+  return null;
+}
+
+const ACCESSORY_SHOT_PREFIX: Record<string, string> = {
+  eyewear:  "⚠️ EYEWEAR DETECTED. Your positive_prompt MUST begin with: \"Close-up portrait shot, model's face fills the frame, sunglasses/glasses prominently worn on the eyes, face is the hero of the image, shoulders-up framing.\" — NEVER use full body shot for eyewear.",
+  earring:  "⚠️ EARRINGS DETECTED. Your positive_prompt MUST begin with: \"Close-up head-and-shoulders shot, earrings clearly and prominently visible on the ear, face turned slightly to showcase the earrings.\"",
+  necklace: "⚠️ NECKLACE DETECTED. Your positive_prompt MUST begin with: \"Half-body shot from chest to face, necklace prominently worn on neck, clearly visible against skin, chest-and-face framing.\"",
+  ring:     "⚠️ RING DETECTED. Your positive_prompt MUST begin with: \"Close-up of hand and wrist, ring prominently shown worn on finger, hand elegantly posed, ring is the hero.\"",
+  bracelet: "⚠️ BRACELET DETECTED. Your positive_prompt MUST begin with: \"Close-up of wrist and forearm, bracelet prominently shown, wrist elegantly posed, bracelet is the hero.\"",
+  hat:      "⚠️ HAT/CAP DETECTED. Your positive_prompt MUST begin with: \"Half-body or close-up shot, hat prominently worn on head, face and hat fill the frame, shoulders-up framing.\"",
+};
+
 export async function generatePromptWithOllama(
   produto: string,
   cenario: string,
@@ -219,9 +241,12 @@ export async function generatePromptWithOllama(
     ? contextBlock + SYSTEM_PROMPT
     : SYSTEM_PROMPT;
 
+  const accessoryType = detectAccessoryType(produto, visionDesc);
+  const accessoryInstruction = accessoryType ? `\n\n${ACCESSORY_SHOT_PREFIX[accessoryType]}` : "";
+
   const userMessage = `Product Name: ${produto || "(not provided)"}
 Scene: ${cenario || "(not provided)"}
-Vision Description: ${visionDesc || "(not provided)"}`;
+Vision Description: ${visionDesc || "(not provided)"}${accessoryInstruction}`;
 
   const url = `${OLLAMA_BASE}/api/chat`;
 
