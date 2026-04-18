@@ -227,29 +227,86 @@ function OnboardingPageInner() {
 // ── WelcomeStep ───────────────────────────────────────────────────────────────
 function WelcomeStep({ variant, onNext }: { variant: Variant; onNext: () => void }) {
   const cfg = {
-    A: { headline: "Seu primeiro conteúdo em vídeo começa com 1 foto", sub: "Em ~2 minutos eu transformo a foto do seu produto em criativo pronto.", cta: "Começar agora →", badge: "⚡ Entrega em ~2 min" },
-    B: { headline: "Vamos criar seu criativo para vender mais", sub: "Manda a foto do produto e eu monto cena profissional para vender mais.", cta: "Criar meu primeiro criativo →", badge: "🎁 Grátis para começar" },
-    C: { headline: "Crie conteúdo de produto mais rápido com IA", sub: "Foto profissional, vídeo narrado e legenda prontos — sem esforço manual.", cta: "Começar agora →", badge: "✨ Sem cartão de crédito" },
+    A: {
+      badge: "⚡ Resultado em ~2 min",
+      headline: "1 foto. Resultado profissional em 2 minutos.",
+      sub: "Sem fotógrafo, sem editor, sem complicação.",
+      benefits: [
+        { icon: "📸", label: "Foto profissional do produto" },
+        { icon: "🎬", label: "Vídeo narrado pronto para postar" },
+        { icon: "📝", label: "Legenda e hashtags incluídas" },
+      ],
+      cta: "Criar meu primeiro conteúdo grátis →",
+    },
+    B: {
+      badge: "🎁 Grátis para começar",
+      headline: "Fotos que vendem mais — sem esforço.",
+      sub: "Transformo a foto do seu produto em criativo que prende atenção e converte.",
+      benefits: [
+        { icon: "🛒", label: "Visual otimizado para venda" },
+        { icon: "📸", label: "Foto com apelo profissional" },
+        { icon: "⚡", label: "Pronto em menos de 2 minutos" },
+      ],
+      cta: "Quero vender mais agora →",
+    },
+    C: {
+      badge: "✨ Sem cartão de crédito",
+      headline: "Conteúdo de produto em 2 min, não 2 horas.",
+      sub: "Foto, vídeo e legenda — tudo em um lugar, sem nenhuma ferramenta extra.",
+      benefits: [
+        { icon: "📸", label: "Foto profissional automática" },
+        { icon: "🎬", label: "Vídeo narrado gerado por IA" },
+        { icon: "📋", label: "Legenda pronta para copiar" },
+      ],
+      cta: "Começar agora →",
+    },
   }[variant];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 12 }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 12 }}>
+      {/* Avatar + badge */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
         <div style={{ position: "relative" }}>
-          <img src="/tamo/idle.png" alt="Tamo" style={{ width: 80, height: 80, objectFit: "contain" }} />
+          <img src="/tamo/idle.png" alt="Tamo" style={{ width: 76, height: 76, objectFit: "contain" }} />
           <div style={{ position: "absolute", bottom: -4, right: -8, background: "rgba(168,85,247,0.9)", borderRadius: 12, padding: "3px 8px", fontSize: 10, fontWeight: 700, color: "#fff" }}>IA</div>
         </div>
         <span style={s.badge}>{cfg.badge}</span>
       </div>
-      <div><h1 style={s.headline}>{cfg.headline}</h1><p style={s.sub}>{cfg.sub}</p></div>
-      <div style={s.exampleRow}>
-        <div style={s.exampleCard}><div style={s.exampleIcon}>📷</div><span style={s.exampleLabel}>Sua foto</span></div>
-        <div style={s.arrow}>→</div>
-        <div style={{ ...s.exampleCard, background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.3)" }}>
-          <div style={s.exampleIcon}>✨</div><span style={{ ...s.exampleLabel, color: "#c4b5fd" }}>Foto profissional</span>
+
+      {/* Social proof */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        <div style={{ display: "flex" }}>
+          {["#a855f7","#6366f1","#8b5cf6"].map((c, i) => (
+            <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: "2px solid #07080b", marginLeft: i ? -6 : 0 }} />
+          ))}
         </div>
+        <span style={{ fontSize: 12, color: "#8394b0" }}>
+          <strong style={{ color: "#c4b5fd" }}>+25.000</strong> empreendedores já usam
+        </span>
       </div>
+
+      {/* Headline + sub */}
+      <div>
+        <h1 style={s.headline}>{cfg.headline}</h1>
+        <p style={s.sub}>{cfg.sub}</p>
+      </div>
+
+      {/* Benefits */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {cfg.benefits.map(({ icon, label }) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: 12, background: "#0c1018", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px 14px" }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
+            <span style={{ fontSize: 14, color: "#eef2f9", fontWeight: 600 }}>{label}</span>
+            <span style={{ marginLeft: "auto", color: "#16c784", fontSize: 14 }}>✓</span>
+          </div>
+        ))}
+      </div>
+
       <button onClick={onNext} style={s.primaryBtn}>{cfg.cta}</button>
+
+      <p style={{ textAlign: "center" as const, color: "#4e5c72", fontSize: 12, margin: 0 }}>
+        Sem cartão de crédito · Cancele quando quiser
+      </p>
     </div>
   );
 }
