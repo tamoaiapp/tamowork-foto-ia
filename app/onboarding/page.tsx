@@ -68,6 +68,7 @@ function OnboardingPageInner() {
 
   // Job state
   const [jobId, setJobId]           = useState<string | null>(null);
+  const [jobType, setJobType]       = useState<"photo" | "narrated">("photo");
   const [jobStatus, setJobStatus]   = useState<JobStatus>(null);
   const [jobOutputUrl, setJobOutputUrl] = useState<string | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
@@ -129,7 +130,7 @@ function OnboardingPageInner() {
     reader.readAsDataURL(f);
   }
 
-  function startPolling(id: string) {
+  function startPolling(id: string, type: "photo" | "narrated") {
     setElapsedSec(0);
     elapsedRef.current = setInterval(() => {
       setElapsedSec(s => s + 1);
@@ -138,9 +139,10 @@ function OnboardingPageInner() {
     async function poll() {
       try {
         const token = await getToken();
-        const res = await fetch(`/api/image-jobs/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const endpoint = type === "narrated"
+          ? `/api/narrated-video/${id}`
+          : `/api/image-jobs/${id}`;
+        const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;
         const data = await res.json();
         setJobStatus(data.status);
@@ -148,7 +150,9 @@ function OnboardingPageInner() {
         if (["done", "failed", "canceled"].includes(data.status)) {
           if (pollRef.current) clearInterval(pollRef.current);
           if (elapsedRef.current) clearInterval(elapsedRef.current);
-          if (data.status === "done") setJobOutputUrl(data.output_image_url);
+          if (data.status === "done") {
+            setJobOutputUrl(type === "narrated" ? data.output_video_url : data.output_image_url);
+          }
         }
       } catch { /* ignora */ }
     }
@@ -177,29 +181,53 @@ function OnboardingPageInner() {
       const { url: imageUrl } = await upRes.json();
 
       const cenarioFinal = cenario.trim() || "Produto em ambiente profissional, fundo clean";
-      const prompt = `${produto.trim()} | cenário: ${cenarioFinal}`;
+      const isNarrated = variant === "C";
 
-      const jobRes = await fetch("/api/image-jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt, input_image_url: imageUrl }),
-      });
-      if (!jobRes.ok) throw new Error("Falha ao criar foto");
-      const { jobId: newJobId } = await jobRes.json();
+      let newJobId: string;
 
-      try {
-        sessionStorage.setItem("pending_job_id", newJobId);
-        sessionStorage.setItem("tamo_active_job", JSON.stringify({ id: newJobId, input_image_url: imageUrl }));
-        sessionStorage.setItem("onboarding_mode", variant);
-        if (variant === "B" && objetivo) sessionStorage.setItem("ob_objetivo", objetivo);
-        if (variant === "B" && facilidade) sessionStorage.setItem("ob_facilidade", facilidade);
-        if (variant === "C" && ondeUsar) sessionStorage.setItem("ob_onde_usar", ondeUsar);
-      } catch { /* ignora */ }
+      if (isNarrated) {
+        // Variante C → vídeo narrado
+        const roteiro = `Conheça o ${produto.trim()}! ${cenarioFinal}. Qualidade profissional para você vender mais. Acesse tamowork.com agora!`;
+        const jobRes = await fetch("/api/narrated-video", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ input_image_url: imageUrl, roteiro, voice: "feminino", scene_source: "generate", format: "story" }),
+        });
+        if (!jobRes.ok) throw new Error("Falha ao criar vídeo narrado");
+        const data = await jobRes.json();
+        newJobId = data.jobId;
+        try {
+          sessionStorage.setItem("pending_video_job_id", newJobId);
+          sessionStorage.setItem("pending_video_job_type", "narrated");
+          sessionStorage.setItem("onboarding_mode", variant);
+          if (ondeUsar) sessionStorage.setItem("ob_onde_usar", ondeUsar);
+        } catch { /* ignora */ }
+        setJobType("narrated");
+      } else {
+        // Variantes A e B → foto
+        const prompt = `${produto.trim()} | cenário: ${cenarioFinal}`;
+        const jobRes = await fetch("/api/image-jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ prompt, input_image_url: imageUrl }),
+        });
+        if (!jobRes.ok) throw new Error("Falha ao criar foto");
+        const data = await jobRes.json();
+        newJobId = data.jobId;
+        try {
+          sessionStorage.setItem("pending_job_id", newJobId);
+          sessionStorage.setItem("tamo_active_job", JSON.stringify({ id: newJobId, input_image_url: imageUrl }));
+          sessionStorage.setItem("onboarding_mode", variant);
+          if (variant === "B" && objetivo) sessionStorage.setItem("ob_objetivo", objetivo);
+          if (variant === "B" && facilidade) sessionStorage.setItem("ob_facilidade", facilidade);
+        } catch { /* ignora */ }
+        setJobType("photo");
+      }
 
       setJobId(newJobId);
       setJobStatus("queued");
       setSubmitting(false);
-      startPolling(newJobId);
+      startPolling(newJobId, isNarrated ? "narrated" : "photo");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar foto");
       setSubmitting(false);
@@ -294,6 +322,7 @@ function OnboardingPageInner() {
         outputUrl={jobOutputUrl}
         inputPreview={preview}
         variant={variant}
+        jobType={jobType}
         onContinueFree={handleContinueFree}
         onAssinar={handleAssinarPro}
       />
@@ -407,15 +436,21 @@ interface ResultScreenProps {
   outputUrl: string;
   inputPreview: string | null;
   variant: Variant;
+  jobType: "photo" | "narrated";
   onContinueFree: () => void;
   onAssinar: () => void;
 }
 
-function ResultScreen({ outputUrl, inputPreview, variant, onContinueFree, onAssinar }: ResultScreenProps) {
+function ResultScreen({ outputUrl, inputPreview, variant, jobType, onContinueFree, onAssinar }: ResultScreenProps) {
   const headlines: Record<Variant, string> = {
     A: "Sua foto profissional ficou pronta! 🎉",
     B: "Perfeito para vender mais! 🚀",
-    C: "Resultado incrível para seus Reels! ✨",
+    C: "Seu vídeo narrado ficou pronto! 🎬",
+  };
+  const subtitles: Record<Variant, string> = {
+    A: "Veja o antes e depois do seu produto",
+    B: "Veja o antes e depois do seu produto",
+    C: "Pronto para publicar nos Stories e Reels",
   };
 
   return (
@@ -428,22 +463,37 @@ function ResultScreen({ outputUrl, inputPreview, variant, onContinueFree, onAssi
 
         <div style={{ textAlign: "center" as const }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#eef2f9", margin: "0 0 6px" }}>{headlines[variant]}</h2>
-          <p style={{ fontSize: 13, color: "#8394b0", margin: 0 }}>Veja o antes e depois do seu produto</p>
+          <p style={{ fontSize: 13, color: "#8394b0", margin: 0 }}>{subtitles[variant]}</p>
         </div>
 
-        {/* Antes / Depois */}
-        <div style={{ display: "flex", gap: 8 }}>
-          {inputPreview && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#4e5c72", textAlign: "center" as const, textTransform: "uppercase" as const, letterSpacing: 1 }}>Antes</span>
-              <img src={inputPreview} alt="antes" style={{ width: "100%", borderRadius: 14, objectFit: "cover", aspectRatio: "1/1" }} />
-            </div>
-          )}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#a855f7", textAlign: "center" as const, textTransform: "uppercase" as const, letterSpacing: 1 }}>Depois ✨</span>
-            <img src={outputUrl} alt="depois" style={{ width: "100%", borderRadius: 14, objectFit: "cover", aspectRatio: "1/1", border: "1.5px solid rgba(168,85,247,0.4)" }} />
+        {/* Vídeo narrado (variante C) */}
+        {jobType === "narrated" && (
+          <div style={{ borderRadius: 16, overflow: "hidden", border: "1.5px solid rgba(168,85,247,0.4)", background: "#0c1018" }}>
+            <video
+              src={outputUrl}
+              controls
+              autoPlay
+              playsInline
+              style={{ width: "100%", display: "block", maxHeight: 480, objectFit: "contain" }}
+            />
           </div>
-        </div>
+        )}
+
+        {/* Antes / Depois (variantes A e B) */}
+        {jobType === "photo" && (
+          <div style={{ display: "flex", gap: 8 }}>
+            {inputPreview && (
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#4e5c72", textAlign: "center" as const, textTransform: "uppercase" as const, letterSpacing: 1 }}>Antes</span>
+                <img src={inputPreview} alt="antes" style={{ width: "100%", borderRadius: 14, objectFit: "cover", aspectRatio: "1/1" }} />
+              </div>
+            )}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#a855f7", textAlign: "center" as const, textTransform: "uppercase" as const, letterSpacing: 1 }}>Depois ✨</span>
+              <img src={outputUrl} alt="depois" style={{ width: "100%", borderRadius: 14, objectFit: "cover", aspectRatio: "1/1", border: "1.5px solid rgba(168,85,247,0.4)" }} />
+            </div>
+          </div>
+        )}
 
         {/* PRO upsell */}
         <div style={{ background: "rgba(168,85,247,0.08)", border: "1.5px solid rgba(168,85,247,0.35)", borderRadius: 18, padding: "20px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -707,8 +757,8 @@ function OndeUsarStep({ ondeUsar, onSelect, submitting, onNext, onBack }: OndeUs
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 8 }}>
       <div>
-        <h2 style={s.stepTitle}>Onde vai usar a foto?</h2>
-        <p style={s.stepSub}>Vou deixar otimizada para esse canal</p>
+        <h2 style={s.stepTitle}>Onde vai usar o vídeo?</h2>
+        <p style={s.stepSub}>Vou deixar otimizado para esse canal</p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -730,7 +780,7 @@ function OndeUsarStep({ ondeUsar, onSelect, submitting, onNext, onBack }: OndeUs
 
       <div style={s.futureCard}>
         <p style={{ margin: 0, fontSize: 13, color: "#8394b0", lineHeight: 1.6 }}>
-          🦎 Depois da foto, posso criar <strong style={{ color: "#c4b5fd" }}>vídeo, legenda pronta</strong> e <strong style={{ color: "#c4b5fd" }}>anúncio</strong> para o mesmo produto.
+          🦎 Vou gerar um <strong style={{ color: "#c4b5fd" }}>vídeo narrado com locução</strong> do seu produto, pronto para publicar nos Stories.
         </p>
       </div>
 
