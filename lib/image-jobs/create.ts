@@ -23,6 +23,7 @@ export async function createImageJob(
   inputImageUrl: string,
   format = "story",
   bonusRetry = false,
+  source = "app",
 ) {
   const supabase = createServerClient();
 
@@ -90,6 +91,7 @@ export async function createImageJob(
       input_image_url: inputImageUrl,
       format,
       status: "queued",
+      source,
       ...(bonusRetry ? { is_bonus_retry: true } : {}),
     })
     .select()

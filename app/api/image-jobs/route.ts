@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { prompt, input_image_url, format, bonus_retry } = body;
+  const { prompt, input_image_url, format, bonus_retry, source } = body;
 
   // prompt pode ser vazio — nesse caso a visão lê a imagem automaticamente
   if (!input_image_url) {
@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const validFormat = ["story","square","portrait","horizontal"].includes(format) ? format : "story";
-    const job = await createImageJob(user.id, prompt, input_image_url, validFormat, !!bonus_retry);
+    const validSource = ["onboarding","app","bubble","editor"].includes(source) ? source : "app";
+    const job = await createImageJob(user.id, prompt, input_image_url, validFormat, !!bonus_retry, validSource);
     return NextResponse.json({ jobId: job.id, status: job.status }, { status: 201 });
   } catch (err: unknown) {
     if (err instanceof RateLimitError) {
