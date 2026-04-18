@@ -295,7 +295,9 @@ function ExperienciaPageInner() {
 
       {/* Header TAMO */}
       <div style={{ width: "100%", maxWidth: 480, padding: "20px 20px 0", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#a855f7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>T</div>
+        <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#a855f7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+            <img src={phase === "processing" ? "/tamo/processing.png" : "/tamo/idle.png"} alt="TAMO" style={{ width: 34, height: 34, objectFit: "contain" }} />
+          </div>
         <div>
           <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 15 }}>TAMO</div>
           <div style={{ color: "#16c784", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
@@ -364,7 +366,9 @@ function ExperienciaPageInner() {
         {messages.map(msg => (
           <div key={msg.id} className="msg-bubble" style={{ display: "flex", justifyContent: msg.from === "user" ? "flex-end" : "flex-start" }}>
             {msg.from === "tamo" && (
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#a855f7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0, marginRight: 8, alignSelf: "flex-end" }}>T</div>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#a855f7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginRight: 8, alignSelf: "flex-end", overflow: "hidden" }}>
+                <img src="/tamo/idle.png" alt="TAMO" style={{ width: 26, height: 26, objectFit: "contain" }} />
+              </div>
             )}
             <div className={msg.from === "tamo" ? "tamo-bubble" : "user-bubble"} style={{ maxWidth: "80%", padding: "10px 14px", color: "#eef2f9", fontSize: 14, lineHeight: 1.5 }}>
               {msg.text}
