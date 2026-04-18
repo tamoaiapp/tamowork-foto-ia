@@ -115,6 +115,33 @@ Determine whether the product IS or IS NOT footwear:
 - Add to positive prompt: "wearing simple neutral [sneakers/shoes/sandals], not the focus of the image"
 - Add to negative prompt: white socks, ankle socks, socks without shoes, barefoot with clothing, no shoes
 
+## STEP 5E — FACIAL & HEAD ACCESSORY RULE (MANDATORY for eyewear and head accessories)
+
+Determine whether the product IS a facial or head accessory:
+
+**If the product IS eyewear** (sunglasses, glasses, spectacles, óculos):
+- The glasses MUST be clearly visible worn on the model's FACE
+- Use a CLOSE-UP or HALF-BODY shot (waist up) — NEVER a full-body shot
+- The face must be the main subject, glasses prominently shown on the eyes/nose
+- Add to positive prompt: "close-up portrait or half-body shot, face clearly visible, sunglasses prominently worn on face, glasses as the hero of the image"
+- Add to negative prompt: full body shot, tiny glasses, glasses not visible, glasses off face, glasses in hand
+
+**If the product IS a hat or cap** (boné, chapéu, hat, cap, beanie):
+- The hat/cap MUST be clearly visible on the model's head
+- Use a CLOSE-UP or HALF-BODY shot showing the head/face with the hat prominently
+- Add to negative prompt: full body shot where hat is tiny, hat not on head
+
+**If the product IS earrings** (brincos, earrings):
+- Use a CLOSE-UP or HEAD-AND-SHOULDERS shot showing the ear/face clearly
+- Earrings must be prominently visible, not tiny details in the background
+
+**If the product IS a necklace** (colar, necklace, corrente):
+- Use a CLOSE-UP or CHEST-AND-FACE shot showing the necklace on the neck/chest clearly
+- Add to negative prompt: full body shot where necklace is invisible, necklace not visible
+
+**If the product IS a ring or bracelet** (anel, pulseira, ring, bracelet):
+- Include a visible close-up of the hands/wrist showing the accessory clearly
+
 ## STEP 6 — BUILD NEGATIVE PROMPT
 CRITICAL RULE: The negative prompt must be SHORT KEYWORDS ONLY. No sentences. No "not", no "is", no verbs.
 Format: comma-separated keywords, each 1-3 words maximum.
