@@ -108,7 +108,7 @@ export default function CriacoesPage() {
             <div style={{ fontSize: 13, color: "#4e5c72", marginBottom: 24 }}>
               {lang === "en" ? "Take a photo of your product and watch the magic happen." : lang === "es" ? "Toma una foto de tu producto y mira cómo ocurre la magia." : "Tire uma foto do seu produto e veja a mágica acontecer."}
             </div>
-            <button onClick={() => router.push("/")} style={s.createBtn}>
+            <button onClick={() => router.push("/tamo")} style={s.createBtn}>
               {lang === "en" ? "Create my first photo" : lang === "es" ? "Crear mi primera foto" : "Criar minha primeira foto"}
             </button>
           </div>

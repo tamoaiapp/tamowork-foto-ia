@@ -151,15 +151,6 @@ export default function DesktopSidebar() {
             <button
               key={item.key}
               onClick={() => {
-                // "Criar" redireciona para onboarding se ainda não completou
-                if (item.key === "criar") {
-                  try {
-                    if (localStorage.getItem("onboarding_completed") !== "1") {
-                      router.push("/onboarding");
-                      return;
-                    }
-                  } catch { /* ignora */ }
-                }
                 router.push(item.path);
               }}
               style={{

@@ -864,6 +864,14 @@ export default function HomePage() {
         resolvedPlan = userPlan;
         setPlan(userPlan);
 
+        // Se o usuário já tem jobs, marca onboarding como completo (fonte de verdade = banco)
+        if (jobs.length > 0) {
+          try {
+            localStorage.setItem("onboarding_completed", "1");
+            if (user?.id) localStorage.setItem(`onboarding_completed_${user.id}`, "1");
+          } catch { /* ignora */ }
+        }
+
         // Upsell popup removido da entrada — não empurrar venda antes do usuário ver valor
 
         const active = jobs.find(
