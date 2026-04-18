@@ -237,7 +237,7 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
           {formatMs(countdown)}
         </div>
         <div style={{ fontSize: 12, color: "#4e5c72", marginBottom: 20 }}>
-          O plano gratuito permite 2 fotos por dia
+          O plano gratuito permite 3 fotos e 2 vídeos por dia
         </div>
       </div>
 
@@ -917,7 +917,7 @@ export default function HomePage() {
         // Detecta rate limit no carregamento: free user com 2+ jobs COMPLETOS recentes (<24h)
         if (userPlan === "free") {
           const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-          const FREE_DAILY_LIMIT = 2;
+          const FREE_DAILY_LIMIT = 3;
           const since = Date.now() - FREE_COOLDOWN_MS;
           const recentDoneJobs = jobs
             .filter((j) => j.status === "done" && new Date(j.created_at ?? 0).getTime() > since)
