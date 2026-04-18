@@ -6,42 +6,59 @@ function getToken(req: NextRequest) {
   return (req.headers.get("authorization") ?? "").replace("Bearer ", "");
 }
 
+function cleanValue(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
 export async function GET(req: NextRequest) {
   const supabaseAdmin = createSupabaseAdminClient();
   const supabase = createServerClient();
-  const { data: { user } } = await supabase.auth.getUser(getToken(req));
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser(getToken(req));
 
-  const { data } = await supabaseAdmin
-    .from("bot_onboarding")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
+  const { data } = await supabaseAdmin.from("bot_onboarding").select("*").eq("user_id", user.id).single();
   return NextResponse.json({ onboarding: data ?? null });
 }
 
 export async function POST(req: NextRequest) {
   const supabaseAdmin = createSupabaseAdminClient();
   const supabase = createServerClient();
-  const { data: { user } } = await supabase.auth.getUser(getToken(req));
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser(getToken(req));
 
-  const body = await req.json().catch(() => ({}));
-  const { business_name, business_type, products, tone } = body;
-
-  if (!business_name || !products) {
-    return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const context = await generateBusinessContext({ business_name, business_type, products, tone });
+  const body = await req.json().catch(() => ({}));
+  const business_name = cleanValue(body?.business_name);
+  const business_type = cleanValue(body?.business_type);
+  const products = cleanValue(body?.products);
+  const tone = cleanValue(body?.tone);
+
+  if (!business_name || !business_type || !products || !tone) {
+    return NextResponse.json({ error: "Responda as 4 perguntas do onboarding para continuar." }, { status: 400 });
+  }
+
+  const context = await generateBusinessContext({
+    business_name,
+    business_type,
+    products,
+    tone,
+  });
 
   await supabaseAdmin.from("bot_onboarding").upsert({
     user_id: user.id,
     business_name,
-    business_type: business_type ?? "",
+    business_type,
     products,
-    tone: tone ?? "",
+    tone,
     context,
     updated_at: new Date().toISOString(),
   });
@@ -56,18 +73,32 @@ async function generateBusinessContext(data: {
   tone: string;
 }) {
   const ollamaBase = process.env.OLLAMA_BASE;
+
   if (!ollamaBase) {
-    return `Empresa: ${data.business_name}. Tipo: ${data.business_type}. Produtos: ${data.products}. Tom: ${data.tone || "profissional e amigável"}.`;
+    return (
+      `Empresa: ${data.business_name}. ` +
+      `Nicho: ${data.business_type}. ` +
+      `Produtos principais: ${data.products}. ` +
+      `Canal e desafio atual: ${data.tone}.`
+    );
   }
 
-  const prompt = `Com base nas informações abaixo, crie um contexto de negócio COMPACTO (máx 200 palavras) para um assistente de IA que vai ajudar este empreendedor a criar conteúdo e melhorar suas fotos de produto. Seja objetivo: o que vende, para quem, tom e diferenciais.
+  const prompt = `Com base nas informacoes abaixo, crie um contexto de negocio compacto para um assistente de IA do TamoWork.
 
-Nome: ${data.business_name}
-Tipo: ${data.business_type}
-Produtos: ${data.products}
-Tom preferido: ${data.tone || "profissional e amigável"}
+Seja objetivo e escreva em um unico paragrafo curto.
+Inclua:
+- o que a empresa vende
+- o nicho
+- os produtos mais importantes
+- onde vende hoje
+- o principal desafio comercial
 
-Responda APENAS com o contexto em parágrafo, sem títulos.`;
+Nome do negocio: ${data.business_name}
+Nicho: ${data.business_type}
+Produtos principais: ${data.products}
+Canal principal e desafio atual: ${data.tone}
+
+Responda apenas com o contexto final.`;
 
   try {
     const res = await fetch(`${ollamaBase}/api/chat`, {
@@ -77,13 +108,20 @@ Responda APENAS com o contexto em parágrafo, sem títulos.`;
         model: "llama3.2:3b",
         messages: [{ role: "user", content: prompt }],
         stream: false,
-        options: { num_predict: 300, temperature: 0.5 },
+        options: { num_predict: 260, temperature: 0.4 },
       }),
     });
-    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
+
+    if (!res.ok) {
+      throw new Error(`Ollama HTTP ${res.status}`);
+    }
+
     const json = await res.json();
-    return json.message?.content ?? `Empresa: ${data.business_name}. Produtos: ${data.products}.`;
+    return (
+      cleanValue(json.message?.content) ||
+      `Empresa: ${data.business_name}. Nicho: ${data.business_type}. Produtos principais: ${data.products}. Canal e desafio atual: ${data.tone}.`
+    );
   } catch {
-    return `Empresa: ${data.business_name}. Produtos: ${data.products}. Tom: ${data.tone || "profissional"}.`;
+    return `Empresa: ${data.business_name}. Nicho: ${data.business_type}. Produtos principais: ${data.products}. Canal e desafio atual: ${data.tone}.`;
   }
 }

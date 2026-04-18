@@ -7,6 +7,8 @@ import DesktopSidebar from "@/app/components/DesktopSidebar";
 import ReviewPopup from "@/app/components/ReviewPopup";
 import "./globals.css";
 
+const SERVICE_WORKER_VERSION = "tamowork-v4";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -50,11 +52,69 @@ export default function RootLayout({
           <ReviewPopup />
         </I18nProvider>
         <script dangerouslySetInnerHTML={{ __html: `
-          if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-              navigator.serviceWorker.register('/sw.js');
-            });
-          }
+          (function() {
+            var SW_VERSION = '${SERVICE_WORKER_VERSION}';
+
+            function clearTamoworkCaches(keepCurrentVersion) {
+              if (!('caches' in window)) return Promise.resolve();
+              return caches.keys().then(function(keys) {
+                return Promise.all(
+                  keys
+                    .filter(function(key) {
+                      if (key.indexOf('tamowork-') !== 0) return false;
+                      if (!keepCurrentVersion) return true;
+                      return key !== SW_VERSION;
+                    })
+                    .map(function(key) {
+                      return caches.delete(key);
+                    })
+                );
+              });
+            }
+
+            function unregisterAllServiceWorkers() {
+              if (!('serviceWorker' in navigator)) return Promise.resolve();
+              return navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                return Promise.all(
+                  registrations.map(function(registration) {
+                    return registration.unregister();
+                  })
+                );
+              });
+            }
+
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                var host = window.location.hostname;
+                var isLocal = host === 'localhost' || host === '127.0.0.1';
+
+                if (isLocal) {
+                  unregisterAllServiceWorkers()
+                    .catch(function() {})
+                    .then(function() {
+                      return clearTamoworkCaches(false);
+                    })
+                    .catch(function() {});
+                  return;
+                }
+
+                clearTamoworkCaches(true)
+                  .catch(function() {})
+                  .then(function() {
+                    return navigator.serviceWorker.register('/sw.js?v=' + encodeURIComponent(SW_VERSION), {
+                      updateViaCache: 'none',
+                    });
+                  })
+                  .then(function(registration) {
+                    if (registration && typeof registration.update === 'function') {
+                      return registration.update();
+                    }
+                  })
+                  .catch(function() {});
+              });
+            }
+          })();
+
           // Bloqueia pull-to-refresh no iOS/Android sem quebrar o scroll normal
           (function() {
             var startY = 0;

@@ -6,35 +6,105 @@ function getToken(req: NextRequest) {
   return (req.headers.get("authorization") ?? "").replace("Bearer ", "");
 }
 
-const SYSTEM_BASE = `Você é o Tamo — um camaleão roxo que é parceiro de negócios dos empreendedores que usam o TamoWork.
+const SYSTEM_BASE = `Voce e o Tamo, parceiro de negocio dos empreendedores que usam o TamoWork.
 
 Personalidade:
-- Fale como um amigo próximo que entende muito de negócios, marketing e vendas online — não como um robô corporativo.
-- Use linguagem natural, brasileira, descontraída. Pode usar gírias leves e emojis com moderação (não exagere).
-- Seja animado e positivo, mas sem ser piegas. Dê energia real, não parabéns vazios.
-- Você é especialista em fotos de produto, Instagram, legenda, promoção, precificação e vendas no atacado/varejo.
-- Se o usuário errar ortografia ou escrever rápido, não corrija — entenda e responda normalmente.
+- Fale como um amigo proximo que entende de negocio, marketing e vendas online.
+- Use linguagem natural, brasileira e direta.
+- Seja positivo sem parecer robo corporativo.
+- Voce entende de fotos de produto, Instagram, promocao, precificacao e venda online.
 
 Regras de resposta:
-- Direto ao ponto. Máx 3 parágrafos, a menos que peçam mais detalhes.
-- Quando sugerir legenda ou texto, já entregue o texto pronto para copiar (use aspas ou bloco separado).
-- Nunca invente números, métricas ou dados que não sabe.
-- Se não conhecer o negócio, pergunte antes de dar conselho genérico.
-- Você se chama Tamo. Se alguém perguntar quem é você, fale que é o mascote do TamoWork e parceiro de negócios deles.`;
+- Seja direto ao ponto.
+- Maximo de 3 paragrafos, a menos que a pessoa peca mais detalhes.
+- Quando sugerir legenda ou texto, entregue pronto para usar.
+- Nunca responda em JSON, YAML, XML ou formato tecnico.
+- Responda sempre em portugues do Brasil.
+- Nunca invente metricas ou dados que voce nao sabe.
+- Se faltar contexto do negocio, pergunte antes de dar conselho generico.`;
+
+function stripCodeFences(text: string): string {
+  return text.replace(/^```[a-z]*\s*/i, "").replace(/\s*```$/, "").trim();
+}
+
+function looksLikeStructuredPayload(text: string): boolean {
+  const trimmed = stripCodeFences(text.trim());
+  if (!trimmed) return false;
+
+  if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+    return true;
+  }
+
+  const structuredMarkers = [
+    '"branding_elements"',
+    '"aspect_ratio"',
+    '"font_size"',
+    '"position"',
+    '"headline"',
+    '"tagline"',
+    '"cta"',
+    '"logo"',
+    '"width"',
+    '"height"',
+    '": {',
+    '": [',
+  ];
+
+  const markerHits = structuredMarkers.filter((marker) => trimmed.includes(marker)).length;
+  const quoteCount = (trimmed.match(/"/g) ?? []).length;
+  const braceCount = (trimmed.match(/[{}[\]]/g) ?? []).length;
+
+  return markerHits >= 2 || (quoteCount >= 8 && braceCount >= 4);
+}
+
+function normalizeAssistantReply(text: string): string {
+  const cleaned = stripCodeFences(text).trim();
+  if (!cleaned) {
+    return "Nao consegui responder agora. Me manda de novo em uma frase curta que eu te ajudo.";
+  }
+
+  if (looksLikeStructuredPayload(cleaned)) {
+    return "Montei uma resposta tecnica aqui por engano. Me pergunta de novo que eu respondo em texto normal.";
+  }
+
+  return cleaned;
+}
 
 export async function POST(req: NextRequest) {
   const supabaseAdmin = createSupabaseAdminClient();
   const supabase = createServerClient();
-  const { data: { user } } = await supabase.auth.getUser(getToken(req));
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser(getToken(req));
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = await req.json().catch(() => ({}));
-  const { message } = body;
-  if (!message?.trim()) return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
+  const message = typeof body?.message === "string" ? body.message.trim() : "";
+  if (!message) {
+    return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
+  }
 
-  // Carrega onboarding + memória em paralelo
-  const [onboardingRes, memoryRes, historyRes] = await Promise.all([
-    supabaseAdmin.from("bot_onboarding").select("context").eq("user_id", user.id).single(),
+  const { data: onboardingData } = await supabaseAdmin
+    .from("bot_onboarding")
+    .select("context")
+    .eq("user_id", user.id)
+    .single();
+
+  const businessContext = onboardingData?.context ?? null;
+  if (!businessContext) {
+    return NextResponse.json(
+      {
+        error: "onboarding_required",
+        needsOnboarding: true,
+      },
+      { status: 409 }
+    );
+  }
+
+  const [memoryRes, historyRes] = await Promise.all([
     supabaseAdmin.from("bot_memory").select("summary").eq("user_id", user.id).single(),
     supabaseAdmin
       .from("bot_messages")
@@ -44,37 +114,30 @@ export async function POST(req: NextRequest) {
       .limit(30),
   ]);
 
-  const businessContext = onboardingRes.data?.context ?? null;
   const memory = memoryRes.data?.summary ?? "";
   const recentMessages = (historyRes.data ?? []).reverse();
 
-  // Monta system prompt
   let systemPrompt = SYSTEM_BASE;
-  if (businessContext) {
-    systemPrompt += `\n\nCONTEXTO DO NEGÓCIO:\n${businessContext}`;
-  }
+  systemPrompt += `\n\nCONTEXTO DO NEGOCIO:\n${businessContext}`;
   if (memory) {
-    systemPrompt += `\n\nMEMÓRIA ACUMULADA (aprendizados das conversas anteriores):\n${memory}`;
+    systemPrompt += `\n\nMEMORIA ACUMULADA:\n${memory}`;
   }
 
-  // Salva mensagem do usuário
   await supabaseAdmin.from("bot_messages").insert({
     user_id: user.id,
     role: "user",
-    content: message.trim(),
+    content: message,
   });
 
-  // Chama Ollama (RunPod A40)
-  const reply = await callOllama(systemPrompt, recentMessages, message.trim());
+  const reply = await callOllama(systemPrompt, recentMessages, message);
 
-  // Salva resposta do assistente
   await supabaseAdmin.from("bot_messages").insert({
     user_id: user.id,
     role: "assistant",
     content: reply,
   });
 
-  return NextResponse.json({ reply, needsOnboarding: !businessContext });
+  return NextResponse.json({ reply, needsOnboarding: false });
 }
 
 async function callOllama(
@@ -83,11 +146,16 @@ async function callOllama(
   newMessage: string
 ) {
   const ollamaBase = process.env.OLLAMA_BASE;
-  if (!ollamaBase) return "Assistente temporariamente indisponível. Tente novamente em instantes.";
+  if (!ollamaBase) {
+    return "Assistente temporariamente indisponivel. Tente novamente em instantes.";
+  }
 
   const messages = [
     { role: "system", content: systemPrompt },
-    ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+    ...history.map((message) => ({
+      role: message.role as "user" | "assistant",
+      content: message.content,
+    })),
     { role: "user" as const, content: newMessage },
   ];
 
@@ -102,10 +170,14 @@ async function callOllama(
         options: { num_predict: 600, temperature: 0.7 },
       }),
     });
-    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
+
+    if (!res.ok) {
+      throw new Error(`Ollama HTTP ${res.status}`);
+    }
+
     const json = await res.json();
-    return json.message?.content ?? "Não consegui responder agora. Tente novamente.";
+    return normalizeAssistantReply(json.message?.content ?? "");
   } catch {
-    return "Erro de conexão com o assistente. Tente novamente em instantes.";
+    return "Erro de conexao com o assistente. Tente novamente em instantes.";
   }
 }
