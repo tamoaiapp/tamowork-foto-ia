@@ -643,14 +643,14 @@ function PaywallStep({ preview, submitting, onContinueFree, onAssinar, onBack }:
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 15, fontWeight: 800, color: "#c4b5fd" }}>⚡ Plano Pro</span>
           <div style={{ textAlign: "right" as const }}>
-            <span style={{ fontSize: 18, fontWeight: 900, color: "#eef2f9" }}>R$228</span>
-            <span style={{ fontSize: 12, color: "#8394b0" }}>/ano</span>
+            <span style={{ fontSize: 18, fontWeight: 900, color: "#eef2f9" }}>R$79</span>
+            <span style={{ fontSize: 12, color: "#8394b0" }}>/mês</span>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
           {[
             "✦ Fotos profissionais ilimitadas",
-            "🎬 Vídeos animados e narrados",
+            "🎬 Vídeos animados e narrados ilimitados",
             "⚡ Sem fila de espera",
             "📣 Legenda e hashtags prontas",
           ].map(f => (
@@ -661,7 +661,7 @@ function PaywallStep({ preview, submitting, onContinueFree, onAssinar, onBack }:
           onClick={onAssinar}
           style={{ ...s.primaryBtn, background: "linear-gradient(135deg, #6366f1, #a855f7)", boxShadow: "0 4px 20px rgba(139,92,246,0.4)" }}
         >
-          ⚡ Assinar Pro — R$228/ano
+          ⚡ Assinar Pro — R$79/mês
         </button>
       </div>
 
@@ -672,7 +672,7 @@ function PaywallStep({ preview, submitting, onContinueFree, onAssinar, onBack }:
           disabled={submitting}
           style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "13px 24px", color: "#8394b0", fontSize: 14, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%", opacity: submitting ? 0.7 : 1 }}
         >
-          {submitting ? "Criando sua foto..." : "Continuar grátis (1 foto/dia)"}
+          {submitting ? "Criando sua foto..." : "Continuar grátis (3 fotos · 2 vídeos)"}
         </button>
         <p style={{ fontSize: 11, color: "#4e5c72", margin: 0, textAlign: "center" as const }}>Grátis para sempre · Sem cartão de crédito</p>
       </div>
