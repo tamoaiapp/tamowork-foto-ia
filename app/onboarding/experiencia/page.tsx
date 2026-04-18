@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense, useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type Variant = "A" | "B" | "C";
 type Phase = "processing" | "done";
@@ -85,6 +85,7 @@ export default function ExperienciaPage() {
 
 function ExperienciaPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [userId, setUserId] = useState("");
   const [variant, setVariant] = useState<Variant>("A");
@@ -125,17 +126,28 @@ function ExperienciaPageInner() {
     return () => { if (progressRef.current) clearInterval(progressRef.current); };
   }, [phase]);
 
-  // Auth + read sessionStorage
+  // Auth + read URL params (primary) com fallback para sessionStorage
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { router.replace("/login"); return; }
 
-      let jid = "", v: Variant = "A", imgUrl = "", preview: string | null = null;
+      // Tenta URL params primeiro (mais confiável em PWA/iOS)
+      let jid = searchParams.get("job") ?? "";
+      const vParam = searchParams.get("v")?.toUpperCase();
+      let v: Variant = (vParam && ["A","B","C"].includes(vParam)) ? vParam as Variant : "A";
+      let imgUrl = searchParams.get("img") ? decodeURIComponent(searchParams.get("img")!) : "";
+      let preview: string | null = null;
+
+      // Fallback sessionStorage se URL params ausentes
+      if (!jid) {
+        try {
+          jid = sessionStorage.getItem("ob_job_id") ?? "";
+          const sv = sessionStorage.getItem("ob_variant");
+          if (sv && ["A","B","C"].includes(sv)) v = sv as Variant;
+          imgUrl = imgUrl || (sessionStorage.getItem("ob_image_url") ?? "");
+        } catch { /* ignore */ }
+      }
       try {
-        jid = sessionStorage.getItem("ob_job_id") ?? "";
-        const sv = sessionStorage.getItem("ob_variant");
-        if (sv && ["A", "B", "C"].includes(sv)) v = sv as Variant;
-        imgUrl = sessionStorage.getItem("ob_image_url") ?? "";
         preview = sessionStorage.getItem("ob_image_preview");
       } catch { /* ignore */ }
 
@@ -148,7 +160,7 @@ function ExperienciaPageInner() {
       if (preview) setInputPreview(preview);
       setReady(true);
     });
-  }, [router]);
+  }, [router, searchParams]);
 
   const addTamoMsg = useCallback((text: string) => {
     setMessages(prev => [...prev, { id: `t_${Date.now()}_${Math.random()}`, from: "tamo", text }]);
