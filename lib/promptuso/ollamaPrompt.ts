@@ -115,32 +115,32 @@ Determine whether the product IS or IS NOT footwear:
 - Add to positive prompt: "wearing simple neutral [sneakers/shoes/sandals], not the focus of the image"
 - Add to negative prompt: white socks, ankle socks, socks without shoes, barefoot with clothing, no shoes
 
-## STEP 5E — FACIAL & HEAD ACCESSORY RULE (MANDATORY for eyewear and head accessories)
+## STEP 5E — FACIAL & HEAD ACCESSORY RULE ⚠️ HIGHEST PRIORITY OVERRIDE
 
-Determine whether the product IS a facial or head accessory:
+CHECK THE PRODUCT TYPE FIRST. If it matches any category below, OVERRIDE the default full-body fashion shot and use the specified shot type instead. This rule CANCELS any full-body shot for these products.
 
-**If the product IS eyewear** (sunglasses, glasses, spectacles, óculos):
-- The glasses MUST be clearly visible worn on the model's FACE
-- Use a CLOSE-UP or HALF-BODY shot (waist up) — NEVER a full-body shot
-- The face must be the main subject, glasses prominently shown on the eyes/nose
-- Add to positive prompt: "close-up portrait or half-body shot, face clearly visible, sunglasses prominently worn on face, glasses as the hero of the image"
-- Add to negative prompt: full body shot, tiny glasses, glasses not visible, glasses off face, glasses in hand
+**EYEWEAR** (sunglasses, glasses, spectacles, óculos, óculos de sol, lunettes):
+- ⛔ FORBIDDEN: full body shot, standing pose, body from head to toe
+- ✅ MANDATORY: Start your positive prompt with: "Close-up portrait shot, model's face fills most of the frame, [product] clearly and prominently worn on the eyes, face is the hero, fashion editorial style."
+- The shot must be from SHOULDERS UP at most — face and glasses dominate the image
+- Add to negative prompt: full body, full length, standing pose, legs visible, tiny glasses, glasses too small, glasses not visible, glasses off face, glasses in hand
 
-**If the product IS a hat or cap** (boné, chapéu, hat, cap, beanie):
-- The hat/cap MUST be clearly visible on the model's head
-- Use a CLOSE-UP or HALF-BODY shot showing the head/face with the hat prominently
-- Add to negative prompt: full body shot where hat is tiny, hat not on head
+**HAT or CAP** (boné, chapéu, hat, cap, beanie, gorro):
+- ⛔ FORBIDDEN: full body shot where hat becomes tiny
+- ✅ MANDATORY: Start your positive prompt with: "Half-body or close-up shot, [product] prominently worn on head, face and hat fill the frame."
+- Add to negative prompt: full body, tiny hat, hat not on head
 
-**If the product IS earrings** (brincos, earrings):
-- Use a CLOSE-UP or HEAD-AND-SHOULDERS shot showing the ear/face clearly
-- Earrings must be prominently visible, not tiny details in the background
+**EARRINGS** (brincos, earrings, argola, ear cuff):
+- ✅ MANDATORY: Start your positive prompt with: "Close-up head-and-shoulders shot, [product] clearly visible on the ear, face turned slightly to show the earring."
+- Add to negative prompt: full body, tiny earrings, earrings not visible
 
-**If the product IS a necklace** (colar, necklace, corrente):
-- Use a CLOSE-UP or CHEST-AND-FACE shot showing the necklace on the neck/chest clearly
-- Add to negative prompt: full body shot where necklace is invisible, necklace not visible
+**NECKLACE** (colar, necklace, corrente, chain, pendant):
+- ✅ MANDATORY: Start your positive prompt with: "Half-body shot from chest to face, [product] prominently worn on neck, necklace clearly visible against skin."
+- Add to negative prompt: full body, necklace too small, necklace not visible
 
-**If the product IS a ring or bracelet** (anel, pulseira, ring, bracelet):
-- Include a visible close-up of the hands/wrist showing the accessory clearly
+**RING or BRACELET** (anel, pulseira, ring, bracelet, bangle):
+- ✅ MANDATORY: Start your positive prompt with: "Close-up of hands/wrist, [product] prominently shown worn on finger/wrist, hand elegantly posed."
+- Add to negative prompt: full body, accessory not visible, tiny accessory
 
 ## STEP 6 — BUILD NEGATIVE PROMPT
 CRITICAL RULE: The negative prompt must be SHORT KEYWORDS ONLY. No sentences. No "not", no "is", no verbs.
