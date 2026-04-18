@@ -66,6 +66,10 @@ function OnboardingPageInner() {
   // Variant C
   const [ondeUsar, setOndeUsar]   = useState<OndeUsar | null>(null);
 
+  // Paywall
+  const [isPro, setIsPro]         = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+
   // ── Auth + init ─────────────────────────────────────────────────────────
   useEffect(() => {
     // getUser() faz validação server-side — funciona em mobile, magic link, token refresh
@@ -89,6 +93,10 @@ function OnboardingPageInner() {
       }
 
       setUserId(user.id);
+
+      // Verifica se já é Pro (para pular paywall)
+      supabase.from("user_plans").select("plan").eq("user_id", user.id).single()
+        .then(({ data }) => { if (data?.plan === "pro") setIsPro(true); });
 
       // Atribui ou restaura variante — ?v=A/B/C força variante para testes
       try {
@@ -180,21 +188,31 @@ function OnboardingPageInner() {
     }
   }
 
-  // ── Número total de steps por variante ──────────────────────────────────
-  const totalSteps = variant === "C" ? 3 : 2;
+  // ── Número total de steps por variante (inclui paywall) ────────────────
+  const totalSteps = variant === "C" ? 4 : 3;
 
   // ── Avança step ─────────────────────────────────────────────────────────
   function nextStep() {
-    if (step === 2 && variant !== "C") { createJob(); return; }
+    if (step === 2 && variant !== "C") {
+      if (!file) { setError("Envie a foto do produto"); return; }
+      if (!produto.trim()) { setError("Digite o nome do produto"); return; }
+      setError("");
+      if (isPro) { createJob(); return; }
+      setShowPaywall(true);
+      return;
+    }
     if (step === 2 && variant === "C") {
-      // Valida antes de avançar para o step 3
       if (!file) { setError("Envie a foto do produto"); return; }
       if (!produto.trim()) { setError("Digite o nome do produto"); return; }
       setError("");
       setStep(3);
       return;
     }
-    if (step === 3) { createJob(); return; }
+    if (step === 3) {
+      if (isPro) { createJob(); return; }
+      setShowPaywall(true);
+      return;
+    }
     setStep(s => s + 1);
   }
 
@@ -244,14 +262,14 @@ function OnboardingPageInner() {
 
         {/* Barra de progresso */}
         <div style={s.progressBar}>
-          <div style={{ ...s.progressFill, width: `${(step / totalSteps) * 100}%` }} />
+          <div style={{ ...s.progressFill, width: showPaywall ? "100%" : `${(step / totalSteps) * 100}%` }} />
         </div>
 
         {/* ── STEP 1: Boas-vindas (igual em A, B, C) ── */}
-        {step === 1 && <WelcomeStep variant={variant} onNext={() => setStep(2)} />}
+        {!showPaywall && step === 1 && <WelcomeStep variant={variant} onNext={() => setStep(2)} />}
 
         {/* ── STEP 2: Upload + Produto + Cenário ── */}
-        {step === 2 && (
+        {!showPaywall && step === 2 && (
           <UploadStep
             variant={variant}
             file={file}
@@ -259,19 +277,19 @@ function OnboardingPageInner() {
             produto={produto}
             cenario={cenario}
             error={error}
-            submitting={submitting && variant !== "C"}
+            submitting={false}
             fileRef={fileRef}
             onPickFile={pickFile}
             onProduto={setProduto}
             onCenario={setCenario}
             onNext={nextStep}
             onBack={() => setStep(1)}
-            isLastStep={variant !== "C"}
+            isLastStep={false}
           />
         )}
 
         {/* ── STEP 3: Variant B — Objetivos durante upload ── */}
-        {step === 2 && variant === "B" && (
+        {!showPaywall && step === 2 && variant === "B" && (
           <EngajamentoCards
             objetivo={objetivo}
             facilidade={facilidade}
@@ -281,13 +299,24 @@ function OnboardingPageInner() {
         )}
 
         {/* ── STEP 3: Variant C — Onde vai usar? ── */}
-        {step === 3 && variant === "C" && (
+        {!showPaywall && step === 3 && variant === "C" && (
           <OndeUsarStep
             ondeUsar={ondeUsar}
             onSelect={setOndeUsar}
-            submitting={submitting}
+            submitting={false}
             onNext={nextStep}
             onBack={() => setStep(2)}
+          />
+        )}
+
+        {/* ── PAYWALL ─────────────────────────────────────────────────────── */}
+        {showPaywall && (
+          <PaywallStep
+            preview={preview}
+            submitting={submitting}
+            onContinueFree={createJob}
+            onAssinar={() => router.push("/planos")}
+            onBack={() => setShowPaywall(false)}
           />
         )}
 
@@ -579,9 +608,76 @@ function OndeUsarStep({ ondeUsar, onSelect, submitting, onNext, onBack }: OndeUs
           disabled={submitting}
           style={{ ...s.primaryBtn, flex: 1, opacity: submitting ? 0.7 : 1 }}
         >
-          {submitting ? "Criando sua foto..." : "✨ Gerar foto profissional"}
+          Continuar →
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── Paywall Step ──────────────────────────────────────────────────────────────
+interface PaywallStepProps {
+  preview: string | null;
+  submitting: boolean;
+  onContinueFree: () => void;
+  onAssinar: () => void;
+  onBack: () => void;
+}
+
+function PaywallStep({ preview, submitting, onContinueFree, onAssinar, onBack }: PaywallStepProps) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 8 }}>
+      {/* Cabeçalho */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, textAlign: "center" as const }}>
+        {preview && (
+          <img src={preview} alt="produto" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 14, border: "2px solid rgba(168,85,247,0.4)" }} />
+        )}
+        <div>
+          <h2 style={s.stepTitle}>Quase lá! 🎉</h2>
+          <p style={s.stepSub}>Sua foto está pronta para ser criada. Escolha como continuar:</p>
+        </div>
+      </div>
+
+      {/* PRO card */}
+      <div style={{ background: "rgba(168,85,247,0.08)", border: "1.5px solid rgba(168,85,247,0.35)", borderRadius: 18, padding: "20px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#c4b5fd" }}>⚡ Plano Pro</span>
+          <div style={{ textAlign: "right" as const }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: "#eef2f9" }}>R$228</span>
+            <span style={{ fontSize: 12, color: "#8394b0" }}>/ano</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          {[
+            "✦ Fotos profissionais ilimitadas",
+            "🎬 Vídeos animados e narrados",
+            "⚡ Sem fila de espera",
+            "📣 Legenda e hashtags prontas",
+          ].map(f => (
+            <span key={f} style={{ fontSize: 13, color: "#8394b0" }}>{f}</span>
+          ))}
+        </div>
+        <button
+          onClick={onAssinar}
+          style={{ ...s.primaryBtn, background: "linear-gradient(135deg, #6366f1, #a855f7)", boxShadow: "0 4px 20px rgba(139,92,246,0.4)" }}
+        >
+          ⚡ Assinar Pro — R$228/ano
+        </button>
+      </div>
+
+      {/* Free option */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <button
+          onClick={onContinueFree}
+          disabled={submitting}
+          style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "13px 24px", color: "#8394b0", fontSize: 14, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%", opacity: submitting ? 0.7 : 1 }}
+        >
+          {submitting ? "Criando sua foto..." : "Continuar grátis (1 foto/dia)"}
+        </button>
+        <p style={{ fontSize: 11, color: "#4e5c72", margin: 0, textAlign: "center" as const }}>Grátis para sempre · Sem cartão de crédito</p>
+      </div>
+
+      <button onClick={onBack} style={{ ...s.backBtn, width: "100%", textAlign: "center" as const }}>← Voltar</button>
     </div>
   );
 }
