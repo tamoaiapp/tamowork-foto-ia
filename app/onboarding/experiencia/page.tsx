@@ -8,76 +8,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 type Variant = "A" | "B" | "C";
 type Phase = "processing" | "done";
 
-interface TamoMsg {
-  id: string;
-  from: "tamo" | "user";
-  text: string;
-}
-
-const TAMO_SCRIPTS: Record<Variant, Array<{ delay: number; text: string }>> = {
-  A: [
-    { delay: 0, text: "Já comecei a transformar sua imagem em algo com cara de venda." },
-    { delay: 15, text: "Estou ajustando a apresentação do produto para ficar mais profissional." },
-    { delay: 35, text: "Falta pouco. Já já vou te mostrar o antes e depois." },
-  ],
-  B: [
-    { delay: 0, text: "Analisei sua foto. Vou deixar com muito mais apelo comercial." },
-    { delay: 15, text: "Imagens assim costumam prender mais atenção em anúncios. Estou caprichando." },
-    { delay: 35, text: "Quase pronto. Isso vai fazer diferença no seu resultado de venda." },
-  ],
-  C: [
-    { delay: 0, text: "Já comecei a produzir conteúdo a partir da sua foto." },
-    { delay: 15, text: "Estou montando o material de apresentação para o seu produto." },
-    { delay: 35, text: "Seu conteúdo está quase pronto para publicar." },
-  ],
-};
-
-const TAMO_RESULT: Record<Variant, string> = {
-  A: "Olha a diferença disso. Agora imagina esse padrão em todos os seus produtos.",
-  B: "Isso não é só imagem bonita. Isso ajuda a vender.",
-  C: "Você acabou de testar uma forma mais rápida de produzir conteúdo.",
-};
-
-// Chips durante o processamento — perguntas enquanto espera
-const CHIPS_PROCESSING = [
-  { label: "Quanto tempo demora?", answer: "Menos de 2 minutos normalmente. Estou trabalhando nisso agora." },
-  { label: "Qual cenário vai usar?", answer: "Vou escolher o mais adequado para o seu produto automaticamente." },
-  { label: "Funciona com qualquer foto?", answer: "Sim! Funciona com foto de celular, fundo bagunçado, qualquer resolução." },
-];
-
-// Chips após a foto ficar pronta — reações ao resultado
-const CHIPS_DONE = [
-  { label: "Ficou bom pra anúncio?", answer: "Esse estilo tem muito mais apelo em anúncios pagos. Tende a converter bem." },
-  { label: "Quero vídeo também", answer: "Posso criar um vídeo narrado desse produto. Assine o PRO para desbloquear." },
-  { label: "Depois faz legenda também", answer: "Combinado! Com o PRO crio legenda e hashtags prontas para postar." },
-];
-
-interface PaywallCopy {
-  headline: string;
-  subheadline: string;
-  ctaPrimary: string;
-  ctaSecondary: string;
-}
-
-const PAYWALL: Record<Variant, PaywallCopy> = {
-  A: {
-    headline: "Você viu o que isso fez com sua foto.",
-    subheadline: "Agora imagina esse nível em todos os seus produtos.",
-    ctaPrimary: "Liberar tudo agora",
-    ctaSecondary: "Continuar grátis com limite",
-  },
-  B: {
-    headline: "Enquanto você usa fotos comuns, pode estar perdendo vendas.",
-    subheadline: "Seu produto já mostrou que pode ter mais impacto. Agora é sua escolha.",
-    ctaPrimary: "Quero vender mais agora",
-    ctaSecondary: "Continuar no plano grátis",
-  },
-  C: {
-    headline: "Seu conteúdo já começou a ser criado pra você.",
-    subheadline: "Fotos melhores, vídeos quando aplicável, apoio do TAMO e mais velocidade.",
-    ctaPrimary: "Ativar criação completa agora",
-    ctaSecondary: "Seguir com acesso limitado",
-  },
+const HEADLINE: Record<Variant, string> = {
+  A: "Sua foto virou uma peça de loja profissional. Sem fotógrafo, sem estúdio.",
+  B: "Essa foto agora compete com marcas grandes. Sem investir em produção.",
+  C: "Conteúdo criado automaticamente a partir do seu produto.",
 };
 
 async function getToken() {
@@ -107,16 +41,10 @@ function ExperienciaPageInner() {
   const [jobError, setJobError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
 
-  const [messages, setMessages] = useState<TamoMsg[]>([]);
-  const [usedReplies, setUsedReplies] = useState<Set<string>>(new Set());
-  const [resultMsgShown, setResultMsgShown] = useState(false);
-
   const [showPaywall, setShowPaywall] = useState(false);
   const [navigating, setNavigating] = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const scriptTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef(Date.now());
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -126,7 +54,6 @@ function ExperienciaPageInner() {
     progressRef.current = setInterval(() => {
       setProgress(p => {
         const elapsed = (Date.now() - startTimeRef.current) / 1000;
-        // Asymptotic: 90% at ~90s
         const target = Math.min(90, (elapsed / (elapsed + 30)) * 90);
         return p < target ? p + 0.5 : p;
       });
@@ -134,19 +61,17 @@ function ExperienciaPageInner() {
     return () => { if (progressRef.current) clearInterval(progressRef.current); };
   }, [phase]);
 
-  // Auth + read URL params (primary) com fallback para sessionStorage
+  // Auth + read URL params com fallback para sessionStorage
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { router.replace("/login"); return; }
 
-      // Tenta URL params primeiro (mais confiável em PWA/iOS)
       let jid = searchParams.get("job") ?? "";
       const vParam = searchParams.get("v")?.toUpperCase();
       let v: Variant = (vParam && ["A","B","C"].includes(vParam)) ? vParam as Variant : "A";
       let imgUrl = searchParams.get("img") ? decodeURIComponent(searchParams.get("img")!) : "";
       let preview: string | null = null;
 
-      // Fallback sessionStorage se URL params ausentes
       if (!jid) {
         try {
           jid = sessionStorage.getItem("ob_job_id") ?? "";
@@ -170,45 +95,14 @@ function ExperienciaPageInner() {
     });
   }, [router, searchParams]);
 
-  const addTamoMsg = useCallback((text: string) => {
-    setMessages(prev => [...prev, { id: `t_${Date.now()}_${Math.random()}`, from: "tamo", text }]);
-  }, []);
-
-  // Start scripted TAMO messages when ready
-  useEffect(() => {
-    if (!ready) return;
-    const script = TAMO_SCRIPTS[variant];
-    script.forEach(({ delay, text }) => {
-      const t = setTimeout(() => addTamoMsg(text), delay * 1000);
-      scriptTimersRef.current.push(t);
-    });
-    return () => scriptTimersRef.current.forEach(clearTimeout);
-  }, [ready, variant, addTamoMsg]);
-
-  // Scroll chat to bottom
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Job done handling
   const handleDone = useCallback((url: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
-    scriptTimersRef.current.forEach(clearTimeout);
     setProgress(100);
     setOutputUrl(url);
     setPhase("done");
     setShowPaywall(true);
   }, []);
 
-  // Show TAMO result comment once after done
-  useEffect(() => {
-    if (phase === "done" && !resultMsgShown) {
-      setResultMsgShown(true);
-      setTimeout(() => addTamoMsg(TAMO_RESULT[variant]), 800);
-    }
-  }, [phase, resultMsgShown, variant, addTamoMsg]);
-
-  // Polling
   const poll = useCallback(async () => {
     if (!jobId) return;
     try {
@@ -234,21 +128,6 @@ function ExperienciaPageInner() {
     pollRef.current = setInterval(poll, 8000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [ready, jobId, poll]);
-
-  function handleQuickReply(chip: { label: string; answer: string }) {
-    if (usedReplies.has(chip.label)) return;
-    setUsedReplies(prev => new Set([...prev, chip.label]));
-    setMessages(prev => [
-      ...prev,
-      { id: `u_${Date.now()}`, from: "user", text: chip.label },
-    ]);
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev,
-        { id: `t_${Date.now()}`, from: "tamo", text: chip.answer },
-      ]);
-    }, 600);
-  }
 
   function completeOnboarding() {
     try {
@@ -291,10 +170,6 @@ function ExperienciaPageInner() {
     router.push("/tamo");
   }
 
-  const pw = PAYWALL[variant];
-  const chips = phase === "processing" ? CHIPS_PROCESSING : CHIPS_DONE;
-  const availableChips = chips.filter(c => !usedReplies.has(c.label));
-
   if (!ready) return (
     <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid rgba(168,85,247,0.3)", borderTopColor: "#a855f7", animation: "spin 0.8s linear infinite" }} />
@@ -302,79 +177,145 @@ function ExperienciaPageInner() {
     </div>
   );
 
+  // ── Tela de paywall (fase done) ───────────────────────────────────────────────
+  if (showPaywall && outputUrl) {
+    return (
+      <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", justifyContent: "center" }}>
+        <div style={{ width: "100%", maxWidth: 480, display: "flex", flexDirection: "column", paddingBottom: 40 }}>
+          <style>{`
+            @keyframes spin { to { transform: rotate(360deg) } }
+            .cta-pro { background: linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7); color: #fff; border: none; border-radius: 14px; padding: 18px 28px; font-size: 17px; font-weight: 800; cursor: pointer; width: 100%; transition: opacity 0.2s; letter-spacing: -0.3px; }
+            .cta-pro:hover { opacity: 0.9; }
+            .cta-free { background: transparent; border: none; color: #4e5c72; font-size: 13px; cursor: pointer; width: 100%; padding: 14px; text-decoration: underline; transition: color 0.2s; }
+            .cta-free:hover { color: #8394b0; }
+            .feat-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; }
+          `}</style>
+
+          {/* Before/After — full width, sem padding lateral */}
+          <div style={{ display: "flex", gap: 2, background: "#07080b" }}>
+            <div style={{ flex: 1, position: "relative", aspectRatio: "1", background: "#0c1018", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              <img src={inputPreview || inputImageUrl} alt="antes" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
+              <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)", color: "#8394b0", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8 }}>Antes</div>
+            </div>
+            <div style={{ flex: 1, position: "relative", aspectRatio: "1", background: "#0c1018", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              <img src={outputUrl} alt="depois" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
+              <div style={{ position: "absolute", top: 10, right: 10, background: "rgba(99,102,241,0.9)", backdropFilter: "blur(4px)", color: "#fff", fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 8 }}>Depois</div>
+            </div>
+          </div>
+
+          {/* Headline + badges */}
+          <div style={{ padding: "20px 20px 0", textAlign: "center" }}>
+            <p style={{ color: "#eef2f9", fontSize: 15, lineHeight: 1.6, fontWeight: 500, margin: "0 0 14px" }}>
+              {HEADLINE[variant]}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <span style={{ background: "rgba(22,199,132,0.12)", border: "1px solid rgba(22,199,132,0.25)", color: "#16c784", borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 600 }}>
+                Cancele quando quiser
+              </span>
+              <span style={{ color: "#4e5c72", fontSize: 12 }}>|</span>
+              <span style={{ background: "rgba(22,199,132,0.12)", border: "1px solid rgba(22,199,132,0.25)", color: "#16c784", borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 600 }}>
+                Sem fidelidade
+              </span>
+            </div>
+          </div>
+
+          {/* PRO card */}
+          <div style={{ margin: "16px 16px 0", background: "#111820", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 22, padding: "24px 20px" }}>
+
+            {/* PRO badge + preço */}
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <div style={{ display: "inline-block", background: "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 20, padding: "3px 14px", fontSize: 11, fontWeight: 800, color: "#fff", letterSpacing: 1, marginBottom: 12 }}>
+                PRO
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
+                <span style={{ color: "#eef2f9", fontSize: 48, fontWeight: 900, lineHeight: 1, letterSpacing: -2 }}>R$79</span>
+                <span style={{ color: "#8394b0", fontSize: 16 }}>/mês</span>
+              </div>
+              <div style={{ color: "#4e5c72", fontSize: 13, marginTop: 6 }}>
+                Menos de R$2,63 por dia • Cancele quando quiser
+              </div>
+            </div>
+
+            {/* Feature list */}
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16, marginBottom: 20 }}>
+              {[
+                "Fotos ilimitadas de produto com IA",
+                "Vídeos animados para Reels e TikTok",
+                "Vídeo narrado com locução e cenas",
+                "Foto pronta na hora, sem fila",
+                "Alta qualidade, sem marca d'água",
+                "Cancele quando quiser",
+              ].map(feat => (
+                <div key={feat} className="feat-item">
+                  <span style={{ color: "#a855f7", fontSize: 15, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>✓</span>
+                  <span style={{ color: "#eef2f9", fontSize: 14, lineHeight: 1.5 }}>{feat}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <button className="cta-pro" onClick={goToPro} disabled={navigating}>
+              {navigating ? "Aguarde..." : "🔥 Assinar agora — R$79/mês"}
+            </button>
+            <p style={{ color: "#4e5c72", fontSize: 12, textAlign: "center", margin: "12px 0 0", lineHeight: 1.5 }}>
+              Pagamento seguro via Stripe • Cancele a qualquer momento
+            </p>
+          </div>
+
+          {/* Skip link */}
+          <button className="cta-free" onClick={goToFree} disabled={navigating}>
+            Continuar grátis com limite
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Tela de processamento ─────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", justifyContent: "center" }}>
     <div style={{ width: "100%", maxWidth: 480, display: "flex", flexDirection: "column", padding: "0 0 80px" }}>
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg) } }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
-        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
-        .msg-bubble { animation: fadeUp 0.35s ease; }
-        .tamo-bubble { background: #161e2e; border-radius: 0 14px 14px 14px; }
-        .user-bubble { background: linear-gradient(135deg,#6366f1,#a855f7); border-radius: 14px 14px 0 14px; }
-        .chip-btn { background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.3); color: #c4b5fd; border-radius: 20px; padding: 8px 16px; font-size: 13px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .chip-btn:hover { background: rgba(168,85,247,0.25); border-color: rgba(168,85,247,0.6); }
-        .cta-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7); color: #fff; border: none; border-radius: 14px; padding: 16px 28px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; transition: opacity 0.2s; }
-        .cta-primary:hover { opacity: 0.9; }
-        .cta-secondary { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #8394b0; border-radius: 14px; padding: 14px 28px; font-size: 14px; cursor: pointer; width: 100%; margin-top: 10px; transition: all 0.2s; }
-        .cta-secondary:hover { border-color: rgba(255,255,255,0.3); color: #eef2f9; }
-      `}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
 
       {/* Header TAMO */}
       <div style={{ padding: "20px 20px 0", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#a855f7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-            <img src={phase === "processing" ? "/tamo/processing.png" : "/tamo/idle.png"} alt="TAMO" style={{ width: 34, height: 34, objectFit: "contain" }} />
-          </div>
+          <img src="/tamo/processing.png" alt="TAMO" style={{ width: 34, height: 34, objectFit: "contain" }} />
+        </div>
         <div>
           <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 15 }}>TAMO</div>
           <div style={{ color: "#16c784", fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#16c784", display: "inline-block" }} />
-            {phase === "processing" ? "processando sua foto..." : "foto pronta ✓"}
+            processando sua foto...
           </div>
         </div>
       </div>
 
       {/* Progress bar */}
-      {phase === "processing" && (
-        <div style={{ padding: "16px 20px 0" }}>
-          <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg,#6366f1,#a855f7)", borderRadius: 2, transition: "width 0.5s ease" }} />
-          </div>
-          <div style={{ color: "#4e5c72", fontSize: 11, marginTop: 6, textAlign: "right" }}>{Math.round(progress)}% concluído</div>
+      <div style={{ padding: "16px 20px 0" }}>
+        <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg,#6366f1,#a855f7)", borderRadius: 2, transition: "width 0.5s ease" }} />
         </div>
-      )}
+        <div style={{ color: "#4e5c72", fontSize: 11, marginTop: 6, textAlign: "right" }}>{Math.round(progress)}% concluído</div>
+      </div>
 
-      {/* Image preview (blurred during processing, clear when done) */}
+      {/* Image preview — blurred during processing */}
       {(inputPreview || inputImageUrl) && (
         <div style={{ padding: "16px 20px 0" }}>
           <div style={{ borderRadius: 18, overflow: "hidden", position: "relative", background: "#111820" }}>
-            {phase === "processing" ? (
-              <div style={{ position: "relative" }}>
-                <img
-                  src={inputPreview || inputImageUrl}
-                  alt="foto original"
-                  style={{ width: "100%", aspectRatio: "1", objectFit: "cover", filter: "blur(12px) brightness(0.6)", display: "block" }}
-                />
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(168,85,247,0.3)", borderTopColor: "#a855f7", animation: "spin 0.8s linear infinite", margin: "0 auto 10px" }} />
-                    <div style={{ color: "#c4b5fd", fontSize: 13 }}>Transformando...</div>
-                  </div>
+            <div style={{ position: "relative" }}>
+              <img
+                src={inputPreview || inputImageUrl}
+                alt="foto original"
+                style={{ width: "100%", aspectRatio: "1", objectFit: "cover", filter: "blur(12px) brightness(0.6)", display: "block" }}
+              />
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(168,85,247,0.3)", borderTopColor: "#a855f7", animation: "spin 0.8s linear infinite", margin: "0 auto 10px" }} />
+                  <div style={{ color: "#c4b5fd", fontSize: 13 }}>Transformando...</div>
                 </div>
               </div>
-            ) : outputUrl ? (
-              /* Before/After when done — square 1:1 contain, sem corte */
-              <div style={{ display: "flex", gap: 2 }}>
-                <div style={{ flex: 1, position: "relative", aspectRatio: "1", background: "#0c1018", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                  <img src={inputPreview || inputImageUrl} alt="antes" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
-                  <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(0,0,0,0.7)", color: "#8394b0", fontSize: 11, padding: "3px 8px", borderRadius: 6 }}>Antes</div>
-                </div>
-                <div style={{ flex: 1, position: "relative", aspectRatio: "1", background: "#0c1018", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                  <img src={outputUrl} alt="depois" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
-                  <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(99,102,241,0.9)", color: "#fff", fontSize: 11, padding: "3px 8px", borderRadius: 6 }}>Depois</div>
-                </div>
-              </div>
-            ) : null}
+            </div>
           </div>
         </div>
       )}
@@ -384,72 +325,6 @@ function ExperienciaPageInner() {
         <div style={{ padding: "16px 20px 0" }}>
           <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, padding: 16, color: "#fca5a5", fontSize: 14 }}>
             {jobError}
-          </div>
-        </div>
-      )}
-
-      {/* Chat messages */}
-      <div style={{ padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: 10 }}>
-        {messages.map(msg => (
-          <div key={msg.id} className="msg-bubble" style={{ display: "flex", justifyContent: msg.from === "user" ? "flex-end" : "flex-start" }}>
-            {msg.from === "tamo" && (
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#a855f7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginRight: 8, alignSelf: "flex-end", overflow: "hidden" }}>
-                <img src="/tamo/idle.png" alt="TAMO" style={{ width: 26, height: 26, objectFit: "contain" }} />
-              </div>
-            )}
-            <div className={msg.from === "tamo" ? "tamo-bubble" : "user-bubble"} style={{ maxWidth: "80%", padding: "10px 14px", color: "#eef2f9", fontSize: 14, lineHeight: 1.5 }}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        <div ref={chatEndRef} />
-      </div>
-
-      {/* Quick reply chips — diferentes por fase */}
-      {availableChips.length > 0 && !showPaywall && (
-        <div style={{ padding: "12px 20px 0" }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {availableChips.map(chip => (
-              <button key={chip.label} className="chip-btn" onClick={() => handleQuickReply(chip)}>
-                {chip.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Paywall — shown after result */}
-      {showPaywall && (
-        <div style={{ padding: "24px 20px 0" }}>
-          <div style={{ background: "#111820", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 22, padding: "24px 20px", textAlign: "center" }}>
-            {/* Sparkle icon */}
-            <div style={{ fontSize: 36, marginBottom: 12 }}>✨</div>
-
-            <h2 style={{ color: "#eef2f9", fontSize: 20, fontWeight: 800, lineHeight: 1.3, margin: "0 0 10px" }}>
-              {pw.headline}
-            </h2>
-            <p style={{ color: "#8394b0", fontSize: 14, lineHeight: 1.6, margin: "0 0 20px" }}>
-              {pw.subheadline}
-            </p>
-
-            {/* Price highlight */}
-            <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: 14, padding: "14px 16px", marginBottom: 20 }}>
-              <div style={{ color: "#c4b5fd", fontSize: 13, marginBottom: 4 }}>Plano PRO</div>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
-                <span style={{ color: "#eef2f9", fontSize: 32, fontWeight: 800 }}>R$79</span>
-                <span style={{ color: "#8394b0", fontSize: 14 }}>/mês</span>
-              </div>
-              <div style={{ color: "#4e5c72", fontSize: 12, marginTop: 4 }}>
-                Fotos ilimitadas · Vídeos narrados · Suporte prioritário
-              </div>
-            </div>
-
-            <button className="cta-primary" onClick={goToPro} disabled={navigating}>
-              {navigating ? "Aguarde..." : pw.ctaPrimary}
-            </button>
-            <button className="cta-secondary" onClick={goToFree} disabled={navigating}>
-              {pw.ctaSecondary}
-            </button>
           </div>
         </div>
       )}

@@ -182,13 +182,21 @@ function OnboardingPageInner() {
   if (submitting) return (
     <div style={{ minHeight: "100dvh", background: "#07080b", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ maxWidth: 340, padding: "0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
-        <div style={{ position: "relative", width: 72, height: 72 }}>
-          <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "4px solid rgba(168,85,247,0.15)", borderTopColor: "#a855f7", animation: "spin 0.9s linear infinite" }} />
-          <img src="/tamo/idle.png" alt="Tamo" style={{ position: "absolute", inset: 8, objectFit: "contain" }} />
-        </div>
+        <style>{`
+          @keyframes tamoTalk {
+            0%, 100% { transform: scaleY(1); }
+            25% { transform: scaleY(0.92); }
+            50% { transform: scaleY(1.04); }
+            75% { transform: scaleY(0.96); }
+          }
+        `}</style>
+        <img
+          src="/tamo/processing.png"
+          alt="Tamo"
+          style={{ width: 80, height: 80, objectFit: "contain", animation: "tamoTalk 0.9s ease-in-out infinite", transformOrigin: "bottom center" }}
+        />
         <p style={{ fontSize: 16, fontWeight: 700, color: "#eef2f9", margin: 0, textAlign: "center" as const }}>Enviando sua foto...</p>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
@@ -243,8 +251,8 @@ function WelcomeStep({ variant, onNext }: { variant: Variant; onNext: () => void
       headline: "Fotos que vendem mais — sem esforço.",
       sub: "Transformo a foto do seu produto em criativo que prende atenção e converte.",
       benefits: [
-        { icon: "🛒", label: "Visual otimizado para venda" },
-        { icon: "📸", label: "Foto com apelo profissional" },
+        { icon: "📸", label: "Foto profissional do produto" },
+        { icon: "🎬", label: "Vídeo para Reels e TikTok" },
         { icon: "⚡", label: "Pronto em menos de 2 minutos" },
       ],
       cta: "Quero vender mais agora →",
@@ -276,8 +284,13 @@ function WelcomeStep({ variant, onNext }: { variant: Variant; onNext: () => void
       {/* Social proof */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
         <div style={{ display: "flex" }}>
-          {["#a855f7","#6366f1","#8b5cf6"].map((c, i) => (
-            <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: "2px solid #07080b", marginLeft: i ? -6 : 0 }} />
+          {[11, 26, 44, 57].map((n, i) => (
+            <img
+              key={n}
+              src={`https://i.pravatar.cc/40?img=${n}`}
+              alt=""
+              style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid #07080b", marginLeft: i ? -8 : 0, objectFit: "cover" }}
+            />
           ))}
         </div>
         <span style={{ fontSize: 12, color: "#8394b0" }}>
