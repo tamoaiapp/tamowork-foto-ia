@@ -86,46 +86,77 @@ function formatMs(ms: number) {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-// Card de urgência exibido no painel de resultado quando free user bate o limite
-function RateLimitCard({ countdown, onAssinar }: { countdown: number; onAssinar: () => void }) {
+// Card unificado de limite diário — exibido no painel de resultado (substitui RateLimitCard + ProUpsell)
+function RateLimitUpsell({ countdown, onAssinar }: { countdown: number; onAssinar: () => void }) {
+  const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
   return (
     <div style={{
-      background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12))",
-      border: "1.5px solid rgba(168,85,247,0.35)",
-      borderRadius: 16, padding: "16px 14px",
-      display: "flex", flexDirection: "column" as const, gap: 10,
-      marginBottom: 8,
+      background: "#111820",
+      border: "1px solid rgba(168,85,247,0.3)",
+      borderRadius: 18, padding: "20px 16px",
+      display: "flex", flexDirection: "column" as const, gap: 14,
     }}>
+      {/* Título + timer */}
       <div style={{ textAlign: "center" as const }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 4 }}>
-          {CONVERSION.rateLimitTitle}
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 6 }}>
+          Limite diário atingido
         </div>
-        <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 6 }}>{CONVERSION.rateLimitSubtitle}</div>
+        <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 8 }}>
+          Próxima criação disponível em
+        </div>
         <div style={{
-          fontSize: 36, fontWeight: 900, color: "#fff",
-          letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", lineHeight: 1,
+          fontSize: 40, fontWeight: 900, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", lineHeight: 1,
           background: "linear-gradient(135deg, #a5b4fc, #c084fc)",
           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
         }}>
           {formatMs(countdown)}
         </div>
+        <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 6 }}>
+          Plano grátis: 3 fotos + 2 vídeos por dia
+        </div>
       </div>
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
-        <div style={{ fontSize: 12, color: "#c4b5fd", fontWeight: 700, marginBottom: 6, textAlign: "center" as const }}>
-          {CONVERSION.rateLimitCTALabel}
+
+      {/* Divisor */}
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+
+      {/* Badge PRO + preço */}
+      <div style={{ textAlign: "center" as const }}>
+        <div style={{ display: "inline-block", background: "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 20, padding: "3px 12px", fontSize: 10, fontWeight: 800, color: "#fff", letterSpacing: 1, marginBottom: 10 }}>PRO</div>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4, marginBottom: 4 }}>
+          <span style={{ color: "#eef2f9", fontSize: 36, fontWeight: 900, letterSpacing: -1 }}>{isBR ? "R$79" : "$100"}</span>
+          <span style={{ color: "#8394b0", fontSize: 14 }}>{isBR ? "/mês" : "/year"}</span>
         </div>
-        <button onClick={onAssinar} style={{
-          width: "100%", background: "linear-gradient(135deg, #6366f1, #a855f7)",
-          border: "none", borderRadius: 12, padding: "12px",
-          color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer",
-          fontFamily: "Outfit, sans-serif",
-          boxShadow: "0 4px 16px rgba(139,92,246,0.4)",
-        }}>
-          {CONVERSION.rateLimitBtnLabel}
-        </button>
-        <div style={{ fontSize: 11, color: "#4e5c72", textAlign: "center" as const, marginTop: 6 }}>
-          {CONVERSION.rateLimitFooter}
-        </div>
+        <div style={{ fontSize: 12, color: "#4e5c72" }}>Menos de {isBR ? "R$2,63" : "$0.28"} por dia • Cancele quando quiser</div>
+      </div>
+
+      {/* Feature list */}
+      <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+        {[
+          "Fotos ilimitadas de produto com IA",
+          "Vídeos animados para Reels e TikTok",
+          "Vídeo narrado com locução e cenas",
+          "Foto pronta na hora, sem fila",
+          "Alta qualidade, sem marca d'água",
+        ].map(feat => (
+          <div key={feat} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ color: "#a855f7", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>✓</span>
+            <span style={{ color: "#eef2f9", fontSize: 13 }}>{feat}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <button onClick={onAssinar} style={{
+        width: "100%", background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
+        border: "none", borderRadius: 14, padding: "15px",
+        color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer",
+        fontFamily: "Outfit, sans-serif",
+        boxShadow: "0 4px 20px rgba(139,92,246,0.4)",
+      }}>
+        🔥 Assinar agora — {isBR ? "R$79/mês" : "$100/ano"}
+      </button>
+      <div style={{ fontSize: 11, color: "#4e5c72", textAlign: "center" as const }}>
+        Pagamento seguro via {isBR ? "Stripe" : "Stripe"} • Cancele a qualquer momento
       </div>
     </div>
   );
@@ -223,39 +254,63 @@ function CatalogModelPicker({
 }
 
 function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssinar: () => void }) {
+  const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
   return (
-    <div style={pu.wrap}>
-      <div style={{ textAlign: "center" as const }}>
-        <div style={{ fontSize: 48, marginBottom: 8 }}>⏳</div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#8394b0", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: 6 }}>
+    <div style={{ width: "100%", display: "flex", flexDirection: "column" as const, gap: 0 }}>
+      {/* Bloco superior: timer */}
+      <div style={{ background: "#111820", border: "1px solid rgba(168,85,247,0.25)", borderRadius: "18px 18px 0 0", padding: "24px 20px 20px", textAlign: "center" as const }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 8 }}>
           Limite diário atingido
         </div>
-        <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 600, marginBottom: 4 }}>
-          Sua próxima foto gratuita estará disponível em
+        <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 10 }}>
+          Próxima criação disponível em
         </div>
-        <div style={{ fontSize: 52, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", lineHeight: 1.1, marginBottom: 4 }}>
+        <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", lineHeight: 1, background: "linear-gradient(135deg, #a5b4fc, #c084fc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
           {formatMs(countdown)}
         </div>
-        <div style={{ fontSize: 12, color: "#4e5c72", marginBottom: 20 }}>
-          O plano gratuito permite 3 fotos e 2 vídeos por dia
+        <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 8 }}>
+          Plano grátis: 3 fotos + 2 vídeos por dia
         </div>
       </div>
 
-      <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: 14, padding: "14px 16px" }}>
-        <div style={{ fontSize: 13, color: "#c4b5fd", fontWeight: 700, marginBottom: 6 }}>
-          Com o PRO você não espera:
+      {/* Bloco inferior: PRO card */}
+      <div style={{ background: "#0e1520", border: "1px solid rgba(168,85,247,0.25)", borderTop: "none", borderRadius: "0 0 18px 18px", padding: "20px" }}>
+        {/* Badge PRO + preço */}
+        <div style={{ textAlign: "center" as const, marginBottom: 16 }}>
+          <div style={{ display: "inline-block", background: "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 20, padding: "3px 12px", fontSize: 10, fontWeight: 800, color: "#fff", letterSpacing: 1, marginBottom: 10 }}>PRO</div>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
+            <span style={{ color: "#eef2f9", fontSize: 40, fontWeight: 900, letterSpacing: -1 }}>{isBR ? "R$79" : "$100"}</span>
+            <span style={{ color: "#8394b0", fontSize: 14 }}>{isBR ? "/mês" : "/year"}</span>
+          </div>
+          <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 4 }}>
+            Menos de {isBR ? "R$2,63" : "$0.28"} por dia • Cancele quando quiser
+          </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
-          {["🎬 Cria fotos e vídeos ilimitados", "⚡ Processa mais rápido na fila", "🎨 Todos os estilos desbloqueados"].map(t => (
-            <div key={t} style={{ fontSize: 13, color: "#8394b0" }}>{t}</div>
+
+        {/* Features */}
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 8, marginBottom: 18 }}>
+          {[
+            "Fotos ilimitadas de produto com IA",
+            "Vídeos animados para Reels e TikTok",
+            "Vídeo narrado com locução e cenas",
+            "Foto pronta na hora, sem fila",
+            "Alta qualidade, sem marca d'água",
+            "Cancele quando quiser",
+          ].map(feat => (
+            <div key={feat} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ color: "#a855f7", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>✓</span>
+              <span style={{ color: "#eef2f9", fontSize: 14 }}>{feat}</span>
+            </div>
           ))}
         </div>
-      </div>
 
-      <button onClick={onAssinar} style={pu.btn}>
-        Assinar e criar agora
-      </button>
-      <div style={pu.guarantee}>Cancela quando quiser · Sem fidelidade</div>
+        <button onClick={onAssinar} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 14, padding: "16px", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 20px rgba(139,92,246,0.4)" }}>
+          🔥 Assinar agora — {isBR ? "R$79/mês" : "$100/ano"}
+        </button>
+        <div style={{ fontSize: 11, color: "#4e5c72", textAlign: "center" as const, marginTop: 10 }}>
+          Pagamento seguro via Stripe • Cancele a qualquer momento
+        </div>
+      </div>
     </div>
   );
 }
@@ -3107,15 +3162,11 @@ export default function HomePage() {
               {plan === "free" && (
                 <>
                   {rateLimitedUntil && countdown > 0 ? (
-                    <>
-                      <RateLimitCard countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
-                      <ProUpsell onAssinar={handleAssinarDireto} />
-                    </>
+                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
                   ) : (
-                    // Antes do limite: teaser leve, sem pressão de compra
                     <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 14, padding: "12px 14px", marginTop: 4 }}>
                       <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.6 }}>
-                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos ilimitadas + vídeos animados
+                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos + vídeos ilimitados
                         <br />
                         <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
                           Assinar Pro — R$79/mês
@@ -3228,14 +3279,11 @@ export default function HomePage() {
               {plan === "free" && (
                 <>
                   {rateLimitedUntil && countdown > 0 ? (
-                    <>
-                      <RateLimitCard countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
-                      <ProUpsell onAssinar={handleAssinarDireto} />
-                    </>
+                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
                   ) : (
                     <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 14, padding: "12px 14px", marginTop: 4 }}>
                       <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.6 }}>
-                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos ilimitadas + vídeos animados
+                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos + vídeos ilimitados
                         <br />
                         <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
                           Assinar Pro — R$79/mês
