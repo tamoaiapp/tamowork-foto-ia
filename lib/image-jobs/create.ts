@@ -64,11 +64,13 @@ export async function createImageJob(
       // Bonus aprovado — pula o rate limit normal
     } else {
       // Só desconta se a foto ficou pronta (status "done") — falhas não consomem o crédito
+      // Jobs de onboarding (source = onboarding_A/B/C) não contam no limite diário
       const { data: recentJobs } = await supabase
         .from("image_jobs")
         .select("created_at")
         .eq("user_id", userId)
         .eq("status", "done")
+        .not("source", "like", "onboarding%")
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(FREE_DAILY_LIMIT);
