@@ -21,6 +21,17 @@ async function getToken() {
   return rd.session?.access_token ?? "";
 }
 
+async function trackOBEvent(event: string, variant: string) {
+  try {
+    const tok = await getToken();
+    fetch("/api/ab/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+      body: JSON.stringify({ event, variant }),
+    }).catch(() => {});
+  } catch { /* ignora */ }
+}
+
 export default function ExperienciaPage() {
   return <Suspense><ExperienciaPageInner /></Suspense>;
 }
@@ -101,7 +112,8 @@ function ExperienciaPageInner() {
     setOutputUrl(url);
     setPhase("done");
     setShowPaywall(true);
-  }, []);
+    trackOBEvent("ob_result_viewed", variant);
+  }, [variant]);
 
   const poll = useCallback(async () => {
     if (!jobId) return;
@@ -143,6 +155,7 @@ function ExperienciaPageInner() {
 
   async function goToPro() {
     setNavigating(true);
+    trackOBEvent("ob_paywall_pro", variant);
     try {
       const token = await getToken();
       const res = await fetch("/api/checkout/stripe", {
@@ -166,6 +179,7 @@ function ExperienciaPageInner() {
 
   function goToFree() {
     setNavigating(true);
+    trackOBEvent("ob_paywall_free", variant);
     completeOnboarding();
     router.push("/tamo");
   }

@@ -30,6 +30,17 @@ function assignVariant(): Variant {
   return r < 0.33 ? "A" : r < 0.66 ? "B" : "C";
 }
 
+async function trackOBEvent(event: string, variant: string) {
+  try {
+    const tok = await getToken();
+    fetch("/api/ab/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+      body: JSON.stringify({ event, variant }),
+    }).catch(() => {});
+  } catch { /* ignora */ }
+}
+
 export default function OnboardingPage() {
   return <Suspense><OnboardingPageInner /></Suspense>;
 }
@@ -93,6 +104,13 @@ function OnboardingPageInner() {
     });
   }, [router]);
 
+  // Tracking de funil — dispara quando o step muda
+  useEffect(() => {
+    if (!ready || !variant) return;
+    if (step === 1) trackOBEvent("ob_welcome_viewed", variant);
+    if (step === 2) trackOBEvent("ob_upload_viewed", variant);
+  }, [ready, step, variant]);
+
   function pickFile(f: File) {
     setFile(f);
     setError("");
@@ -150,6 +168,7 @@ function OnboardingPageInner() {
         sessionStorage.setItem("onboarding_mode", variant);
       } catch { /* ignora */ }
 
+      trackOBEvent("ob_photo_submitted", variant);
       router.push(`/onboarding/experiencia?job=${jobId}&v=${variant}&img=${encodeURIComponent(imageUrl)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar foto");

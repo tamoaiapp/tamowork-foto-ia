@@ -3,6 +3,14 @@ import { createServerClient } from "@/lib/supabase/server";
 
 // Eventos válidos do A/B test
 const VALID_EVENTS = [
+  // ── Funil de onboarding ─────────────────────────────────────────────────────
+  "ob_welcome_viewed",  // viu o step 1 (WelcomeStep) — topo do funil
+  "ob_upload_viewed",   // clicou em "próximo" e chegou no step 2 (UploadStep)
+  "ob_photo_submitted", // clicou em "Gerar foto" — foto enviada
+  "ob_result_viewed",   // chegou na tela de resultado/paywall do onboarding
+  "ob_paywall_pro",     // clicou em Assinar no paywall do onboarding
+  "ob_paywall_free",    // clicou em "Continuar grátis" no paywall
+  // ── Funil principal do app ──────────────────────────────────────────────────
   "photo1_done",       // 1ª foto concluída — variante foi exibida
   "photo2_started",    // clicou para criar 2ª foto
   "photo2_done",       // 2ª foto concluída
