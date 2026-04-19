@@ -20,7 +20,8 @@ async function startAssembly(
   sceneUrls: string[],
   text: string,
   voice?: string,
-  audioUrl?: string
+  audioUrl?: string,
+  voiceSampleUrl?: string,
 ): Promise<void> {
   if (!ASSEMBLY_BASE) throw new Error("NARRATED_ASSEMBLY_BASE não configurado");
 
@@ -32,11 +33,12 @@ async function startAssembly(
       scenes: sceneUrls,
       text,
       voice: voice ?? "feminino",
+      voice_sample_url: voiceSampleUrl ?? undefined,
       audio_url: audioUrl ?? "",
       supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
       supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     }),
-    signal: AbortSignal.timeout(10_000), // Responde rápido (só inicia background)
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) throw new Error(`Assembly server HTTP ${res.status}`);
@@ -189,7 +191,7 @@ export async function checkNarratedVideoJob(jobId: string): Promise<void> {
       .eq("id", jobId);
 
     try {
-      await startAssembly(jobId, allSceneUrls, job.roteiro_melhorado || job.roteiro, job.voice, job.audio_url ?? undefined);
+      await startAssembly(jobId, allSceneUrls, job.roteiro_melhorado || job.roteiro, job.voice, job.audio_url ?? undefined, job.voice_sample_url ?? undefined);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error(`[narrated] assembly start error job ${jobId}:`, errMsg);

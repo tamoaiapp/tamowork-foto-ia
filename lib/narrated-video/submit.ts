@@ -303,6 +303,7 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
           body: JSON.stringify({
             text: job.roteiro,
             voice: job.voice ?? "feminino",
+            voice_sample_url: job.voice_sample_url ?? undefined,
             supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
             supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
             job_id: jobId,
@@ -343,6 +344,7 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
               audio_url: audioUrl || undefined,
               text: roteiroMelhorado || job.roteiro,
               voice: job.voice ?? "feminino",
+              voice_sample_url: job.voice_sample_url ?? undefined,
               supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
               supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
             }),

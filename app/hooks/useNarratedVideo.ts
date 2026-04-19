@@ -43,6 +43,8 @@ export function useNarratedVideo({ user }: Options) {
   const [narratedSceneSource, setNarratedSceneSource] = useState<"generate" | "existing">("generate");
   const [narratedDonePhotos, setNarratedDonePhotos] = useState<{ id: string; output_image_url: string }[]>([]);
   const [narratedSelectedScenes, setNarratedSelectedScenes] = useState<string[]>([]);
+  const [narratedVoiceMode, setNarratedVoiceMode] = useState<"builtin" | "clone">("builtin");
+  const [narratedVoiceSampleUrl, setNarratedVoiceSampleUrl] = useState("");
 
   const narratedPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const narratedElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -95,6 +97,8 @@ export function useNarratedVideo({ user }: Options) {
     setNarratedVoice("feminino");
     setNarratedSceneSource("generate");
     setNarratedSelectedScenes([]);
+    setNarratedVoiceMode("builtin");
+    setNarratedVoiceSampleUrl("");
   }
 
   return {
@@ -109,6 +113,8 @@ export function useNarratedVideo({ user }: Options) {
     narratedSceneSource, setNarratedSceneSource,
     narratedDonePhotos, setNarratedDonePhotos,
     narratedSelectedScenes, setNarratedSelectedScenes,
+    narratedVoiceMode, setNarratedVoiceMode,
+    narratedVoiceSampleUrl, setNarratedVoiceSampleUrl,
     resetNarratedVideo,
   };
 }

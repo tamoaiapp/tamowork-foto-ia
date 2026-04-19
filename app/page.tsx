@@ -772,8 +772,62 @@ export default function HomePage() {
     narratedSceneSource, setNarratedSceneSource,
     narratedDonePhotos, setNarratedDonePhotos,
     narratedSelectedScenes, setNarratedSelectedScenes,
+    narratedVoiceMode, setNarratedVoiceMode,
+    narratedVoiceSampleUrl, setNarratedVoiceSampleUrl,
     resetNarratedVideo,
   } = useNarratedVideo({ user });
+
+  // Voice recording state
+  const [voiceRecording, setVoiceRecording] = useState(false);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [voiceUploading, setVoiceUploading] = useState(false);
+  const voiceMediaRef = useRef<MediaRecorder | null>(null);
+  const voiceChunksRef = useRef<Blob[]>([]);
+
+  async function startVoiceRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      voiceChunksRef.current = [];
+      const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4" });
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) voiceChunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(voiceChunksRef.current, { type: recorder.mimeType });
+        setVoiceBlob(blob);
+        stream.getTracks().forEach(t => t.stop());
+      };
+      recorder.start();
+      voiceMediaRef.current = recorder;
+      setVoiceRecording(true);
+      setVoiceBlob(null);
+    } catch {
+      alert("Sem permissão para o microfone. Permita o acesso e tente novamente.");
+    }
+  }
+
+  function stopVoiceRecording() {
+    voiceMediaRef.current?.stop();
+    voiceMediaRef.current = null;
+    setVoiceRecording(false);
+  }
+
+  async function uploadVoiceSample(blob: Blob) {
+    setVoiceUploading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/voice-sample", {
+        method: "POST",
+        headers: { "Content-Type": blob.type || "audio/webm", Authorization: `Bearer ${token}` },
+        body: blob,
+      });
+      if (!res.ok) throw new Error("Falha no upload");
+      const { url } = await res.json();
+      setNarratedVoiceSampleUrl(url);
+    } catch {
+      alert("Erro ao salvar amostra de voz. Tente novamente.");
+    } finally {
+      setVoiceUploading(false);
+    }
+  }
 
   // Long video state
   type LongVideoJob = { id: string; status: string; output_video_url?: string; clip_urls?: string[]; error_message?: string; created_at?: string };
@@ -1878,6 +1932,7 @@ export default function HomePage() {
           input_image_url: imageUrl,
           roteiro: narratedRoteiro,
           voice: narratedVoice,
+          voice_sample_url: narratedVoiceMode === "clone" && narratedVoiceSampleUrl ? narratedVoiceSampleUrl : undefined,
           scene_source: narratedSceneSource,
           scene_urls: narratedSceneSource === "existing" ? narratedSelectedScenes : undefined,
           format: photoFormat,
@@ -2695,29 +2750,112 @@ export default function HomePage() {
                       {/* Voz */}
                       <div style={styles.fieldGroup}>
                         <label style={styles.label}>Voz da narração</label>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          {(["feminino", "masculino"] as const).map((v) => (
+                        {/* Modo: IA built-in ou clone */}
+                        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                          {([["builtin", "🤖 Voz IA"], ["clone", "🎤 Sua voz"]] as const).map(([mode, label]) => (
                             <button
-                              key={v}
+                              key={mode}
                               type="button"
-                              onClick={() => setNarratedVoice(v)}
+                              onClick={() => { setNarratedVoiceMode(mode); setVoiceBlob(null); setNarratedVoiceSampleUrl(""); }}
                               style={{
                                 flex: 1,
                                 padding: "10px 0",
                                 borderRadius: 10,
-                                border: `1.5px solid ${narratedVoice === v ? "rgba(168,85,247,0.7)" : "rgba(255,255,255,0.08)"}`,
-                                background: narratedVoice === v ? "rgba(168,85,247,0.18)" : "rgba(255,255,255,0.03)",
-                                color: narratedVoice === v ? "#c4b5fd" : "#8394b0",
-                                fontWeight: 700,
-                                fontSize: 13,
-                                cursor: "pointer",
-                                transition: "all 0.15s",
+                                border: `1.5px solid ${narratedVoiceMode === mode ? "rgba(168,85,247,0.7)" : "rgba(255,255,255,0.08)"}`,
+                                background: narratedVoiceMode === mode ? "rgba(168,85,247,0.18)" : "rgba(255,255,255,0.03)",
+                                color: narratedVoiceMode === mode ? "#c4b5fd" : "#8394b0",
+                                fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all 0.15s",
                               }}
-                            >
-                              {v === "feminino" ? "👩 Feminina" : "👨 Masculina"}
-                            </button>
+                            >{label}</button>
                           ))}
                         </div>
+
+                        {/* Builtin: feminina/masculina */}
+                        {narratedVoiceMode === "builtin" && (
+                          <div style={{ display: "flex", gap: 8 }}>
+                            {(["feminino", "masculino"] as const).map((v) => (
+                              <button
+                                key={v}
+                                type="button"
+                                onClick={() => setNarratedVoice(v)}
+                                style={{
+                                  flex: 1,
+                                  padding: "10px 0",
+                                  borderRadius: 10,
+                                  border: `1.5px solid ${narratedVoice === v ? "rgba(168,85,247,0.7)" : "rgba(255,255,255,0.08)"}`,
+                                  background: narratedVoice === v ? "rgba(168,85,247,0.18)" : "rgba(255,255,255,0.03)",
+                                  color: narratedVoice === v ? "#c4b5fd" : "#8394b0",
+                                  fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all 0.15s",
+                                }}
+                              >{v === "feminino" ? "👩 Feminina" : "👨 Masculina"}</button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Clone: gravar amostra */}
+                        {narratedVoiceMode === "clone" && (
+                          <div style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.18)", borderRadius: 12, padding: "14px 14px" }}>
+                            <div style={{ fontSize: 12, color: "#c4b5fd", fontWeight: 600, marginBottom: 8 }}>
+                              Grave 5–15 segundos lendo o texto abaixo
+                            </div>
+                            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#eef2f9", lineHeight: 1.5, marginBottom: 12, fontStyle: "italic" }}>
+                              &ldquo;Olá! Vou mostrar um produto incrível que vai transformar sua rotina. Aproveita porque é por tempo limitado!&rdquo;
+                            </div>
+
+                            {!narratedVoiceSampleUrl ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={voiceRecording ? stopVoiceRecording : startVoiceRecording}
+                                  style={{
+                                    width: "100%",
+                                    padding: "11px 0",
+                                    borderRadius: 10,
+                                    border: "none",
+                                    background: voiceRecording ? "rgba(239,68,68,0.25)" : "rgba(168,85,247,0.22)",
+                                    color: voiceRecording ? "#fca5a5" : "#c4b5fd",
+                                    fontWeight: 700, fontSize: 14, cursor: "pointer", transition: "all 0.15s",
+                                  }}
+                                >
+                                  {voiceRecording ? "⏹ Parar gravação" : "⏺ Iniciar gravação"}
+                                </button>
+
+                                {voiceBlob && !voiceRecording && (
+                                  <div style={{ marginTop: 10 }}>
+                                    <audio controls src={URL.createObjectURL(voiceBlob)} style={{ width: "100%", height: 36, marginBottom: 8 }} />
+                                    <button
+                                      type="button"
+                                      disabled={voiceUploading}
+                                      onClick={() => uploadVoiceSample(voiceBlob)}
+                                      style={{
+                                        width: "100%",
+                                        padding: "10px 0",
+                                        borderRadius: 10,
+                                        border: "none",
+                                        background: "rgba(22,199,132,0.2)",
+                                        color: "#34d399",
+                                        fontWeight: 700, fontSize: 13, cursor: "pointer",
+                                      }}
+                                    >
+                                      {voiceUploading ? "Salvando..." : "✅ Usar esta voz"}
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <div style={{ flex: 1, fontSize: 13, color: "#34d399", fontWeight: 600 }}>✅ Voz gravada com sucesso!</div>
+                                <button
+                                  type="button"
+                                  onClick={() => { setVoiceBlob(null); setNarratedVoiceSampleUrl(""); }}
+                                  style={{ fontSize: 12, color: "#8394b0", background: "none", border: "none", cursor: "pointer" }}
+                                >
+                                  Regravar
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Roteiro */}

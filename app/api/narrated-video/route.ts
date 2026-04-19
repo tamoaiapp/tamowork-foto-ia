@@ -53,14 +53,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let body: { input_image_url?: string; roteiro?: string; voice?: string; scene_source?: string; scene_urls?: string[]; format?: string };
+  let body: { input_image_url?: string; roteiro?: string; voice?: string; voice_sample_url?: string; scene_source?: string; scene_urls?: string[]; format?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  const { input_image_url, roteiro, voice, scene_source, scene_urls } = body;
+  const { input_image_url, roteiro, voice, voice_sample_url, scene_source, scene_urls } = body;
   const validSceneSource = scene_source === "existing" ? "existing" : "generate";
 
   if (validSceneSource === "generate" && !input_image_url) {
@@ -75,20 +75,35 @@ export async function POST(req: NextRequest) {
 
   const validFormat = ["story","square","portrait","horizontal"].includes(body.format ?? "") ? body.format : "story";
 
-  const { data: job, error: insertErr } = await supabase
+  const insertPayload: Record<string, unknown> = {
+    user_id: user.id,
+    input_image_url: input_image_url ?? null,
+    roteiro: roteiro.trim(),
+    voice: validVoice,
+    scene_source: validSceneSource,
+    scene_urls: validSceneSource === "existing" ? scene_urls : null,
+    format: validFormat,
+    status: "queued",
+  };
+  if (voice_sample_url) insertPayload.voice_sample_url = voice_sample_url;
+
+  let { data: job, error: insertErr } = await supabase
     .from("narrated_video_jobs")
-    .insert({
-      user_id: user.id,
-      input_image_url: input_image_url ?? null,
-      roteiro: roteiro.trim(),
-      voice: validVoice,
-      scene_source: validSceneSource,
-      scene_urls: validSceneSource === "existing" ? scene_urls : null,
-      format: validFormat,
-      status: "queued",
-    })
+    .insert(insertPayload)
     .select("id, status")
     .single();
+
+  // Fallback: coluna voice_sample_url ainda não existe — tenta sem ela
+  if (insertErr?.code === "42703" && voice_sample_url) {
+    const fallback = await supabase
+      .from("narrated_video_jobs")
+      .insert({ ...insertPayload, voice_sample_url: undefined })
+      .select("id, status")
+      .single();
+    job = fallback.data;
+    insertErr = fallback.error;
+    console.warn("[narrated] voice_sample_url ignorado: coluna não existe ainda");
+  }
 
   if (insertErr || !job) {
     return NextResponse.json({ error: insertErr?.message ?? "Erro ao criar job" }, { status: 500 });
