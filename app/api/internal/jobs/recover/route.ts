@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
     // Narrated video jobs
     { data: queuedNarratedJobs },
     { data: activeNarratedJobs },
+    { data: staleSubmittingNarratedJobs },
   ] = await Promise.all([
     supabase.from("image_jobs").select("id").eq("status", "queued").gte("updated_at", staleQueuedCutoff).limit(1),
     supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", checkCutoff).gte("updated_at", restartCutoff).limit(10),
@@ -95,9 +96,10 @@ export async function GET(req: NextRequest) {
     // submitting preso há mais de 2 min → reset para queued
     supabase.from("image_jobs").select("id").eq("status", "submitting").lt("updated_at", staleSubmittingCutoff).limit(10),
     supabase.from("video_jobs").select("id").eq("status", "submitting").lt("updated_at", staleSubmittingCutoff).limit(5),
-    // narrated video: queued + ativos
+    // narrated video: queued + ativos + submitting preso
     supabase.from("narrated_video_jobs").select("id").eq("status", "queued").limit(2),
-    supabase.from("narrated_video_jobs").select("id").in("status", ["submitting", "generating_scenes", "assembling"]).lt("updated_at", checkCutoff).limit(5),
+    supabase.from("narrated_video_jobs").select("id").in("status", ["generating_scenes", "assembling"]).lt("updated_at", checkCutoff).limit(5),
+    supabase.from("narrated_video_jobs").select("id").eq("status", "submitting").lt("updated_at", staleSubmittingCutoff).limit(5),
   ]);
 
   const results: { id: string; action: string; ok: boolean; error?: string }[] = [];
@@ -116,6 +118,13 @@ export async function GET(req: NextRequest) {
       .update({ status: "queued", updated_at: new Date().toISOString() })
       .in("id", ids);
     results.push(...ids.map(id => ({ id, action: "vid-submitting-reset", ok: true })));
+  }
+  if ((staleSubmittingNarratedJobs ?? []).length > 0) {
+    const ids = (staleSubmittingNarratedJobs ?? []).map(j => j.id);
+    await supabase.from("narrated_video_jobs")
+      .update({ status: "queued", updated_at: new Date().toISOString() })
+      .in("id", ids);
+    results.push(...ids.map(id => ({ id, action: "narr-submitting-reset", ok: true })));
   }
 
   // REGRA 0: Jobs stuck há mais de 30 min → falha definitiva

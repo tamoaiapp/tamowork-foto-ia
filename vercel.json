@@ -12,6 +12,9 @@
     },
     "app/api/prompt/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/internal/jobs/recover/route.ts": {
+      "maxDuration": 300
     }
   }
 }
