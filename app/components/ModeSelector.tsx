@@ -1,15 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useI18n } from "@/lib/i18n";
 
 export type CreationMode = "simulacao" | "fundo_branco" | "catalogo" | "personalizado" | "video" | "promo" | "video_narrado" | "video_longo" | "produto_exposto";
 
-const FOTO_MODES: CreationMode[] = ["simulacao", "catalogo", "produto_exposto", "fundo_branco", "personalizado"];
-const VIDEO_MODES: CreationMode[] = ["video_narrado", "video", "video_longo"];
-
 const BASE = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/examples";
-
 const VIDEO_URLS = Array.from({ length: 9 }, (_, i) => `${BASE}/video${i + 1}.mp4`);
 
 interface Props {
@@ -18,44 +13,11 @@ interface Props {
   isPro?: boolean;
 }
 
-type ModeData = { id: CreationMode; name: string; title: string; desc: string; img: string; badge?: string; };
-
-function getModes(lang: string): ModeData[] {
-  if (lang === "en") return [
-    { id: "simulacao",     name: "Lifestyle scene",   title: "Product in real setting",  desc: "Place your product in a beautiful, real-world scene.", img: `${BASE}/simulacao.jpg`, badge: "Most used" },
-    { id: "catalogo",      name: "With model",         title: "AI-dressed model",         desc: "Virtual model wears your item — no photographer needed.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video",         name: "Animated video",     title: "Photo that moves",         desc: "Turn your photo into a video ready for Reels.", img: "", badge: "2 free / 24h" },
-    { id: "video_narrado", name: "Narrated video",     title: "Photo + voiceover",        desc: "Your product photo becomes a video with AI narration. Write the script, AI reads it.", img: "", badge: "Most used" },
-    { id: "video_longo",   name: "Long video",         title: "~32 second video",         desc: "AI generates 4 different scenes and joins them. Takes 20-40 min. PRO exclusive.", img: "", badge: "PRO" },
-    { id: "produto_exposto", name: "Store display",      title: "Premium store display",    desc: "AI places your product on a mannequin, bust, counter or pedestal. No typing needed — AI reads the photo.", img: "", badge: "PRO" },
-    { id: "personalizado", name: "Custom",             title: "You choose the scene",     desc: "Describe what you want and the AI creates it your way.", img: `${BASE}/produto.jpg` },
-  ];
-  if (lang === "es") return [
-    { id: "simulacao",     name: "Foto en escena",     title: "Producto en ambiente real", desc: "Pon tu producto en una escena bonita y real.", img: `${BASE}/simulacao.jpg`, badge: "Más usado" },
-    { id: "catalogo",      name: "Con modelo",          title: "Ropa vestida por IA",       desc: "Modelo virtual usa tu prenda sin necesitar fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video",         name: "Video animado",       title: "Foto que se mueve",         desc: "Transforma tu foto en un video listo para Reels.", img: "", badge: "2 gratis / 24h" },
-    { id: "video_narrado", name: "Video narrado",       title: "Foto + narración",          desc: "Tu foto se convierte en video con narración de IA. Escribe el guión, la IA lo lee.", img: "", badge: "Más usado" },
-    { id: "video_longo",   name: "Video largo",         title: "Video de ~32 segundos",     desc: "IA genera 4 escenas distintas y las une. Tarda 20-40 min. Solo PRO.", img: "", badge: "PRO" },
-    { id: "produto_exposto", name: "Expositor premium", title: "Display de loja premium",  desc: "IA coloca seu produto em manequim, busto, bancada ou pedestal. Sem digitar nada — IA lê a foto.", img: `${BASE}/expositor.jpg`, badge: "PRO" },
-    { id: "personalizado", name: "A mi manera",         title: "Tú eliges la escena",       desc: "Describe lo que quieres y la IA lo crea a tu manera.", img: `${BASE}/produto.jpg` },
-  ];
-  return [
-    { id: "simulacao",     name: "Foto em cena",       title: "Produto em ambiente real",  desc: "Coloca seu produto numa cena bonita e real.", img: `${BASE}/simulacao.jpg`, badge: "Mais usado" },
-    { id: "catalogo",      name: "Com modelo",          title: "Roupa vestida por IA",      desc: "Modelo virtual usa sua peça sem precisar de fotógrafo.", img: `${BASE}/modelo_opt1.jpg` },
-    { id: "video",         name: "Vídeo animado",       title: "Foto que se mexe",          desc: "Transforma sua foto num vídeo pronto para Reels.", img: "", badge: "2 grátis / 24h" },
-    { id: "video_narrado", name: "Vídeo com narração",  title: "Foto + voz narrada",        desc: "Sua foto vira vídeo com narração de IA. Você escreve o roteiro, a IA fala.", img: "", badge: "Mais usado" },
-    { id: "video_longo",   name: "Vídeo longo",         title: "Vídeo de ~32 segundos",     desc: "IA gera 4 cenas diferentes e junta num vídeo só. Demora 20-40 min. Exclusivo PRO.", img: "", badge: "PRO" },
-    { id: "produto_exposto", name: "Expositor premium", title: "Display de loja premium",  desc: "IA coloca seu produto em manequim, busto, bancada ou pedestal. Sem digitar nada — IA lê a foto.", img: "", badge: "PRO" },
-    { id: "personalizado", name: "Do meu jeito",        title: "Você escolhe a cena",       desc: "Descreva o que quer e a IA cria do seu jeito.", img: `${BASE}/produto.jpg` },
-  ];
-}
-
-function VideoCard({ name, title, desc, badge, onClick, btnLabel }: {
-  name: string; title: string; desc: string; badge?: string; onClick: () => void; btnLabel?: string;
-}) {
+// ── Card com vídeo em loop para modo "vídeo curto" ───────────────────────────
+function VideoMedia() {
   const [activeSlot, setActiveSlot] = useState<"A" | "B">("A");
-  const [idxA, setIdxA] = useState(8);
-  const [idxB, setIdxB] = useState(0);
+  const [idxA, setIdxA] = useState(0);
+  const [idxB, setIdxB] = useState(1);
   const refA = useRef<HTMLVideoElement>(null);
   const refB = useRef<HTMLVideoElement>(null);
   const fadingRef = useRef(false);
@@ -80,30 +42,38 @@ function VideoCard({ name, title, desc, badge, onClick, btnLabel }: {
     const handler = () => advance();
     el.addEventListener("ended", handler);
     return () => el.removeEventListener("ended", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSlot]);
 
   return (
-    <ModeCard
-      name={name} title={title} desc={desc} badge={badge}
-      onClick={onClick} btnLabel={btnLabel}
-      media={
-        <>
-          <video ref={refA} src={VIDEO_URLS[idxA]}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: activeSlot === "A" ? 1 : 0, transition: "opacity 0.7s ease" }}
-            autoPlay muted playsInline preload="metadata" />
-          <video ref={refB} src={VIDEO_URLS[idxB]}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: activeSlot === "B" ? 1 : 0, transition: "opacity 0.7s ease" }}
-            muted playsInline preload="none" />
-        </>
-      }
-    />
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <video ref={refA} src={VIDEO_URLS[idxA]}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: activeSlot === "A" ? 1 : 0, transition: "opacity 0.7s" }}
+        autoPlay muted playsInline preload="metadata" />
+      <video ref={refB} src={VIDEO_URLS[idxB]}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: activeSlot === "B" ? 1 : 0, transition: "opacity 0.7s" }}
+        muted playsInline preload="none" />
+    </div>
   );
 }
 
-function ModeCard({ name, title, desc, badge, onClick, media, img, btnLabel }: {
-  name: string; title: string; desc: string; badge?: string;
-  onClick: () => void; media?: React.ReactNode; img?: string; btnLabel?: string;
+// ── Card horizontal principal ─────────────────────────────────────────────────
+function CreationCard({
+  icon,
+  label,
+  highlightWord,
+  desc,
+  media,
+  badge,
+  onClick,
+}: {
+  icon: string;
+  label: string;       // "Criar foto que"
+  highlightWord: string; // "vende"
+  desc: string;
+  media: React.ReactNode;
+  badge?: string;
+  onClick: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -112,315 +82,154 @@ function ModeCard({ name, title, desc, badge, onClick, media, img, btnLabel }: {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
+        display: "flex",
+        alignItems: "stretch",
         background: "#111820",
-        border: `1.5px solid ${hovered ? "rgba(168,85,247,0.5)" : "rgba(255,255,255,0.07)"}`,
-        borderRadius: 16,
+        border: `1.5px solid ${hovered ? "rgba(168,85,247,0.55)" : "rgba(255,255,255,0.07)"}`,
+        borderRadius: 18,
         overflow: "hidden",
         cursor: "pointer",
         transition: "border-color 0.15s, transform 0.15s, box-shadow 0.15s",
         transform: hovered ? "translateY(-2px)" : "none",
-        boxShadow: hovered ? "0 8px 32px rgba(168,85,247,0.15)" : "none",
-        display: "flex",
-        flexDirection: "column",
+        boxShadow: hovered ? "0 8px 28px rgba(168,85,247,0.14)" : "none",
+        minHeight: 110,
+        position: "relative",
       }}
-      className="mode-card"
     >
-      {/* Image area */}
-      <div style={{ position: "relative", width: "100%", overflow: "hidden" }} className="mode-card-img-wrap">
-        {media || (img && <img src={img} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />)}
-        {/* Gradient overlay */}
-        <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0, height: "60%",
-          background: "linear-gradient(to top, rgba(0,0,0,0.8), transparent)",
-          pointerEvents: "none",
-        }} />
-        {/* Badge */}
+      {/* Left: text */}
+      <div style={{ flex: 1, padding: "18px 16px 18px 18px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 6, minWidth: 0 }}>
         {badge && (
           <div style={{
-            position: "absolute", top: 10, right: 10,
-            background: ["Mais usado", "Most used", "Más usado"].includes(badge)
+            display: "inline-flex", alignSelf: "flex-start",
+            background: badge === "Mais usado"
               ? "linear-gradient(135deg, #16c784, #0ea86a)"
               : "linear-gradient(135deg, #6366f1, #a855f7)",
-            borderRadius: 6, padding: "4px 10px",
-            fontSize: 11, fontWeight: 800, color: "#fff", letterSpacing: "0.04em",
+            borderRadius: 6, padding: "3px 9px",
+            fontSize: 10, fontWeight: 800, color: "#fff", letterSpacing: "0.05em",
+            marginBottom: 2,
           }}>{badge}</div>
         )}
-        {/* Overlay text */}
-        <div style={{ position: "absolute", bottom: 10, left: 12, right: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(196,181,253,0.9)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>
-            {name}
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1.25, letterSpacing: "-0.01em" }}>
-            {title}
-          </div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: "#eef2f9", lineHeight: 1.2, letterSpacing: "-0.02em" }}>
+          <span style={{ color: "#eef2f9" }}>{icon} {label} </span>
+          <span style={{
+            background: "linear-gradient(90deg, #a855f7, #6366f1)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}>{highlightWord}</span>
+        </div>
+        <div style={{ fontSize: 12.5, color: "#8394b0", lineHeight: 1.45, fontWeight: 400 }}>
+          {desc}
         </div>
       </div>
 
-      {/* Footer */}
-      <div style={{ padding: "12px 12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, minHeight: 64 }} className="mode-card-footer">
-        <span style={{ fontSize: 12.5, color: "#8394b0", lineHeight: 1.45, fontWeight: 400 }} className="mode-card-desc">{desc}</span>
-        <button
-          style={{
-            background: hovered ? "rgba(168,85,247,0.25)" : "rgba(168,85,247,0.1)",
-            border: "1px solid rgba(168,85,247,0.4)",
-            borderRadius: 10, padding: "10px 14px",
-            color: "#c4b5fd", fontSize: 13, fontWeight: 700,
-            cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-            transition: "background 0.15s",
-          }}
-        >
-          {btnLabel ?? "Usar agora"}
-        </button>
+      {/* Right: image/video */}
+      <div style={{
+        width: 140,
+        flexShrink: 0,
+        position: "relative",
+        overflow: "hidden",
+      }} className="mode-card-media">
+        {/* gradient fade from left */}
+        <div style={{
+          position: "absolute", left: 0, top: 0, bottom: 0, width: 40,
+          background: "linear-gradient(to right, #111820, transparent)",
+          zIndex: 1, pointerEvents: "none",
+        }} />
+        {media}
       </div>
     </div>
   );
 }
 
-export default function ModeSelector({ onChange }: Props) {
-  const { lang } = useI18n();
-  const [tab, setTab] = useState<"foto" | "video">("foto");
-  const ALL_MODES = getModes(lang);
-  const activeIds = tab === "foto" ? FOTO_MODES : VIDEO_MODES;
-  const MODES = ALL_MODES.filter(m => activeIds.includes(m.id));
-
-  const title = lang === "en" ? "What do you want to create?" : lang === "es" ? "¿Qué quieres crear?" : "O que você quer criar?";
-  const subtitle = lang === "en" ? "Choose a mode to get started" : lang === "es" ? "Elige un modo para empezar" : "Escolha um modo para começar";
-
-  const tabLabel = (t: "foto" | "video") => {
-    if (t === "foto") return lang === "en" ? "📷 Photo" : "📷 Foto";
-    return lang === "en" ? "🎬 Video" : "🎬 Vídeo";
-  };
-
+// ── Animação de ondas sonoras para vídeo narrado ──────────────────────────────
+function AudioWaveMedia() {
   return (
-    <div className="mode-selector">
-      <style>{`
-        .mode-selector .mode-title {
-          font-size: 16px;
-          font-weight: 800;
-          color: #eef2f9;
-          letter-spacing: -0.01em;
-          margin-top: 0;
-          margin-bottom: 14px;
-        }
-        .mode-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-          padding-bottom: 88px;
-        }
-        .mode-card-img-wrap {
-          aspect-ratio: 3 / 4;
-        }
-        .mode-card-desc { display: block; }
-        .mode-card-footer { min-height: 56px; }
-        .mode-card-footer button { min-height: 40px; }
+    <div style={{
+      width: "100%", height: "100%",
+      background: "linear-gradient(135deg, #120825 0%, #0d1a2e 60%, #07080b 100%)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      flexDirection: "column", gap: 10,
+    }}>
+      <div style={{ fontSize: 40, lineHeight: 1 }}>🎙️</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+        {[5, 9, 14, 10, 7, 12, 8, 5, 11, 7].map((h, i) => (
+          <div key={i} style={{
+            width: 3, height: h,
+            background: "linear-gradient(to top, #6366f1, #a855f7)",
+            borderRadius: 2,
+            animation: "modeWave 1.3s ease-in-out infinite",
+            animationDelay: `${i * 0.11}s`,
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
+// ── Export principal ──────────────────────────────────────────────────────────
+export default function ModeSelector({ onChange }: Props) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingBottom: 88 }} className="mode-selector-v2">
+      <style>{`
+        @keyframes modeWave {
+          0%, 100% { transform: scaleY(1); opacity: 0.7; }
+          50% { transform: scaleY(1.8); opacity: 1; }
+        }
+        .mode-selector-v2 .mode-card-media {
+          width: 130px;
+        }
+        @media (min-width: 480px) {
+          .mode-selector-v2 .mode-card-media {
+            width: 160px;
+          }
+        }
         @media (min-width: 900px) {
-          .mode-selector .mode-title {
-            font-size: 22px;
-            font-weight: 800;
-            color: #eef2f9;
-            letter-spacing: -0.01em;
-            margin-bottom: 6px;
+          .mode-selector-v2 {
+            padding-bottom: 0 !important;
           }
-          .mode-selector .mode-subtitle {
-            display: block !important;
+          .mode-selector-v2 .mode-card-media {
+            width: 200px;
           }
-          .mode-grid {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            padding-bottom: 0;
-          }
-          .mode-card-img-wrap {
-            aspect-ratio: 4 / 3;
-          }
-          .mode-card-desc { display: block; }
         }
       `}</style>
 
-      <div className="mode-title">{title}</div>
-      <div
-        style={{ fontSize: 14, color: "#8394b0", marginBottom: 16, display: "none" }}
-        className="mode-subtitle"
-      >
-        {subtitle}
-      </div>
+      {/* 1 — Foto */}
+      <CreationCard
+        icon="📸"
+        label="Criar foto que"
+        highlightWord="vende"
+        desc="Transforme sua foto em imagem profissional com IA"
+        badge="Mais usado"
+        onClick={() => onChange("simulacao")}
+        media={
+          <img
+            src={`${BASE}/simulacao.jpg`}
+            alt="Foto profissional"
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        }
+      />
 
-      {/* Abas Foto / Vídeo */}
-      <div style={{
-        display: "flex", gap: 8, marginBottom: 20,
-        background: "rgba(255,255,255,0.04)",
-        borderRadius: 12, padding: 4,
-      }}>
-        {(["foto", "video"] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              flex: 1, padding: "10px 0",
-              borderRadius: 9, border: "none",
-              background: tab === t
-                ? "linear-gradient(135deg, #6366f1, #a855f7)"
-                : "transparent",
-              color: tab === t ? "#fff" : "#8394b0",
-              fontSize: 14, fontWeight: 700,
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
-          >
-            {tabLabel(t)}
-          </button>
-        ))}
-      </div>
+      {/* 2 — Vídeo curto */}
+      <CreationCard
+        icon="🎬"
+        label="Criar vídeo que"
+        highlightWord="vende"
+        desc="Vídeo curto animado pra atrair clientes no Reels"
+        onClick={() => onChange("video")}
+        media={<VideoMedia />}
+      />
 
-      <div style={{ display: "grid", gap: 12 }} className="mode-grid">
-        {MODES.map((mode) => {
-          const btnLabel = lang === "en" ? "Use now" : lang === "es" ? "Usar ahora" : "Usar agora";
-          if (mode.id === "video") {
-            return (
-              <VideoCard
-                key="video"
-                name={mode.name}
-                title={mode.title}
-                desc={mode.desc}
-                badge={mode.badge}
-                onClick={() => onChange("video")}
-                btnLabel={btnLabel}
-              />
-            );
-          }
-          if (mode.id === "video_narrado") {
-            return (
-              <ModeCard
-                key="video_narrado"
-                name={mode.name}
-                title={mode.title}
-                desc={mode.desc}
-                badge={mode.badge}
-                media={
-                  <div style={{
-                    position: "absolute", inset: 0,
-                    background: "linear-gradient(135deg, #1a0533 0%, #0f1a2e 50%, #07080b 100%)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexDirection: "column", gap: 8,
-                  }}>
-                    <div style={{ fontSize: 44, lineHeight: 1 }}>🎙️</div>
-                    <div style={{ fontSize: 11, color: "rgba(196,181,253,0.7)", fontWeight: 600, letterSpacing: "0.06em" }}>
-                      FOTO + VOZ
-                    </div>
-                    {/* Animação de ondas sonoras */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 4 }}>
-                      {[4, 8, 12, 8, 6, 10, 7, 5].map((h, i) => (
-                        <div key={i} style={{
-                          width: 3, height: h, background: "#a855f7",
-                          borderRadius: 2, opacity: 0.7,
-                          animation: `pulse 1.2s ease-in-out infinite`,
-                          animationDelay: `${i * 0.12}s`,
-                        }} />
-                      ))}
-                    </div>
-                  </div>
-                }
-                onClick={() => onChange("video_narrado")}
-                btnLabel={btnLabel}
-              />
-            );
-          }
-          if (mode.id === "video_longo") {
-            return (
-              <ModeCard
-                key="video_longo"
-                name={mode.name}
-                title={mode.title}
-                desc={mode.desc}
-                badge={mode.badge}
-                media={
-                  <div style={{
-                    position: "absolute", inset: 0,
-                    background: "linear-gradient(135deg, #0a1628 0%, #1a0a2e 50%, #07080b 100%)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexDirection: "column", gap: 6,
-                  }}>
-                    <div style={{ display: "flex", gap: 4 }}>
-                      {["🏙️", "🌿", "🛋️", "🌅"].map((emoji, i) => (
-                        <div key={i} style={{
-                          fontSize: 20, lineHeight: 1,
-                          animation: "pulse 1.8s ease-in-out infinite",
-                          animationDelay: `${i * 0.35}s`,
-                        }}>{emoji}</div>
-                      ))}
-                    </div>
-                    <div style={{ fontSize: 11, color: "rgba(196,181,253,0.7)", fontWeight: 600, letterSpacing: "0.06em", marginTop: 4 }}>
-                      4 CENAS · ~32 SEGUNDOS
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 2 }}>
-                      {[6, 10, 14, 10, 8, 12, 9, 7, 11, 6].map((h, i) => (
-                        <div key={i} style={{
-                          width: 2.5, height: h, background: "linear-gradient(to top, #6366f1, #a855f7)",
-                          borderRadius: 2, opacity: 0.8,
-                          animation: "pulse 1.4s ease-in-out infinite",
-                          animationDelay: `${i * 0.1}s`,
-                        }} />
-                      ))}
-                    </div>
-                  </div>
-                }
-                onClick={() => onChange("video_longo")}
-                btnLabel={btnLabel}
-              />
-            );
-          }
-          if (mode.id === "produto_exposto") {
-            return (
-              <ModeCard
-                key="produto_exposto"
-                name={mode.name}
-                title={mode.title}
-                desc={mode.desc}
-                badge={mode.badge}
-                onClick={() => onChange("produto_exposto")}
-                btnLabel={btnLabel}
-                media={
-                  <div style={{
-                    position: "absolute", inset: 0,
-                    background: "linear-gradient(135deg, #0e1a12 0%, #1a1a0e 40%, #0f0d1a 100%)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexDirection: "column", gap: 6,
-                  }}>
-                    <div style={{ fontSize: 46, lineHeight: 1 }}>🪆</div>
-                    <div style={{ fontSize: 11, color: "rgba(196,181,253,0.7)", fontWeight: 600, letterSpacing: "0.07em" }}>
-                      MANEQUIM · BUSTO · PEDESTAL
-                    </div>
-                    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginTop: 4 }}>
-                      {[14, 20, 28, 22, 16].map((h, i) => (
-                        <div key={i} style={{
-                          width: 4, height: h,
-                          background: "linear-gradient(to top, #16c784, #a855f7)",
-                          borderRadius: 3, opacity: 0.75,
-                          animation: "pulse 1.6s ease-in-out infinite",
-                          animationDelay: `${i * 0.2}s`,
-                        }} />
-                      ))}
-                    </div>
-                  </div>
-                }
-              />
-            );
-          }
-          return (
-            <ModeCard
-              key={mode.id}
-              name={mode.name}
-              title={mode.title}
-              desc={mode.desc}
-              badge={mode.badge}
-              img={mode.img}
-              onClick={() => onChange(mode.id)}
-              btnLabel={btnLabel}
-            />
-          );
-        })}
-      </div>
+      {/* 3 — Vídeo narrado */}
+      <CreationCard
+        icon="🎙️"
+        label="Criar vídeo que"
+        highlightWord="explica"
+        desc="Vídeo com narração de IA que convence e vende"
+        onClick={() => onChange("video_narrado")}
+        media={<AudioWaveMedia />}
+      />
     </div>
   );
 }
