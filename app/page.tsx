@@ -2453,7 +2453,7 @@ export default function HomePage() {
         )}
 
         {/* PASSO 1: Menu de escolha de modo */}
-        {!modeSelected && !videoMode && !narratedMode && !longVideoMode && (
+        {!modeSelected && !videoMode && !longVideoMode && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
               <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
@@ -2474,7 +2474,7 @@ export default function HomePage() {
         )}
 
         {/* PASSO 2: Formulário após escolher o modo */}
-        {modeSelected && !videoMode && !narratedMode && !longVideoMode && workState !== "trabalhando" && (
+        {modeSelected && !videoMode && !longVideoMode && workState !== "trabalhando" && (
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
