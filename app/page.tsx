@@ -3611,10 +3611,10 @@ export default function HomePage() {
           }}
           onClose={() => {
             setShowUpsell(false);
-            // Só mostra onboarding para FREE sem jobs
-            if (workState === "sem_trabalho" && !modeSelected && plan === "free") {
-              setShowOnboarding(true);
-            }
+            // Onboarding desativado temporariamente — reativar descomentando abaixo
+            // if (workState === "sem_trabalho" && !modeSelected && plan === "free") {
+            //   setShowOnboarding(true);
+            // }
           }}
         />
       )}
