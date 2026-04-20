@@ -781,6 +781,7 @@ export default function HomePage() {
   const [voiceRecording, setVoiceRecording] = useState(false);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [voiceUploading, setVoiceUploading] = useState(false);
+  const [voiceEditMode, setVoiceEditMode] = useState(false);
   const voiceMediaRef = useRef<MediaRecorder | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
 
@@ -2756,7 +2757,7 @@ export default function HomePage() {
                             <button
                               key={mode}
                               type="button"
-                              onClick={() => { setNarratedVoiceMode(mode); setVoiceBlob(null); setNarratedVoiceSampleUrl(""); }}
+                              onClick={() => { setNarratedVoiceMode(mode); setVoiceBlob(null); setNarratedVoiceSampleUrl(""); setVoiceEditMode(false); }}
                               style={{
                                 flex: 1,
                                 padding: "10px 0",
@@ -2795,15 +2796,28 @@ export default function HomePage() {
                         {/* Clone: gravar amostra */}
                         {narratedVoiceMode === "clone" && (
                           <div style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.18)", borderRadius: 12, padding: "14px 14px" }}>
-                            <div style={{ fontSize: 12, color: "#c4b5fd", fontWeight: 600, marginBottom: 8 }}>
-                              Grave 5–15 segundos lendo o texto abaixo
-                            </div>
-                            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#eef2f9", lineHeight: 1.5, marginBottom: 12, fontStyle: "italic" }}>
-                              &ldquo;Olá! Vou mostrar um produto incrível que vai transformar sua rotina. Aproveita porque é por tempo limitado!&rdquo;
-                            </div>
-
-                            {!narratedVoiceSampleUrl ? (
+                            {narratedVoiceSampleUrl && !voiceEditMode ? (
+                              /* Voz salva — modo compacto */
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <div style={{ flex: 1, fontSize: 13, color: "#34d399", fontWeight: 600 }}>✅ Voz personalizada salva</div>
+                                <button
+                                  type="button"
+                                  onClick={() => { setVoiceEditMode(true); setVoiceBlob(null); }}
+                                  style={{ fontSize: 12, color: "#c4b5fd", background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontWeight: 600 }}
+                                >
+                                  ✏️ Editar
+                                </button>
+                              </div>
+                            ) : (
+                              /* Painel de gravação */
                               <>
+                                <div style={{ fontSize: 12, color: "#c4b5fd", fontWeight: 600, marginBottom: 8 }}>
+                                  Grave 5–15 segundos lendo o texto abaixo
+                                </div>
+                                <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#eef2f9", lineHeight: 1.5, marginBottom: 12, fontStyle: "italic" }}>
+                                  &ldquo;Olá! Vou mostrar um produto incrível que vai transformar sua rotina. Aproveita porque é por tempo limitado!&rdquo;
+                                </div>
+
                                 <button
                                   type="button"
                                   onClick={voiceRecording ? stopVoiceRecording : startVoiceRecording}
@@ -2826,7 +2840,7 @@ export default function HomePage() {
                                     <button
                                       type="button"
                                       disabled={voiceUploading}
-                                      onClick={() => uploadVoiceSample(voiceBlob)}
+                                      onClick={async () => { await uploadVoiceSample(voiceBlob); setVoiceEditMode(false); }}
                                       style={{
                                         width: "100%",
                                         padding: "10px 0",
@@ -2841,18 +2855,17 @@ export default function HomePage() {
                                     </button>
                                   </div>
                                 )}
+
+                                {voiceEditMode && narratedVoiceSampleUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() => { setVoiceEditMode(false); setVoiceBlob(null); }}
+                                    style={{ marginTop: 8, width: "100%", padding: "8px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "#8394b0", fontSize: 12, cursor: "pointer" }}
+                                  >
+                                    Cancelar
+                                  </button>
+                                )}
                               </>
-                            ) : (
-                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                <div style={{ flex: 1, fontSize: 13, color: "#34d399", fontWeight: 600 }}>✅ Voz gravada com sucesso!</div>
-                                <button
-                                  type="button"
-                                  onClick={() => { setVoiceBlob(null); setNarratedVoiceSampleUrl(""); }}
-                                  style={{ fontSize: 12, color: "#8394b0", background: "none", border: "none", cursor: "pointer" }}
-                                >
-                                  Regravar
-                                </button>
-                              </div>
                             )}
                           </div>
                         )}
