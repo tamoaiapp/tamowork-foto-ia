@@ -304,8 +304,8 @@ export async function submitSceneVariation(
       inputs: { image: ["170", 0] },
       _meta: { title: "FluxKontextImageScale User" },
     };
+    // Apenas no encoder do prompt positivo (node 1) — node 39 é negativo e não precisa
     (workflow["1"] as { inputs: Record<string, unknown> }).inputs.image2 = ["171", 0];
-    (workflow["39"] as { inputs: Record<string, unknown> }).inputs.image2 = ["171", 0];
   }
 
   const res = await fetch(`${comfyBase}/prompt`, {
