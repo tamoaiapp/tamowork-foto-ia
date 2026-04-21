@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 export type CreationMode = "simulacao" | "fundo_branco" | "catalogo" | "personalizado" | "video" | "promo" | "video_narrado" | "video_longo" | "produto_exposto";
 
 const BASE = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/examples";
-const VIDEO_URLS = Array.from({ length: 9 }, (_, i) => `${BASE}/video${i + 1}.mp4`);
+const VIDEO_URLS = [1,3,4,6,7,8,9].map(i => `${BASE}/video${i}.mp4`);
 
 interface Props {
   selected?: CreationMode;
