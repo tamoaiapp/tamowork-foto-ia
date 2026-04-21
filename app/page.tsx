@@ -1827,7 +1827,7 @@ export default function HomePage() {
     }
   }
 
-  async function handleAssinarDireto(_selectedPlan?: "annual" | "monthly") {
+  async function handleAssinarDireto(_selectedPlan?: "annual" | "monthly", source?: string) {
     // Rastreia clique de CTA no A/B test
     if (abVariant) trackABEvent("cta_clicked", abVariant);
     try {
@@ -1839,7 +1839,7 @@ export default function HomePage() {
       const res = await fetch("/api/checkout/stripe", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, source: source ?? "app" }),
       });
       const json = await res.json();
       if (json.url) window.location.href = json.url;
@@ -2534,7 +2534,7 @@ export default function HomePage() {
         {!modeSelected && !videoMode && !longVideoMode && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
-              <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
+              <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual", "limite_diario")} />
             ) : (
               <ModeSelector
                 selected={creationMode}
@@ -2718,7 +2718,7 @@ export default function HomePage() {
                       {plan === "free" && (
                         <button
                           type="button"
-                          onClick={() => handleAssinarDireto("monthly")}
+                          onClick={() => handleAssinarDireto("monthly", "resultado_narrado")}
                           style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "16px", width: "100%", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginTop: 4 }}
                         >
                           🚀 Assinar Pro — vídeos ilimitados por R$79/mês
@@ -2985,7 +2985,7 @@ export default function HomePage() {
                         <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 4 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "#c4b5fd", marginBottom: 4 }}>🔒 Disponível no plano Pro</div>
                           <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 12 }}>Vídeos com narração de IA a partir de R$0,61/dia</div>
-                          <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>✨ Assinar agora</button>
+                          <button type="button" onClick={() => handleAssinarDireto(undefined, "lock_narrado")} style={styles.unlockBtn}>✨ Assinar agora</button>
                         </div>
                       )}
 
@@ -2994,7 +2994,7 @@ export default function HomePage() {
                       <FormatSelector value={photoFormat} onChange={setPhotoFormat} />
 
                       {plan !== "pro" ? (
-                        <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>
+                        <button type="button" onClick={() => handleAssinarDireto(undefined, "lock_video")} style={styles.unlockBtn}>
                           ⚡ Assinar para criar vídeos
                         </button>
                       ) : (
@@ -3043,7 +3043,7 @@ export default function HomePage() {
                     <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 4 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#c4b5fd", marginBottom: 4 }}>🔒 Disponível no plano Pro</div>
                       <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 12 }}>Vídeos com IA a partir de R$0,61/dia</div>
-                      <button type="button" onClick={() => router.push("/planos")} style={styles.unlockBtn}>✨ Assinar agora</button>
+                      <button type="button" onClick={() => handleAssinarDireto(undefined, "lock_video_longo")} style={styles.unlockBtn}>✨ Assinar agora</button>
                     </div>
                   )}
 
@@ -3060,7 +3060,7 @@ export default function HomePage() {
                   {plan !== "pro" ? (
                     <button
                       type="button"
-                      onClick={() => router.push("/planos")}
+                      onClick={() => handleAssinarDireto(undefined, "lock_video_form")}
                       style={styles.unlockBtn}
                     >
                       ⚡ {lang === "en" ? "Subscribe to create videos" : lang === "es" ? "Suscribirse para crear videos" : "Assinar para criar vídeos"}
@@ -3375,7 +3375,7 @@ export default function HomePage() {
               {/* Gerar novamente */}
               <div style={{ marginBottom: 8 }}>
                 {plan === "free" && freePhotosUsed >= 3 ? (
-                  <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0, background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+                  <button onClick={() => handleAssinarDireto("annual", "resultado_foto_limite")} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0, background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
                     🔓 Assinar PRO para criar mais fotos
                   </button>
                 ) : plan === "free" && rateLimitedUntil && countdown > 0 ? (
@@ -3410,7 +3410,7 @@ export default function HomePage() {
                   </button>
                 );
               })() : (
-                <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc" }}>
+                <button onClick={() => handleAssinarDireto("annual", "resultado_foto_video_btn")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc" }}>
                   🎬 Vídeo animado — exclusivo PRO ✨
                 </button>
               )}
@@ -3419,14 +3419,14 @@ export default function HomePage() {
               {plan === "free" && (
                 <>
                   {rateLimitedUntil && countdown > 0 ? (
-                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
+                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual", "resultado_foto_ratelimit")} />
                   ) : (
                     <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 14, padding: "14px", marginTop: 6 }}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#eef2f9", marginBottom: 4 }}>Quer mais do que isso? 🚀</div>
                       <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.6, marginBottom: 10 }}>
                         Com o PRO: fundo personalizado, vídeo animado para Reels, downloads ilimitados e sem fila de espera.
                       </div>
-                      <button onClick={() => handleAssinarDireto("annual")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
+                      <button onClick={() => handleAssinarDireto("annual", "resultado_foto_hook")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
                         Assinar PRO — R$79/mês
                       </button>
                     </div>
@@ -3513,7 +3513,7 @@ export default function HomePage() {
               {/* Gerar novamente */}
               <div style={{ marginBottom: 8 }}>
                 {plan === "free" && freePhotosUsed >= 3 ? (
-                  <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0, background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+                  <button onClick={() => handleAssinarDireto("annual", "resultado_foto_limite")} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0, background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
                     🔓 Assinar PRO para criar mais fotos
                   </button>
                 ) : plan === "free" && rateLimitedUntil && countdown > 0 ? (
@@ -3554,14 +3554,14 @@ export default function HomePage() {
               {plan === "free" && (
                 <>
                   {rateLimitedUntil && countdown > 0 ? (
-                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
+                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual", "resultado_foto_ratelimit")} />
                   ) : (
                     <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 14, padding: "14px", marginTop: 6 }}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#eef2f9", marginBottom: 4 }}>Quer mais do que isso? 🚀</div>
                       <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.6, marginBottom: 10 }}>
                         Com o PRO: fundo personalizado, vídeo animado para Reels, downloads ilimitados e sem fila de espera.
                       </div>
-                      <button onClick={() => handleAssinarDireto("annual")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
+                      <button onClick={() => handleAssinarDireto("annual", "resultado_foto_hook")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
                         Assinar PRO — R$79/mês
                       </button>
                     </div>
@@ -3601,7 +3601,7 @@ export default function HomePage() {
               <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 24, lineHeight: 1.5 }}>
                 {lang === "en" ? "Subscribe and generate amazing AI product videos." : lang === "es" ? "Suscríbete y genera videos increíbles de tus productos con IA." : "Assine e gere vídeos incríveis dos seus produtos com IA."}
               </div>
-              <button onClick={() => router.push("/planos")} style={{ ...styles.submitBtn, marginBottom: 12 }}>
+              <button onClick={() => handleAssinarDireto(undefined, "tela_video_locked")} style={{ ...styles.submitBtn, marginBottom: 12 }}>
                 {lang === "en" ? "✨ Subscribe PRO" : lang === "es" ? "✨ Suscribirse PRO" : "✨ Assinar PRO"}
               </button>
               <button onClick={() => { setVideoMode(false); }} style={styles.backBtn}>{t("back")}</button>
@@ -3744,7 +3744,7 @@ export default function HomePage() {
         <UpsellPopup
           onAssinar={(planType) => {
             setShowUpsell(false);
-            handleAssinarDireto(planType);
+            handleAssinarDireto(planType, "popup");
           }}
           onClose={() => {
             setShowUpsell(false);
@@ -3794,7 +3794,7 @@ export default function HomePage() {
           onAssinar={() => {
             setShowConversion(false);
             setOnboardingMode(false);
-            handleAssinarDireto("annual");
+            handleAssinarDireto("annual", "tela_conversao");
           }}
           onContinuar={() => {
             setShowConversion(false);
@@ -3811,7 +3811,7 @@ export default function HomePage() {
           onAssinar={() => {
             setShowVideoHook(false);
             if (abVariant) trackABEvent("cta_clicked", abVariant);
-            handleAssinarDireto("annual");
+            handleAssinarDireto("annual", "video_hook");
           }}
           onCriar2aFoto={() => {
             setShowVideoHook(false);

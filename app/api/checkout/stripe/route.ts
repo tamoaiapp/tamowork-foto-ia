@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const isMonthly = body.plan === "monthly";
+  const source = typeof body.source === "string" ? body.source : "app";
 
   // BR → mensal R$79 (BRL) | Não-BR → anual $100 (USD)
   const priceId = isMonthly
@@ -28,8 +29,8 @@ export async function POST(req: NextRequest) {
       payment_method_types: ["card"],
       customer_email: user.email,
       line_items: [{ price: priceId, quantity: 1 }],
-      metadata: { userId: user.id },
-      subscription_data: { metadata: { userId: user.id } },
+      metadata: { userId: user.id, source },
+      subscription_data: { metadata: { userId: user.id, source } },
       success_url: `${process.env.APP_URL ?? "https://tamowork.com"}/obrigado?source=stripe`,
       cancel_url: `${process.env.APP_URL ?? "https://tamowork.com"}/planos`,
     });
