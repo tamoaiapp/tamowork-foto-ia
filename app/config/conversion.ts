@@ -22,11 +22,11 @@ export const CONVERSION = {
   // ── A/B test — variante promovida ───────────────────────────────────────
   // null = sorteia pelo user_id (comportamento padrão)
   // "A" | "B" | "C" = força todos para a variante vencedora
-  abPromotedVariant: null as "A" | "B" | "C" | null,
+  abPromotedVariant: "B" as "A" | "B" | "C" | null,
 
   // ── Metadados da última decisão do agente ───────────────────────────────
   _agentDecision: {
-    updatedAt: "2026-04-13T21:00:00.000Z",
-    reason: "7 free users com 1 foto sem retorno — CTA 2ª foto com mais urgência + rate limit com framing positivo",
+    updatedAt: "2026-04-21T12:00:01.301Z",
+    reason: "Variante B vencedora com 0.0% de conversão (33 usuários)",
   },
 };
