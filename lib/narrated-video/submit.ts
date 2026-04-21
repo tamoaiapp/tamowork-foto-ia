@@ -213,85 +213,56 @@ Roteiro: ${original}`,
 
 // ─── Prompts Live Shop por tipo de produto ───────────────────────────────────
 // image1 = produto, image2 = pessoa (usuário)
-// Regras: sem câmera/tripé visível, fundo de live commerce colorido/gradiente
+// Regra: pessoa SEGURA o produto em direção à câmera — nunca veste ou coloca no corpo
+// Fundo: branco limpo e profissional (sem gradiente colorido que distrai)
 
-const LIVE_BG = "bright colorful live commerce stream background, soft pink or gradient backdrop, energetic commercial lighting, no camera no tripod no photography equipment visible";
+const LIVE_BG = "clean white studio background, bright even commercial lighting, no camera no tripod no photography equipment visible, live commerce presentation";
 
 const LIVE_SHOP_PROMPT: Record<string, string> = {
+  // Roupas: ao lado de manequim (não veste na pessoa)
   wear_torso_upper:
-    `The person from image2 stands beside a white mannequin bust wearing the garment from image1, pointing at it naturally with a smile. ${LIVE_BG}.`,
+    `The person from image2 stands beside a white mannequin bust displaying the garment from image1, holding one side of it open toward the camera with a natural smile. ${LIVE_BG}.`,
   wear_torso_full:
-    `The person from image2 stands next to a full-body white mannequin wearing the outfit from image1, gesturing toward it with a natural smile. ${LIVE_BG}.`,
+    `The person from image2 stands next to a white full-body mannequin wearing the outfit from image1, gesturing toward it clearly with one hand. ${LIVE_BG}.`,
   wear_waist_legs:
-    `The person from image2 stands beside a lower-body display showing the bottoms from image1, pointing at the product naturally. ${LIVE_BG}.`,
+    `The person from image2 holds up the pants/shorts from image1 with both hands at chest height, clearly showing the product toward the camera. ${LIVE_BG}.`,
+  // Joias e acessórios: SEGURA o produto embalado/na cartela em direção à câmera
   wear_feet:
-    `The person from image2 stands beside a clean white shelf with the shoe from image1 displayed on it, gesturing toward it enthusiastically. ${LIVE_BG}.`,
+    `The person from image2 holds up one shoe from image1 with both hands at chest height, presenting it clearly toward the camera. ${LIVE_BG}.`,
   wear_head_top:
-    `The person from image2 is wearing the hat from image1, adjusting it with both hands and looking forward with a natural expression. ${LIVE_BG}.`,
+    `The person from image2 holds up the hat from image1 with both hands at chest height, showing it clearly toward the camera. ${LIVE_BG}.`,
   wear_head_ear:
-    `The person from image2 is wearing the earrings from image1, tilting their head slightly to show the jewelry forward. ${LIVE_BG}.`,
+    `The person from image2 holds up the earring display card from image1 with both hands at chest height, presenting the jewelry clearly toward the camera. ${LIVE_BG}.`,
   wear_head_face:
-    `The person from image2 is wearing the sunglasses from image1, looking forward with a confident natural expression. ${LIVE_BG}.`,
+    `The person from image2 holds up the sunglasses from image1 with both hands at chest height, presenting them clearly toward the camera. ${LIVE_BG}.`,
   wear_neck:
-    `The person from image2 is wearing the necklace from image1, touching it gently and presenting it toward the viewer. ${LIVE_BG}.`,
+    `The person from image2 holds up the necklace from image1 with both hands at chest height, displaying it clearly toward the camera. ${LIVE_BG}.`,
   wear_wrist:
-    `The person from image2 holds up their wrist showing the watch or bracelet from image1, turning it slightly toward the viewer. ${LIVE_BG}.`,
+    `The person from image2 holds up the watch or bracelet from image1 with both hands at chest height, presenting it clearly toward the camera. ${LIVE_BG}.`,
   wear_finger:
-    `The person from image2 holds up their hand showing the ring from image1, fingers spread naturally. ${LIVE_BG}.`,
+    `The person from image2 holds up the ring from image1 between two fingers at chest height, presenting it clearly toward the camera. ${LIVE_BG}.`,
   wear_crossbody:
-    `The person from image2 is wearing the bag from image1 crossbody, turning slightly to show the design. ${LIVE_BG}.`,
+    `The person from image2 holds up the bag from image1 with both hands at chest height, presenting it clearly toward the camera. ${LIVE_BG}.`,
   hold_bag_hand:
-    `The person from image2 holds the bag from image1 up at chest height, presenting it enthusiastically toward the viewer. ${LIVE_BG}.`,
+    `The person from image2 holds the bag from image1 up with both hands at chest height, presenting it enthusiastically toward the camera. ${LIVE_BG}.`,
   hold_beauty_product:
-    `The person from image2 holds up the beauty product from image1 at chest height with both hands, smiling toward the viewer. ${LIVE_BG}.`,
+    `The person from image2 holds up the beauty product from image1 with both hands at chest height, smiling and presenting it clearly toward the camera. ${LIVE_BG}.`,
   hold_food_display:
-    `The person from image2 holds the product from image1 at chest height, presenting it naturally toward the viewer with a warm expression. ${LIVE_BG}.`,
+    `The person from image2 holds the product from image1 with both hands at chest height, presenting it clearly toward the camera with a warm smile. ${LIVE_BG}.`,
   hold_beverage:
-    `The person from image2 holds the beverage from image1 up cheerfully, smiling toward the viewer. ${LIVE_BG}.`,
+    `The person from image2 holds the beverage from image1 up with both hands at chest height, presenting it toward the camera with a natural smile. ${LIVE_BG}.`,
   scene_tabletop:
-    `The person from image2 stands behind a clean white table with the product from image1 placed in front, gesturing toward it with enthusiasm. ${LIVE_BG}.`,
+    `The person from image2 holds the product from image1 up with both hands at chest height in front of a clean white table, presenting it toward the camera. ${LIVE_BG}.`,
 };
 
 const LIVE_SHOP_PROMPT_DEFAULT =
-  `The person from image2 holds up the product from image1 at chest height toward the viewer, presenting it enthusiastically with a natural engaging expression. ${LIVE_BG}.`;
+  `The person from image2 holds up the product from image1 with both hands at chest height, clearly presenting it toward the camera with a natural engaging smile. ${LIVE_BG}.`;
 
 const LIVE_SHOP_NEGATIVE =
-  "blurry, low quality, distorted face, wrong face, deformed hands, extra limbs, watermark, text overlay, camera, tripod, photography equipment, dark background, cluttered background";
+  "blurry, low quality, distorted face, wrong face, deformed body, deformed hands, extra limbs, watermark, text overlay, camera, tripod, photography equipment, dark background, cluttered background, product on body, product worn, earrings on face";
 
 function buildLiveShopPrompt(slot: string): { positive: string; negative: string } {
-  const positive = LIVE_SHOP_PROMPT[slot] ?? LIVE_SHOP_PROMPT_DEFAULT;
-  return { positive, negative: LIVE_SHOP_NEGATIVE };
-}
-
-// ─── Gera roteiro de live shop com IA (~10s de fala) ─────────────────────────
-
-async function generateLiveShopScript(productDesc: string): Promise<string> {
-  const hint = productDesc.slice(0, 180);
-  const fallback = `Olha que incrível! ${productDesc.slice(0, 50)}. Qualidade top, entrega rápida. Aproveita que ainda tem disponível, garante o seu agora!`;
-
-  if (!OLLAMA_BASE) return normalizeScript(fallback);
-
-  try {
-    const res = await fetch(`${OLLAMA_BASE}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "llama3.2:3b",
-        prompt: `Você é copywriter de live shop no TikTok/Instagram. Crie um roteiro de vendas de exatamente 25 a 35 palavras (≈10 segundos falando) para o produto abaixo. Estrutura: gancho (2s) + benefício principal (5s) + CTA urgente (3s). Tom: empolgado, direto, humano. Responda APENAS o texto do roteiro, sem aspas, sem título.
-
-Produto: ${hint}`,
-        stream: false,
-        options: { num_predict: 100, temperature: 0.82, top_p: 0.9 },
-      }),
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (!res.ok) return normalizeScript(fallback);
-    const json = await res.json() as { response?: string };
-    const text = (json.response ?? "").trim();
-    return text.length >= 15 ? normalizeScript(text) : normalizeScript(fallback);
-  } catch {
-    return normalizeScript(fallback);
-  }
+  return { positive: LIVE_SHOP_PROMPT[slot] ?? LIVE_SHOP_PROMPT_DEFAULT, negative: LIVE_SHOP_NEGATIVE };
 }
 
 // ─── Submete workflow de variação no ComfyUI ─────────────────────────────────
@@ -410,14 +381,9 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
     const slot = inferSlot(productText);
     console.log(`[narrated] produto="${productText.slice(0, 60)}" → slot=${slot} | liveShop=${isLiveShop}`);
 
-    // 2. Gera ou melhora roteiro
-    let roteiroMelhorado: string;
-    if (isLiveShop && !job.roteiro?.trim()) {
-      roteiroMelhorado = await generateLiveShopScript(productText);
-      console.log(`[narrated] roteiro gerado por IA: "${roteiroMelhorado.slice(0, 80)}"`);
-    } else {
-      roteiroMelhorado = await improveRoteiro(job.roteiro?.trim() ? job.roteiro : productText);
-    }
+    // 2. Melhora o roteiro do usuário para video shop — SEMPRE baseado no texto que ele escreveu
+    // A visão (productText/slot) é usada apenas para identificar o produto para a cena visual
+    const roteiroMelhorado = await improveRoteiro(job.roteiro?.trim() || productText.slice(0, 100));
 
     // 3. Gera áudio TTS com roteiro correto + calcula quantas cenas são necessárias
     let scenesNeeded = DEFAULT_SCENES;

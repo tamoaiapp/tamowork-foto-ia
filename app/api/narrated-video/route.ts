@@ -69,8 +69,7 @@ export async function POST(req: NextRequest) {
   if (validSceneSource === "existing" && (!scene_urls || scene_urls.length < 2)) {
     return NextResponse.json({ error: "Selecione pelo menos 2 fotos para as cenas" }, { status: 400 });
   }
-  // Roteiro é opcional no modo Live Shop (com foto do usuário) — IA gera automaticamente
-  if (!roteiro?.trim() && !user_photo_url) return NextResponse.json({ error: "roteiro obrigatório" }, { status: 400 });
+  if (!roteiro?.trim()) return NextResponse.json({ error: "roteiro obrigatório" }, { status: 400 });
 
   const validVoice = voice === "masculino" ? "masculino" : "feminino";
 
