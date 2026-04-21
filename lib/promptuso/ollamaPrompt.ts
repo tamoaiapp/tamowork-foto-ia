@@ -219,6 +219,18 @@ function detectAccessoryType(produto: string, visionDesc?: string): string | nul
   return null;
 }
 
+/**
+ * Detecta se o cenário do usuário implica colocar o produto em uma SUPERFÍCIE (sem pessoa).
+ * Exemplos: "em cima da mesa", "na prateleira", "ao lado da chave", "expositor"
+ */
+function detectSurfacePlacement(cenario: string): boolean {
+  if (!cenario) return false;
+  const c = cenario.toLowerCase();
+  return /\b(mesa|table|desk|shelf|prateleira|piso|floor|bancada|countertop|expositor|display stand|ao lado|beside|next to|cima de|on top|flat lay|flatlay|chão)\b/.test(c)
+    || /\b(coloca(r)? (em|na|no|sobre|cima)|place (on|at|next))\b/.test(c);
+}
+
+
 const ACCESSORY_SHOT_PREFIX: Record<string, string> = {
   eyewear:  "⚠️ EYEWEAR DETECTED. Your positive_prompt MUST begin with: \"Close-up portrait shot, model's face fills the frame, sunglasses/glasses prominently worn on the eyes, face is the hero of the image, shoulders-up framing.\" — NEVER use full body shot for eyewear.",
   earring:  "⚠️ EARRINGS DETECTED. Your positive_prompt MUST begin with: \"Close-up head-and-shoulders shot, earrings clearly and prominently visible on the ear, face turned slightly to showcase the earrings.\"",
@@ -241,12 +253,31 @@ export async function generatePromptWithOllama(
     ? contextBlock + SYSTEM_PROMPT
     : SYSTEM_PROMPT;
 
-  const accessoryType = detectAccessoryType(produto, visionDesc);
-  const accessoryInstruction = accessoryType ? `\n\n${ACCESSORY_SHOT_PREFIX[accessoryType]}` : "";
+  const isSurface = detectSurfacePlacement(cenario);
+  const accessoryType = isSurface ? null : detectAccessoryType(produto, visionDesc);
+
+  // Instrução de superfície: produto em cima de mesa/prateleira/etc. — sem pessoa, sem mãos
+  const surfaceInstruction = isSurface
+    ? `\n\n⚠️ SURFACE PLACEMENT — USER EXPLICITLY REQUESTED THIS:
+The user wants the product placed on a surface: "${cenario}"
+This is a PRODUCT ONLY shot — no person, no hands, no model in the image.
+Your positive_prompt MUST:
+1. Start with: "Product only shot, no person, no hands in the scene."
+2. Show the product resting naturally on the described surface.
+3. Include any props/objects the user mentioned (keys, flowers, etc.) near the product.
+4. Never add a person holding or touching the product.
+Add to negative_prompt: person, hand, hands, fingers, holding, touching, model, human, people.`
+    : "";
+
+  // Instrução de acessório: adiciona o fundo/cena do usuário explicitamente
+  let accessoryInstruction = accessoryType ? `\n\n${ACCESSORY_SHOT_PREFIX[accessoryType]}` : "";
+  if (accessoryType && cenario) {
+    accessoryInstruction += `\n⚠️ SCENE BACKGROUND — MANDATORY: The person must be placed in this exact scene/location: "${cenario}". This is the background/setting of the shot. Do not use a neutral or studio background — use the scene the user requested.`;
+  }
 
   const userMessage = `Product Name: ${produto || "(not provided)"}
 Scene: ${cenario || "(not provided)"}
-Vision Description: ${visionDesc || "(not provided)"}${accessoryInstruction}`;
+Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${accessoryInstruction}`;
 
   const url = `${OLLAMA_BASE}/api/chat`;
 
