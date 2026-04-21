@@ -4,7 +4,7 @@ import { submitVideoJob } from "@/lib/video-jobs/submit";
 
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
 const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-const FREE_VIDEO_DAILY_LIMIT = 2;
+const FREE_VIDEO_DAILY_LIMIT = 1;
 
 export class ProRequiredError extends Error {
   constructor() { super("pro_required"); }

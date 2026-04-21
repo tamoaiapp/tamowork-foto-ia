@@ -3,7 +3,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getUserPlan } from "@/lib/plans";
 
 const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-const FREE_NARRATED_DAILY_LIMIT = 2;
+const FREE_NARRATED_DAILY_LIMIT = 1;
 
 // GET /api/narrated-video — lista jobs do usuário
 export async function GET(req: NextRequest) {

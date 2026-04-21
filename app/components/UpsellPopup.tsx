@@ -44,7 +44,7 @@ const VARIANTS = [
     id: "v4_urgencia",
     emoji: "🚀",
     headline: "Desbloqueie tudo agora",
-    subheadline: "Você está limitado a 3 fotos e 2 vídeos/dia. Com o Pro, são criações ilimitadas todo dia.",
+    subheadline: "Você está limitado a 1 foto e 1 vídeo/dia. Com o Pro, são criações ilimitadas todo dia.",
     cta_br: "Desbloquear Pro — R$79/mês",
     cta_en: "Unlock Pro — $100/year",
     badge: "🔓 Sem limites",

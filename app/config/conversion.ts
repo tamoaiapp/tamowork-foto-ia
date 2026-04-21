@@ -10,10 +10,10 @@
 
 export const CONVERSION = {
   // ── CTA após 1ª foto (painel de resultado) ──────────────────────────────
-  cta1Label: "✨ Criar minha 2ª foto grátis agora →",
+  cta1Label: "✨ Ver planos e criar mais fotos →",
 
   // ── RateLimitCard — aparece quando bate o limite ─────────────────────────
-  rateLimitTitle: "⏰ Suas 3 fotos grátis de hoje foram usadas!",
+  rateLimitTitle: "⏰ Sua foto grátis de hoje foi usada!",
   rateLimitSubtitle: "Próxima foto grátis em",
   rateLimitCTALabel: "Quer criar mais agora mesmo?",
   rateLimitBtnLabel: "🚀 Quero fotos ilimitadas — Assinar PRO",

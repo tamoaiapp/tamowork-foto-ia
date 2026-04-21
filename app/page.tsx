@@ -112,7 +112,7 @@ function RateLimitUpsell({ countdown, onAssinar }: { countdown: number; onAssina
           {formatMs(countdown)}
         </div>
         <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 6 }}>
-          Plano grátis: 3 fotos + 2 vídeos por dia
+          Plano grátis: 1 foto + 1 vídeo por dia
         </div>
       </div>
 
@@ -269,7 +269,7 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
           {formatMs(countdown)}
         </div>
         <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 8 }}>
-          Plano grátis: 3 fotos + 2 vídeos por dia
+          Plano grátis: 1 foto + 1 vídeo por dia
         </div>
       </div>
 

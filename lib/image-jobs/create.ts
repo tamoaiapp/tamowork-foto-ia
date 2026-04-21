@@ -5,7 +5,7 @@ import { getUserPlan } from "@/lib/plans";
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
 
 const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 horas
-const FREE_DAILY_LIMIT = 3; // fotos grátis por período de 24h
+const FREE_DAILY_LIMIT = 1; // fotos grátis por período de 24h
 
 export class RateLimitError extends Error {
   nextAvailableAt: Date;
