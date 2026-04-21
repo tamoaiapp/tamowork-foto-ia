@@ -1742,10 +1742,10 @@ export default function HomePage() {
     setTimeoutError("");
     setSubmitting(true);
     setJob(null);
-    // Limpa resultados done de outros tipos para evitar conflito de exibição
-    if (narratedJob && ["done", "failed", "canceled"].includes(narratedJob.status)) resetNarrated();
-    if (videoJob && ["done", "failed", "canceled"].includes(videoJob.status ?? "")) resetVideo();
-    if (longVideoJob && ["done", "failed", "canceled"].includes(longVideoJob.status)) resetLongVideo();
+    // Sempre limpa resultados de outros tipos ao iniciar nova foto
+    if (narratedJob) resetNarrated();
+    if (videoJob) resetVideo();
+    if (longVideoJob) resetLongVideo();
 
     try {
       const token = await getToken();
@@ -1958,9 +1958,9 @@ export default function HomePage() {
 
     setVideoError("");
     setVideoSubmitting(true);
-    // Limpa resultados done de outros tipos para evitar conflito de exibição
-    if (narratedJob && ["done", "failed", "canceled"].includes(narratedJob.status)) resetNarrated();
-    if (longVideoJob && ["done", "failed", "canceled"].includes(longVideoJob.status)) resetLongVideo();
+    // Sempre limpa resultados de outros tipos ao iniciar novo vídeo curto
+    if (narratedJob) resetNarrated();
+    if (longVideoJob) resetLongVideo();
 
     try {
       const token = await getToken();
@@ -2015,10 +2015,10 @@ export default function HomePage() {
     if (!narratedRoteiro.trim()) { setNarratedError("Escreva o roteiro — o que você quer dizer no vídeo"); return; }
     setNarratedError("");
     setNarratedSubmitting(true);
-    // Limpa resultados done de outros tipos para evitar conflito de exibição
-    if (job && ["done", "failed", "canceled"].includes(job.status ?? "")) resetJob();
-    if (videoJob && ["done", "failed", "canceled"].includes(videoJob.status ?? "")) resetVideo();
-    if (longVideoJob && ["done", "failed", "canceled"].includes(longVideoJob.status)) resetLongVideo();
+    // Sempre limpa resultados de outros tipos ao iniciar narrado
+    if (job) resetJob();
+    if (videoJob) resetVideo();
+    if (longVideoJob) resetLongVideo();
 
     try {
       const token = await getToken();
