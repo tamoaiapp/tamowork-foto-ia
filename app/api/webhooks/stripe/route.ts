@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { setUserPro } from "@/lib/plans";
 import { createServerClient } from "@/lib/supabase/server";
 
-const META_PIXEL_ID = "1279506057538215";
+const META_PIXEL_ID = "970174612165185";
 const META_PIXEL_TOKEN = process.env.META_PIXEL_TOKEN ?? "";
 
 async function sendMetaConversionEvent(eventName: string, value: number, currency: string, userId: string, email?: string) {
