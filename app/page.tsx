@@ -974,6 +974,14 @@ export default function HomePage() {
         resolvedPlan = userPlan;
         setPlan(userPlan);
 
+        // Mostra upsell popup após 4s para usuários free (1x por dia)
+        if (userPlan === "free") {
+          const { shouldShowUpsell } = await import("@/app/components/UpsellPopup");
+          if (shouldShowUpsell()) {
+            setTimeout(() => setShowUpsell(true), 4000);
+          }
+        }
+
         // Se o usuário já tem jobs, marca onboarding como completo (fonte de verdade = banco)
         if (jobs.length > 0) {
           try {
