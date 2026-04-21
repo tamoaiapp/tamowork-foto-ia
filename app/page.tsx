@@ -844,6 +844,7 @@ export default function HomePage() {
       const { url } = await res.json();
       setNarratedVoiceSampleUrl(url);
       setVoiceEditMode(false);
+      try { if (user?.id) localStorage.setItem(`narr_voice_url_${user.id}`, url); } catch { /* ignora */ }
     } catch {
       alert("Erro ao salvar amostra de voz. Tente novamente.");
     } finally {
@@ -943,6 +944,14 @@ export default function HomePage() {
       clearTimeout(safetyTimeout);
       setOnboardingReady(true);
       console.log("[tamo] run() user:", user.id, user.email);
+
+      // Restaura voz e foto do usuário salvas anteriormente
+      try {
+        const savedVoice = localStorage.getItem(`narr_voice_url_${user.id}`);
+        if (savedVoice) { setNarratedVoiceSampleUrl(savedVoice); setNarratedVoiceMode("clone"); }
+        const savedPhoto = localStorage.getItem(`narr_photo_url_${user.id}`);
+        if (savedPhoto) setUserPhotoUrlForVideo(savedPhoto);
+      } catch { /* ignora */ }
 
       try {
 
@@ -2014,12 +2023,13 @@ export default function HomePage() {
     try {
       const token = await getToken();
       let imageUrl: string | undefined;
-      let userPhotoUrl: string | undefined;
+      // Foto do usuário: usa URL já salva (upload feito ao selecionar) ou faz upload do File
+      let userPhotoUrl: string | undefined = userPhotoUrlForVideo.startsWith("https://") ? userPhotoUrlForVideo : undefined;
       const uploads: Promise<void>[] = [];
       if (narratedSceneSource === "generate") {
         uploads.push(uploadImage(imageFile!, token).then(u => { imageUrl = u; }));
       }
-      if (userPhotoForVideo) {
+      if (!userPhotoUrl && userPhotoForVideo) {
         uploads.push(uploadImage(userPhotoForVideo, token).then(u => { userPhotoUrl = u; }));
       }
       await Promise.all(uploads);
@@ -2880,11 +2890,19 @@ export default function HomePage() {
                               📸 Adicionar foto sua
                             </button>
                             <input ref={userPhotoVideoRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }}
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const f = e.target.files?.[0];
                                 if (!f) return;
                                 setUserPhotoForVideo(f);
                                 setUserPhotoUrlForVideo(URL.createObjectURL(f));
+                                // Upload imediato para persistir URL
+                                try {
+                                  const token = await getToken();
+                                  const uploadedUrl = await uploadImage(f, token);
+                                  setUserPhotoUrlForVideo(uploadedUrl);
+                                  setUserPhotoForVideo(null);
+                                  if (user?.id) localStorage.setItem(`narr_photo_url_${user.id}`, uploadedUrl);
+                                } catch { /* mantém file para retry no submit */ }
                               }} />
                             <div style={{ marginTop: 8, background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#8394b0", lineHeight: 1.6 }}>
                               Para melhor resultado:<br />
