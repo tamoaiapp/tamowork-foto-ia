@@ -785,27 +785,37 @@ export default function HomePage() {
 
   // Voice recording state
   const [voiceRecording, setVoiceRecording] = useState(false);
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [voiceBlobs, setVoiceBlobs] = useState<(Blob | null)[]>([null, null, null]);
+  const [voiceStep, setVoiceStep] = useState(0);
   const [voiceUploading, setVoiceUploading] = useState(false);
   const [voiceEditMode, setVoiceEditMode] = useState(false);
+  const [userPhotoForVideo, setUserPhotoForVideo] = useState<File | null>(null);
+  const [userPhotoUrlForVideo, setUserPhotoUrlForVideo] = useState("");
+  const userPhotoVideoRef = useRef<HTMLInputElement | null>(null);
   const voiceMediaRef = useRef<MediaRecorder | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
+
+  const VOICE_TEXTS = [
+    { label: "Animado", text: "Gente, olha o que chegou aqui! Esse produto é incrível, eu testei e aprovei. Vocês vão amar!" },
+    { label: "Descritivo", text: "Deixa eu te mostrar os detalhes. A qualidade é muito boa, o acabamento é perfeito. Vale cada centavo." },
+    { label: "Conversa", text: "Qualquer dúvida me chama aqui que eu respondo tudo. Aproveita que ainda tem disponível." },
+  ];
 
   async function startVoiceRecording() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       voiceChunksRef.current = [];
-      const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4" });
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+      const recorder = new MediaRecorder(stream, { mimeType });
       recorder.ondataavailable = (e) => { if (e.data.size > 0) voiceChunksRef.current.push(e.data); };
       recorder.onstop = () => {
         const blob = new Blob(voiceChunksRef.current, { type: recorder.mimeType });
-        setVoiceBlob(blob);
+        setVoiceBlobs(prev => { const next = [...prev]; next[voiceStep] = blob; return next; });
         stream.getTracks().forEach(t => t.stop());
       };
       recorder.start();
       voiceMediaRef.current = recorder;
       setVoiceRecording(true);
-      setVoiceBlob(null);
     } catch {
       alert("Sem permissão para o microfone. Permita o acesso e tente novamente.");
     }
@@ -817,18 +827,23 @@ export default function HomePage() {
     setVoiceRecording(false);
   }
 
-  async function uploadVoiceSample(blob: Blob) {
+  async function uploadVoiceSample(blobs: (Blob | null)[]) {
+    const valid = blobs.filter((b): b is Blob => b !== null);
+    if (valid.length === 0) return;
     setVoiceUploading(true);
     try {
       const token = await getToken();
+      const mimeType = valid[0].type || "audio/webm";
+      const combined = new Blob(valid, { type: mimeType });
       const res = await fetch("/api/voice-sample", {
         method: "POST",
-        headers: { "Content-Type": blob.type || "audio/webm", Authorization: `Bearer ${token}` },
-        body: blob,
+        headers: { "Content-Type": mimeType, Authorization: `Bearer ${token}` },
+        body: combined,
       });
       if (!res.ok) throw new Error("Falha no upload");
       const { url } = await res.json();
       setNarratedVoiceSampleUrl(url);
+      setVoiceEditMode(false);
     } catch {
       alert("Erro ao salvar amostra de voz. Tente novamente.");
     } finally {
@@ -1999,10 +2014,15 @@ export default function HomePage() {
     try {
       const token = await getToken();
       let imageUrl: string | undefined;
+      let userPhotoUrl: string | undefined;
+      const uploads: Promise<void>[] = [];
       if (narratedSceneSource === "generate") {
-        // Upload da imagem para gerar cenas no ComfyUI
-        imageUrl = await uploadImage(imageFile!, token);
+        uploads.push(uploadImage(imageFile!, token).then(u => { imageUrl = u; }));
       }
+      if (userPhotoForVideo) {
+        uploads.push(uploadImage(userPhotoForVideo, token).then(u => { userPhotoUrl = u; }));
+      }
+      await Promise.all(uploads);
       // Cria job
       const res = await fetch("/api/narrated-video", {
         method: "POST",
@@ -2012,6 +2032,7 @@ export default function HomePage() {
           roteiro: narratedRoteiro,
           voice: narratedVoice,
           voice_sample_url: narratedVoiceMode === "clone" && narratedVoiceSampleUrl ? narratedVoiceSampleUrl : undefined,
+          user_photo_url: userPhotoUrl,
           scene_source: narratedSceneSource,
           scene_urls: narratedSceneSource === "existing" ? narratedSelectedScenes : undefined,
           format: photoFormat,
@@ -2568,7 +2589,7 @@ export default function HomePage() {
                   personalizado: "Personalizado",
                   video: "Criar vídeo",
                   promo: "Criar promoção",
-                  video_narrado: "Vídeo com narração",
+                  video_narrado: "🛍️ Mini Live Shop",
                   video_longo: "🎬 Vídeo longo (~32s)",
                   produto_exposto: "🏪 Expositor premium",
                 }[creationMode]}
@@ -2837,6 +2858,45 @@ export default function HomePage() {
                         </div>
                       )}
 
+                      {/* Foto do apresentador */}
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>Sua foto <span style={{ color: "#4e5c72", fontWeight: 400 }}>(opcional)</span></label>
+                        {userPhotoUrlForVideo ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <img src={userPhotoUrlForVideo} alt="Sua foto" style={{ width: 52, height: 52, borderRadius: 10, objectFit: "cover", border: "2px solid rgba(168,85,247,0.4)" }} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, color: "#34d399", fontWeight: 600 }}>✅ Foto salva</div>
+                              <div style={{ fontSize: 11, color: "#8394b0" }}>Sua aparência será usada nas cenas</div>
+                            </div>
+                            <button type="button" onClick={() => { setUserPhotoForVideo(null); setUserPhotoUrlForVideo(""); }}
+                              style={{ fontSize: 12, color: "#8394b0", background: "none", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 10px", cursor: "pointer" }}>
+                              Trocar
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => userPhotoVideoRef.current?.click()}
+                              style={{ width: "100%", padding: "12px 0", borderRadius: 10, border: "1.5px dashed rgba(168,85,247,0.3)", background: "rgba(168,85,247,0.04)", color: "#c4b5fd", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                              📸 Adicionar foto sua
+                            </button>
+                            <input ref={userPhotoVideoRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (!f) return;
+                                setUserPhotoForVideo(f);
+                                setUserPhotoUrlForVideo(URL.createObjectURL(f));
+                              }} />
+                            <div style={{ marginTop: 8, background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#8394b0", lineHeight: 1.6 }}>
+                              Para melhor resultado:<br />
+                              ✓ Rosto visível e bem iluminado<br />
+                              ✓ Olhando para a câmera<br />
+                              ✓ Fundo claro ou neutro<br />
+                              ✗ Sem óculos escuros ou chapéu cobrindo o rosto
+                            </div>
+                          </>
+                        )}
+                      </div>
+
                       {/* Voz */}
                       <div style={styles.fieldGroup}>
                         <label style={styles.label}>Voz da narração</label>
@@ -2846,7 +2906,7 @@ export default function HomePage() {
                             <button
                               key={mode}
                               type="button"
-                              onClick={() => { setNarratedVoiceMode(mode); setVoiceBlob(null); setNarratedVoiceSampleUrl(""); setVoiceEditMode(false); }}
+                              onClick={() => { setNarratedVoiceMode(mode); setVoiceBlobs([null,null,null]); setVoiceStep(0); setNarratedVoiceSampleUrl(""); setVoiceEditMode(false); }}
                               style={{
                                 flex: 1,
                                 padding: "10px 0",
@@ -2882,75 +2942,56 @@ export default function HomePage() {
                           </div>
                         )}
 
-                        {/* Clone: gravar amostra */}
+                        {/* Clone: 3 gravações sequenciais */}
                         {narratedVoiceMode === "clone" && (
-                          <div style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.18)", borderRadius: 12, padding: "14px 14px" }}>
+                          <div style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.18)", borderRadius: 12, padding: "14px" }}>
                             {narratedVoiceSampleUrl && !voiceEditMode ? (
-                              /* Voz salva — modo compacto */
                               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                <div style={{ flex: 1, fontSize: 13, color: "#34d399", fontWeight: 600 }}>✅ Voz personalizada salva</div>
-                                <button
-                                  type="button"
-                                  onClick={() => { setVoiceEditMode(true); setVoiceBlob(null); }}
-                                  style={{ fontSize: 12, color: "#c4b5fd", background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontWeight: 600 }}
-                                >
-                                  ✏️ Editar
+                                <div style={{ flex: 1, fontSize: 13, color: "#34d399", fontWeight: 600 }}>✅ Voz salva (3 gravações)</div>
+                                <button type="button" onClick={() => { setVoiceEditMode(true); setVoiceBlobs([null,null,null]); setVoiceStep(0); }}
+                                  style={{ fontSize: 12, color: "#c4b5fd", background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontWeight: 600 }}>
+                                  ✏️ Regravar
                                 </button>
                               </div>
                             ) : (
-                              /* Painel de gravação */
                               <>
-                                <div style={{ fontSize: 12, color: "#c4b5fd", fontWeight: 600, marginBottom: 8 }}>
-                                  Grave 5–15 segundos lendo o texto abaixo
+                                {/* Indicador de progresso */}
+                                <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                                  {VOICE_TEXTS.map((_, i) => (
+                                    <div key={i} style={{ flex: 1, height: 4, borderRadius: 99, background: voiceBlobs[i] ? "#a855f7" : i === voiceStep ? "rgba(168,85,247,0.4)" : "rgba(255,255,255,0.08)" }} />
+                                  ))}
                                 </div>
-                                <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#eef2f9", lineHeight: 1.5, marginBottom: 12, fontStyle: "italic" }}>
-                                  &ldquo;Olá! Vou mostrar um produto incrível que vai transformar sua rotina. Aproveita porque é por tempo limitado!&rdquo;
+                                <div style={{ fontSize: 11, color: "#8394b0", marginBottom: 6 }}>
+                                  Gravação {voiceStep + 1} de 3 — <span style={{ color: "#c4b5fd", fontWeight: 600 }}>{VOICE_TEXTS[voiceStep].label}</span>
                                 </div>
-
-                                <button
-                                  type="button"
-                                  onClick={voiceRecording ? stopVoiceRecording : startVoiceRecording}
-                                  style={{
-                                    width: "100%",
-                                    padding: "11px 0",
-                                    borderRadius: 10,
-                                    border: "none",
-                                    background: voiceRecording ? "rgba(239,68,68,0.25)" : "rgba(168,85,247,0.22)",
-                                    color: voiceRecording ? "#fca5a5" : "#c4b5fd",
-                                    fontWeight: 700, fontSize: 14, cursor: "pointer", transition: "all 0.15s",
-                                  }}
-                                >
-                                  {voiceRecording ? "⏹ Parar gravação" : "⏺ Iniciar gravação"}
+                                <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#eef2f9", lineHeight: 1.55, marginBottom: 10, fontStyle: "italic" }}>
+                                  &ldquo;{VOICE_TEXTS[voiceStep].text}&rdquo;
+                                </div>
+                                <button type="button" onClick={voiceRecording ? stopVoiceRecording : startVoiceRecording}
+                                  style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: voiceRecording ? "rgba(239,68,68,0.25)" : "rgba(168,85,247,0.22)", color: voiceRecording ? "#fca5a5" : "#c4b5fd", fontWeight: 700, fontSize: 14, cursor: "pointer", transition: "all 0.15s" }}>
+                                  {voiceRecording ? "⏹ Parar gravação" : `⏺ ${voiceBlobs[voiceStep] ? "Regravar" : "Gravar"}`}
                                 </button>
 
-                                {voiceBlob && !voiceRecording && (
+                                {voiceBlobs[voiceStep] && !voiceRecording && (
                                   <div style={{ marginTop: 10 }}>
-                                    <audio controls src={URL.createObjectURL(voiceBlob)} style={{ width: "100%", height: 36, marginBottom: 8 }} />
-                                    <button
-                                      type="button"
-                                      disabled={voiceUploading}
-                                      onClick={async () => { await uploadVoiceSample(voiceBlob); setVoiceEditMode(false); }}
-                                      style={{
-                                        width: "100%",
-                                        padding: "10px 0",
-                                        borderRadius: 10,
-                                        border: "none",
-                                        background: "rgba(22,199,132,0.2)",
-                                        color: "#34d399",
-                                        fontWeight: 700, fontSize: 13, cursor: "pointer",
-                                      }}
-                                    >
-                                      {voiceUploading ? "Salvando..." : "✅ Usar esta voz"}
-                                    </button>
+                                    <audio controls src={URL.createObjectURL(voiceBlobs[voiceStep]!)} style={{ width: "100%", height: 36, marginBottom: 8 }} />
+                                    {voiceStep < 2 ? (
+                                      <button type="button" onClick={() => setVoiceStep(s => s + 1)}
+                                        style={{ width: "100%", padding: "10px 0", borderRadius: 10, border: "none", background: "rgba(168,85,247,0.22)", color: "#c4b5fd", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                                        Próxima gravação →
+                                      </button>
+                                    ) : (
+                                      <button type="button" disabled={voiceUploading} onClick={() => uploadVoiceSample(voiceBlobs)}
+                                        style={{ width: "100%", padding: "10px 0", borderRadius: 10, border: "none", background: "rgba(22,199,132,0.2)", color: "#34d399", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                                        {voiceUploading ? "Salvando..." : "✅ Usar esta voz"}
+                                      </button>
+                                    )}
                                   </div>
                                 )}
 
                                 {voiceEditMode && narratedVoiceSampleUrl && (
-                                  <button
-                                    type="button"
-                                    onClick={() => { setVoiceEditMode(false); setVoiceBlob(null); }}
-                                    style={{ marginTop: 8, width: "100%", padding: "8px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "#8394b0", fontSize: 12, cursor: "pointer" }}
-                                  >
+                                  <button type="button" onClick={() => { setVoiceEditMode(false); setVoiceBlobs([null,null,null]); setVoiceStep(0); }}
+                                    style={{ marginTop: 8, width: "100%", padding: "8px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "#8394b0", fontSize: 12, cursor: "pointer" }}>
                                     Cancelar
                                   </button>
                                 )}

@@ -194,13 +194,23 @@ export default function ModeSelector({ onChange }: Props) {
         }
       `}</style>
 
-      {/* 1 — Foto */}
+      {/* 1 — Live Shop (vídeo narrado) — PRIMEIRO */}
+      <CreationCard
+        icon="🛍️"
+        label="Mini live que"
+        highlightWord="vende"
+        desc="Vídeo 10–12s estilo live shop com sua voz e imagem"
+        badge="Mais usado"
+        onClick={() => onChange("video_narrado")}
+        media={<AudioWaveMedia />}
+      />
+
+      {/* 2 — Foto */}
       <CreationCard
         icon="📸"
         label="Criar foto que"
         highlightWord="vende"
         desc="Transforme sua foto em imagem profissional com IA"
-        badge="Mais usado"
         onClick={() => onChange("simulacao")}
         media={
           <img
@@ -211,7 +221,7 @@ export default function ModeSelector({ onChange }: Props) {
         }
       />
 
-      {/* 2 — Vídeo curto */}
+      {/* 3 — Vídeo curto animado */}
       <CreationCard
         icon="🎬"
         label="Criar vídeo que"
@@ -219,16 +229,6 @@ export default function ModeSelector({ onChange }: Props) {
         desc="Vídeo curto animado pra atrair clientes no Reels"
         onClick={() => onChange("video")}
         media={<VideoMedia />}
-      />
-
-      {/* 3 — Vídeo narrado */}
-      <CreationCard
-        icon="🎙️"
-        label="Criar vídeo que"
-        highlightWord="explica"
-        desc="Vídeo com narração de IA que convence e vende"
-        onClick={() => onChange("video_narrado")}
-        media={<AudioWaveMedia />}
       />
     </div>
   );
