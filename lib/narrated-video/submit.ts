@@ -365,17 +365,17 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
     ]);
 
     // 4. Visão do produto → identifica tipo e escolhe cenários compatíveis
-    // Usamos apenas a visão para identificar o produto — o roteiro é texto de marketing
-    // e pode conter frases que confundem inferSlot/inferPersona ("dia das mães", "presente", etc.)
-    const visionDesc = await getProductVisionDescription(job.input_image_url);
-    // Fallback offline: extrai apenas o trecho do produto antes de preço/promoção no roteiro
-    const roteiroHint = job.roteiro.replace(/\b(por|r\$|apenas|só|entrega|frete|disponível|unidade|parcelo|chama|compra|presente).*/i, "").trim().slice(0, 60);
-    const productText = visionDesc ?? roteiroHint ?? "product";
+    // Passa o roteiro como hint: ajuda o moondream a focar no produto correto
+    // (roteiro é texto de marketing — filtra preços/promoções antes de passar)
+    const roteiroHint = job.roteiro.replace(/\b(por|r\$|apenas|só|entrega|frete|disponível|unidade|parcelo|chama|compra|presente).*/i, "").trim().slice(0, 80);
+    const visionDesc = await getProductVisionDescription(job.input_image_url, roteiroHint);
+    const productText = mergeProductTexts(roteiroHint, visionDesc);
     const slot = inferSlot(productText);
     const cenarios = getCenariosForSlot(slot);
     console.log(`[narrated] produto="${productText.slice(0, 60)}" → slot=${slot} | ${cenarios.length} cenários disponíveis`);
 
     // 5. Pré-computa os planos de todas as cenas (prompts positivo + negativo)
+    //    Cenas são "simulação de uso" — produto sendo usado na vida real pelo consumidor.
     //    Cenas 1+ recebem um prefixo de cadeia para instruir o modelo a manter o produto
     const jobFormat = (job.format as PhotoFormat) ?? DEFAULT_FORMAT;
     const scenePlans: ScenePlan[] = [];
@@ -385,8 +385,8 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       // Cenas encadeadas (i > 0): o input já é a cena anterior com o produto correto
       // → reforça "mantenha o produto, mude só o cenário"
       const chainPositive = i === 0
-        ? positive
-        : `Maintain the exact same product as shown in this reference image, unchanged in every detail, same design, same material, same color. Only change the background and environment to a new scene: ${cenario}. ${positive}`;
+        ? `${positive}, lifestyle in-use simulation, real person using the product naturally`
+        : `Maintain the exact same product as shown in this reference image, unchanged in every detail, same design, same material, same color. Only change the background and environment to a new scene: ${cenario}. ${positive}, lifestyle in-use simulation, real person using the product naturally`;
       scenePlans.push({ positive: chainPositive, negative, cenario });
     }
 
