@@ -49,6 +49,20 @@ export function useNarratedVideo({ user }: Options) {
   const narratedPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const narratedElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Restaura voz salva quando user fica disponível
+  useEffect(() => {
+    const uid = (user as { id?: string } | null)?.id;
+    if (!uid) return;
+    try {
+      const saved = localStorage.getItem(`narr_voice_url_${uid}`);
+      if (saved) {
+        setNarratedVoiceSampleUrl(saved);
+        setNarratedVoiceMode("clone");
+      }
+    } catch { /* ignora */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [(user as { id?: string } | null)?.id]);
+
   // Polling a cada 15s enquanto job estiver ativo
   useEffect(() => {
     if (!narratedJob || !user) return;
@@ -97,8 +111,7 @@ export function useNarratedVideo({ user }: Options) {
     setNarratedVoice("feminino");
     setNarratedSceneSource("generate");
     setNarratedSelectedScenes([]);
-    setNarratedVoiceMode("builtin");
-    setNarratedVoiceSampleUrl("");
+    // NÃO reseta voz nem foto — são ativos persistentes do usuário
   }
 
   return {

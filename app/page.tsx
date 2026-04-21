@@ -945,10 +945,8 @@ export default function HomePage() {
       setOnboardingReady(true);
       console.log("[tamo] run() user:", user.id, user.email);
 
-      // Restaura voz e foto do usuário salvas anteriormente
+      // Restaura foto do usuário (voz é restaurada pelo hook useNarratedVideo)
       try {
-        const savedVoice = localStorage.getItem(`narr_voice_url_${user.id}`);
-        if (savedVoice) { setNarratedVoiceSampleUrl(savedVoice); setNarratedVoiceMode("clone"); }
         const savedPhoto = localStorage.getItem(`narr_photo_url_${user.id}`);
         if (savedPhoto) setUserPhotoUrlForVideo(savedPhoto);
       } catch { /* ignora */ }
