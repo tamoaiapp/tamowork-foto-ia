@@ -213,53 +213,52 @@ Roteiro: ${original}`,
 
 // ─── Prompts Live Shop por tipo de produto ───────────────────────────────────
 // image1 = produto, image2 = pessoa (usuário)
-// Regra: pessoa SEGURA o produto em direção à câmera — nunca veste ou coloca no corpo
-// Fundo: branco limpo e profissional (sem gradiente colorido que distrai)
+// Regra: produto em display ao lado da pessoa — nunca tocando/vestindo o produto
+// Fundo: branco limpo e profissional
 
-const LIVE_BG = "clean white studio background, bright even commercial lighting, no camera no tripod no photography equipment visible, live commerce presentation";
+const LIVE_BG = "clean white studio background, bright even commercial lighting, no camera no tripod no photography equipment visible";
 
+// Pessoa à direita, produto em display à esquerda, gesto suave apontando para o produto
 const LIVE_SHOP_PROMPT: Record<string, string> = {
-  // Roupas: ao lado de manequim (não veste na pessoa)
   wear_torso_upper:
-    `The person from image2 stands beside a white mannequin bust displaying the garment from image1, holding one side of it open toward the camera with a natural smile. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling naturally at the camera. A white mannequin bust on the left displays the exact garment from image1. The person gestures gently toward the mannequin with one hand. ${LIVE_BG}.`,
   wear_torso_full:
-    `The person from image2 stands next to a white full-body mannequin wearing the outfit from image1, gesturing toward it clearly with one hand. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. A white full-body mannequin on the left wears the exact outfit from image1. The person gestures toward the mannequin with one hand. ${LIVE_BG}.`,
   wear_waist_legs:
-    `The person from image2 holds up the pants/shorts from image1 with both hands at chest height, clearly showing the product toward the camera. ${LIVE_BG}.`,
-  // Joias e acessórios: SEGURA o produto embalado/na cartela em direção à câmera
+    `The person from image2 stands on the right side, smiling at the camera. A white lower-body mannequin on the left displays the exact bottoms from image1. The person points toward the mannequin. ${LIVE_BG}.`,
   wear_feet:
-    `The person from image2 holds up one shoe from image1 with both hands at chest height, presenting it clearly toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact shoe from image1 is displayed on a clean white shelf on the left. The person points toward the shoe with one hand. ${LIVE_BG}.`,
   wear_head_top:
-    `The person from image2 holds up the hat from image1 with both hands at chest height, showing it clearly toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact hat from image1 sits on a white hat stand on the left. The person points toward it with one hand. ${LIVE_BG}.`,
   wear_head_ear:
-    `The person from image2 holds up the earring display card from image1 with both hands at chest height, presenting the jewelry clearly toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact earrings from image1 are displayed on a small white jewelry stand on the left. The person points gently toward them. ${LIVE_BG}.`,
   wear_head_face:
-    `The person from image2 holds up the sunglasses from image1 with both hands at chest height, presenting them clearly toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact sunglasses from image1 rest on a white display stand on the left. The person gestures toward them with one hand. ${LIVE_BG}.`,
   wear_neck:
-    `The person from image2 holds up the necklace from image1 with both hands at chest height, displaying it clearly toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact necklace from image1 is displayed on a white jewelry bust on the left. The person gestures toward it with one hand. ${LIVE_BG}.`,
   wear_wrist:
-    `The person from image2 holds up the watch or bracelet from image1 with both hands at chest height, presenting it clearly toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact watch or bracelet from image1 is displayed on a white stand on the left. The person points toward it with one hand. ${LIVE_BG}.`,
   wear_finger:
-    `The person from image2 holds up the ring from image1 between two fingers at chest height, presenting it clearly toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact ring from image1 is displayed on a small white ring stand on the left. The person points toward it with one hand. ${LIVE_BG}.`,
   wear_crossbody:
-    `The person from image2 holds up the bag from image1 with both hands at chest height, presenting it clearly toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact bag from image1 hangs on a white display hook on the left. The person gestures toward it with one hand. ${LIVE_BG}.`,
   hold_bag_hand:
-    `The person from image2 holds the bag from image1 up with both hands at chest height, presenting it enthusiastically toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact bag from image1 is displayed on a clean white table on the left. The person gestures toward it enthusiastically. ${LIVE_BG}.`,
   hold_beauty_product:
-    `The person from image2 holds up the beauty product from image1 with both hands at chest height, smiling and presenting it clearly toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact beauty product from image1 is displayed on a clean white surface on the left. The person gestures toward it with one hand. ${LIVE_BG}.`,
   hold_food_display:
-    `The person from image2 holds the product from image1 with both hands at chest height, presenting it clearly toward the camera with a warm smile. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact product from image1 is displayed on a clean white surface on the left. The person gestures toward it with a warm smile. ${LIVE_BG}.`,
   hold_beverage:
-    `The person from image2 holds the beverage from image1 up with both hands at chest height, presenting it toward the camera with a natural smile. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact beverage from image1 is displayed on a clean white surface on the left. The person gestures toward it with a natural smile. ${LIVE_BG}.`,
   scene_tabletop:
-    `The person from image2 holds the product from image1 up with both hands at chest height in front of a clean white table, presenting it toward the camera. ${LIVE_BG}.`,
+    `The person from image2 stands on the right side, smiling at the camera. The exact product from image1 is displayed on a clean white table on the left. The person gestures toward it with one hand. ${LIVE_BG}.`,
 };
 
 const LIVE_SHOP_PROMPT_DEFAULT =
-  `The person from image2 holds up the product from image1 with both hands at chest height, clearly presenting it toward the camera with a natural engaging smile. ${LIVE_BG}.`;
+  `The person from image2 stands on the right side, smiling naturally at the camera. The exact product from image1 is displayed on a clean white stand or table on the left. The person gestures gently toward the product with one hand. ${LIVE_BG}.`;
 
 const LIVE_SHOP_NEGATIVE =
-  "blurry, low quality, distorted face, wrong face, deformed body, deformed hands, extra limbs, watermark, text overlay, camera, tripod, photography equipment, dark background, cluttered background, product on body, product worn, earrings on face";
+  "blurry, low quality, distorted face, wrong face, deformed body, deformed hands, extra limbs, watermark, text overlay, camera, tripod, photography equipment, dark background, cluttered background, product touching person, product on body, product worn";
 
 function buildLiveShopPrompt(slot: string): { positive: string; negative: string } {
   return { positive: LIVE_SHOP_PROMPT[slot] ?? LIVE_SHOP_PROMPT_DEFAULT, negative: LIVE_SHOP_NEGATIVE };
@@ -440,6 +439,8 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
               supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
               supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
               clip_duration: 4,
+              motion_prompt: "subtle gentle movements, slight natural head movement, soft body sway, product display stays perfectly still, minimal motion, smooth",
+              motion_negative: "fast movement, shaking, jumping, large gestures, blurry, distorted",
             }),
             signal: AbortSignal.timeout(10_000),
           });

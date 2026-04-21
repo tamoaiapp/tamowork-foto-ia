@@ -38,6 +38,8 @@ async function startAssembly(
       supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
       supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
       clip_duration: 4,
+      motion_prompt: "subtle gentle movements, slight natural head movement, soft body sway, product display stays perfectly still, minimal motion, smooth",
+      motion_negative: "fast movement, shaking, jumping, large gestures, blurry, distorted",
     }),
     signal: AbortSignal.timeout(10_000),
   });
