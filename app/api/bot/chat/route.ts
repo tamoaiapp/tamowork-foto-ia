@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
   const recentMessages = (historyRes.data ?? []).reverse();
 
   let systemPrompt = SYSTEM_BASE;
-  systemPrompt += `\n\nCONTEXTO DO NEGOCIO:\n${businessContext}`;
+  systemPrompt += `\n\nCONTEXTO DO NEGOCIO DO USUARIO (use isso para criar legendas, ofertas e textos PARA O NEGOCIO DELE, nao sobre o TamoWork):\n${businessContext}`;
   if (memory) {
     systemPrompt += `\n\nMEMORIA ACUMULADA:\n${memory}`;
   }

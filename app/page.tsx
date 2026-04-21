@@ -2481,8 +2481,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* PASSO 2: Formulário após escolher o modo */}
-        {modeSelected && !videoMode && !longVideoMode && workState !== "trabalhando" && (
+        {/* PASSO 2: Formulário — esconde quando resultado de foto está visível (exceto modos de vídeo ativos) */}
+        {modeSelected && !videoMode && !longVideoMode && workState !== "trabalhando" && (workState !== "terminado" || narratedMode) && (
           <div style={styles.card}>
             {/* Botão voltar */}
             <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
@@ -2643,6 +2643,17 @@ export default function HomePage() {
                       >
                         Criar outro vídeo
                       </button>
+
+                      {/* Upsell PRO para free após resultado de vídeo narrado */}
+                      {plan === "free" && (
+                        <button
+                          type="button"
+                          onClick={() => handleAssinarDireto("monthly")}
+                          style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "16px", width: "100%", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginTop: 4 }}
+                        >
+                          🚀 Assinar Pro — vídeos ilimitados por R$79/mês
+                        </button>
+                      )}
                     </div>
                   ) : (
                     /* Formulário */
@@ -3196,8 +3207,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Resultado (só aparece se Tamo fechado) */}
-        {workState === "terminado" && job && !videoMode && !botNavOpen && (
+        {/* Resultado (só aparece se Tamo fechado e sem outro modo de vídeo ativo) */}
+        {workState === "terminado" && job && !videoMode && !narratedMode && !longVideoMode && !botNavOpen && (
           <div style={styles.card} className="result-wrap">
             {/* Imagem — coluna esquerda no desktop */}
             <div className="result-image-col">

@@ -83,22 +83,16 @@ async function generateBusinessContext(data: {
     );
   }
 
-  const prompt = `Com base nas informacoes abaixo, crie um contexto de negocio compacto para um assistente de IA do TamoWork.
+  const prompt = `Escreva um resumo do NEGOCIO DO USUARIO em um unico paragrafo curto.
+IMPORTANTE: escreva sobre o NEGOCIO DO USUARIO, nao sobre o TamoWork.
+Inclua: o que o usuario vende, o nicho, os produtos principais, onde vende e o desafio comercial.
 
-Seja objetivo e escreva em um unico paragrafo curto.
-Inclua:
-- o que a empresa vende
-- o nicho
-- os produtos mais importantes
-- onde vende hoje
-- o principal desafio comercial
+Nome do negocio do usuario: ${data.business_name}
+Nicho do usuario: ${data.business_type}
+Produtos principais do usuario: ${data.products}
+Canal e desafio do usuario: ${data.tone}
 
-Nome do negocio: ${data.business_name}
-Nicho: ${data.business_type}
-Produtos principais: ${data.products}
-Canal principal e desafio atual: ${data.tone}
-
-Responda apenas com o contexto final.`;
+Responda apenas com o resumo do negocio do usuario, em portugues.`;
 
   try {
     const res = await fetch(`${ollamaBase}/api/chat`, {
