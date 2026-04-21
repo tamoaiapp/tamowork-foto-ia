@@ -94,16 +94,18 @@ export async function POST(req: NextRequest) {
     .select("id, status")
     .single();
 
-  // Fallback: coluna voice_sample_url ainda não existe — tenta sem ela
-  if (insertErr?.code === "42703" && voice_sample_url) {
+  // Fallback: colunas opcionais podem não existir ainda — tenta sem elas
+  if (insertErr?.code === "42703") {
+    const safePayload = { ...insertPayload };
+    if (voice_sample_url) { delete safePayload.voice_sample_url; console.warn("[narrated] voice_sample_url ignorado: coluna não existe"); }
+    if (user_photo_url) { delete safePayload.user_photo_url; console.warn("[narrated] user_photo_url ignorado: coluna não existe"); }
     const fallback = await supabase
       .from("narrated_video_jobs")
-      .insert({ ...insertPayload, voice_sample_url: undefined })
+      .insert(safePayload)
       .select("id, status")
       .single();
     job = fallback.data;
     insertErr = fallback.error;
-    console.warn("[narrated] voice_sample_url ignorado: coluna não existe ainda");
   }
 
   if (insertErr || !job) {
