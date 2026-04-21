@@ -717,6 +717,12 @@ export default function HomePage() {
   const [formError, setFormError] = useState("");
   const [timeoutError, setTimeoutError] = useState("");
   const [photosToday, setPhotosToday] = useState(0);
+  const [freePhotosUsed, setFreePhotosUsed] = useState(() => {
+    try {
+      const n = parseInt(localStorage.getItem("free_photos_used") ?? "0", 10);
+      return isNaN(n) ? 0 : n;
+    } catch { return 0; }
+  });
   const [pushTrigger, setPushTrigger] = useState<"photo_done" | "rate_limit" | "return_visit" | null>(null);
   const [abVariant, setAbVariant] = useState<"A" | "B" | "C" | null>(null);
   const [showVideoHook, setShowVideoHook] = useState(false);
@@ -1526,6 +1532,13 @@ export default function HomePage() {
         }
         return Math.max(prev, prev + 1 <= 2 ? prev + 1 : prev);
       });
+      if (plan === "free") {
+        setFreePhotosUsed((prev) => {
+          const next = prev + 1;
+          try { localStorage.setItem("free_photos_used", String(next)); } catch { /* ignora */ }
+          return next;
+        });
+      }
 
       // Gatilho de conversão de push — só se ainda não tem permissão
       if (typeof Notification !== "undefined" && Notification.permission === "default") {
@@ -3286,6 +3299,20 @@ export default function HomePage() {
                 </div>
               </div>
 
+              {/* Contador de uso free */}
+              {plan === "free" && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "#8394b0" }}>📸 Fotos grátis usadas</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: freePhotosUsed >= 3 ? "#f87171" : "#a5b4fc" }}>{Math.min(freePhotosUsed, 3)} / 3</span>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 4, height: 5, overflow: "hidden" }}>
+                    <div style={{ background: freePhotosUsed >= 3 ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 4, height: "100%", width: `${Math.min(100, (freePhotosUsed / 3) * 100)}%`, transition: "width 0.4s ease" }} />
+                  </div>
+                  {freePhotosUsed >= 3 && <p style={{ fontSize: 11, color: "#f87171", margin: "4px 0 0", textAlign: "center" as const }}>Limite gratuito atingido — assine o PRO para continuar criando</p>}
+                </div>
+              )}
+
               {/* Rating de qualidade */}
               <PhotoRating
                 rating={photoRating}
@@ -3347,12 +3374,15 @@ export default function HomePage() {
 
               {/* Gerar novamente */}
               <div style={{ marginBottom: 8 }}>
-                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
+                {plan === "free" && freePhotosUsed >= 3 ? (
+                  <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0, background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+                    🔓 Assinar PRO para criar mais fotos
+                  </button>
+                ) : plan === "free" && rateLimitedUntil && countdown > 0 ? (
                   <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
                 ) : plan === "free" && photosToday === 1 ? (
-                  // CTA primária: 2ª foto grátis — destaque máximo
                   <button onClick={resetJob} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0 }}>
                     {CONVERSION.cta1Label}
                   </button>
@@ -3391,14 +3421,14 @@ export default function HomePage() {
                   {rateLimitedUntil && countdown > 0 ? (
                     <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
                   ) : (
-                    <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 14, padding: "12px 14px", marginTop: 4 }}>
-                      <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.6 }}>
-                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos + vídeos ilimitados
-                        <br />
-                        <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
-                          Assinar Pro — R$79/mês
-                        </button>
+                    <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 14, padding: "14px", marginTop: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#eef2f9", marginBottom: 4 }}>Quer mais do que isso? 🚀</div>
+                      <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.6, marginBottom: 10 }}>
+                        Com o PRO: fundo personalizado, vídeo animado para Reels, downloads ilimitados e sem fila de espera.
                       </div>
+                      <button onClick={() => handleAssinarDireto("annual")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
+                        Assinar PRO — R$79/mês
+                      </button>
                     </div>
                   )}
                 </>
@@ -3407,6 +3437,20 @@ export default function HomePage() {
 
             {/* Mobile: mesmo layout, só muda padding */}
             <div className="result-mobile-actions" style={{ display: "block", padding: "16px 16px 28px" }}>
+              {/* Contador de uso free — mobile */}
+              {plan === "free" && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "#8394b0" }}>📸 Fotos grátis usadas</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: freePhotosUsed >= 3 ? "#f87171" : "#a5b4fc" }}>{Math.min(freePhotosUsed, 3)} / 3</span>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 4, height: 5, overflow: "hidden" }}>
+                    <div style={{ background: freePhotosUsed >= 3 ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 4, height: "100%", width: `${Math.min(100, (freePhotosUsed / 3) * 100)}%`, transition: "width 0.4s ease" }} />
+                  </div>
+                  {freePhotosUsed >= 3 && <p style={{ fontSize: 11, color: "#f87171", margin: "4px 0 0", textAlign: "center" as const }}>Limite gratuito atingido — assine o PRO para continuar criando</p>}
+                </div>
+              )}
+
               {/* Rating de qualidade — mobile */}
               <PhotoRating
                 rating={photoRating}
@@ -3468,7 +3512,11 @@ export default function HomePage() {
 
               {/* Gerar novamente */}
               <div style={{ marginBottom: 8 }}>
-                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
+                {plan === "free" && freePhotosUsed >= 3 ? (
+                  <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0, background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
+                    🔓 Assinar PRO para criar mais fotos
+                  </button>
+                ) : plan === "free" && rateLimitedUntil && countdown > 0 ? (
                   <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
                     🔒 Nova foto em {formatMs(countdown)}
                   </button>
@@ -3508,14 +3556,14 @@ export default function HomePage() {
                   {rateLimitedUntil && countdown > 0 ? (
                     <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual")} />
                   ) : (
-                    <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 14, padding: "12px 14px", marginTop: 4 }}>
-                      <div style={{ fontSize: 12, color: "#8394b0", textAlign: "center" as const, lineHeight: 1.6 }}>
-                        Com o <span style={{ color: "#a5b4fc", fontWeight: 700 }}>PRO</span>: fotos + vídeos ilimitados
-                        <br />
-                        <button onClick={() => handleAssinarDireto("annual")} style={{ background: "none", border: "none", color: "#6366f1", fontSize: 12, cursor: "pointer", fontFamily: "Outfit, sans-serif", fontWeight: 700, padding: 0, marginTop: 4 }}>
-                          Assinar Pro — R$79/mês
-                        </button>
+                    <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 14, padding: "14px", marginTop: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#eef2f9", marginBottom: 4 }}>Quer mais do que isso? 🚀</div>
+                      <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.6, marginBottom: 10 }}>
+                        Com o PRO: fundo personalizado, vídeo animado para Reels, downloads ilimitados e sem fila de espera.
                       </div>
+                      <button onClick={() => handleAssinarDireto("annual")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
+                        Assinar PRO — R$79/mês
+                      </button>
                     </div>
                   )}
                 </>
