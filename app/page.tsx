@@ -1198,6 +1198,50 @@ export default function HomePage() {
     };
   }, [router]);
 
+  // Marca job como "visto" no localStorage quando o resultado aparece na tela
+  // Isso evita que o resultado reapareça em novas sessões/recargas
+  const seenJobRef = useRef<string | null>(null);
+  useEffect(() => {
+    const id = job?.status === "done" && job.output_image_url && job.id !== "rate_limited" ? job.id : null;
+    if (id && id !== seenJobRef.current) {
+      seenJobRef.current = id;
+      setTimeout(() => {
+        try {
+          const dismissed: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
+          if (!dismissed.includes(id)) { dismissed.push(id); localStorage.setItem("dismissed_jobs", JSON.stringify(dismissed.slice(-50))); }
+        } catch { /* ignora */ }
+      }, 1500);
+    }
+  }, [job?.status, job?.id, job?.output_image_url]);
+
+  const seenNarratedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const id = narratedJob?.status === "done" && narratedJob.output_video_url ? narratedJob.id : null;
+    if (id && id !== seenNarratedRef.current) {
+      seenNarratedRef.current = id;
+      setTimeout(() => {
+        try {
+          const dismissed: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
+          if (!dismissed.includes(id)) { dismissed.push(id); localStorage.setItem("dismissed_jobs", JSON.stringify(dismissed.slice(-50))); }
+        } catch { /* ignora */ }
+      }, 1500);
+    }
+  }, [narratedJob?.status, narratedJob?.id, narratedJob?.output_video_url]);
+
+  const seenVideoRef = useRef<string | null>(null);
+  useEffect(() => {
+    const id = videoJob?.status === "done" && videoJob.output_video_url ? videoJob.id : null;
+    if (id && id !== seenVideoRef.current) {
+      seenVideoRef.current = id;
+      setTimeout(() => {
+        try {
+          const dismissed: string[] = JSON.parse(localStorage.getItem("dismissed_jobs") ?? "[]");
+          if (!dismissed.includes(id)) { dismissed.push(id); localStorage.setItem("dismissed_jobs", JSON.stringify(dismissed.slice(-50))); }
+        } catch { /* ignora */ }
+      }, 1500);
+    }
+  }, [videoJob?.status, videoJob?.id, videoJob?.output_video_url]);
+
   // Quando foto fica pronta: mostra mini toast + badge em Criações + fecha Tamo se aberto
   const toastFiredRef = useRef(false);
   useEffect(() => {
