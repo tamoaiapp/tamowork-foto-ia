@@ -389,7 +389,37 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
   }
 
   try {
-    // 1. Gera áudio TTS + calcula quantas cenas precisam (áudio salvo no Supabase para reuso)
+    const hasUserPhoto = !!(job as Record<string, unknown>).user_photo_url;
+    const userPhotoUrl = hasUserPhoto ? (job as Record<string, unknown>).user_photo_url as string : null;
+    const isLiveShop = hasUserPhoto;
+
+    // 1. Visão do produto em paralelo com upload de imagens → identifica tipo e slot
+    const roteiroHint = (job.roteiro ?? "").replace(/\b(por|r\$|apenas|só|entrega|frete|disponível|unidade|parcelo|chama|compra|presente).*/i, "").trim().slice(0, 80);
+
+    const [visionDesc, imageName, userImageName] = await Promise.all([
+      getProductVisionDescription(job.input_image_url, roteiroHint),
+      job.scene_source !== "existing"
+        ? uploadImageToComfy(job.input_image_url, comfyBase, `narr_${jobId.replace(/-/g, "").slice(0, 12)}`)
+        : Promise.resolve(""),
+      userPhotoUrl
+        ? uploadImageToComfy(userPhotoUrl, comfyBase, `narr_user_${jobId.replace(/-/g, "").slice(0, 12)}`)
+        : Promise.resolve(undefined),
+    ]);
+
+    const productText = mergeProductTexts(roteiroHint, visionDesc);
+    const slot = inferSlot(productText);
+    console.log(`[narrated] produto="${productText.slice(0, 60)}" → slot=${slot} | liveShop=${isLiveShop}`);
+
+    // 2. Gera ou melhora roteiro
+    let roteiroMelhorado: string;
+    if (isLiveShop && !job.roteiro?.trim()) {
+      roteiroMelhorado = await generateLiveShopScript(productText);
+      console.log(`[narrated] roteiro gerado por IA: "${roteiroMelhorado.slice(0, 80)}"`);
+    } else {
+      roteiroMelhorado = await improveRoteiro(job.roteiro?.trim() ? job.roteiro : productText);
+    }
+
+    // 3. Gera áudio TTS com roteiro correto + calcula quantas cenas são necessárias
     let scenesNeeded = DEFAULT_SCENES;
     let audioUrl = "";
     if (ASSEMBLY_BASE) {
@@ -398,7 +428,7 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            text: job.roteiro?.trim() || productText,
+            text: roteiroMelhorado,
             voice: job.voice ?? "feminino",
             voice_sample_url: job.voice_sample_url ?? undefined,
             supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -419,9 +449,8 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       }
     }
 
-    // 2. Se scene_source = 'existing', pula ComfyUI e inicia montagem diretamente
+    // 4. Se scene_source = 'existing', pula ComfyUI e inicia montagem diretamente
     if (job.scene_source === "existing" && (job.scene_urls ?? []).length >= 2) {
-      const roteiroMelhorado = await improveRoteiro(job.roteiro);
       await supabase.from("narrated_video_jobs").update({
         status: "assembling",
         roteiro_melhorado: roteiroMelhorado,
@@ -430,7 +459,6 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
         updated_at: new Date().toISOString(),
       }).eq("id", jobId);
 
-      // Inicia montagem imediatamente (sem passar pelo ComfyUI)
       if (ASSEMBLY_BASE) {
         try {
           const assemblyRes = await fetch(`${ASSEMBLY_BASE}/assemble`, {
@@ -440,11 +468,12 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
               job_id: jobId,
               scenes: job.scene_urls,
               audio_url: audioUrl || undefined,
-              text: roteiroMelhorado || job.roteiro,
+              text: roteiroMelhorado,
               voice: job.voice ?? "feminino",
               voice_sample_url: job.voice_sample_url ?? undefined,
               supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
               supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+              clip_duration: 4,
             }),
             signal: AbortSignal.timeout(10_000),
           });
@@ -454,35 +483,6 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
         }
       }
       return;
-    }
-
-    // 3. Uploads em paralelo: produto + foto do usuário (se houver)
-    const hasUserPhoto = !!(job as Record<string, unknown>).user_photo_url;
-    const userPhotoUrl = hasUserPhoto ? (job as Record<string, unknown>).user_photo_url as string : null;
-    const isLiveShop = hasUserPhoto;
-
-    const [imageName, userImageName] = await Promise.all([
-      uploadImageToComfy(job.input_image_url, comfyBase, `narr_${jobId.replace(/-/g, "").slice(0, 12)}`),
-      userPhotoUrl
-        ? uploadImageToComfy(userPhotoUrl, comfyBase, `narr_user_${jobId.replace(/-/g, "").slice(0, 12)}`)
-        : Promise.resolve(undefined),
-    ]);
-
-    // 4. Visão do produto → identifica tipo e slot
-    const roteiroHint = (job.roteiro ?? "").replace(/\b(por|r\$|apenas|só|entrega|frete|disponível|unidade|parcelo|chama|compra|presente).*/i, "").trim().slice(0, 80);
-    const visionDesc = await getProductVisionDescription(job.input_image_url, roteiroHint);
-    const productText = mergeProductTexts(roteiroHint, visionDesc);
-    const slot = inferSlot(productText);
-    console.log(`[narrated] produto="${productText.slice(0, 60)}" → slot=${slot} | liveShop=${isLiveShop}`);
-
-    // 5a. Gera ou melhora roteiro
-    let roteiroMelhorado: string;
-    if (isLiveShop && !job.roteiro?.trim()) {
-      // Live shop sem roteiro: gera automaticamente com IA focado em ~10s
-      roteiroMelhorado = await generateLiveShopScript(productText);
-      console.log(`[narrated] roteiro gerado por IA: "${roteiroMelhorado.slice(0, 80)}"`);
-    } else {
-      roteiroMelhorado = await improveRoteiro(job.roteiro ?? productText);
     }
 
     // 5b. Pré-computa planos de cena

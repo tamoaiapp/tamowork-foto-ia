@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
   const insertPayload: Record<string, unknown> = {
     user_id: user.id,
     input_image_url: input_image_url ?? null,
-    roteiro: roteiro.trim(),
+    roteiro: roteiro?.trim() ?? "",
     voice: validVoice,
     scene_source: validSceneSource,
     scene_urls: validSceneSource === "existing" ? scene_urls : null,
