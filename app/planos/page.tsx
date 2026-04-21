@@ -214,13 +214,14 @@ export default function PlanosPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) router.replace("/login");
-      else { setUser(data.user); setLoading(false); }
+      setUser(data.user ?? null);
+      setLoading(false);
     });
-  }, [router]);
+  }, []);
 
   async function handleCheckout() {
-    if (!user || loadingStripe) return;
+    if (loadingStripe) return;
+    if (!user) { router.push("/login?next=/planos"); return; }
     setLoadingStripe(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -242,15 +243,7 @@ export default function PlanosPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div style={{ ...styles.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ color: "#4e5c72", fontSize: 15 }}>
-          {lang === "en" ? "Loading..." : lang === "es" ? "Cargando..." : "Carregando..."}
-        </span>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   return (
     <div style={styles.page} className="app-layout">
