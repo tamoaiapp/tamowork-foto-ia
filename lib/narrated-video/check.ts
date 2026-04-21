@@ -37,6 +37,7 @@ async function startAssembly(
       audio_url: audioUrl ?? "",
       supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
       supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+      clip_duration: 4,
     }),
     signal: AbortSignal.timeout(10_000),
   });

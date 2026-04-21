@@ -2012,7 +2012,8 @@ export default function HomePage() {
     if (narratedSceneSource === "existing" && narratedSelectedScenes.length < 2) {
       setNarratedError("Selecione pelo menos 2 fotos para as cenas"); return;
     }
-    if (!narratedRoteiro.trim()) { setNarratedError("Escreva o roteiro — o que você quer dizer no vídeo"); return; }
+    // Roteiro é obrigatório apenas quando não há foto do usuário (sem modo live shop)
+    if (!narratedRoteiro.trim() && !userPhotoUrlForVideo) { setNarratedError("Escreva o roteiro — o que você quer dizer no vídeo"); return; }
     setNarratedError("");
     setNarratedSubmitting(true);
     // Sempre limpa resultados de outros tipos ao iniciar narrado
@@ -3019,26 +3020,36 @@ export default function HomePage() {
                         )}
                       </div>
 
-                      {/* Roteiro */}
-                      <div style={styles.fieldGroup}>
-                        <label style={styles.label}>
-                          O que você quer dizer no vídeo? <span style={{ color: "#ef4444" }}>*</span>
-                        </label>
-                        <textarea
-                          placeholder={"Ex: Oi pessoal, hoje vou mostrar nosso novo produto. Olha que diferença faz na sua vida do dia a dia. Aproveita o desconto especial só essa semana!"}
-                          value={narratedRoteiro}
-                          onChange={(e) => setNarratedRoteiro(e.target.value)}
-                          rows={5}
-                          style={{
-                            ...styles.input,
-                            resize: "vertical",
-                            minHeight: 100,
-                          } as React.CSSProperties}
-                        />
-                        <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 4 }}>
-                          Eu melhoro o texto e gero a narração automaticamente
+                      {/* Roteiro — oculto no modo Live Shop (IA gera automaticamente) */}
+                      {userPhotoUrlForVideo ? (
+                        <div style={{ background: "rgba(168,85,247,0.07)", border: "1px solid rgba(168,85,247,0.18)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 22 }}>🤖</span>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "#c4b5fd", marginBottom: 2 }}>Roteiro gerado automaticamente pela IA</div>
+                            <div style={{ fontSize: 11.5, color: "#8394b0" }}>A IA vai criar um roteiro de ~10s focado em vender seu produto</div>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div style={styles.fieldGroup}>
+                          <label style={styles.label}>
+                            O que você quer dizer no vídeo? <span style={{ color: "#ef4444" }}>*</span>
+                          </label>
+                          <textarea
+                            placeholder={"Ex: Oi pessoal, hoje vou mostrar nosso novo produto. Olha que diferença faz na sua vida do dia a dia. Aproveita o desconto especial só essa semana!"}
+                            value={narratedRoteiro}
+                            onChange={(e) => setNarratedRoteiro(e.target.value)}
+                            rows={5}
+                            style={{
+                              ...styles.input,
+                              resize: "vertical",
+                              minHeight: 100,
+                            } as React.CSSProperties}
+                          />
+                          <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 4 }}>
+                            Eu melhoro o texto e gero a narração automaticamente
+                          </div>
+                        </div>
+                      )}
 
                       {plan !== "pro" && (
                         <div style={{ background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 4 }}>
@@ -3059,9 +3070,9 @@ export default function HomePage() {
                       ) : (
                         <button
                           type="button"
-                          disabled={narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || !narratedRoteiro.trim()}
+                          disabled={narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || (!userPhotoUrlForVideo && !narratedRoteiro.trim())}
                           onClick={handleNarratedSubmit}
-                          style={{ ...styles.submitBtn, opacity: (narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || !narratedRoteiro.trim()) ? 0.5 : 1 }}
+                          style={{ ...styles.submitBtn, opacity: (narratedSubmitting || (narratedSceneSource === "generate" ? !imageFile : narratedSelectedScenes.length < 2) || (!userPhotoUrlForVideo && !narratedRoteiro.trim())) ? 0.5 : 1 }}
                         >
                           {narratedSubmitting ? "Enviando..." : "🎙️ Criar vídeo com narração"}
                         </button>
