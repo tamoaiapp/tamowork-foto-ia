@@ -211,8 +211,56 @@ Roteiro: ${original}`,
   }
 }
 
+// ─── Prompts Live Shop por tipo de produto ───────────────────────────────────
+// image1 = produto, image2 = pessoa (usuário)
+
+const LIVE_SHOP_PROMPT: Record<string, string> = {
+  wear_torso_upper:
+    "The person shown in image2 is standing beside a white mannequin bust that is wearing the garment shown in image1. The person points naturally toward the display. Clean white studio background, soft commercial lighting, live shop style.",
+  wear_torso_full:
+    "The person shown in image2 stands next to a full-body white mannequin wearing the outfit from image1. The person gestures toward the garment. Clean white background, studio lighting, live shopping scene.",
+  wear_waist_legs:
+    "The person shown in image2 stands next to a lower-body mannequin display showing the clothing from image1. The person points toward the product. Clean studio background, live shop style.",
+  wear_feet:
+    "The person shown in image2 is standing beside a clean white display table with the shoe from image1 placed on it. The person leans slightly toward the shoe, presenting it to the camera. Clean white background, studio lighting.",
+  wear_head_top:
+    "The person shown in image2 is wearing the hat or cap from image1, adjusting it naturally for the camera. Clean white background, live shop style, studio lighting.",
+  wear_head_ear:
+    "The person shown in image2 is wearing the earrings from image1, tilting their head slightly to show the jewelry to the camera. Clean background, soft studio lighting.",
+  wear_head_face:
+    "The person shown in image2 is wearing the sunglasses or eyewear from image1, looking toward the camera with a natural expression. Clean background, live shop style.",
+  wear_neck:
+    "The person shown in image2 is wearing the necklace or chain from image1, touching it gently and presenting it to the camera. Clean background, studio lighting.",
+  wear_wrist:
+    "The person shown in image2 holds up their wrist showing the watch or bracelet from image1, turning it slightly toward the camera. Clean background, live shop style.",
+  wear_finger:
+    "The person shown in image2 holds up their hand showing the ring from image1, fingers spread naturally for the camera. Clean background, elegant live shop style.",
+  wear_crossbody:
+    "The person shown in image2 is wearing the bag from image1 crossbody, turning slightly to show both sides. Clean white background, live shop style.",
+  hold_bag_hand:
+    "The person shown in image2 is holding the bag from image1 elegantly at their side, presenting it toward the camera. Clean white background, live shop style.",
+  hold_beauty_product:
+    "The person shown in image2 holds up the beauty product from image1 at chest height, presenting it to the camera with a natural expression. Clean white background, studio lighting.",
+  hold_food_display:
+    "The person shown in image2 holds the product from image1 at chest height, presenting it naturally to the camera. Clean background, commercial studio lighting.",
+  hold_beverage:
+    "The person shown in image2 holds the beverage from image1 up toward the camera, smiling naturally. Clean background, lifestyle lighting.",
+  scene_tabletop:
+    "The person shown in image2 stands behind a clean white table with the product from image1 displayed in front. The person gestures toward the product. Clean white background, commercial studio lighting, live shop style.",
+};
+
+const LIVE_SHOP_PROMPT_DEFAULT =
+  "The person shown in image2 is standing in a live shopping scene, holding and presenting the product from image1 naturally toward the camera. Clean white studio background. Soft commercial studio lighting. Natural, engaging presentation pose.";
+
+const LIVE_SHOP_NEGATIVE =
+  "blurry, low quality, distorted face, wrong face, deformed hands, extra limbs, watermark, text overlay, cluttered background, dark background";
+
+function buildLiveShopPrompt(slot: string): { positive: string; negative: string } {
+  const positive = LIVE_SHOP_PROMPT[slot] ?? LIVE_SHOP_PROMPT_DEFAULT;
+  return { positive, negative: LIVE_SHOP_NEGATIVE };
+}
+
 // ─── Submete workflow de variação no ComfyUI ─────────────────────────────────
-// Usa a API /prompt diretamente com um workflow de img2img simplificado
 
 export async function submitSceneVariation(
   imageName: string,
@@ -222,9 +270,8 @@ export async function submitSceneVariation(
   sceneIndex: number,
   comfyBase: string,
   format: PhotoFormat = DEFAULT_FORMAT,
+  userImageName?: string,
 ): Promise<string> {
-  // Deep clone do template de foto existente mas com seed aleatório
-  // Importa o template dinamicamente para não criar dependência circular
   const { default: templateJson } = await import("@/lib/comfyui/prompt_template.json");
   const workflow = JSON.parse(JSON.stringify(templateJson)) as Record<string, unknown>;
 
@@ -232,18 +279,34 @@ export async function submitSceneVariation(
   const prefix = `narr_${jobId.replace(/-/g, "").slice(0, 8)}_s${sceneIndex}`;
 
   (workflow["11"] as { inputs: { image: string } }).inputs.image = imageName;
-  (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt =
-    `${promptPos}\n#job:${prefix}\n`;
+  (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt = `${promptPos}\n#job:${prefix}\n`;
   (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = promptNeg;
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = prefix;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = seed;
-  // Aplica formato: injeta ImageScale (168) antes do FluxKontextImageScale (160)
+
+  // Aplica formato
   const { w, h } = PHOTO_DIMS[format];
   (workflow as Record<string, unknown>)["168"] = {
     class_type: "ImageScale",
     inputs: { image: ["11", 0], width: w, height: h, upscale_method: "lanczos", crop: "center" },
   };
   (workflow["160"] as { inputs: { image: unknown } }).inputs.image = ["168", 0];
+
+  // Foto do usuário como image2 nos encoders
+  if (userImageName) {
+    (workflow as Record<string, unknown>)["170"] = {
+      class_type: "LoadImage",
+      inputs: { image: userImageName },
+      _meta: { title: "Load User Photo" },
+    };
+    (workflow as Record<string, unknown>)["171"] = {
+      class_type: "FluxKontextImageScale",
+      inputs: { image: ["170", 0] },
+      _meta: { title: "FluxKontextImageScale User" },
+    };
+    (workflow["1"] as { inputs: Record<string, unknown> }).inputs.image2 = ["171", 0];
+    (workflow["39"] as { inputs: Record<string, unknown> }).inputs.image2 = ["171", 0];
+  }
 
   const res = await fetch(`${comfyBase}/prompt`, {
     method: "POST",
@@ -358,43 +421,55 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       return;
     }
 
-    // 3. Melhora roteiro em paralelo com upload da imagem
-    const [roteiroMelhorado, imageName] = await Promise.all([
+    // 3. Uploads em paralelo: produto + foto do usuário (se houver) + melhoria do roteiro
+    const hasUserPhoto = !!(job as Record<string, unknown>).user_photo_url;
+    const userPhotoUrl = hasUserPhoto ? (job as Record<string, unknown>).user_photo_url as string : null;
+
+    const [roteiroMelhorado, imageName, userImageName] = await Promise.all([
       improveRoteiro(job.roteiro),
       uploadImageToComfy(job.input_image_url, comfyBase, `narr_${jobId.replace(/-/g, "").slice(0, 12)}`),
+      userPhotoUrl
+        ? uploadImageToComfy(userPhotoUrl, comfyBase, `narr_user_${jobId.replace(/-/g, "").slice(0, 12)}`)
+        : Promise.resolve(undefined),
     ]);
 
-    // 4. Visão do produto → identifica tipo e escolhe cenários compatíveis
-    // Passa o roteiro como hint: ajuda o moondream a focar no produto correto
-    // (roteiro é texto de marketing — filtra preços/promoções antes de passar)
+    // 4. Visão do produto → identifica tipo e slot
     const roteiroHint = job.roteiro.replace(/\b(por|r\$|apenas|só|entrega|frete|disponível|unidade|parcelo|chama|compra|presente).*/i, "").trim().slice(0, 80);
     const visionDesc = await getProductVisionDescription(job.input_image_url, roteiroHint);
     const productText = mergeProductTexts(roteiroHint, visionDesc);
     const slot = inferSlot(productText);
-    const cenarios = getCenariosForSlot(slot);
-    console.log(`[narrated] produto="${productText.slice(0, 60)}" → slot=${slot} | ${cenarios.length} cenários disponíveis`);
+    console.log(`[narrated] produto="${productText.slice(0, 60)}" → slot=${slot} | userPhoto=${!!userImageName}`);
 
-    // 5. Pré-computa os planos de todas as cenas (prompts positivo + negativo)
-    //    Cenas são "simulação de uso" — produto sendo usado na vida real pelo consumidor.
-    //    Cenas 1+ recebem um prefixo de cadeia para instruir o modelo a manter o produto
+    // 5. Pré-computa planos de cena
+    // Com foto do usuário → Live Shop (pessoa + produto em cena de apresentação)
+    // Sem foto → lifestyle padrão (produto em uso)
     const jobFormat = (job.format as PhotoFormat) ?? DEFAULT_FORMAT;
     const scenePlans: ScenePlan[] = [];
     for (let i = 0; i < scenesNeeded; i++) {
-      const cenario = cenarios[i % cenarios.length];
-      const { positive, negative } = buildPromptResult(productText, cenario);
-      // Cenas encadeadas (i > 0): o input já é a cena anterior com o produto correto
-      // → reforça "mantenha o produto, mude só o cenário"
-      const chainPositive = i === 0
-        ? `${positive}, lifestyle in-use simulation, real person using the product naturally`
-        : `Maintain the exact same product as shown in this reference image, unchanged in every detail, same design, same material, same color. Only change the background and environment to a new scene: ${cenario}. ${positive}, lifestyle in-use simulation, real person using the product naturally`;
-      scenePlans.push({ positive: chainPositive, negative, cenario });
+      let positive: string;
+      let negative: string;
+      if (userImageName) {
+        // Live Shop: usa prompt especializado por slot (referencia image1=produto, image2=pessoa)
+        const liveShop = buildLiveShopPrompt(slot);
+        positive = liveShop.positive;
+        negative = liveShop.negative;
+      } else {
+        const cenarios = getCenariosForSlot(slot);
+        const cenario = cenarios[i % cenarios.length];
+        const built = buildPromptResult(productText, cenario);
+        positive = i === 0
+          ? `${built.positive}, lifestyle in-use simulation, real person using the product naturally`
+          : `Maintain the exact same product as shown in this reference image, unchanged in every detail. Only change the background to: ${cenario}. ${built.positive}, lifestyle in-use simulation`;
+        negative = built.negative;
+      }
+      scenePlans.push({ positive, negative, cenario: userImageName ? "live_shop" : slot });
     }
 
-    // 6. Submete APENAS a cena 0 agora — as demais serão submetidas em cadeia pelo check.ts
+    // 6. Submete cena 0
     const { positive: p0, negative: n0 } = scenePlans[0];
     let scene0Id: string;
     try {
-      scene0Id = await submitSceneVariation(imageName, p0, n0, jobId, 0, comfyBase, jobFormat);
+      scene0Id = await submitSceneVariation(imageName, p0, n0, jobId, 0, comfyBase, jobFormat, userImageName);
     } catch (err) {
       throw new Error(`Erro ao submeter cena 0: ${err}`);
     }
@@ -409,6 +484,7 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
       scene_built_urls: [],
       scenes_needed: scenesNeeded,
       audio_url: audioUrl || null,
+      user_comfy_image_name: userImageName ?? null,
       updated_at: new Date().toISOString(),
     }).eq("id", jobId);
 

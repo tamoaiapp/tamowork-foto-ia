@@ -86,6 +86,7 @@ export async function checkNarratedVideoJob(jobId: string): Promise<void> {
     const scenesNeeded: number = job.scenes_needed ?? 4;
     const scenePlans: ScenePlan[] = (job.scene_plans as ScenePlan[]) ?? [];
     const builtUrls: string[] = (job.scene_built_urls as string[]) ?? [];
+    const userComfyImageName: string | undefined = (job as Record<string, unknown>).user_comfy_image_name as string | undefined;
 
     if (!comfyBase || promptIds.length === 0) {
       await supabase.from("narrated_video_jobs")
@@ -154,7 +155,7 @@ export async function checkNarratedVideoJob(jobId: string): Promise<void> {
         const { positive, negative } = scenePlans[nextIdx];
         const jobFormat = (job.format as PhotoFormat) ?? "story";
         const nextPromptId = await submitSceneVariation(
-          chainImageName, positive, negative, jobId, nextIdx, comfyBase, jobFormat
+          chainImageName, positive, negative, jobId, nextIdx, comfyBase, jobFormat, userComfyImageName
         );
 
         await supabase.from("narrated_video_jobs").update({

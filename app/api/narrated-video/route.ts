@@ -53,14 +53,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let body: { input_image_url?: string; roteiro?: string; voice?: string; voice_sample_url?: string; scene_source?: string; scene_urls?: string[]; format?: string };
+  let body: { input_image_url?: string; roteiro?: string; voice?: string; voice_sample_url?: string; user_photo_url?: string; scene_source?: string; scene_urls?: string[]; format?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  const { input_image_url, roteiro, voice, voice_sample_url, scene_source, scene_urls } = body;
+  const { input_image_url, roteiro, voice, voice_sample_url, user_photo_url, scene_source, scene_urls } = body;
   const validSceneSource = scene_source === "existing" ? "existing" : "generate";
 
   if (validSceneSource === "generate" && !input_image_url) {
@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
     status: "queued",
   };
   if (voice_sample_url) insertPayload.voice_sample_url = voice_sample_url;
+  if (user_photo_url) insertPayload.user_photo_url = user_photo_url;
 
   let { data: job, error: insertErr } = await supabase
     .from("narrated_video_jobs")
