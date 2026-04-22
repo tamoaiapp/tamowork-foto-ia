@@ -15,7 +15,7 @@
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const VISION_MODEL = process.env.OLLAMA_VISION_MODEL ?? "moondream";
-const VISION_TIMEOUT_MS = 5_000;
+const VISION_TIMEOUT_MS = 15_000;
 
 /**
  * Extrai a descrição do produto da resposta do modelo.

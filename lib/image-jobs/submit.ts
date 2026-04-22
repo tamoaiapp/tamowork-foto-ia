@@ -171,8 +171,12 @@ export async function submitImageJob(jobId: string) {
   } else {
     const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined, userFeedback);
 
+    // Cláusula de fidelidade: ancora SEMPRE ao produto da imagem de referência.
+    // Impede que o Flux Kontext invente outro produto quando o prompt descreve genericamente.
+    const fidelityClause = "Use ONLY the exact product shown in the reference image provided — preserve every detail of its design, colors, text, shape, and materials exactly as shown. Do not replace, reinvent, or modify the product.";
+
     // Injeta qualidade profissional (sombra + iluminação + K4 cinematic)
-    const positiveEnhanced = `${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();
+    const positiveEnhanced = `${fidelityClause} ${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();
     const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${promptResult.negative}`.trim();
 
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
