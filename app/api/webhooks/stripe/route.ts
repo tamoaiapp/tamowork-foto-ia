@@ -5,6 +5,7 @@ import {
   calculateCommissionAmount,
   DEFAULT_AFFILIATE_COMMISSION_RATE,
   DEFAULT_AFFILIATE_HOLD_DAYS,
+  isAffiliateSchemaMissingError,
 } from "@/lib/affiliates/server";
 import { setUserPro } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -232,14 +233,22 @@ export async function POST(req: NextRequest) {
         stripeSubscriptionId: sub.id,
       });
 
-      await syncReferralCheckout({
-        admin,
-        referralId,
-        userId,
-        customerId: typeof session.customer === "string" ? session.customer : String(sub.customer ?? ""),
-        subscriptionId: sub.id,
-        latestInvoiceId: typeof sub.latest_invoice === "string" ? sub.latest_invoice : null,
-      });
+      try {
+        await syncReferralCheckout({
+          admin,
+          referralId,
+          userId,
+          customerId: typeof session.customer === "string" ? session.customer : String(sub.customer ?? ""),
+          subscriptionId: sub.id,
+          latestInvoiceId: typeof sub.latest_invoice === "string" ? sub.latest_invoice : null,
+        });
+      } catch (affiliateErr) {
+        if (isAffiliateSchemaMissingError(affiliateErr)) {
+          console.warn("[Stripe] afiliados ainda nao ativados no banco; checkout segue sem referral");
+        } else {
+          throw affiliateErr;
+        }
+      }
 
       const amountPaid = session.amount_total ? session.amount_total / 100 : 79;
       const currency = (session.currency ?? "brl").toUpperCase();
@@ -280,15 +289,23 @@ export async function POST(req: NextRequest) {
         stripeSubscriptionId: subData.id,
       });
 
-      await createRecurringCommission({
-        admin,
-        referralId,
-        userId,
-        subscriptionId: subData.id,
-        invoice,
-        customerId,
-        nextBillingAt: periodEnd.toISOString(),
-      });
+      try {
+        await createRecurringCommission({
+          admin,
+          referralId,
+          userId,
+          subscriptionId: subData.id,
+          invoice,
+          customerId,
+          nextBillingAt: periodEnd.toISOString(),
+        });
+      } catch (affiliateErr) {
+        if (isAffiliateSchemaMissingError(affiliateErr)) {
+          console.warn("[Stripe] afiliados ainda nao ativados no banco; renovacao segue sem comissao");
+        } else {
+          throw affiliateErr;
+        }
+      }
 
       console.log(`[Stripe] Renovado user ${userId} atÃ© ${periodEnd.toISOString()}`);
     } catch (err) {
@@ -314,25 +331,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const referral = await getReferral(admin, {
-      referralId: sub.metadata?.referralId ?? null,
-      userId: userId ?? null,
-      subscriptionId: sub.id,
-    });
+    try {
+      const referral = await getReferral(admin, {
+        referralId: sub.metadata?.referralId ?? null,
+        userId: userId ?? null,
+        subscriptionId: sub.id,
+      });
 
-    if (referral) {
-      const { error: referralError } = await admin
-        .from("affiliate_referrals")
-        .update({
-          status: "canceled",
-          stripe_subscription_id: sub.id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", referral.id);
+      if (referral) {
+        const { error: referralError } = await admin
+          .from("affiliate_referrals")
+          .update({
+            status: "canceled",
+            stripe_subscription_id: sub.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", referral.id);
 
-      if (referralError) {
+        if (referralError) {
+          throw referralError;
+        }
+      }
+    } catch (affiliateErr) {
+      if (!isAffiliateSchemaMissingError(affiliateErr)) {
         return NextResponse.json({ error: "Falha ao atualizar afiliado cancelado" }, { status: 500 });
       }
+      console.warn("[Stripe] afiliados ainda nao ativados no banco; cancelamento segue sem referral");
     }
 
     if (userId) {

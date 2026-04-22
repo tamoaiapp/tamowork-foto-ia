@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getAffiliateSetupMessage, isAffiliateSchemaMissingError } from "@/lib/affiliates/server";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 
@@ -31,6 +32,9 @@ export async function GET(req: NextRequest) {
     .limit(100);
 
   if (commissionsError) {
+    if (isAffiliateSchemaMissingError(commissionsError)) {
+      return NextResponse.json({ ok: false, skipped: true, reason: getAffiliateSetupMessage() });
+    }
     return NextResponse.json({ error: commissionsError.message }, { status: 500 });
   }
 
@@ -43,6 +47,9 @@ export async function GET(req: NextRequest) {
     : { data: [], error: null };
 
   if (affiliatesError) {
+    if (isAffiliateSchemaMissingError(affiliatesError)) {
+      return NextResponse.json({ ok: false, skipped: true, reason: getAffiliateSetupMessage() });
+    }
     return NextResponse.json({ error: affiliatesError.message }, { status: 500 });
   }
 

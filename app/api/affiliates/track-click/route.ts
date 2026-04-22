@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { recordAffiliateClick } from "@/lib/affiliates/server";
+import {
+  getAffiliateSetupMessage,
+  isAffiliateSchemaMissingError,
+  recordAffiliateClick,
+} from "@/lib/affiliates/server";
 
 export async function POST(req: NextRequest) {
   let body: { code?: string; visitorId?: string; landingPath?: string };
@@ -28,6 +32,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, affiliateCode: affiliate.code });
   } catch (err) {
+    if (isAffiliateSchemaMissingError(err)) {
+      return NextResponse.json({ error: getAffiliateSetupMessage() }, { status: 503 });
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro ao registrar clique" },
       { status: 500 }

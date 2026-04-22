@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { buildAffiliateLink, ensureAffiliateForUser } from "@/lib/affiliates/server";
+import {
+  buildAffiliateLink,
+  ensureAffiliateForUser,
+  getAffiliateSetupMessage,
+  isAffiliateSchemaMissingError,
+} from "@/lib/affiliates/server";
 
 function inferStripeStatus(account: Stripe.Account) {
   if (account.charges_enabled && account.payouts_enabled) return "active";
@@ -125,6 +130,9 @@ export async function GET(req: NextRequest) {
       commissions,
     });
   } catch (err) {
+    if (isAffiliateSchemaMissingError(err)) {
+      return NextResponse.json({ error: getAffiliateSetupMessage() }, { status: 503 });
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro ao carregar afiliados" },
       { status: 500 }

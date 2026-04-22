@@ -3,6 +3,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const DEFAULT_AFFILIATE_COMMISSION_RATE = 0.3;
 export const DEFAULT_AFFILIATE_HOLD_DAYS = Number(process.env.AFFILIATE_HOLD_DAYS ?? 7);
+const AFFILIATE_SETUP_MESSAGE =
+  "Programa de afiliados ainda nao foi ativado no banco. Rode o bootstrap SQL de exec_sql no Supabase e depois chame /api/internal/affiliates/migrate.";
 
 type AffiliateRow = {
   id: string;
@@ -16,6 +18,40 @@ type AffiliateRow = {
   stripe_charges_enabled?: boolean | null;
   stripe_payouts_enabled?: boolean | null;
 };
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error && "message" in error && typeof (error as { message?: unknown }).message === "string") {
+    return (error as { message: string }).message;
+  }
+  return String(error ?? "");
+}
+
+export function getAffiliateSetupMessage() {
+  return AFFILIATE_SETUP_MESSAGE;
+}
+
+export function isAffiliateSchemaMissingError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  return (
+    message.includes("programa de afiliados ainda nao foi ativado no banco") ||
+    message.includes("could not find the table 'public.affiliates'") ||
+    message.includes("could not find the table 'public.affiliate_clicks'") ||
+    message.includes("could not find the table 'public.affiliate_referrals'") ||
+    message.includes("could not find the table 'public.affiliate_commissions'") ||
+    message.includes("relation \"affiliates\" does not exist") ||
+    message.includes("relation \"affiliate_clicks\" does not exist") ||
+    message.includes("relation \"affiliate_referrals\" does not exist") ||
+    message.includes("relation \"affiliate_commissions\" does not exist")
+  );
+}
+
+function wrapAffiliateError(error: unknown): Error {
+  if (isAffiliateSchemaMissingError(error)) {
+    return new Error(AFFILIATE_SETUP_MESSAGE);
+  }
+  return error instanceof Error ? error : new Error(getErrorMessage(error) || "Erro interno de afiliados");
+}
 
 export function normalizeAffiliateCode(input: string) {
   return input
@@ -49,7 +85,7 @@ export async function ensureAffiliateForUser(userId: string, email?: string | nu
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (existingError) throw existingError;
+  if (existingError) throw wrapAffiliateError(existingError);
   if (existing) return existing as AffiliateRow;
 
   const baseCode = normalizeAffiliateCode((email ?? "").split("@")[0] ?? "afiliado");
@@ -70,7 +106,7 @@ export async function ensureAffiliateForUser(userId: string, email?: string | nu
       .single();
 
     if (!error && data) return data as AffiliateRow;
-    lastError = new Error(error?.message ?? "Falha ao criar afiliado");
+    lastError = wrapAffiliateError(error?.message ?? "Falha ao criar afiliado");
   }
 
   throw lastError ?? new Error("Falha ao criar afiliado");
@@ -85,7 +121,7 @@ export async function getAffiliateByCode(code: string) {
     .eq("code", normalized)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) throw wrapAffiliateError(error);
   return (data as AffiliateRow | null) ?? null;
 }
 
@@ -97,7 +133,12 @@ export async function getAffiliateReferralForUser(userId: string) {
     .eq("referred_user_id", userId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (isAffiliateSchemaMissingError(error)) {
+      return null;
+    }
+    throw wrapAffiliateError(error);
+  }
   return data;
 }
 
@@ -127,7 +168,7 @@ export async function recordAffiliateClick(params: {
       ip_hash: ipHash,
     });
 
-  if (error) throw error;
+  if (error) throw wrapAffiliateError(error);
   return affiliate;
 }
 
@@ -148,7 +189,7 @@ export async function claimAffiliateReferral(params: {
     .eq("referred_user_id", params.userId)
     .maybeSingle();
 
-  if (existingError) throw existingError;
+  if (existingError) throw wrapAffiliateError(existingError);
 
   const payload = {
     affiliate_id: affiliate.id,
@@ -170,7 +211,7 @@ export async function claimAffiliateReferral(params: {
       .select("*")
       .single();
 
-    if (error) throw error;
+    if (error) throw wrapAffiliateError(error);
     return data;
   }
 
@@ -180,7 +221,7 @@ export async function claimAffiliateReferral(params: {
     .select("*")
     .single();
 
-  if (error) throw error;
+  if (error) throw wrapAffiliateError(error);
   return data;
 }
 
@@ -197,6 +238,11 @@ export async function markAffiliateCheckoutStarted(userId: string) {
     .select("*")
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (isAffiliateSchemaMissingError(error)) {
+      return null;
+    }
+    throw wrapAffiliateError(error);
+  }
   return data;
 }

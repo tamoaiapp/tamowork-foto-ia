@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { claimAffiliateReferral } from "@/lib/affiliates/server";
+import {
+  claimAffiliateReferral,
+  getAffiliateSetupMessage,
+  isAffiliateSchemaMissingError,
+} from "@/lib/affiliates/server";
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient();
@@ -31,6 +35,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, referral });
   } catch (err) {
+    if (isAffiliateSchemaMissingError(err)) {
+      return NextResponse.json({ error: getAffiliateSetupMessage() }, { status: 503 });
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro ao vincular afiliado" },
       { status: 500 }

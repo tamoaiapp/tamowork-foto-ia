@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { ensureAffiliateForUser } from "@/lib/affiliates/server";
+import {
+  ensureAffiliateForUser,
+  getAffiliateSetupMessage,
+  isAffiliateSchemaMissingError,
+} from "@/lib/affiliates/server";
 
 function inferStripeStatus(account: Stripe.Account) {
   if (account.charges_enabled && account.payouts_enabled) return "active";
@@ -75,6 +79,9 @@ export async function POST(req: NextRequest) {
       status: accountStatus,
     });
   } catch (err) {
+    if (isAffiliateSchemaMissingError(err)) {
+      return NextResponse.json({ error: getAffiliateSetupMessage() }, { status: 503 });
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro ao conectar Stripe" },
       { status: 500 }
