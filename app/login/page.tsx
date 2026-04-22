@@ -186,8 +186,22 @@ function AuthCard() {
       if (error) setError(translateError(error.message, lang));
       else {
         trackEvent("CompleteRegistration");
-        if (data.session) router.push(nextUrl || "/onboarding");
-        else setMsg(t("login_verify_email"));
+        if (data.session) {
+          // Se veio de /planos, vai direto para o Stripe
+          if (nextUrl === "/planos") {
+            const tok = data.session.access_token;
+            try {
+              const res = await fetch("/api/checkout/stripe", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ plan: navigator.language.startsWith("pt") ? "monthly" : "annual", source: "planos_signup" }),
+              });
+              const json = await res.json();
+              if (json.url) { window.location.href = json.url; return; }
+            } catch {}
+          }
+          router.push(nextUrl || "/onboarding");
+        } else setMsg(t("login_verify_email"));
       }
     }
     setLoading(false);
