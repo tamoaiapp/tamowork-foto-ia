@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { createImageJob, RateLimitError } from "@/lib/image-jobs/create";
 import { getUserPlan, checkAndApplyPendingBonus } from "@/lib/plans";
+import { metaEvents } from "@/lib/meta/capi";
 
 // GET /api/image-jobs — lista jobs + plano do usuário autenticado
 export async function GET(req: NextRequest) {
@@ -63,6 +64,16 @@ export async function POST(req: NextRequest) {
     const validFormat = ["story","square","portrait","horizontal"].includes(format) ? format : "story";
     const validSource = ["onboarding","onboarding_A","onboarding_B","onboarding_C","app","bubble","editor"].includes(source) ? source : "app";
     const job = await createImageJob(user.id, prompt, input_image_url, validFormat, !!bonus_retry, validSource);
+
+    // Lead: dispara na primeira foto gerada pelo usuário
+    supabase.from("image_jobs").select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .then(({ count }) => {
+        if (count === 1) {
+          metaEvents.lead({ userId: user.id, email: user.email }).catch(() => {});
+        }
+      });
+
     return NextResponse.json({ jobId: job.id, status: job.status }, { status: 201 });
   } catch (err: unknown) {
     if (err instanceof RateLimitError) {

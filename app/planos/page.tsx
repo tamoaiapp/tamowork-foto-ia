@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { useI18n } from "@/lib/i18n";
+import { trackEvent } from "@/lib/meta/pixel";
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -219,6 +220,11 @@ export default function PlanosPage() {
     });
   }, []);
 
+  useEffect(() => {
+    // ViewContent: usuário chegou na página de preços
+    trackEvent("ViewContent");
+  }, []);
+
   async function handleCheckout() {
     if (loadingStripe) return;
     if (!user) { router.push("/login?next=/planos"); return; }
@@ -226,6 +232,8 @@ export default function PlanosPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const tok = session?.access_token ?? "";
+      // InitiateCheckout: clicou em Assinar
+      trackEvent("InitiateCheckout", { value: isBR ? 79 : 100, currency: isBR ? "BRL" : "USD" }, tok);
 
       // BR → Stripe mensal R$79 | Não-BR → Stripe anual $100
       const res = await fetch("/api/checkout/stripe", {

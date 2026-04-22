@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useI18n, LangSelector } from "@/lib/i18n";
+import { trackEvent } from "@/lib/meta/pixel";
 
 const S3 = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object";
 const VID = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/video-jobs";
@@ -181,8 +182,11 @@ function AuthCard() {
     } else {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) setError(translateError(error.message, lang));
-      else if (data.session) router.push("/onboarding");
-      else setMsg(t("login_verify_email"));
+      else {
+        trackEvent("CompleteRegistration");
+        if (data.session) router.push("/onboarding");
+        else setMsg(t("login_verify_email"));
+      }
     }
     setLoading(false);
   }
