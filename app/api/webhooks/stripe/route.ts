@@ -9,7 +9,7 @@ import {
 } from "@/lib/affiliates/server";
 import { setUserPro } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { metaEvents } from "@/lib/meta/capi";
+import { metaEvents, queueMetaEvent } from "@/lib/meta/capi";
 
 type SubscriptionLike = Stripe.Subscription & {
   current_period_end?: number;
@@ -253,7 +253,7 @@ export async function POST(req: NextRequest) {
       const amountPaid = session.amount_total ? session.amount_total / 100 : 79;
       const currency = (session.currency ?? "brl").toUpperCase();
       const email = session.customer_details?.email ?? undefined;
-      await metaEvents.subscribe({ userId, email }, amountPaid, currency);
+      queueMetaEvent(metaEvents.subscribe({ userId, email }, amountPaid, currency));
       console.log(`[Stripe] User ${userId} → PRO até ${periodEnd.toISOString()}`);
     } catch (err) {
       console.error(`[Stripe] CRÃTICO: setUserPro falhou para ${userId}:`, err);
