@@ -23,3 +23,7 @@ next-env.d.ts
 .env*.local
 
 .env.vercel-prod
+.env.vercel
+.env.vercel.full
+screenshots/
+e2e-report/
