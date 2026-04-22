@@ -223,8 +223,10 @@ export async function POST(req: NextRequest) {
 
     const sub = await stripe.subscriptions.retrieve(session.subscription as string);
     const subData = sub as SubscriptionLike;
-    const periodEnd = new Date((subData.current_period_end ?? 0) * 1000);
-    periodEnd.setMonth(periodEnd.getMonth() + 1);
+    const rawEnd = subData.current_period_end;
+    const periodEnd = rawEnd && rawEnd > 0
+      ? new Date(rawEnd * 1000)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     try {
       await setUserPro(userId, {
@@ -275,7 +277,10 @@ export async function POST(req: NextRequest) {
     const userId = subData.metadata?.userId;
     if (!userId) return NextResponse.json({ ok: true });
 
-    const periodEnd = new Date((subData.current_period_end ?? 0) * 1000);
+    const rawEnd2 = subData.current_period_end;
+    const periodEnd = rawEnd2 && rawEnd2 > 0
+      ? new Date(rawEnd2 * 1000)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const referralId = subData.metadata?.referralId ?? null;
     const customerId =
       typeof invoice.customer === "string"
