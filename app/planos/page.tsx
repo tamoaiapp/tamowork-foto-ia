@@ -256,14 +256,6 @@ export default function PlanosPage() {
   return (
     <div style={styles.page} className="app-layout">
       <div style={styles.inner}>
-        <button
-          style={styles.backBtn}
-          onClick={() => router.back()}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#eef2f9")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#8394b0")}
-        >
-          {lang === "en" ? "← Back" : lang === "es" ? "← Volver" : "← Voltar"}
-        </button>
 
         {/* Hero */}
         <div style={styles.hero}>
