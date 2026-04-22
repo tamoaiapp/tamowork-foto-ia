@@ -49,15 +49,17 @@ export async function setUserPro(
   }
 ) {
   const supabase = createServerClient();
-  const { error } = await supabase.from("user_plans").upsert({
+  const row: Record<string, unknown> = {
     user_id: userId,
     plan: "pro",
     period_end: opts.periodEnd.toISOString(),
-    stripe_customer_id: opts.stripeCustomerId ?? null,
-    stripe_subscription_id: opts.stripeSubscriptionId ?? null,
-    mp_subscription_id: opts.mpSubscriptionId ?? null,
     updated_at: new Date().toISOString(),
-  });
+  };
+  // Só sobrescreve IDs de assinatura quando explicitamente fornecidos — evita zerar ID existente
+  if (opts.stripeCustomerId !== undefined) row.stripe_customer_id = opts.stripeCustomerId;
+  if (opts.stripeSubscriptionId !== undefined) row.stripe_subscription_id = opts.stripeSubscriptionId;
+  if (opts.mpSubscriptionId !== undefined) row.mp_subscription_id = opts.mpSubscriptionId;
+  const { error } = await supabase.from("user_plans").upsert(row);
   if (error) {
     console.error(`[setUserPro] Falha ao salvar plano PRO do usuário ${userId}:`, error.message);
     throw new Error(`setUserPro failed: ${error.message}`);
