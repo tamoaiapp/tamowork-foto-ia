@@ -8,9 +8,7 @@ import {
 } from "@/lib/affiliates/server";
 import { setUserPro } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-
-const META_PIXEL_ID = "970174612165185";
-const META_PIXEL_TOKEN = process.env.META_PIXEL_TOKEN ?? "";
+import { metaEvents } from "@/lib/meta/capi";
 
 type SubscriptionLike = Stripe.Subscription & {
   current_period_end?: number;
@@ -26,32 +24,6 @@ type InvoiceLike = Stripe.Invoice & {
   };
   subscription?: string | Stripe.Subscription | null;
 };
-
-async function sendMetaConversionEvent(eventName: string, value: number, currency: string, userId: string, email?: string) {
-  if (!META_PIXEL_TOKEN) return;
-  try {
-    const userData: Record<string, string> = { external_id: userId };
-    if (email) userData.em = Buffer.from(email.trim().toLowerCase()).toString("hex");
-    await fetch(`https://graph.facebook.com/v19.0/${META_PIXEL_ID}/events`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        data: [{
-          event_name: eventName,
-          event_time: Math.floor(Date.now() / 1000),
-          action_source: "website",
-          user_data: userData,
-          custom_data: { value, currency },
-        }],
-        access_token: META_PIXEL_TOKEN,
-      }),
-      signal: AbortSignal.timeout(8_000),
-    });
-    console.log(`[Meta CAPI] ${eventName} userId=${userId} value=${value}`);
-  } catch (e) {
-    console.warn("[Meta CAPI] falhou:", e);
-  }
-}
 
 async function getReferral(admin: ReturnType<typeof createSupabaseAdminClient>, params: {
   referralId?: string | null;
@@ -272,9 +244,8 @@ export async function POST(req: NextRequest) {
       const amountPaid = session.amount_total ? session.amount_total / 100 : 79;
       const currency = (session.currency ?? "brl").toUpperCase();
       const email = session.customer_details?.email ?? undefined;
-      await sendMetaConversionEvent("Subscribe", amountPaid, currency, userId, email);
-
-      console.log(`[Stripe] User ${userId} â†’ PRO atÃ© ${periodEnd.toISOString()}`);
+      await metaEvents.subscribe({ userId, email }, amountPaid, currency);
+      console.log(`[Stripe] User ${userId} → PRO até ${periodEnd.toISOString()}`);
     } catch (err) {
       console.error(`[Stripe] CRÃTICO: setUserPro falhou para ${userId}:`, err);
       return NextResponse.json({ error: "Falha ao ativar plano" }, { status: 500 });

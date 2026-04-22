@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { setUserPro } from "@/lib/plans";
 import { createServerClient } from "@/lib/supabase/server";
+import { metaEvents } from "@/lib/meta/capi";
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN ?? "";
 const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET ?? "";
@@ -79,6 +80,9 @@ export async function POST(req: NextRequest) {
         try {
           await setUserPro(userId, { periodEnd, mpSubscriptionId: String(event.data.id) });
           console.log(`[MP] payment approved: user ${userId} → PRO até ${periodEnd.toISOString()}`);
+          const email = payment.payer?.email ?? undefined;
+          const value = payment.transaction_amount ?? (isAnnual ? 228 : 49);
+          await metaEvents.subscribe({ userId, email }, value, "BRL");
         } catch (err) {
           console.error(`[MP] CRÍTICO: setUserPro falhou para ${userId}:`, err);
           return NextResponse.json({ error: "Falha ao ativar plano" }, { status: 500 });
@@ -100,11 +104,10 @@ export async function POST(req: NextRequest) {
       periodEnd.setMonth(periodEnd.getMonth() + (isMonthly ? 1 : 12));
 
       try {
-        await setUserPro(userId, {
-          periodEnd,
-          mpSubscriptionId: sub.id,
-        });
+        await setUserPro(userId, { periodEnd, mpSubscriptionId: sub.id });
         console.log(`[MP] User ${userId} → PRO anual até ${periodEnd.toISOString()}`);
+        const isMonthlyPlan = sub.preapproval_plan_id === MP_MONTHLY_PLAN_ID;
+        await metaEvents.subscribe({ userId }, isMonthlyPlan ? 49 : 228, "BRL");
       } catch (err) {
         console.error(`[MP] CRÍTICO: setUserPro falhou para ${userId}:`, err);
         return NextResponse.json({ error: "Falha ao ativar plano" }, { status: 500 });
