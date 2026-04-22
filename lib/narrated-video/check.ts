@@ -22,6 +22,7 @@ async function startAssembly(
   voice?: string,
   audioUrl?: string,
   voiceSampleUrl?: string,
+  useVideoLoop?: boolean,
 ): Promise<void> {
   if (!ASSEMBLY_BASE) throw new Error("NARRATED_ASSEMBLY_BASE não configurado");
 
@@ -38,6 +39,8 @@ async function startAssembly(
       supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
       supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
       clip_duration: 4,
+      voice_speed: "+20%",
+      use_video_loop: useVideoLoop ?? false,
       motion_prompt: "subtle gentle movements, slight natural head movement, soft body sway, product display stays perfectly still, minimal motion, smooth",
       motion_negative: "fast movement, shaking, jumping, large gestures, blurry, distorted",
     }),
@@ -195,7 +198,8 @@ export async function checkNarratedVideoJob(jobId: string): Promise<void> {
       .eq("id", jobId);
 
     try {
-      await startAssembly(jobId, allSceneUrls, job.roteiro_melhorado || job.roteiro, job.voice, job.audio_url ?? undefined, job.voice_sample_url ?? undefined);
+      const isLiveShop = !!(job as Record<string, unknown>).user_comfy_image_name;
+      await startAssembly(jobId, allSceneUrls, job.roteiro_melhorado || job.roteiro, job.voice, job.audio_url ?? undefined, job.voice_sample_url ?? undefined, isLiveShop);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error(`[narrated] assembly start error job ${jobId}:`, errMsg);

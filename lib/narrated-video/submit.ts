@@ -380,9 +380,9 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
     const slot = inferSlot(productText);
     console.log(`[narrated] produto="${productText.slice(0, 60)}" → slot=${slot} | liveShop=${isLiveShop}`);
 
-    // 2. Melhora o roteiro do usuário para video shop — SEMPRE baseado no texto que ele escreveu
-    // A visão (productText/slot) é usada apenas para identificar o produto para a cena visual
-    const roteiroMelhorado = await improveRoteiro(job.roteiro?.trim() || productText.slice(0, 100));
+    // 2. Usa o roteiro original do usuário — sem reescrita por IA para evitar invenções
+    const roteiroMelhorado = normalizeScript(job.roteiro?.trim() || productText.slice(0, 100));
+    const useVideoLoop = isLiveShop; // Live Shop: 1 foto + vídeo em loop infinito
 
     // 3. Gera áudio TTS com roteiro correto + calcula quantas cenas são necessárias
     let scenesNeeded = DEFAULT_SCENES;
@@ -400,6 +400,8 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
             supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
             job_id: jobId,
             clip_duration: 4,
+            voice_speed: "+20%",
+            use_video_loop: useVideoLoop,
           }),
           signal: AbortSignal.timeout(60_000),
         });
@@ -407,7 +409,9 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
           const prep = await prepRes.json() as { duration_seconds: number; scenes_needed: number; audio_url?: string };
           scenesNeeded = prep.scenes_needed;
           audioUrl = prep.audio_url ?? "";
-          console.log(`[narrated] áudio=${prep.duration_seconds}s → ${scenesNeeded} cenas | audio_url=${audioUrl ? "ok" : "none"}`);
+          // Live Shop: apenas 1 foto + vídeo em loop → não precisa de múltiplas cenas
+          if (useVideoLoop) scenesNeeded = 1;
+          console.log(`[narrated] áudio=${prep.duration_seconds}s → ${scenesNeeded} cenas | loop=${useVideoLoop} | audio_url=${audioUrl ? "ok" : "none"}`);
         }
       } catch (err) {
         console.warn("[narrated] /prepare falhou, usando", DEFAULT_SCENES, "cenas:", err);
@@ -439,6 +443,8 @@ export async function submitNarratedVideoJob(jobId: string): Promise<void> {
               supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
               supabase_key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
               clip_duration: 4,
+              voice_speed: "+20%",
+              use_video_loop: useVideoLoop,
               motion_prompt: "subtle gentle movements, slight natural head movement, soft body sway, product display stays perfectly still, minimal motion, smooth",
               motion_negative: "fast movement, shaking, jumping, large gestures, blurry, distorted",
             }),
