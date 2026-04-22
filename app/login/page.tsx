@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useI18n, LangSelector } from "@/lib/i18n";
 import { trackEvent } from "@/lib/meta/pixel";
 
@@ -147,6 +147,8 @@ function GoogleIcon() {
 
 function AuthCard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get("next") ?? "";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"signup" | "login">("signup");
@@ -161,10 +163,10 @@ function AuthCard() {
   async function handleGoogle() {
     setGoogleLoading(true);
     setError("");
-    // Signup → vai para onboarding | Login → vai para app
+    // Signup com next → vai para next | Signup sem next → onboarding | Login → next ou app
     const redirectTo = isSignup
-      ? `${window.location.origin}/onboarding`
-      : `${window.location.origin}/`;
+      ? `${window.location.origin}${nextUrl || "/onboarding"}`
+      : `${window.location.origin}${nextUrl || "/"}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },
@@ -178,13 +180,13 @@ function AuthCard() {
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(translateError(error.message, lang));
-      else router.push("/");
+      else router.push(nextUrl || "/");
     } else {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) setError(translateError(error.message, lang));
       else {
         trackEvent("CompleteRegistration");
-        if (data.session) router.push("/onboarding");
+        if (data.session) router.push(nextUrl || "/onboarding");
         else setMsg(t("login_verify_email"));
       }
     }
