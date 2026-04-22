@@ -88,7 +88,7 @@ function IconAccount() {
   );
 }
 
-const HIDDEN_PATHS = ["/login", "/onboarding", "/privacidade", "/convite"];
+const HIDDEN_PATHS = ["/login", "/onboarding", "/privacidade", "/convite", "/planos"];
 
 function isDesktop(): boolean {
   if (typeof window === "undefined") return false;
