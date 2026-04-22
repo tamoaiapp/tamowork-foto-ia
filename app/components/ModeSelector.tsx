@@ -210,9 +210,46 @@ export default function ModeSelector({ onChange }: Props) {
         }
       />
 
-      {/* Live Shop e Vídeo curto — em desenvolvimento, temporariamente ocultos */}
+      {/* Vídeo curto */}
+      <CreationCard
+        icon="🎬"
+        label="Vídeo curto que"
+        highlightWord="vende"
+        desc="Anime seu produto em 6s — perfeito para Stories e Reels"
+        onClick={() => onChange("video")}
+        media={<VideoMedia />}
+      />
+
+      {/* Vídeo longo */}
+      <CreationCard
+        icon="🎥"
+        label="Vídeo longo que"
+        highlightWord="impressiona"
+        desc="+30s com 4 cenas diferentes geradas por IA — ideal para feed e apresentações"
+        onClick={() => onChange("video_longo")}
+        media={
+          <div style={{
+            width: "100%", height: "100%",
+            background: "linear-gradient(135deg, #0d1a2e 0%, #120825 50%, #07080b 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexDirection: "column", gap: 8,
+          }}>
+            <div style={{ fontSize: 36, lineHeight: 1 }}>🎥</div>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", padding: "0 8px" }}>
+              {["Cena 1", "Cena 2", "Cena 3", "Cena 4"].map((c, i) => (
+                <div key={i} style={{
+                  fontSize: 9, fontWeight: 700, color: "#a855f7",
+                  border: "1px solid rgba(168,85,247,0.4)", borderRadius: 4,
+                  padding: "2px 5px",
+                }}>{c}</div>
+              ))}
+            </div>
+          </div>
+        }
+      />
+
+      {/* Live Shop — em desenvolvimento, temporariamente oculto */}
       {/* <CreationCard icon="🛍️" label="Mini live que" highlightWord="vende" desc="Vídeo 10–12s estilo live shop com sua voz e imagem" badge="Mais usado" onClick={() => onChange("video_narrado")} media={<AudioWaveMedia />} /> */}
-      {/* <CreationCard icon="🎬" label="Criar vídeo que" highlightWord="vende" desc="Vídeo curto animado pra atrair clientes no Reels" onClick={() => onChange("video")} media={<VideoMedia />} /> */}
     </div>
   );
 }
