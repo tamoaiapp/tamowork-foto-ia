@@ -55,7 +55,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[stripe] checkout error:", msg);
+    const code = (err as Record<string,unknown>)?.code ?? "";
+    const type = (err as Record<string,unknown>)?.type ?? "";
+    console.error(`[stripe-ERR] type=${type} code=${code} msg=${msg} priceId=${priceId}`);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
