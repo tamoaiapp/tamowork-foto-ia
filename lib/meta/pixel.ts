@@ -18,7 +18,7 @@ function fbqTrack(event: string, params?: Record<string, unknown>, eventId?: str
 }
 
 export async function trackEvent(
-  event: "ViewContent" | "InitiateCheckout" | "Lead" | "CompleteRegistration",
+  event: "ViewContent" | "InitiateCheckout" | "Lead" | "CompleteRegistration" | "Purchase",
   params?: { value?: number; currency?: string },
   token?: string,
 ) {

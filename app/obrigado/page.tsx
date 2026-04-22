@@ -3,12 +3,14 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
+import { trackEvent } from "@/lib/meta/pixel";
 
 export default function ObrigadoPage() {
   const router = useRouter();
   const { lang } = useI18n();
 
   useEffect(() => {
+    trackEvent("Purchase");
     const t = setTimeout(() => router.replace("/"), 4000);
     return () => clearTimeout(t);
   }, [router]);

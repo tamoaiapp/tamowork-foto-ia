@@ -13,7 +13,7 @@ import {
   type CAPIUserData,
 } from "@/lib/meta/capi";
 
-const ALLOWED_EVENTS = ["ViewContent", "InitiateCheckout", "Lead", "CompleteRegistration"] as const;
+const ALLOWED_EVENTS = ["ViewContent", "InitiateCheckout", "Lead", "CompleteRegistration", "Purchase"] as const;
 type AllowedEvent = (typeof ALLOWED_EVENTS)[number];
 
 export async function POST(req: NextRequest) {
