@@ -404,8 +404,17 @@ export default function PlanosPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
+      const u = data.user ?? null;
+      setUser(u);
       setLoading(false);
+
+      // Não logado → redireciona para home (fluxo completo: cadastro → testa → assina)
+      // Exceção: ?checkout=1 vem do OAuth redirect — aguarda sessão restaurar
+      if (!u) {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("checkout") === "1") return; // OAuth ainda carregando
+        router.replace("/");
+      }
     });
   }, []);
 
