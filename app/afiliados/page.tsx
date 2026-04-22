@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import BottomNav from "@/app/components/BottomNav";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase/client";
@@ -78,7 +78,6 @@ const statusLabel: Record<string, string> = {
 
 export default function AfiliadosPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { lang } = useI18n();
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState("");
@@ -108,8 +107,12 @@ export default function AfiliadosPage() {
       if (!active) return;
       setToken(accessToken);
 
-      const connected = searchParams.get("connected");
-      const refreshConnect = searchParams.get("refresh_connect");
+      const params =
+        typeof window === "undefined"
+          ? new URLSearchParams()
+          : new URLSearchParams(window.location.search);
+      const connected = params.get("connected");
+      const refreshConnect = params.get("refresh_connect");
       if (connected === "1") {
         setBanner("Conta Stripe conectada. Agora suas comissões podem ser transferidas automaticamente.");
       } else if (refreshConnect === "1") {
@@ -124,7 +127,7 @@ export default function AfiliadosPage() {
     return () => {
       active = false;
     };
-  }, [router, searchParams]);
+  }, [router]);
 
   async function loadDashboard(accessToken: string, active = true) {
     setLoading(true);
