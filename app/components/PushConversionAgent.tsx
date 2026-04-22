@@ -16,7 +16,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-type Trigger = "photo_done" | "rate_limit" | "return_visit";
+type Trigger = "photo_done" | "rate_limit" | "return_visit" | "processing";
 
 interface Props {
   trigger: Trigger | null;       // gatilho ativo no momento
@@ -48,6 +48,11 @@ function shouldShow(): boolean {
 }
 
 const COPY: Record<Trigger, { title: string; body: string; cta: string }> = {
+  processing: {
+    title: "📸 Sua foto está sendo criada!",
+    body: "Ativa as notificações e te avisamos na hora quando ficar pronta — mesmo com o celular bloqueado.",
+    cta: "🔔 Me avisa quando ficar pronta",
+  },
   photo_done: {
     title: "Sua foto ficou incrível! 🎉",
     body: "Ative as notificações e saiba na hora quando sua próxima foto estiver pronta — mesmo com o celular bloqueado.",

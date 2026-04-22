@@ -1071,7 +1071,7 @@ export default function HomePage() {
         // Detecta rate limit no carregamento: free user com 2+ jobs COMPLETOS recentes (<24h)
         if (userPlan === "free") {
           const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-          const FREE_DAILY_LIMIT = 3;
+          const FREE_DAILY_LIMIT = 1;
           const since = Date.now() - FREE_COOLDOWN_MS;
           const recentDoneJobs = jobs
             .filter((j) => j.status === "done" && new Date(j.created_at ?? 0).getTime() > since)

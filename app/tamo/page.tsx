@@ -8,8 +8,46 @@ import dynamic_next from "next/dynamic";
 import BottomNav from "@/app/components/BottomNav";
 import AppHeader from "@/app/components/AppHeader";
 import TamoMascot from "@/app/components/TamoMascot";
+import PushConversionAgent from "@/app/components/PushConversionAgent";
 
 const BotChat = dynamic_next(() => import("@/app/components/BotChat"), { ssr: false });
+
+const VAPID_PUBLIC = "BOFpGK6deSOtMczLOppZ8RXLb8XbAP0cs4hDHOZtJrDsnLhvzdPQXeojc5CohPhnj0PvNkPd7B7HKLtUva03cGk";
+
+async function registerPush(token: string) {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const padding = "=".repeat((4 - (VAPID_PUBLIC.length % 4)) % 4);
+    const base64 = (VAPID_PUBLIC + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(base64);
+    const key = Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    const json = sub.toJSON();
+    await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+    });
+    await fetch("/api/push/status", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status: "enabled" }),
+    });
+  } catch { /* ignora */ }
+}
+
+async function requestAndRegisterPush() {
+  if (typeof Notification === "undefined") return;
+  if (Notification.permission === "denied") return;
+  if (Notification.permission === "default") {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") return;
+  }
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token ?? "";
+  await registerPush(token);
+}
 
 type JobStatus = "queued" | "submitted" | "processing" | "done" | "failed" | "canceled" | null;
 type VideoJobType = "video" | "narrated" | "long";
@@ -66,6 +104,10 @@ export default function TamoPage() {
   const videoElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [botActive, setBotActive] = useState(false);
+
+  // Push notification prompt durante processamento
+  const [pushTrigger, setPushTrigger] = useState<"processing" | "photo_done" | "rate_limit" | "return_visit" | null>(null);
+  const pushShownRef = useRef(false);
 
   // Onboarding mode
   const [obVariant, setObVariant] = useState<OnboardingVariant>(null);
@@ -179,6 +221,16 @@ export default function TamoPage() {
 
       fetchStatus();
       pollRef.current = setInterval(fetchStatus, 10_000);
+
+      // Popup de push ~4s após iniciar processamento (momento estratégico)
+      if (!pushShownRef.current && typeof Notification !== "undefined" && Notification.permission === "default") {
+        setTimeout(() => {
+          if (!pushShownRef.current) {
+            pushShownRef.current = true;
+            setPushTrigger("processing");
+          }
+        }, 4000);
+      }
 
       setElapsedSec(0);
       elapsedRef.current = setInterval(() => {
@@ -643,6 +695,12 @@ export default function TamoPage() {
       </div>
 
       <BottomNav hasActiveJob={!!(isActive || isVideoActive)} hasDoneJob={!!(isDone || isVideoDone)} />
+
+      <PushConversionAgent
+        trigger={pushTrigger}
+        onRequest={async () => { await requestAndRegisterPush(); setPushTrigger(null); }}
+        onSkip={() => setPushTrigger(null)}
+      />
 
       <style>{`
         @keyframes pulse {
