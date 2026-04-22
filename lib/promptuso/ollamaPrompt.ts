@@ -11,21 +11,28 @@ const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const PROMPT_MODEL = process.env.OLLAMA_PROMPT_MODEL ?? "qwen2.5:7b";
 const TIMEOUT_MS = 40_000;
 
-const SYSTEM_PROMPT = `You are a professional prompt engineer specialized in generating prompts for Qwen Image/Video models.
+const SYSTEM_PROMPT = `You are a professional photographer and prompt engineer. You create vivid, detailed image generation prompts in English for Qwen Image/Video models.
 
-Your task is to transform user inputs into highly specific, unambiguous prompts that place a product in a realistic context of use.
+Your task: READ what the user wants → VISUALIZE the photo in your mind → WRITE a rich, descriptive English prompt as if describing that exact photo to a camera crew.
 
 ## INPUTS YOU WILL RECEIVE:
 * Product Name: (name provided by user)
-* Scene: (what the user wants to see)
-* Vision Description: (AI description of the real product from the image)
+* Scene: (what the user wants to see — this is the LAW, always respect it)
+* Vision Description: (AI visual description of the real product from the photo — use this as product truth)
 
 ## YOUR GOAL:
 Generate TWO outputs:
-1. positive_prompt
-2. negative_prompt
+1. positive_prompt — a rich visual description in English of the exact photo to be created
+2. negative_prompt — short keywords of what must NOT appear
 
-## CORE RULE (MOST IMPORTANT):
+## FUNDAMENTAL CREATIVE RULE:
+You are NOT copying the user's words. You are IMAGINING the photo and describing it in rich, professional English.
+- Use the Vision Description to know exactly what the product looks like (colors, materials, textures)
+- Use the Scene to know WHERE the product is and what surrounds it
+- Write as a photographer: describe lighting, composition, materials, textures, props, atmosphere
+- NEVER just repeat the user's words — transform them into a vivid visual description
+
+## CORE RULE:
 The product must exist in ONE clear physical context with NO ambiguity.
 Never allow multiple interpretations.
 
@@ -256,23 +263,24 @@ export async function generatePromptWithOllama(
   const isSurface = detectSurfacePlacement(cenario);
   const accessoryType = isSurface ? null : detectAccessoryType(produto, visionDesc);
 
-  // Instrução de superfície: produto em cima de mesa/prateleira/etc. — sem pessoa, sem mãos
+  // Instrução de superfície: produto em superfície — prompt visual criativo, sem pessoa
   const surfaceInstruction = isSurface
-    ? `\n\n⚠️ SURFACE PLACEMENT — USER EXPLICITLY REQUESTED THIS:
-The user wants the product placed on a surface: "${cenario}"
-This is a PRODUCT ONLY shot — no person, no hands, no model in the image.
-Your positive_prompt MUST:
-1. Start with: "Product only shot, no person, no hands in the scene."
-2. Show the product resting naturally on the described surface.
-3. Include any props/objects the user mentioned (keys, flowers, etc.) near the product.
-4. Never add a person holding or touching the product.
-Add to negative_prompt: person, hand, hands, fingers, holding, touching, model, human, people.`
+    ? `\n\n⚠️ USER SCENE REQUEST (MANDATORY): "${cenario}"
+This is a FLAT LAY / PRODUCT DISPLAY photo — NO person, NO hands, NO model.
+Your job is to IMAGINE and DESCRIBE this photo in rich visual English:
+- Use the Vision Description as the source of truth for the product's appearance (colors, texture, material, design details)
+- Describe the product resting on the exact surface the user mentioned
+- Include any props/objects the user mentioned placed naturally near the product
+- Describe the lighting, angle, composition (e.g. "overhead flat lay", "45-degree side angle", "soft side lighting")
+- Use vivid, professional photography language — do NOT copy the user's words literally
+- Write as if you are a photographer describing the exact photo to be taken
+CRITICAL: Add these keywords to negative_prompt: person, hand, hands, fingers, holding, touching, model, human, people`
     : "";
 
   // Instrução de acessório: adiciona o fundo/cena do usuário explicitamente
   let accessoryInstruction = accessoryType ? `\n\n${ACCESSORY_SHOT_PREFIX[accessoryType]}` : "";
   if (accessoryType && cenario) {
-    accessoryInstruction += `\n⚠️ SCENE BACKGROUND — MANDATORY: The person must be placed in this exact scene/location: "${cenario}". This is the background/setting of the shot. Do not use a neutral or studio background — use the scene the user requested.`;
+    accessoryInstruction += `\n⚠️ SCENE BACKGROUND MANDATORY: The person must be placed in this specific environment: "${cenario}". Describe this location/background in detail in the positive_prompt — do NOT use a neutral studio background. The background IS part of the photo.`;
   }
 
   const userMessage = `Product Name: ${produto || "(not provided)"}
