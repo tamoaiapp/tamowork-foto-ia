@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import {
+  getAffiliateReferralForUser,
+  markAffiliateCheckoutStarted,
+} from "@/lib/affiliates/server";
 import { createServerClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
@@ -24,16 +28,29 @@ export async function POST(req: NextRequest) {
     : (process.env.STRIPE_PRICE_ID_USD ?? "price_1TMndeDn6tNmbP0NJ45SlEOp");
 
   try {
+    const referral = await getAffiliateReferralForUser(user.id);
+    const metadata: Record<string, string> = { userId: user.id, source };
+
+    if (referral?.id && referral?.affiliate_id && referral?.referral_code) {
+      metadata.affiliateId = referral.affiliate_id;
+      metadata.referralId = referral.id;
+      metadata.affiliateCode = referral.referral_code;
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       customer_email: user.email,
       line_items: [{ price: priceId, quantity: 1 }],
-      metadata: { userId: user.id, source },
-      subscription_data: { metadata: { userId: user.id, source } },
+      metadata,
+      subscription_data: { metadata },
       success_url: `${process.env.APP_URL ?? "https://tamowork.com"}/obrigado?source=stripe`,
       cancel_url: `${process.env.APP_URL ?? "https://tamowork.com"}/planos`,
     });
+
+    if (referral) {
+      await markAffiliateCheckoutStarted(user.id);
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (err) {

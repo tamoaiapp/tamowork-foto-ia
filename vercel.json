@@ -3,6 +3,14 @@
     {
       "path": "/api/internal/jobs/recover",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/internal/affiliates/migrate",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/internal/affiliates/payouts",
+      "schedule": "0 9 * * *"
     }
   ],
   "functions": {

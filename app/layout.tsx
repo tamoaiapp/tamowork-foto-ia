@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
+import { Suspense } from "react";
 import { I18nProvider } from "@/lib/i18n";
 
 const outfit = Outfit({ subsets: ["latin"] });
+import AffiliateAttributionClient from "@/app/components/AffiliateAttributionClient";
 import DesktopSidebar from "@/app/components/DesktopSidebar";
 import ReviewPopup from "@/app/components/ReviewPopup";
 import "./globals.css";
@@ -43,6 +45,9 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={outfit.className} style={{ background: "#07080b", color: "#eef2f9", margin: 0 }}>
         <I18nProvider>
+          <Suspense fallback={null}>
+            <AffiliateAttributionClient />
+          </Suspense>
           {/* Sidebar — visível só no desktop via CSS */}
           <DesktopSidebar />
           {/* Conteúdo — com margem esquerda no desktop para dar espaço ao sidebar */}

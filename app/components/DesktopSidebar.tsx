@@ -67,6 +67,18 @@ function IconPlans() {
   );
 }
 
+function IconAffiliates() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8394b0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="16" cy="16" r="3" />
+      <path d="M10.5 10.5l3 3" />
+      <path d="M5 18c.8-2 2.2-3 4-3" />
+      <path d="M15 8c1.8 0 3.2 1 4 3" />
+    </svg>
+  );
+}
+
 function IconAccount() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8394b0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -206,6 +218,10 @@ export default function DesktopSidebar() {
             <span>{lang === "en" ? "Subscribe Pro" : lang === "es" ? "Suscribirse Pro" : "Assinar Pro"}</span>
           </button>
         )}
+        <button onClick={() => router.push("/afiliados")} style={s.accountItem} className="sidebar-nav-item">
+          <IconAffiliates />
+          <span style={s.navLabel}>{lang === "en" ? "Affiliates" : lang === "es" ? "Afiliados" : "Afiliados"}</span>
+        </button>
         <button onClick={() => router.push("/conta")} style={s.accountItem} className="sidebar-nav-item">
           <IconAccount />
           <span style={s.navLabel}>{lang === "en" ? "My account" : lang === "es" ? "Mi cuenta" : "Minha conta"}</span>
