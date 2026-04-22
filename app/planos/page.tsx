@@ -8,6 +8,207 @@ import type { User } from "@supabase/supabase-js";
 import { useI18n } from "@/lib/i18n";
 import { trackEvent } from "@/lib/meta/pixel";
 
+/* ─── Auth Modal ──────────────────────────────────── */
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+function translateError(msg: string, lang: string): string {
+  if (lang !== "pt") return msg;
+  const m = msg.toLowerCase();
+  if (m.includes("user already registered") || m.includes("already registered"))
+    return "Este e-mail já está cadastrado. Clique em 'Entrar' para acessar.";
+  if (m.includes("invalid login credentials") || m.includes("invalid credentials"))
+    return "E-mail ou senha incorretos.";
+  if (m.includes("email not confirmed"))
+    return "Confirme seu e-mail antes de entrar.";
+  if (m.includes("password should be at least"))
+    return "A senha deve ter pelo menos 6 caracteres.";
+  if (m.includes("rate limit") || m.includes("too many requests") || m.includes("security purposes"))
+    return "Muitas tentativas. Aguarde alguns minutos.";
+  if (m.includes("invalid email") || m.includes("unable to validate email"))
+    return "Formato de e-mail inválido.";
+  return msg;
+}
+
+interface AuthModalProps {
+  isBR: boolean;
+  lang: string;
+  onClose: () => void;
+  onSuccess: (token: string) => void;
+}
+
+function AuthModal({ isBR, lang, onClose, onSuccess }: AuthModalProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"signup" | "login">("signup");
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const isSignup = mode === "signup";
+
+  async function handleGoogle() {
+    setGoogleLoading(true);
+    setError("");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/planos?checkout=1` },
+    });
+    if (error) { setError(translateError(error.message, lang)); setGoogleLoading(false); }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true); setError(""); setMsg("");
+
+    if (mode === "login") {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) { setError(translateError(error.message, lang)); setLoading(false); return; }
+      if (data.session) onSuccess(data.session.access_token);
+    } else {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) { setError(translateError(error.message, lang)); setLoading(false); return; }
+      trackEvent("CompleteRegistration");
+      if (data.session) {
+        onSuccess(data.session.access_token);
+      } else {
+        setMsg(lang === "en" ? "Check your e-mail to confirm your account." : lang === "es" ? "Revisa tu correo para confirmar tu cuenta." : "Verifique seu e-mail para confirmar sua conta.");
+      }
+    }
+    setLoading(false);
+  }
+
+  const labels = isSignup ? {
+    title: lang === "en" ? "Create free account" : lang === "es" ? "Crear cuenta gratis" : "Criar conta grátis",
+    sub: lang === "en" ? "Then go straight to checkout" : lang === "es" ? "Luego ir directo al pago" : "Depois vai direto para o pagamento",
+    google: lang === "en" ? "Sign up with Google" : lang === "es" ? "Registrarse con Google" : "Criar conta com Google",
+    submit: loading ? "..." : (lang === "en" ? "Create account →" : lang === "es" ? "Crear cuenta →" : "Criar conta →"),
+    toggle: lang === "en" ? "Already have an account?" : lang === "es" ? "¿Ya tienes cuenta?" : "Já tenho conta",
+    toggleCta: lang === "en" ? "Sign in →" : lang === "es" ? "Entrar →" : "Entrar →",
+  } : {
+    title: lang === "en" ? "Sign in" : lang === "es" ? "Iniciar sesión" : "Entrar na conta",
+    sub: lang === "en" ? "Then go straight to checkout" : lang === "es" ? "Luego ir directo al pago" : "Depois vai direto para o pagamento",
+    google: lang === "en" ? "Continue with Google" : lang === "es" ? "Continuar con Google" : "Entrar com Google",
+    submit: loading ? "..." : (lang === "en" ? "Sign in →" : lang === "es" ? "Entrar →" : "Entrar →"),
+    toggle: lang === "en" ? "Don't have an account?" : lang === "es" ? "¿No tienes cuenta?" : "Não tenho conta",
+    toggleCta: lang === "en" ? "Create for free →" : lang === "es" ? "Crear gratis →" : "Criar grátis →",
+  };
+
+  return (
+    <div style={m.overlay} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={m.modal}>
+        <button onClick={onClose} style={m.closeBtn}>✕</button>
+
+        <div style={m.title}>{labels.title}</div>
+        <div style={m.sub}>{labels.sub}</div>
+
+        <button onClick={handleGoogle} disabled={googleLoading} style={m.googleBtn}>
+          {googleLoading
+            ? <span style={m.spinner} />
+            : <GoogleIcon />}
+          <span>{googleLoading ? "..." : labels.google}</span>
+        </button>
+
+        <div style={m.divider}>
+          <div style={m.divLine} />
+          <span style={m.divText}>{lang === "en" ? "or with e-mail" : lang === "es" ? "o con correo" : "ou com e-mail"}</span>
+          <div style={m.divLine} />
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} required style={m.input} autoComplete={isSignup ? "email" : "username"} />
+          <input type="password" placeholder={lang === "en" ? "Password" : lang === "es" ? "Contraseña" : "Senha"} value={password} onChange={e => setPassword(e.target.value)} required style={m.input} autoComplete={isSignup ? "new-password" : "current-password"} />
+          {error && <div style={m.errorBox}>{error}</div>}
+          {msg && <div style={m.successBox}>{msg}</div>}
+          <button type="submit" disabled={loading} style={{ ...m.submitBtn, opacity: loading ? 0.7 : 1 }}>
+            {labels.submit}
+          </button>
+        </form>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <span style={{ color: "#4e5c72", fontSize: 13 }}>{labels.toggle}</span>
+          <button type="button" onClick={() => { setMode(isSignup ? "login" : "signup"); setError(""); setMsg(""); }}
+            style={{ background: "none", border: "none", color: "#a855f7", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: "inherit" }}>
+            {labels.toggleCta}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const m: Record<string, React.CSSProperties> = {
+  overlay: {
+    position: "fixed", inset: 0, zIndex: 999,
+    background: "rgba(7,8,11,0.85)",
+    backdropFilter: "blur(6px)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    padding: "20px",
+  },
+  modal: {
+    background: "#111820",
+    borderRadius: 22,
+    padding: "36px 32px",
+    width: "100%",
+    maxWidth: 400,
+    boxShadow: "0 0 0 1px rgba(139,92,246,0.3), 0 24px 60px rgba(0,0,0,0.6)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+    position: "relative",
+  },
+  closeBtn: {
+    position: "absolute", top: 16, right: 16,
+    background: "none", border: "none", color: "#4e5c72",
+    fontSize: 18, cursor: "pointer", lineHeight: 1, padding: 4,
+  },
+  title: { fontSize: 22, fontWeight: 800, color: "#eef2f9", letterSpacing: "-0.02em" },
+  sub: { fontSize: 13, color: "#8394b0", marginTop: -6 },
+  googleBtn: {
+    width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+    background: "#ffffff", border: "none", borderRadius: 14, padding: "15px 0",
+    color: "#1a1a2e", fontSize: 15, fontWeight: 700, cursor: "pointer",
+    boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
+  },
+  spinner: {
+    display: "inline-block", width: 18, height: 18,
+    border: "2px solid #ccc", borderTop: "2px solid #6366f1",
+    borderRadius: "50%", animation: "spin 0.8s linear infinite",
+  },
+  divider: { display: "flex", alignItems: "center", gap: 10 },
+  divLine: { flex: 1, height: 1, background: "rgba(255,255,255,0.07)" },
+  divText: { color: "#4e5c72", fontSize: 12, fontWeight: 500, whiteSpace: "nowrap" },
+  input: {
+    background: "#07080b", border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 12, padding: "13px 16px",
+    color: "#eef2f9", fontSize: 15, outline: "none",
+    width: "100%", boxSizing: "border-box",
+  },
+  submitBtn: {
+    background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
+    border: "none", borderRadius: 14, padding: "14px 0",
+    color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", width: "100%", marginTop: 2,
+  },
+  errorBox: {
+    background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+    borderRadius: 10, padding: "10px 14px", color: "#f87171", fontSize: 13,
+  },
+  successBox: {
+    background: "rgba(22,199,132,0.08)", border: "1px solid rgba(22,199,132,0.25)",
+    borderRadius: 10, padding: "10px 14px", color: "#16c784", fontSize: 13,
+  },
+};
+
+/* ─── Planos Page ─────────────────────────────────── */
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
@@ -19,19 +220,6 @@ const styles: Record<string, React.CSSProperties> = {
   inner: {
     maxWidth: 520,
     margin: "0 auto",
-  },
-  backBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    background: "none",
-    border: "none",
-    color: "#8394b0",
-    fontSize: 15,
-    cursor: "pointer",
-    padding: "0 0 32px",
-    fontFamily: "inherit",
-    transition: "color 0.15s",
   },
   hero: {
     textAlign: "center",
@@ -205,6 +393,7 @@ export default function PlanosPage() {
   const [loading, setLoading] = useState(true);
   const [loadingStripe, setLoadingStripe] = useState(false);
   const [isBR, setIsBR] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   const features = lang === "es" ? featuresES : lang === "pt" ? featuresPT : featuresEN;
 
@@ -221,21 +410,27 @@ export default function PlanosPage() {
   }, []);
 
   useEffect(() => {
-    // ViewContent: usuário chegou na página de preços
     trackEvent("ViewContent");
   }, []);
 
-  async function handleCheckout() {
-    if (loadingStripe) return;
-    if (!user) { router.push("/login?next=/planos"); return; }
+  // After Google OAuth redirect, auto-checkout if ?checkout=1
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "1") return;
+    // Remove param from URL without reload
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkout");
+    window.history.replaceState({}, "", url.toString());
+    // Wait for session then checkout
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) startStripeCheckout(session.access_token);
+    });
+  }, []);
+
+  async function startStripeCheckout(tok: string) {
     setLoadingStripe(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const tok = session?.access_token ?? "";
-      // InitiateCheckout: clicou em Assinar
       trackEvent("InitiateCheckout", { value: isBR ? 79 : 100, currency: isBR ? "BRL" : "USD" }, tok);
-
-      // BR → Stripe mensal R$79 | Não-BR → Stripe anual $100
       const res = await fetch("/api/checkout/stripe", {
         method: "POST",
         headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
@@ -251,130 +446,158 @@ export default function PlanosPage() {
     }
   }
 
+  async function handleCheckout() {
+    if (loadingStripe) return;
+    if (!user) {
+      setShowModal(true);
+      return;
+    }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) startStripeCheckout(session.access_token);
+  }
+
+  function handleAuthSuccess(token: string) {
+    setShowModal(false);
+    startStripeCheckout(token);
+  }
+
   if (loading) return null;
 
   return (
-    <div style={styles.page} className="app-layout">
-      <div style={styles.inner}>
+    <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-        {/* Hero */}
-        <div style={styles.hero}>
-          <h1 style={styles.heroHeadline}>
-            {lang === "en"
-              ? "Professional product photos with AI"
-              : lang === "es"
-              ? "Fotos profesionales de productos con IA"
-              : "Fotos profissionais dos seus produtos com IA"}
-          </h1>
-          <p style={styles.heroSub}>
-            {lang === "en"
-              ? "Take a photo with your phone, AI transforms it into a professional store photo. No photographer, no studio."
-              : lang === "es"
-              ? "Toma una foto con el celular, la IA la transforma en foto profesional de tienda. Sin fotógrafo, sin estudio."
-              : "Tire foto com o celular, a IA transforma em foto de loja profissional. Sem fotógrafo, sem estúdio."}
-          </p>
-          <div style={styles.heroTrust}>
-            <span>{lang === "en" ? "Cancel anytime" : lang === "es" ? "Cancela cuando quieras" : "Cancele quando quiser"}</span>
-            <span style={{ opacity: 0.4 }}>|</span>
-            <span>{lang === "en" ? "No commitment" : lang === "es" ? "Sin fidelidad" : "Sem fidelidade"}</span>
-          </div>
-        </div>
+      {showModal && (
+        <AuthModal
+          isBR={isBR}
+          lang={lang}
+          onClose={() => setShowModal(false)}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
 
-        {/* Plan Card */}
-        <div style={styles.card}>
-          <span style={styles.badge}>PRO</span>
+      <div style={styles.page} className="app-layout">
+        <div style={styles.inner}>
 
-          {isBR ? (
-            <>
-              <div style={styles.price}>R$79<span style={styles.pricePeriod}> /mês</span></div>
-              <div style={styles.priceSub}>Menos de R$2,63 por dia • Cancele quando quiser</div>
-            </>
-          ) : (
-            <>
-              <div style={styles.price}>$100<span style={styles.pricePeriod}> /year</span></div>
-              <div style={styles.priceSub}>Less than $0.28 per day • Cancel anytime</div>
-            </>
-          )}
-
-          <div style={styles.divider} />
-
-          <ul style={styles.featureList}>
-            {features.map((f) => (
-              <li key={f} style={styles.featureItem}>
-                <span style={styles.featureCheck}>✓</span>
-                {f}
-              </li>
-            ))}
-          </ul>
-
-          <button
-            style={{ ...styles.btnPrimary, opacity: loadingStripe ? 0.7 : 1 }}
-            onClick={handleCheckout}
-            disabled={loadingStripe}
-            onMouseEnter={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
-            onMouseLeave={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-          >
-            {loadingStripe
-              ? (lang === "en" ? "Redirecting..." : lang === "es" ? "Redirigiendo..." : "Redirecionando...")
-              : isBR
-              ? "🔥 Assinar agora — R$79/mês"
-              : lang === "es"
-              ? "🔥 Suscribirse — $100/año"
-              : "🔥 Subscribe now — $100/year"}
-          </button>
-
-          <div style={styles.btnNote}>
-            {lang === "pt"
-              ? "Pagamento seguro via Stripe • Cancele a qualquer momento"
-              : lang === "es"
-              ? "Pago seguro vía Stripe • Cancela cuando quieras"
-              : "Secure payment via Stripe • Cancel anytime"}
-          </div>
-        </div>
-
-        {/* Value Props */}
-        <div style={styles.valueSection}>
-          <div style={styles.valueCard}>
-            <span style={styles.valueIcon}>⚡</span>
-            <div style={styles.valueTitle}>
-              {lang === "en" ? "Instant photos" : lang === "es" ? "Fotos al instante" : "Foto pronta na hora"}
-            </div>
-            <div style={styles.valueDesc}>
+          {/* Hero */}
+          <div style={styles.hero}>
+            <h1 style={styles.heroHeadline}>
               {lang === "en"
-                ? "No queue. Generate as many as you want, anytime."
+                ? "Professional product photos with AI"
                 : lang === "es"
-                ? "Sin cola. Genera las que quieras, a cualquier hora."
-                : "Sem fila. Gere quantas quiser, a qualquer hora."}
-            </div>
-          </div>
-          <div style={styles.valueCard}>
-            <span style={styles.valueIcon}>🎬</span>
-            <div style={styles.valueTitle}>
-              {lang === "en" ? "Photo & video AI" : lang === "es" ? "Foto y video IA" : "Foto e vídeo com IA"}
-            </div>
-            <div style={styles.valueDesc}>
+                ? "Fotos profesionales de productos con IA"
+                : "Fotos profissionais dos seus produtos com IA"}
+            </h1>
+            <p style={styles.heroSub}>
               {lang === "en"
-                ? "Animated videos and narrated reels for your products."
+                ? "Take a photo with your phone, AI transforms it into a professional store photo. No photographer, no studio."
                 : lang === "es"
-                ? "Videos animados y reels narrados para tus productos."
-                : "Vídeos animados e reels narrados dos seus produtos."}
+                ? "Toma una foto con el celular, la IA la transforma en foto profesional de tienda. Sin fotógrafo, sin estudio."
+                : "Tire foto com o celular, a IA transforma em foto de loja profissional. Sem fotógrafo, sem estúdio."}
+            </p>
+            <div style={styles.heroTrust}>
+              <span>{lang === "en" ? "Cancel anytime" : lang === "es" ? "Cancela cuando quieras" : "Cancele quando quiser"}</span>
+              <span style={{ opacity: 0.4 }}>|</span>
+              <span>{lang === "en" ? "No commitment" : lang === "es" ? "Sin fidelidad" : "Sem fidelidade"}</span>
             </div>
           </div>
-          <div style={styles.valueCard}>
-            <span style={styles.valueIcon}>☕</span>
-            <div style={styles.valueTitle}>
-              {lang === "en" ? "Less than a coffee" : lang === "es" ? "Menos que un café" : "Menos que um café"}
-            </div>
-            <div style={styles.valueDesc}>
-              {isBR
-                ? "R$2,63 por dia para transformar as fotos do seu negócio."
+
+          {/* Plan Card */}
+          <div style={styles.card}>
+            <span style={styles.badge}>PRO</span>
+
+            {isBR ? (
+              <>
+                <div style={styles.price}>R$79<span style={styles.pricePeriod}> /mês</span></div>
+                <div style={styles.priceSub}>Menos de R$2,63 por dia • Cancele quando quiser</div>
+              </>
+            ) : (
+              <>
+                <div style={styles.price}>$100<span style={styles.pricePeriod}> /year</span></div>
+                <div style={styles.priceSub}>Less than $0.28 per day • Cancel anytime</div>
+              </>
+            )}
+
+            <div style={styles.divider} />
+
+            <ul style={styles.featureList}>
+              {features.map((f) => (
+                <li key={f} style={styles.featureItem}>
+                  <span style={styles.featureCheck}>✓</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+
+            <button
+              style={{ ...styles.btnPrimary, opacity: loadingStripe ? 0.7 : 1 }}
+              onClick={handleCheckout}
+              disabled={loadingStripe}
+              onMouseEnter={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+              onMouseLeave={(e) => { if (!loadingStripe) (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+            >
+              {loadingStripe
+                ? (lang === "en" ? "Redirecting..." : lang === "es" ? "Redirigiendo..." : "Redirecionando...")
+                : isBR
+                ? "🔥 Assinar agora — R$79/mês"
                 : lang === "es"
-                ? "$0.28 por día para transformar tu negocio."
-                : "$0.28 per day to transform your business visuals."}
+                ? "🔥 Suscribirse — $100/año"
+                : "🔥 Subscribe now — $100/year"}
+            </button>
+
+            <div style={styles.btnNote}>
+              {lang === "pt"
+                ? "Pagamento seguro via Stripe • Cancele a qualquer momento"
+                : lang === "es"
+                ? "Pago seguro vía Stripe • Cancela cuando quieras"
+                : "Secure payment via Stripe • Cancel anytime"}
+            </div>
+          </div>
+
+          {/* Value Props */}
+          <div style={styles.valueSection}>
+            <div style={styles.valueCard}>
+              <span style={styles.valueIcon}>⚡</span>
+              <div style={styles.valueTitle}>
+                {lang === "en" ? "Instant photos" : lang === "es" ? "Fotos al instante" : "Foto pronta na hora"}
+              </div>
+              <div style={styles.valueDesc}>
+                {lang === "en"
+                  ? "No queue. Generate as many as you want, anytime."
+                  : lang === "es"
+                  ? "Sin cola. Genera las que quieras, a cualquier hora."
+                  : "Sem fila. Gere quantas quiser, a qualquer hora."}
+              </div>
+            </div>
+            <div style={styles.valueCard}>
+              <span style={styles.valueIcon}>🎬</span>
+              <div style={styles.valueTitle}>
+                {lang === "en" ? "Photo & video AI" : lang === "es" ? "Foto y video IA" : "Foto e vídeo com IA"}
+              </div>
+              <div style={styles.valueDesc}>
+                {lang === "en"
+                  ? "Animated videos and narrated reels for your products."
+                  : lang === "es"
+                  ? "Videos animados y reels narrados para tus productos."
+                  : "Vídeos animados e reels narrados dos seus produtos."}
+              </div>
+            </div>
+            <div style={styles.valueCard}>
+              <span style={styles.valueIcon}>☕</span>
+              <div style={styles.valueTitle}>
+                {lang === "en" ? "Less than a coffee" : lang === "es" ? "Menos que un café" : "Menos que um café"}
+              </div>
+              <div style={styles.valueDesc}>
+                {isBR
+                  ? "R$2,63 por dia para transformar as fotos do seu negócio."
+                  : lang === "es"
+                  ? "$0.28 por día para transformar tu negocio."
+                  : "$0.28 per day to transform your business visuals."}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
