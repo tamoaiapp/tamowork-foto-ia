@@ -63,8 +63,8 @@ type DashboardData = {
 };
 
 const statusLabel: Record<string, string> = {
-  not_connected: "NÃ£o conectado",
-  restricted: "RevisÃ£o necessÃ¡ria",
+  not_connected: "Não conectado",
+  restricted: "Revisão necessária",
   clicked: "Entrou pelo link",
   signed_up: "Criou conta",
   checkout_started: "Iniciou checkout",
@@ -141,7 +141,7 @@ export default function AfiliadosPage() {
 
     if (!res) {
       if (!active) return;
-      setError("NÃ£o foi possÃ­vel carregar o painel de afiliados.");
+      setError("Não foi possível carregar o painel de afiliados.");
       setLoading(false);
       return;
     }
@@ -166,7 +166,7 @@ export default function AfiliadosPage() {
       setCopyDone(true);
       window.setTimeout(() => setCopyDone(false), 2200);
     } catch {
-      setError("NÃ£o consegui copiar o link automaticamente.");
+      setError("Não consegui copiar o link automaticamente.");
     }
   }
 
@@ -216,14 +216,14 @@ export default function AfiliadosPage() {
   function getStripeStatusText() {
     if (!dashboard) return "";
     const affiliate = dashboard.affiliate;
-    if (!affiliate.stripe_account_id) return "Conecte seu Stripe para receber comissÃµes automÃ¡ticas.";
+    if (!affiliate.stripe_account_id) return "Conecte seu Stripe para receber comissões automáticas.";
     if (affiliate.stripe_account_status === "active" && affiliate.stripe_payouts_enabled) {
-      return "Stripe conectado e pronto para repasses automÃ¡ticos.";
+      return "Stripe conectado e pronto para repasses automáticos.";
     }
     if (affiliate.stripe_account_status === "pending") {
       return "Stripe conectado, mas ainda faltam etapas do onboarding para liberar recebimentos.";
     }
-    return "Sua conta Stripe precisa de revisÃ£o antes de receber automaticamente.";
+    return "Sua conta Stripe precisa de revisão antes de receber automaticamente.";
   }
 
   if (loading) {
@@ -253,14 +253,14 @@ export default function AfiliadosPage() {
         <section style={styles.heroCard}>
           <div>
             <div style={styles.eyebrow}>Programa de afiliados</div>
-            <h1 style={styles.heroTitle}>Ganhe 30% em toda renovaÃ§Ã£o dos clientes que assinarem pelo seu link.</h1>
+            <h1 style={styles.heroTitle}>Ganhe 30% em toda renovação dos clientes que assinarem pelo seu link.</h1>
             <p style={styles.heroText}>
-              Acompanhamento completo de cliques, cadastros, pagantes e comissÃµes recorrentes em um sÃ³ painel.
+              Acompanhamento completo de cliques, cadastros, pagantes e comissões recorrentes em um só painel.
             </p>
           </div>
           <div style={styles.heroBadges}>
-            <span style={styles.badge}>ComissÃ£o recorrente</span>
-            <span style={styles.badge}>Stripe automÃ¡tico</span>
+            <span style={styles.badge}>Comissão recorrente</span>
+            <span style={styles.badge}>Stripe automático</span>
             <span style={styles.badge}>Link individual</span>
           </div>
         </section>
@@ -276,7 +276,7 @@ export default function AfiliadosPage() {
                   <div style={styles.sectionHeader}>
                     <div>
                       <div style={styles.sectionEyebrow}>Seu link</div>
-                      <h2 style={styles.sectionTitle}>Compartilhe e acompanhe suas indicaÃ§Ãµes</h2>
+                      <h2 style={styles.sectionTitle}>Compartilhe e acompanhe suas indicações</h2>
                     </div>
                     <div style={styles.rateChip}>{Math.round(dashboard.affiliate.commission_rate * 100)}%</div>
                   </div>
@@ -323,19 +323,19 @@ export default function AfiliadosPage() {
                   <div style={styles.sectionHeader}>
                     <div>
                       <div style={styles.sectionEyebrow}>Quem entrou e pagou</div>
-                      <h2 style={styles.sectionTitle}>IndicaÃ§Ãµes</h2>
+                      <h2 style={styles.sectionTitle}>Indicações</h2>
                     </div>
                   </div>
 
                   {dashboard.referrals.length === 0 ? (
-                    <div style={styles.emptyState}>Ainda nÃ£o existe nenhuma indicaÃ§Ã£o registrada no seu link.</div>
+                    <div style={styles.emptyState}>Ainda não existe nenhuma indicação registrada no seu link.</div>
                   ) : (
                     <div style={styles.stack}>
                       {dashboard.referrals.map((item) => (
                         <div key={item.id} style={styles.listCard}>
                           <div style={styles.listTop}>
                             <div>
-                              <div style={styles.listTitle}>{item.referred_email ?? "UsuÃ¡rio sem e-mail visÃ­vel"}</div>
+                              <div style={styles.listTitle}>{item.referred_email ?? "Usuário sem e-mail visível"}</div>
                               <div style={styles.listMeta}>{statusLabel[item.status] ?? item.status}</div>
                             </div>
                             <StatusPill status={item.status} />
@@ -343,10 +343,10 @@ export default function AfiliadosPage() {
                           <div style={styles.infoGrid}>
                             <InfoItem label="Entrou/Cadastrou" value={formatDate(item.signed_up_at ?? item.created_at)} />
                             <InfoItem label="Primeiro pagamento" value={formatDate(item.converted_at)} />
-                            <InfoItem label="Ãšltimo pagamento" value={formatDate(item.last_paid_at)} />
-                            <InfoItem label="PrÃ³xima cobranÃ§a" value={formatDate(item.next_billing_at)} />
+                            <InfoItem label="Último pagamento" value={formatDate(item.last_paid_at)} />
+                            <InfoItem label="Próxima cobrança" value={formatDate(item.next_billing_at)} />
                             <InfoItem label="Total pago" value={formatMoney(item.total_paid_cents)} />
-                            <InfoItem label="Sua comissÃ£o" value={formatMoney(item.total_commission_cents)} />
+                            <InfoItem label="Sua comissão" value={formatMoney(item.total_commission_cents)} />
                           </div>
                         </div>
                       ))}
@@ -376,10 +376,10 @@ export default function AfiliadosPage() {
                     </div>
 
                     <div style={styles.infoGrid}>
-                      <InfoItem label="Conta Stripe" value={dashboard.affiliate.stripe_account_id ?? "Ainda nÃ£o conectada"} />
+                      <InfoItem label="Conta Stripe" value={dashboard.affiliate.stripe_account_id ?? "Ainda não conectada"} />
                       <InfoItem label="Onboarding" value={dashboard.affiliate.stripe_onboarding_complete ? "Completo" : "Pendente"} />
                       <InfoItem label="Recebimentos" value={dashboard.affiliate.stripe_payouts_enabled ? "Liberados" : "Bloqueados"} />
-                      <InfoItem label="ComissÃ£o" value={`${Math.round(dashboard.affiliate.commission_rate * 100)}% em cada renovaÃ§Ã£o`} />
+                      <InfoItem label="Comissão" value={`${Math.round(dashboard.affiliate.commission_rate * 100)}% em cada renovação`} />
                     </div>
 
                     <button onClick={handleConnectStripe} disabled={connecting} style={styles.primaryBtn}>
@@ -391,13 +391,13 @@ export default function AfiliadosPage() {
                 <section style={styles.sectionCard}>
                   <div style={styles.sectionHeader}>
                     <div>
-                      <div style={styles.sectionEyebrow}>ComissÃµes</div>
-                      <h2 style={styles.sectionTitle}>HistÃ³rico de repasses</h2>
+                      <div style={styles.sectionEyebrow}>Comissões</div>
+                      <h2 style={styles.sectionTitle}>Histórico de repasses</h2>
                     </div>
                   </div>
 
                   {dashboard.commissions.length === 0 ? (
-                    <div style={styles.emptyState}>As comissÃµes vÃ£o aparecer aqui sempre que uma assinatura pagar ou renovar.</div>
+                    <div style={styles.emptyState}>As comissões vão aparecer aqui sempre que uma assinatura pagar ou renovar.</div>
                   ) : (
                     <div style={styles.stack}>
                       {dashboard.commissions.map((item) => (
@@ -413,7 +413,7 @@ export default function AfiliadosPage() {
                           <div style={styles.infoGrid}>
                             <InfoItem label="Cliente pagou" value={formatDate(item.earned_at)} />
                             <InfoItem label="Valor pago" value={formatMoney(item.gross_amount_cents, item.currency)} />
-                            <InfoItem label="Sua comissÃ£o" value={formatMoney(item.commission_amount_cents, item.currency)} />
+                            <InfoItem label="Sua comissão" value={formatMoney(item.commission_amount_cents, item.currency)} />
                             <InfoItem label="Libera em" value={formatDate(item.available_at)} />
                             <InfoItem label="Transferida em" value={formatDate(item.transferred_at)} />
                             <InfoItem label="Paga em" value={formatDate(item.paid_at)} />
