@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase/client";
 
 const AFFILIATE_CODE_KEY = "tw_affiliate_code";
 const AFFILIATE_VISITOR_KEY = "tw_affiliate_visitor_id";
+const FBCLID_KEY = "tw_fbclid";
+const UTM_KEY = "tw_utm_source";
 
 function normalizeAffiliateCode(input: string) {
   return input
@@ -29,6 +31,19 @@ function getVisitorId() {
 export default function AffiliateAttributionClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // Captura fbclid e utm_source no landing
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fbclid = searchParams.get("fbclid");
+    if (fbclid && !localStorage.getItem(FBCLID_KEY)) {
+      localStorage.setItem(FBCLID_KEY, fbclid);
+    }
+    const utmSource = searchParams.get("utm_source");
+    if (utmSource && !localStorage.getItem(UTM_KEY)) {
+      localStorage.setItem(UTM_KEY, utmSource);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -91,8 +106,28 @@ export default function AffiliateAttributionClient() {
     }
 
     claimReferral();
+
+    async function saveAttribution() {
+      const fbclid = localStorage.getItem(FBCLID_KEY);
+      const utmSource = localStorage.getItem(UTM_KEY);
+      if (!fbclid && !utmSource) return;
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      const userId = data.session?.user?.id;
+      if (!token || !userId) return;
+      const claimKey = `tw_attribution_saved_${userId}`;
+      if (sessionStorage.getItem(claimKey)) return;
+      fetch("/api/attribution/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fbclid, utm_source: utmSource }),
+      }).then(r => { if (r.ok) sessionStorage.setItem(claimKey, "1"); }).catch(() => {});
+    }
+
+    saveAttribution();
     const { data: listener } = supabase.auth.onAuthStateChange(() => {
       claimReferral();
+      saveAttribution();
     });
 
     return () => {
