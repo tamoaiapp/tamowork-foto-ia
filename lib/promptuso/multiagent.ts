@@ -194,13 +194,24 @@ export function classifyUsageMode({
   const text = normalizeText(joinText(product_name, vision_description));
 
   if (containsAny(text, [
-    "camisa", "camiseta", "vestido", "calca", "calca", "jaqueta", "conjunto",
-    "roupa", "moletom", "uniforme", "hoodie", "tracksuit", "brinco", "colar",
-    "pulseira", "anel", "oculos", "oculos", "tenis", "tenis", "sapato",
-    "sandalia", "sandalia", "bota", "chuteira", "bolsa", "mochila", "relogio",
-    "relogio", "luva", "meias", "colete", "blazer", "blusa", "regata",
+    // PT
+    "camisa", "camiseta", "vestido", "calca", "jaqueta", "conjunto",
+    "roupa", "moletom", "uniforme", "brinco", "colar",
+    "pulseira", "anel", "oculos", "tenis", "sapato",
+    "sandalia", "bota", "chuteira", "bolsa", "mochila", "relogio",
+    "luva", "meias", "colete", "blazer", "blusa", "regata",
     "cropped", "saia", "legging", "pochete", "crossbody", "bone", "chapeu",
-    "tiara", "headband", "munhequeira", "pulseira", "alianca", "bermuda",
+    "tiara", "headband", "munhequeira", "alianca", "bermuda",
+    // EN (traduções automáticas via MyMemory caem aqui)
+    "shirt", "t-shirt", "tshirt", "dress", "pants", "trousers", "jacket",
+    "coat", "sweater", "sweatshirt", "hoodie", "tracksuit", "blouse", "skirt",
+    "shorts", "jeans", "clothing", "clothes", "outfit", "garment", "apparel",
+    "wear", "fashion", "top", "bottom", "underwear", "lingerie", "swimsuit",
+    "sportswear", "athletic wear", "shoe", "shoes", "sneaker", "sneakers",
+    "boot", "boots", "sandal", "sandals", "bag", "handbag", "backpack",
+    "watch", "smartwatch", "glasses", "sunglasses", "hat", "cap", "beanie",
+    "necklace", "bracelet", "ring", "earring", "earrings", "jewelry",
+    "set", "suit", "uniform", "polo", "cardigan", "vest", "romper", "jumpsuit",
   ])) return "wearable_use";
 
   if (containsAny(text, [
