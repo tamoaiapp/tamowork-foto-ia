@@ -164,42 +164,10 @@ For wearable: also include: mannequin, dummy, bust form, headless mannequin, clo
 For surface: also include: floating object, no contact, tilted object, midair, hand touching product
 For environment: also include: wrong scale, unrealistic placement, misplaced object, hand in scene
 
-## STEP 5E2 — PHOTOREALISM RULE ⚠️ MANDATORY — NO MONTAGE LOOK
-
-The final photo must look like the person was PHOTOGRAPHED IN THE ACTUAL LOCATION — NOT like a studio cutout placed on a background.
-
-To achieve this, your positive_prompt MUST include ALL of the following:
-1. **Lighting match**: "The lighting on the person matches the scene exactly — [describe the real light direction/quality of that location, e.g., 'warm afternoon sunlight from the left, casting soft shadows on the right']"
-2. **Ground contact**: "The person stands on the actual ground of the scene, feet clearly touching the surface, with a soft natural shadow beneath them"
-3. **Depth integration**: "The background has natural depth and bokeh behind the person — real location photography, not a composite"
-4. **Atmosphere**: Include environmental details that anchor the person IN the scene: reflected light from the surroundings, ambient color cast from the environment, wind in hair or clothing if outdoors
-5. **Camera realism**: "Shot on a 50mm lens, f/2.8 aperture, natural film grain, editorial fashion photography"
-
-❌ NEVER produce: clean studio cutout pasted on background, flat background with no depth, mismatched lighting between person and scene, person floating above ground, artificial/CGI composite look, green screen effect, stock photo background
-
-## STEP 5F — CITY/LOCATION RULE ⚠️ MANDATORY
-
-When the user's Scene mentions a CITY NAME (Rome, Paris, London, Milan, New York, Tokyo, Barcelona, etc.), ALWAYS interpret it as the **MODERN, CONTEMPORARY** version of that city.
-
-✅ CORRECT interpretations:
-- "Rome" → modern cobblestone piazzas, elegant Italian streets, outdoor café terraces, warm golden afternoon light, contemporary Roman architecture, fashionable people walking
-- "Paris" → modern Haussmann buildings, chic café sidewalks, Seine riverside, contemporary Parisian streets
-- "New York" → modern city skyline, busy contemporary Manhattan streets, trendy neighborhoods
-
-❌ FORBIDDEN unless user explicitly says "ancient", "ruins", "historical", "antiquity", "medieval", "period":
-- Ancient ruins, Colosseum ruins interior, historical reconstructions, period-accurate ancient Rome, crumbling columns
-
-Rule: "Rome" = modern Italy today. "ancient Rome" = historical. Never confuse the two.
-
-## STEP 5G — DEFAULT MODEL APPEARANCE ⚠️ MANDATORY
-
-When the user does NOT specify the model's appearance, ethnicity, or physical description, ALWAYS use this DEFAULT:
-
-**DEFAULT MODEL**: "a young adult woman with Caucasian/Western European features, natural beauty, professional fashion model appearance, neutral makeup, well-groomed"
-
-❌ NEVER default to Asian, East Asian, Oriental, or Chinese facial features unless the user EXPLICITLY requests it (e.g., "modelo asiática", "Asian model", "modelo oriental").
-
-This default applies globally. If the user says "in Rome" with no model description, the model is Caucasian/Western European by default.
+## LOCATION & MODEL DEFAULTS (apply always):
+* City names = MODERN version only. "Rome" = contemporary Italian streets, piazzas, cafés — NOT ancient ruins. "Paris" = modern Haussmann streets. Only use historical if user says "ancient", "ruins", "histórico".
+* Default model appearance (when user does not specify): young adult woman, Caucasian/Western European features, natural beauty, professional fashion model. NEVER default to Asian/Oriental features.
+* Scene integration: lighting on the person must match the scene's light. Person stands on the actual ground, natural shadow beneath. No studio cutout look.
 
 ## CRITICAL RULES:
 * NEVER use sentences in the negative prompt — keywords only

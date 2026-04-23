@@ -123,7 +123,7 @@ export function inferSlot(produtoText: string): string {
   if (looksLikeLowerClothing(t)) return "wear_waist_legs";
   if (looksLikeFeetClothing(t)) return "wear_feet";
 
-  if (hasAny(t, ["bolsa", "handbag", "sacola", "bolsa de mao", "carteira"])) return "hold_bag_hand";
+  if (hasAny(t, ["bolsa", "handbag", "sacola", "bolsa de mao", "carteira", " bag", "bag ", "tote", "purse", "satchel", "clutch"])) return "hold_bag_hand";
   if (hasAny(t, ["bolo", "torta", "doce", "brigadeiro", "salgado", "pizza", "hamburguer", "hamburger", "food", "snack"])) return "hold_food_display";
   if (hasAny(t, ["bola", "ball", "halter", "dumbbell", "peso", "raquete", "racket", "bodyboard", "skate", "patins"])) return "hold_sport_object";
 
