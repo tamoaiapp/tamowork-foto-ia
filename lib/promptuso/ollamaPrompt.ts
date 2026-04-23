@@ -128,7 +128,15 @@ Determine whether the product IS or IS NOT footwear:
 - Add to positive prompt: "wearing simple neutral [sneakers/shoes/sandals], not the focus of the image"
 - Add to negative prompt: white socks, ankle socks, socks without shoes, barefoot with clothing, no shoes
 
-## STEP 5E — FACIAL & HEAD ACCESSORY RULE ⚠️ HIGHEST PRIORITY OVERRIDE
+## STEP 5E — SHOT TYPE RULES ⚠️ HIGHEST PRIORITY OVERRIDE
+
+**FULL CLOTHING RULE (applies FIRST — before accessory rules):**
+If the product is clothing, outfit, set, dress, shirt, pants, coat, jacket, blouse, skirt, or any full garment:
+- ✅ MANDATORY: Use FULL-BODY shot from head to feet. The entire outfit must be visible.
+- ⛔ FORBIDDEN: close-up, head-and-shoulders, portrait shot, face close-up for clothing products.
+- The model stands or walks naturally, showing the COMPLETE outfit.
+
+**ACCESSORY-SPECIFIC SHOT RULES (only when product is NOT clothing):**
 
 CHECK THE PRODUCT TYPE FIRST. If it matches any category below, OVERRIDE the default full-body fashion shot and use the specified shot type instead. This rule CANCELS any full-body shot for these products.
 

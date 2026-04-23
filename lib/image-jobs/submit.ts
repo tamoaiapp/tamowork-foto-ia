@@ -4,6 +4,7 @@ import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
 import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/serverProductVision";
 import { detectDisplayCategory, buildDisplayPrompt } from "@/lib/promptuso/displayPrompt";
+import { classifyUsageMode } from "@/lib/promptuso/multiagent";
 
 // ── Qualificadores de qualidade profissional ───────────────────────────────────
 // Injetados no positive prompt depois do buildPromptResult para elevar o padrão
@@ -175,8 +176,15 @@ export async function submitImageJob(jobId: string) {
     // Impede que o Flux Kontext invente outro produto quando o prompt descreve genericamente.
     const fidelityClause = "Use ONLY the exact product shown in the reference image provided — preserve every detail of its design, colors, text, shape, and materials exactly as shown. Do not replace, reinvent, or modify the product.";
 
+    // Anti-manequim garantido: injetado diretamente para produtos wearable,
+    // independente do que o LLM (Ollama ou multiagent) gerou.
+    const wearableMode = classifyUsageMode({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
+    const antiMannequinGuard = wearableMode === "wearable_use"
+      ? "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom, no packaging. Show the product in real-life use, worn naturally on a real person. Full-body shot showing the complete product from head to feet."
+      : "";
+
     // Injeta qualidade profissional (sombra + iluminação + K4 cinematic)
-    const positiveEnhanced = `${fidelityClause} ${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();
+    const positiveEnhanced = `${fidelityClause} ${antiMannequinGuard} ${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();
     const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${promptResult.negative}`.trim();
 
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
