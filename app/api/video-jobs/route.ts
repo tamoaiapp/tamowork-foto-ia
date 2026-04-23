@@ -36,13 +36,15 @@ export async function POST(req: NextRequest) {
     input_image_url = "https://" + input_image_url;
   }
 
-  // Checa tamanho da fila global antes de criar
+  // Checa tamanho da fila global — só conta jobs recentes (últimos 90min) para não bloquear por jobs travados
+  const cutoff = new Date(Date.now() - 90 * 60 * 1000).toISOString();
   const { count: queueSize } = await supabase
     .from("video_jobs")
     .select("*", { count: "exact", head: true })
-    .in("status", ["queued", "submitted", "submitting", "processing"]);
+    .in("status", ["queued", "submitted", "submitting", "processing"])
+    .gte("created_at", cutoff);
 
-  if ((queueSize ?? 0) >= 10) {
+  if ((queueSize ?? 0) >= 15) {
     return NextResponse.json({ error: "queue_busy" }, { status: 503 });
   }
 
