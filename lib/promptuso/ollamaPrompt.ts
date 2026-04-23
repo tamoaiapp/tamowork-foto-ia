@@ -164,6 +164,30 @@ For wearable: also include: mannequin, dummy, bust form, headless mannequin, clo
 For surface: also include: floating object, no contact, tilted object, midair, hand touching product
 For environment: also include: wrong scale, unrealistic placement, misplaced object, hand in scene
 
+## STEP 5F — CITY/LOCATION RULE ⚠️ MANDATORY
+
+When the user's Scene mentions a CITY NAME (Rome, Paris, London, Milan, New York, Tokyo, Barcelona, etc.), ALWAYS interpret it as the **MODERN, CONTEMPORARY** version of that city.
+
+✅ CORRECT interpretations:
+- "Rome" → modern cobblestone piazzas, elegant Italian streets, outdoor café terraces, warm golden afternoon light, contemporary Roman architecture, fashionable people walking
+- "Paris" → modern Haussmann buildings, chic café sidewalks, Seine riverside, contemporary Parisian streets
+- "New York" → modern city skyline, busy contemporary Manhattan streets, trendy neighborhoods
+
+❌ FORBIDDEN unless user explicitly says "ancient", "ruins", "historical", "antiquity", "medieval", "period":
+- Ancient ruins, Colosseum ruins interior, historical reconstructions, period-accurate ancient Rome, crumbling columns
+
+Rule: "Rome" = modern Italy today. "ancient Rome" = historical. Never confuse the two.
+
+## STEP 5G — DEFAULT MODEL APPEARANCE ⚠️ MANDATORY
+
+When the user does NOT specify the model's appearance, ethnicity, or physical description, ALWAYS use this DEFAULT:
+
+**DEFAULT MODEL**: "a young adult woman with Caucasian/Western European features, natural beauty, professional fashion model appearance, neutral makeup, well-groomed"
+
+❌ NEVER default to Asian, East Asian, Oriental, or Chinese facial features unless the user EXPLICITLY requests it (e.g., "modelo asiática", "Asian model", "modelo oriental").
+
+This default applies globally. If the user says "in Rome" with no model description, the model is Caucasian/Western European by default.
+
 ## CRITICAL RULES:
 * NEVER use sentences in the negative prompt — keywords only
 * NEVER use "if", "when", or conditional logic anywhere
