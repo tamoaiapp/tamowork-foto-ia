@@ -9,7 +9,7 @@
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const PROMPT_MODEL = process.env.OLLAMA_PROMPT_MODEL ?? "qwen2.5:7b";
-const TIMEOUT_MS = 40_000;
+const TIMEOUT_MS = 90_000;
 
 const SYSTEM_PROMPT = `You are a professional photographer and prompt engineer. You create vivid, detailed image generation prompts in English for Qwen Image/Video models (Flux Kontext).
 
@@ -307,7 +307,7 @@ Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${acce
       body: JSON.stringify({
         model: PROMPT_MODEL,
         stream: false,
-        options: { temperature: 0.3, num_predict: 350 },
+        options: { temperature: 0.3, num_predict: 600 },
         messages: [
           { role: "system", content: systemPromptWithContext },
           { role: "user", content: userMessage },
