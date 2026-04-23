@@ -164,6 +164,19 @@ For wearable: also include: mannequin, dummy, bust form, headless mannequin, clo
 For surface: also include: floating object, no contact, tilted object, midair, hand touching product
 For environment: also include: wrong scale, unrealistic placement, misplaced object, hand in scene
 
+## STEP 5E2 — PHOTOREALISM RULE ⚠️ MANDATORY — NO MONTAGE LOOK
+
+The final photo must look like the person was PHOTOGRAPHED IN THE ACTUAL LOCATION — NOT like a studio cutout placed on a background.
+
+To achieve this, your positive_prompt MUST include ALL of the following:
+1. **Lighting match**: "The lighting on the person matches the scene exactly — [describe the real light direction/quality of that location, e.g., 'warm afternoon sunlight from the left, casting soft shadows on the right']"
+2. **Ground contact**: "The person stands on the actual ground of the scene, feet clearly touching the surface, with a soft natural shadow beneath them"
+3. **Depth integration**: "The background has natural depth and bokeh behind the person — real location photography, not a composite"
+4. **Atmosphere**: Include environmental details that anchor the person IN the scene: reflected light from the surroundings, ambient color cast from the environment, wind in hair or clothing if outdoors
+5. **Camera realism**: "Shot on a 50mm lens, f/2.8 aperture, natural film grain, editorial fashion photography"
+
+❌ NEVER produce: clean studio cutout pasted on background, flat background with no depth, mismatched lighting between person and scene, person floating above ground, artificial/CGI composite look, green screen effect, stock photo background
+
 ## STEP 5F — CITY/LOCATION RULE ⚠️ MANDATORY
 
 When the user's Scene mentions a CITY NAME (Rome, Paris, London, Milan, New York, Tokyo, Barcelona, etc.), ALWAYS interpret it as the **MODERN, CONTEMPORARY** version of that city.

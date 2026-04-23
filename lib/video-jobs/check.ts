@@ -82,11 +82,15 @@ export async function checkVideoJob(jobId: string) {
     await finalizeVideoJob(jobId, result.outputUrl);
   } else if (result.status === "failed") {
     if (newAttempts <= 2) {
-      // Primeiras 2 falhas: recoloca na fila para re-submeter
       await supabase.from("video_jobs").update({ status: "queued", external_job_id: null }).eq("id", jobId);
     } else {
       await supabase.from("video_jobs").update({ status: "failed", error_message: "Falha no ComfyUI" }).eq("id", jobId);
     }
+  } else if (result.status === "pending" && !result.outputUrl) {
+    // Histórico vazio = pod foi reiniciado e perdeu o job — recoloca na fila
+    if (newAttempts >= 5) {
+      await supabase.from("video_jobs").update({ status: "queued", external_job_id: null, attempts: 0 }).eq("id", jobId);
+    }
   }
-  // Se pendente, o cron verifica novamente no próximo ciclo
+  // Se pendente com histórico real, o cron verifica novamente no próximo ciclo
 }
