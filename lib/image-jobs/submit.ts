@@ -180,12 +180,13 @@ export async function submitImageJob(jobId: string) {
     // independente do que o LLM (Ollama ou multiagent) gerou.
     const wearableMode = classifyUsageMode({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
     const antiMannequinGuard = wearableMode === "wearable_use"
-      ? "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom, no packaging. Show the product in real-life use, worn naturally on a real person. Full-body shot showing the complete product from head to feet."
+      ? "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom, no packaging. Show the product in real-life use, worn naturally on a real person. Full-body shot showing the complete product from head to feet. The person MUST wear simple neutral shoes (sneakers or flats) — never barefoot when wearing clothing."
       : "";
 
     // Injeta qualidade profissional (sombra + iluminação + K4 cinematic)
     const positiveEnhanced = `${fidelityClause} ${antiMannequinGuard} ${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();
-    const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${promptResult.negative}`.trim();
+    const bareFootGuard = wearableMode === "wearable_use" ? "barefoot, bare feet, no shoes, feet without shoes, socks without shoes," : "";
+    const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${bareFootGuard} ${promptResult.negative}`.trim();
 
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
   }
