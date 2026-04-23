@@ -221,9 +221,166 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: 520,
     margin: "0 auto",
   },
+  urgencyBanner: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    background: "rgba(239,68,68,0.1)",
+    border: "1px solid rgba(239,68,68,0.3)",
+    borderRadius: 12,
+    padding: "10px 16px",
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#f87171",
+    textAlign: "center" as const,
+    marginBottom: 8,
+  },
+  urgencyPulse: {
+    display: "inline-block",
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    background: "#f87171",
+    flexShrink: 0,
+    boxShadow: "0 0 0 0 rgba(248,113,113,0.4)",
+    animation: "pulseDot 1.5s ease-in-out infinite",
+  },
+  socialBar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 0,
+    background: "#111820",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: 16,
+    padding: "16px 12px",
+    marginBottom: 4,
+  },
+  socialStat: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    gap: 3,
+  },
+  socialNum: {
+    fontSize: 20,
+    fontWeight: 800,
+    color: "#eef2f9",
+    letterSpacing: "-0.02em",
+  },
+  socialLabel: {
+    fontSize: 11,
+    color: "#8394b0",
+    textAlign: "center" as const,
+  },
+  socialDivider: {
+    width: 1,
+    height: 32,
+    background: "rgba(255,255,255,0.07)",
+    flexShrink: 0,
+  },
+  testimonialGrid: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 12,
+  },
+  testimonialCard: {
+    background: "#111820",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: 18,
+    padding: "18px 16px",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 10,
+  },
+  testimonialStars: {
+    fontSize: 13,
+    letterSpacing: 1,
+  },
+  testimonialText: {
+    margin: 0,
+    fontSize: 14,
+    color: "#c8d4e8",
+    lineHeight: 1.65,
+    fontStyle: "italic" as const,
+  },
+  testimonialAuthor: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  testimonialName: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#eef2f9",
+  },
+  testimonialHandle: {
+    fontSize: 12,
+    color: "#8394b0",
+  },
+  comparisonCard: {
+    background: "#111820",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: 18,
+    padding: "20px 16px",
+  },
+  comparisonTitle: {
+    fontSize: 13,
+    fontWeight: 800,
+    color: "#8394b0",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.06em",
+    marginBottom: 14,
+    textAlign: "center" as const,
+  },
+  comparisonGrid: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 0,
+  },
+  comparisonHeader: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
+    marginBottom: 10,
+    paddingBottom: 10,
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+  },
+  comparisonHeaderFree: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#4e5c72",
+    textAlign: "center" as const,
+  },
+  comparisonHeaderPro: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#a855f7",
+    textAlign: "center" as const,
+  },
+  comparisonRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 8,
+    padding: "8px 0",
+    borderBottom: "1px solid rgba(255,255,255,0.04)",
+  },
+  comparisonFree: {
+    fontSize: 13,
+    color: "#4e5c72",
+    textAlign: "center" as const,
+  },
+  comparisonPro: {
+    fontSize: 13,
+    color: "#16c784",
+    fontWeight: 600,
+    textAlign: "center" as const,
+  },
   hero: {
     textAlign: "center",
-    marginBottom: 40,
+    marginBottom: 24,
   },
   heroHeadline: {
     fontSize: "clamp(24px, 4vw, 36px)",
@@ -408,12 +565,10 @@ export default function PlanosPage() {
       setUser(u);
       setLoading(false);
 
-      // Não logado → redireciona para home (fluxo completo: cadastro → testa → assina)
-      // Exceção: ?checkout=1 vem do OAuth redirect — aguarda sessão restaurar
       if (!u) {
         const params = new URLSearchParams(window.location.search);
         if (params.get("checkout") === "1") return; // OAuth ainda carregando
-        router.replace("/");
+        // Não redireciona — exibe a página de vendas e abre modal no clique
       }
     });
   }, []);
@@ -474,7 +629,13 @@ export default function PlanosPage() {
 
   return (
     <>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulseDot {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.5); }
+          50% { box-shadow: 0 0 0 6px rgba(248,113,113,0); }
+        }
+      `}</style>
 
       {showModal && (
         <AuthModal
@@ -488,6 +649,14 @@ export default function PlanosPage() {
       <div style={styles.page} className="app-layout">
         <div style={styles.inner}>
 
+          {/* Urgency banner */}
+          {isBR && (
+            <div style={styles.urgencyBanner}>
+              <span style={styles.urgencyPulse} />
+              🔥 Oferta de lançamento &mdash; preço especial por tempo limitado
+            </div>
+          )}
+
           {/* Hero */}
           <div style={styles.hero}>
             <h1 style={styles.heroHeadline}>
@@ -495,14 +664,14 @@ export default function PlanosPage() {
                 ? "Professional product photos with AI"
                 : lang === "es"
                 ? "Fotos profesionales de productos con IA"
-                : "Fotos profissionais dos seus produtos com IA"}
+                : "Fotos e vídeos profissionais dos seus produtos com IA"}
             </h1>
             <p style={styles.heroSub}>
               {lang === "en"
                 ? "Take a photo with your phone, AI transforms it into a professional store photo. No photographer, no studio."
                 : lang === "es"
                 ? "Toma una foto con el celular, la IA la transforma en foto profesional de tienda. Sin fotógrafo, sin estudio."
-                : "Tire foto com o celular, a IA transforma em foto de loja profissional. Sem fotógrafo, sem estúdio."}
+                : "Tire foto com o celular — a IA transforma em foto de loja profissional e vídeo pra Reels. Sem fotógrafo, sem estúdio."}
             </p>
             <div style={styles.heroTrust}>
               <span>{lang === "en" ? "Cancel anytime" : lang === "es" ? "Cancela cuando quieras" : "Cancele quando quiser"}</span>
@@ -510,6 +679,81 @@ export default function PlanosPage() {
               <span>{lang === "en" ? "No commitment" : lang === "es" ? "Sin fidelidad" : "Sem fidelidade"}</span>
             </div>
           </div>
+
+          {/* Social proof bar */}
+          <div style={styles.socialBar}>
+            <div style={styles.socialStat}>
+              <span style={styles.socialNum}>25.000+</span>
+              <span style={styles.socialLabel}>{lang === "en" ? "entrepreneurs" : lang === "es" ? "emprendedores" : "empreendedores"}</span>
+            </div>
+            <div style={styles.socialDivider} />
+            <div style={styles.socialStat}>
+              <span style={styles.socialNum}>+20%</span>
+              <span style={styles.socialLabel}>{lang === "en" ? "more sales" : lang === "es" ? "más ventas" : "em vendas"}</span>
+            </div>
+            <div style={styles.socialDivider} />
+            <div style={styles.socialStat}>
+              <span style={styles.socialNum}>⭐ 4.9</span>
+              <span style={styles.socialLabel}>{lang === "en" ? "rating" : lang === "es" ? "valoración" : "avaliação"}</span>
+            </div>
+          </div>
+
+          {/* Testimonials */}
+          {isBR && (
+            <div style={styles.testimonialGrid}>
+              {[
+                {
+                  text: "Meu Instagram explodiu. As fotos ficam melhores que de fotógrafo profissional, e o vídeo animado é o que mais bombou nos Reels.",
+                  name: "Maria G.",
+                  handle: "@emporiomariag",
+                },
+                {
+                  text: "Economizei mais de R$400/mês em fotógrafo. Em 30 segundos tenho foto de catálogo profissional. Meus clientes pensam que contratei estúdio.",
+                  name: "Carlos R.",
+                  handle: "@docescarlos_rj",
+                },
+                {
+                  text: "Passei de 500 para 3.000 seguidores em 2 meses só mudando as fotos do produto. O vídeo narrado com IA é o diferencial.",
+                  name: "Ana P.",
+                  handle: "@modamimosa_sp",
+                },
+              ].map((t) => (
+                <div key={t.handle} style={styles.testimonialCard}>
+                  <div style={styles.testimonialStars}>⭐⭐⭐⭐⭐</div>
+                  <p style={styles.testimonialText}>&ldquo;{t.text}&rdquo;</p>
+                  <div style={styles.testimonialAuthor}>
+                    <span style={styles.testimonialName}>{t.name}</span>
+                    <span style={styles.testimonialHandle}>{t.handle}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Free vs PRO comparison */}
+          {isBR && (
+            <div style={styles.comparisonCard}>
+              <div style={styles.comparisonTitle}>Gratuito vs PRO</div>
+              <div style={styles.comparisonGrid}>
+                <div style={styles.comparisonHeader}>
+                  <span style={styles.comparisonHeaderFree}>Gratuito</span>
+                  <span style={styles.comparisonHeaderPro}>✨ PRO</span>
+                </div>
+                {[
+                  ["3 fotos por dia", "Fotos ilimitadas"],
+                  ["1 vídeo por dia", "Vídeos ilimitados"],
+                  ["Sem editor de foto", "Editor completo"],
+                  ["Com marca d'água", "Sem marca d'água"],
+                  ["Fila de espera", "Geração instantânea"],
+                ].map(([free, pro]) => (
+                  <div key={free} style={styles.comparisonRow}>
+                    <span style={styles.comparisonFree}>✗ {free}</span>
+                    <span style={styles.comparisonPro}>✓ {pro}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Plan Card */}
           <div style={styles.card}>

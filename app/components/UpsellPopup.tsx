@@ -53,11 +53,11 @@ const VARIANTS = [
   {
     id: "v5_social_proof",
     emoji: "⭐",
-    headline: "Usado por +500 lojistas",
-    subheadline: "Quem vende no Instagram e WhatsApp usa o TamoWork para ter fotos de catálogo sem fotógrafo.",
+    headline: "Mais de 25.000 lojistas já usam",
+    subheadline: "Quem vende no Instagram e WhatsApp usa o TamoWork para ter fotos e vídeos profissionais sem fotógrafo.",
     cta_br: "Fazer parte — R$79/mês",
     cta_en: "Join now — $100/year",
-    badge: "👥 +500 usuários",
+    badge: "👥 +25.000 usuários",
     accent: "#ec4899",
   },
   {
