@@ -594,7 +594,7 @@ export default function PlanosPage() {
   async function startStripeCheckout(tok: string) {
     setLoadingStripe(true);
     try {
-      trackEvent("InitiateCheckout", { value: isBR ? 79 : 100, currency: isBR ? "BRL" : "USD" }, tok);
+      trackEvent("InitiateCheckout", { value: isBR ? 29 : 100, currency: isBR ? "BRL" : "USD" }, tok);
       const res = await fetch("/api/checkout/stripe", {
         method: "POST",
         headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" },
@@ -653,7 +653,7 @@ export default function PlanosPage() {
           {isBR && (
             <div style={styles.urgencyBanner}>
               <span style={styles.urgencyPulse} />
-              🔥 Oferta de lançamento &mdash; preço especial por tempo limitado
+              ⏰ Oferta especial &mdash; R$29/mês válido até domingo (27/04)
             </div>
           )}
 
@@ -761,9 +761,13 @@ export default function PlanosPage() {
 
             {isBR ? (
               <>
-                <div style={styles.price}>R$79<span style={styles.pricePeriod}> /mês</span></div>
-                <div style={styles.priceSub}>Menos de R$2,63 por dia • Cancele quando quiser</div>
-              </>
+                <div style={{ textAlign: "center", marginBottom: 4 }}>
+                  <span style={{ fontSize: 20, color: "#4e5c72", textDecoration: "line-through", marginRight: 8 }}>R$79</span>
+                  <span style={{ fontSize: 12, background: "rgba(239,68,68,0.15)", color: "#f87171", borderRadius: 8, padding: "2px 8px", fontWeight: 700 }}>-63%</span>
+                </div>
+                <div style={styles.price}>R$29<span style={styles.pricePeriod}> /mês</span></div>
+                <div style={styles.priceSub}>Menos de R$0,97/dia • Cancele quando quiser • Válido até domingo</div>
+</>
             ) : (
               <>
                 <div style={styles.price}>$100<span style={styles.pricePeriod}> /year</span></div>
@@ -792,7 +796,7 @@ export default function PlanosPage() {
               {loadingStripe
                 ? (lang === "en" ? "Redirecting..." : lang === "es" ? "Redirigiendo..." : "Redirecionando...")
                 : isBR
-                ? "🔥 Assinar agora — R$79/mês"
+                ? "🔥 Assinar agora — R$29/mês"
                 : lang === "es"
                 ? "🔥 Suscribirse — $100/año"
                 : "🔥 Subscribe now — $100/year"}
@@ -842,7 +846,7 @@ export default function PlanosPage() {
               </div>
               <div style={styles.valueDesc}>
                 {isBR
-                  ? "R$2,63 por dia para transformar as fotos do seu negócio."
+                  ? "R$0,97 por dia para transformar as fotos do seu negócio."
                   : lang === "es"
                   ? "$0.28 por día para transformar tu negocio."
                   : "$0.28 per day to transform your business visuals."}

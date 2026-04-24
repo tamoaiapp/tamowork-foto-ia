@@ -48,22 +48,25 @@ export default function ConversionScreen({ photoUrl, onAssinar, onContinuar, onM
 
         <div style={s.priceRow}>
           <div>
-            <div style={s.priceLabel}>{isBR ? "Plano mensal" : "Annual plan"}</div>
+            <div style={s.priceLabel}>{isBR ? "Oferta até domingo (27/04)" : "Annual plan"}</div>
+            {isBR && (
+              <div style={{ fontSize: 11, color: "#4e5c72", textDecoration: "line-through", marginBottom: 2 }}>R$79/mês</div>
+            )}
             <div style={s.price}>
-              <span style={s.priceNum}>{isBR ? "R$79" : "$100"}</span>
+              <span style={s.priceNum}>{isBR ? "R$29" : "$100"}</span>
               <span style={s.pricePer}>{isBR ? "/mês" : "/year"}</span>
             </div>
             <div style={s.priceSub}>
               {isBR
-                ? "Menos de R$2,63/dia · Cancele sem motivo"
+                ? "Menos de R$0,97/dia · Cancele sem motivo"
                 : "Less than $0.28/day · Cancel anytime"}
             </div>
           </div>
-          <div style={s.saveBadge}>{isBR ? "0 reais de taxa" : "No commitment"}</div>
+          <div style={s.saveBadge}>{isBR ? "-63% OFF" : "No commitment"}</div>
         </div>
 
         <button onClick={onAssinar} style={s.ctaBtn}>
-          {isBR ? "🚀 Liberar fotos ilimitadas — R$79/mês" : "🚀 Get unlimited photos — $100/year"}
+          {isBR ? "🚀 Liberar fotos ilimitadas — R$29/mês" : "🚀 Get unlimited photos — $100/year"}
         </button>
 
         <button onClick={onContinuar} style={s.skipBtn}>

@@ -15,17 +15,17 @@ const VARIANTS = [
     emoji: "⚡",
     headline: "Fotos profissionais ilimitadas",
     subheadline: "Venda mais com imagens que vendem. Fotos e vídeos animados sem limite.",
-    cta_br: "Assinar por R$79/mês",
+    cta_br: "Assinar por R$29/mês — até domingo",
     cta_en: "Subscribe — $100/year",
-    badge: "🔥 Mais popular",
+    badge: "🔥 Promoção até 27/04",
     accent: "#a855f7",
   },
   {
     id: "v2_economia",
     emoji: "💰",
-    headline: "Menos de R$2,63 por dia",
+    headline: "Menos de R$0,97 por dia",
     subheadline: "Fotos de catálogo profissionais por menos do que um cafezinho. Cancele quando quiser.",
-    cta_br: "Assinar por R$79/mês",
+    cta_br: "Assinar por R$29/mês — até domingo",
     cta_en: "Subscribe — $100/year",
     badge: "💸 Melhor custo-benefício",
     accent: "#16c784",
@@ -35,7 +35,7 @@ const VARIANTS = [
     emoji: "📸",
     headline: "Sua foto de produto em 60 segundos",
     subheadline: "Fotos ilimitadas, fundo branco, cenários profissionais e vídeos animados.",
-    cta_br: "Começar agora — R$79/mês",
+    cta_br: "Começar agora — R$29/mês",
     cta_en: "Get started — $100/year",
     badge: "✨ Resultado garantido",
     accent: "#6366f1",
@@ -45,7 +45,7 @@ const VARIANTS = [
     emoji: "🚀",
     headline: "Desbloqueie tudo agora",
     subheadline: "Você está limitado a 1 foto e 1 vídeo/dia. Com o Pro, são criações ilimitadas todo dia.",
-    cta_br: "Desbloquear Pro — R$79/mês",
+    cta_br: "Desbloquear Pro — R$29/mês",
     cta_en: "Unlock Pro — $100/year",
     badge: "🔓 Sem limites",
     accent: "#f59e0b",
@@ -55,7 +55,7 @@ const VARIANTS = [
     emoji: "⭐",
     headline: "Mais de 25.000 lojistas já usam",
     subheadline: "Quem vende no Instagram e WhatsApp usa o TamoWork para ter fotos e vídeos profissionais sem fotógrafo.",
-    cta_br: "Fazer parte — R$79/mês",
+    cta_br: "Fazer parte — R$29/mês",
     cta_en: "Join now — $100/year",
     badge: "👥 +25.000 usuários",
     accent: "#ec4899",
@@ -65,7 +65,7 @@ const VARIANTS = [
     emoji: "😤",
     headline: "Chega de foto feia de produto",
     subheadline: "Fundo bagunçado, luz ruim, produto torto. Com o Pro, qualquer foto vira profissional.",
-    cta_br: "Transformar minhas fotos — R$79/mês",
+    cta_br: "Transformar minhas fotos — R$29/mês",
     cta_en: "Transform my photos — $100/year",
     badge: "✅ Resultados reais",
     accent: "#ef4444",
@@ -73,9 +73,9 @@ const VARIANTS = [
   {
     id: "v7_simples",
     emoji: "🎯",
-    headline: "R$79 por mês. Fotos ilimitadas.",
+    headline: "R$29 por mês. Fotos ilimitadas.",
     subheadline: "Sem taxa de fotógrafo. Sem estúdio. Sem edição manual. Só você e a IA.",
-    cta_br: "Assinar agora",
+    cta_br: "Assinar agora — R$29/mês",
     cta_en: "Subscribe — $100/year",
     badge: "🎯 Simples assim",
     accent: "#0ea5e9",
@@ -83,9 +83,9 @@ const VARIANTS = [
   {
     id: "v8_comparacao",
     emoji: "📊",
-    headline: "Fotógrafo: R$300/sessão. TamoWork: R$79/mês",
+    headline: "Fotógrafo: R$300/sessão. TamoWork: R$29/mês",
     subheadline: "Fotos ilimitadas, entregues em segundos. Sem agendamento, sem deslocamento.",
-    cta_br: "Quero economizar agora",
+    cta_br: "Quero economizar — R$29/mês",
     cta_en: "Start saving now",
     badge: "💡 Compare e decida",
     accent: "#14b8a6",
@@ -95,7 +95,7 @@ const VARIANTS = [
     emoji: "👑",
     headline: "Acesso Pro completo",
     subheadline: "Fotos ilimitadas + vídeo animado + fundo branco + catálogo com modelo. Tudo incluso.",
-    cta_br: "Quero acesso completo — R$79/mês",
+    cta_br: "Quero acesso completo — R$29/mês",
     cta_en: "Get full access — $100/year",
     badge: "👑 Tudo incluído",
     accent: "#8b5cf6",
@@ -105,7 +105,7 @@ const VARIANTS = [
     emoji: "🎉",
     headline: "Sua primeira foto ficou incrível!",
     subheadline: "Imagina ter isso sem limite. Assine e gere fotos profissionais todo dia.",
-    cta_br: "Continuar sem limites — R$79/mês",
+    cta_br: "Continuar sem limites — R$29/mês",
     cta_en: "Go unlimited — $100/year",
     badge: "🎉 Aproveite o momento",
     accent: "#f97316",
@@ -254,11 +254,16 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
         }}>
           <div>
             <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 4 }}>
-              {isBR ? "Plano mensal" : (lang === "en" ? "Annual plan" : "Plan anual")}
+              {isBR ? "Plano mensal — oferta até domingo" : (lang === "en" ? "Annual plan" : "Plan anual")}
             </div>
+            {isBR && (
+              <div style={{ fontSize: 12, color: "#4e5c72", textDecoration: "line-through", marginBottom: 2 }}>
+                R$79/mês
+              </div>
+            )}
             <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
               <span style={{ fontSize: 32, fontWeight: 800, color: "#eef2f9" }}>
-                {isBR ? "R$79" : "$100"}
+                {isBR ? "R$29" : "$100"}
               </span>
               <span style={{ fontSize: 14, color: "#8394b0" }}>
                 {isBR ? "/mês" : "/year"}

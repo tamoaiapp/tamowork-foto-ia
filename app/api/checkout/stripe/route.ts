@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
   const isMonthly = body.plan === "monthly";
   const source = typeof body.source === "string" ? body.source : "app";
 
-  // BR → mensal R$79 (BRL) | Não-BR → anual $100 (USD)
+  // BR → mensal R$29 promoção até 27/04 (antes era price_1TMnqQDn6tNmbP0NqnSZeVmE = R$79) | Não-BR → anual $100 (USD)
   const priceId = isMonthly
-    ? (process.env.STRIPE_PRICE_ID_MONTHLY ?? "price_1TMnqQDn6tNmbP0NqnSZeVmE")
+    ? (process.env.STRIPE_PRICE_ID_MONTHLY ?? "price_1TPqkPDn6tNmbP0NdlGBX5kx")
     : (process.env.STRIPE_PRICE_ID_USD ?? "price_1TMndeDn6tNmbP0NJ45SlEOp");
 
   try {
