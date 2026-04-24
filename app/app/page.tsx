@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 
-const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.tamowork.app";
 
 function detectPlatform(): "android" | "ios" | "desktop" {
   if (typeof navigator === "undefined") return "desktop";
@@ -38,16 +37,14 @@ export default function AppRedirectPage() {
         // já instalado como PWA — vai direto pro app
         setTimeout(() => { router.replace("/"); }, 800);
       }
-    } else if (p === "android") {
-      // Abre Play Store imediatamente
-      window.location.href = PLAY_STORE_URL;
+      // iOS não standalone: mostra instruções (fluxo normal abaixo)
     } else {
-      setTimeout(() => { router.replace("/login"); }, 1000);
+      // Android e Desktop: vai direto para cadastro/login
+      setTimeout(() => { router.replace("/login"); }, 800);
     }
   }, [router]);
 
   const showIOSInstructions = platform === "ios" && !standalone;
-  const isAndroid = platform === "android";
 
   return (
     <>
@@ -218,53 +215,8 @@ export default function AppRedirectPage() {
           </div>
         )}
 
-        {/* ── Android: botão Play Store ── */}
-        {isAndroid && (
-          <div className="fade3" style={{ textAlign: "center", marginTop: 24, width: "100%", maxWidth: 320 }}>
-            <div style={{ fontSize: 15, color: "#8394b0", marginBottom: 20 }}>
-              {lang === "en"
-                ? "Opening Google Play Store..."
-                : "Abrindo o Google Play Store..."}
-            </div>
-
-            <a
-              href={PLAY_STORE_URL}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
-                background: "#1a1a2e", border: "1.5px solid rgba(255,255,255,0.12)",
-                borderRadius: 16, padding: "16px 24px", textDecoration: "none",
-                marginBottom: 12,
-              }}
-            >
-              {/* Ícone Play Store */}
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                <path d="M3 20.5v-17c0-.83 1-.83 1.5-.5l16 8.5-16 8.5C3.5 21.33 3 21.33 3 20.5z" fill="url(#ps)" />
-                <defs>
-                  <linearGradient id="ps" x1="3" y1="12" x2="20" y2="12" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#00d2ff" />
-                    <stop offset="0.5" stopColor="#00e676" />
-                    <stop offset="1" stopColor="#ffee58" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: 11, color: "#8394b0", letterSpacing: "0.04em" }}>
-                  {lang === "en" ? "GET IT ON" : "DISPONÍVEL NO"}
-                </div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "#eef2f9", letterSpacing: "-0.01em", lineHeight: 1.1 }}>
-                  Google Play
-                </div>
-              </div>
-            </a>
-
-            <a href="/login" style={{ fontSize: 13, color: "#4e5c72", textDecoration: "underline" }}>
-              {lang === "en" ? "Continue in browser instead" : "Continuar pelo navegador mesmo"}
-            </a>
-          </div>
-        )}
-
-        {/* ── Desktop / loading ── */}
-        {platform === "desktop" && (
+        {/* ── Android / Desktop: carregando ── */}
+        {(platform === "android" || platform === "desktop") && (
           <div className="fade3" style={{ textAlign: "center", marginTop: 20, color: "#4e5c72", fontSize: 14 }}>
             {lang === "en" ? "Redirecting..." : "Redirecionando..."}
           </div>
