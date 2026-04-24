@@ -27,7 +27,7 @@ export async function submitVideoJob(jobId: string) {
   if (USE_SERVERLESS) {
     const imgName = `product_${jobId.replace(/-/g, "").slice(0, 12)}.jpg`;
     const scaleFactor = await calcVideoScaleFactor(job.input_image_url ?? "");
-    const workflow = buildVideoWorkflow(jobId, imgName, job.prompt ?? "", 6, 16, job.prompt_neg ?? undefined, scaleFactor);
+    const workflow = buildVideoWorkflow(jobId, imgName, job.prompt ?? "", 6, 16, job.prompt_neg ?? undefined, scaleFactor, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
     const runpodJobId = await submitRunpodJob(RUNPOD_VIDEO_ENDPOINT, workflow, job.input_image_url, imgName);
     externalJobId = `runpod:${runpodJobId}`;
     provider = "runpod-serverless";

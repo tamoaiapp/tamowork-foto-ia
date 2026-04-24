@@ -81,7 +81,62 @@ export async function uploadImageToVideoComfy(imageUrl: string, comfyBase: strin
   return data.name;
 }
 
-// Monta o workflow de vídeo (sem submeter) — usado pelo RunPod Serverless
+/**
+ * Gera prompt de câmera para vídeo baseado no tipo de produto.
+ * Wan2.2 responde bem a instruções de movimento em inglês.
+ * Se o usuário forneceu prompt suficiente (≥15 chars), usa o dele.
+ */
+export function buildVideoPrompt(userPrompt: string): string {
+  const p = (userPrompt ?? "").trim();
+  if (p.length >= 15) return p;
+
+  const t = p.toLowerCase();
+  const has = (words: string[]) => words.some(w => t.includes(w));
+
+  // Joias de close-up
+  if (has(["brinco", "earring", "argola", "piercing"]))
+    return "Cinematic slow zoom in on the earring, shallow depth of field, jewelry catching soft light, elegant close-up reveal.";
+  if (has(["colar", "necklace", "corrente", "gargantilha", "choker"]))
+    return "Smooth close-up pan along the necklace, catching natural light on the metal, elegant jewelry reveal.";
+  if (has(["anel", "ring", "alianca"]))
+    return "Slow rotating close-up of the ring on finger, gemstone catching light, luxury jewelry photography motion.";
+  if (has(["pulseira", "bracelet", "relogio", "watch", "smartwatch"]))
+    return "Slow wrist rotation showcasing the piece, light catching the details, elegant jewelry commercial motion.";
+
+  // Óculos
+  if (has(["oculos", "glasses", "sunglasses", "eyewear"]))
+    return "Smooth slow camera push in toward the face, eyewear catching light, fashion editorial motion.";
+
+  // Calçado
+  if (has(["tenis", "sapato", "sandalia", "bota", "chuteira", "shoe", "sneaker", "boot", "sandal"]))
+    return "Low angle cinematic reveal panning up from the shoes, footwear is the hero, commercial product motion.";
+
+  // Bolsa / mochila
+  if (has(["bolsa", "mochila", "bag", "backpack", "pochete", "crossbody"]))
+    return "Slow 180-degree orbit around the bag, showcasing all sides, soft studio lighting in motion.";
+
+  // Chapéu / boné
+  if (has(["chapeu", "bone", "hat", "cap", "beanie", "gorro"]))
+    return "Smooth slow push in toward the hat, model slow head tilt, accessory highlight in motion.";
+
+  // Roupas — full body reveal
+  if (has(["vestido", "dress", "camisa", "shirt", "calca", "pants", "jaqueta", "jacket",
+           "blusa", "top", "conjunto", "set", "roupa", "clothing", "moletom", "hoodie"]))
+    return "Smooth vertical pan from shoes to face revealing the complete outfit, fashion editorial reveal.";
+
+  // Beleza / cosméticos
+  if (has(["perfume", "fragrance", "creme", "cream", "batom", "lipstick", "maquiagem", "makeup", "serum"]))
+    return "Elegant slow orbit around the beauty product, soft diffused studio lighting in motion, luxury feel.";
+
+  // Alimentos
+  if (has(["bolo", "torta", "doce", "brigadeiro", "pizza", "hamburguer", "food", "snack"]))
+    return "Cinematic top-down slow rotation, food styling motion, appetizing warm lighting reveal.";
+
+  // Padrão genérico melhorado
+  return "Smooth cinematic slow zoom in on the product, highlighting every detail. Professional commercial video quality, natural lighting.";
+}
+
+// Monta o workflow de vídeo (sem submeter) — usado pelo RunPod Serverless e pelo ComfyUI direto
 export function buildVideoWorkflow(
   jobId: string,
   imageName: string,
@@ -96,20 +151,19 @@ export function buildVideoWorkflow(
   const seed = Math.floor(Math.random() * 999_999_999);
   const frames = Math.max(1, Math.floor(durationSec * fps));
   (workflow["52"] as { inputs: { image: string } }).inputs.image = imageName;
-  (workflow["6"] as { inputs: { text: string } }).inputs.text = promptPos || "a smooth slow camera move";
+  (workflow["6"] as { inputs: { text: string } }).inputs.text = buildVideoPrompt(promptPos);
   if (promptNeg) (workflow["7"] as { inputs: { text: string } }).inputs.text = promptNeg;
   (workflow["50"] as { inputs: { length: number } }).inputs.length = frames;
   (workflow["63"] as { inputs: { frame_rate: number; filename_prefix: string } }).inputs.frame_rate = fps;
   (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["57"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed;
   (workflow["58"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed + 1;
-  // Fallback: mantém scale_by para compatibilidade com serverless; direto usa applyFormat
   (workflow["100"] as { inputs: { scale_by: number } }).inputs.scale_by = scaleFactor;
   applyFormatToVideoWorkflow(workflow, format);
   return workflow;
 }
 
-// Submete o workflow Wan I2V ao ComfyUI
+// Submete o workflow Wan I2V ao ComfyUI — usa buildVideoWorkflow internamente
 export async function submitVideoWorkflow(
   jobId: string,
   imageName: string,
@@ -118,22 +172,10 @@ export async function submitVideoWorkflow(
   durationSec = 6,
   fps = 16,
   promptNeg?: string,
-  imageUrl?: string,
+  _imageUrl?: string,
   format: PhotoFormat = DEFAULT_FORMAT,
 ): Promise<string> {
-  const workflow = JSON.parse(JSON.stringify(videoTemplate)) as Record<string, unknown>;
-  const seed = Math.floor(Math.random() * 999_999_999);
-  const frames = Math.max(1, Math.floor(durationSec * fps));
-
-  (workflow["52"] as { inputs: { image: string } }).inputs.image = imageName;
-  (workflow["6"] as { inputs: { text: string } }).inputs.text = promptPos || "a smooth slow camera move";
-  if (promptNeg) (workflow["7"] as { inputs: { text: string } }).inputs.text = promptNeg;
-  (workflow["50"] as { inputs: { length: number } }).inputs.length = frames;
-  (workflow["63"] as { inputs: { frame_rate: number; filename_prefix: string } }).inputs.frame_rate = fps;
-  (workflow["63"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
-  (workflow["57"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed;
-  (workflow["58"] as { inputs: { noise_seed: number } }).inputs.noise_seed = seed + 1;
-  applyFormatToVideoWorkflow(workflow, format);
+  const workflow = buildVideoWorkflow(jobId, imageName, promptPos, durationSec, fps, promptNeg, 0.5, format);
 
   const res = await fetch(`${comfyBase}/prompt`, {
     method: "POST",
