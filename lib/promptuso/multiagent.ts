@@ -51,6 +51,8 @@ export type UsageMode =
 export type UsageAgent =
   | "fashion_wearable_agent"
   | "fashion_kids_wearable_agent"
+  | "eyewear_agent"
+  | "hat_agent"
   | "jewelry_ear_agent"
   | "jewelry_neck_agent"
   | "jewelry_hand_agent"
@@ -243,6 +245,8 @@ export function resolveUsageAgent(mode: UsageMode, parsed: ProductContext): Usag
 
   if (mode === "wearable_use") {
     if (parsed.target_user === "child") return "fashion_kids_wearable_agent";
+    if (containsAny(text, ["oculos", "glasses", "sunglasses", "eyewear", "spectacles", "lentes", "oculos de sol"])) return "eyewear_agent";
+    if (containsAny(text, ["bone", "chapeu", "hat", "cap", "beanie", "gorro", "tiara", "headband", "viseira", "touca"])) return "hat_agent";
     if (containsAny(text, ["brinco", "argola", "earring", "piercing"])) return "jewelry_ear_agent";
     if (containsAny(text, ["colar", "corrente", "gargantilha", "choker", "necklace"])) return "jewelry_neck_agent";
     if (containsAny(text, ["pulseira", "anel", "alianca", "relogio", "relogio", "smartwatch", "bracelet", "ring", "watch"])) return "jewelry_hand_agent";
@@ -374,6 +378,8 @@ export function resolvePhysicalAnchor(mode: UsageMode, agent: UsageAgent, parsed
   const text = parsed.normalized_text;
 
   if (mode === "wearable_use") {
+    if (agent === "eyewear_agent") return "worn naturally on the face, resting on the nose and ears, correct position and scale";
+    if (agent === "hat_agent") return "worn naturally on top of the head, correct fit and scale";
     if (agent === "jewelry_ear_agent") return "firmly attached to the earlobe, correct position and scale";
     if (agent === "jewelry_neck_agent") return "worn naturally around the neck, correct drape and scale";
     if (agent === "jewelry_hand_agent") {
@@ -418,12 +424,14 @@ export function resolvePhysicalAnchor(mode: UsageMode, agent: UsageAgent, parsed
 // ── Shot Type ────────────────────────────────────────────────────────────────
 
 export function inferShotType(agent: UsageAgent, mode: UsageMode): string {
+  if (agent === "eyewear_agent") return "close-up portrait, face fills the frame, glasses clearly visible on face, shoulders-up at most";
+  if (agent === "hat_agent") return "half-body or close-up shot, hat prominently on head, face and hat fill the frame";
   if (agent === "jewelry_ear_agent") return "tight close-up portrait, ear clearly visible";
   if (agent === "jewelry_neck_agent") return "close-up or mid close-up portrait";
   if (agent === "jewelry_hand_agent") return "close-up of hand or wrist, clean background";
   if (agent === "fashion_kids_wearable_agent") return "full-body professional campaign shot";
   if (agent === "fashion_wearable_agent") return "full-body or mid-body commercial lifestyle shot";
-  if (agent === "footwear_agent") return "commercial footwear shot, knee-to-ground or full lifestyle pose";
+  if (agent === "footwear_agent") return "commercial footwear shot, knee-to-ground framing, shoes are the hero";
   if (agent === "bag_agent") return "commercial lifestyle fashion shot, product prominently visible";
   if (mode === "placed_environment") return "realistic room or environment view with product as focal point";
   if (mode === "surface_display_use") return "clean contextual close-up commercial shot";
@@ -457,6 +465,10 @@ function antiDisplayNegatives(): string[] {
 
 function agentNegativeTerms(agent: UsageAgent): string[] {
   switch (agent) {
+    case "eyewear_agent":
+      return ["full body", "full length", "standing pose", "legs visible", "tiny glasses", "glasses not visible", "glasses off face", "glasses in hand", "floating glasses"];
+    case "hat_agent":
+      return ["full body", "tiny hat", "hat not on head", "floating hat", "hat in hand"];
     case "jewelry_ear_agent":
       return ["hand", "fingers", "holding", "touching", "earring not on ear", "floating earring", "wrong ear placement"];
     case "jewelry_neck_agent":
