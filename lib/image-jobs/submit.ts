@@ -4,7 +4,7 @@ import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
 import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/serverProductVision";
 import { detectDisplayCategory, buildDisplayPrompt } from "@/lib/promptuso/displayPrompt";
-import { classifyUsageMode } from "@/lib/promptuso/multiagent";
+import { classifyUsageMode, resolveUsageAgent, parseProductContext } from "@/lib/promptuso/multiagent";
 
 // ── Qualificadores de qualidade profissional ───────────────────────────────────
 // Injetados no positive prompt depois do buildPromptResult para elevar o padrão
@@ -179,13 +179,19 @@ export async function submitImageJob(jobId: string) {
     // Anti-manequim garantido: injetado diretamente para produtos wearable,
     // independente do que o LLM (Ollama ou multiagent) gerou.
     const wearableMode = classifyUsageMode({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
+    const parsedCtx = parseProductContext({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
+    const usageAgent = wearableMode === "wearable_use" ? resolveUsageAgent(wearableMode, parsedCtx) : null;
+    // Joias de close-up (brinco, colar, anel, relógio) NÃO recebem "Full-body shot"
+    const isCloseUpJewelry = usageAgent === "jewelry_ear_agent" || usageAgent === "jewelry_neck_agent" || usageAgent === "jewelry_hand_agent";
     const antiMannequinGuard = wearableMode === "wearable_use"
-      ? "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom, no packaging. Show the product in real-life use, worn naturally on a real person. Full-body shot showing the complete product from head to feet. The person MUST wear simple neutral shoes (sneakers or flats) — never barefoot when wearing clothing."
+      ? isCloseUpJewelry
+        ? "The product MUST be worn by a real human person — never on a mannequin, bust form, or display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom, no packaging. Show the product in real-life use, worn naturally on a real person."
+        : "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom, no packaging. Show the product in real-life use, worn naturally on a real person. Full-body shot showing the complete product from head to feet. The person MUST wear simple neutral shoes (sneakers or flats) — never barefoot when wearing clothing."
       : "";
 
     // Injeta qualidade profissional (sombra + iluminação + K4 cinematic)
     const positiveEnhanced = `${fidelityClause} ${antiMannequinGuard} ${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();
-    const bareFootGuard = wearableMode === "wearable_use" ? "barefoot, bare feet, no shoes, feet without shoes, socks without shoes," : "";
+    const bareFootGuard = (wearableMode === "wearable_use" && !isCloseUpJewelry) ? "barefoot, bare feet, no shoes, feet without shoes, socks without shoes," : "";
     const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${bareFootGuard} ${promptResult.negative}`.trim();
 
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
