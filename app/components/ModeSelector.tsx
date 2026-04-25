@@ -220,36 +220,15 @@ export default function ModeSelector({ onChange }: Props) {
         media={<VideoMedia />}
       />
 
-      {/* Vídeo longo */}
+      {/* Vídeo narrado */}
       <CreationCard
-        icon="🎥"
-        label="Vídeo longo que"
-        highlightWord="impressiona"
-        desc="+30s com 4 cenas diferentes geradas por IA — ideal para feed e apresentações"
-        onClick={() => onChange("video_longo")}
-        media={
-          <div style={{
-            width: "100%", height: "100%",
-            background: "linear-gradient(135deg, #0d1a2e 0%, #120825 50%, #07080b 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexDirection: "column", gap: 8,
-          }}>
-            <div style={{ fontSize: 36, lineHeight: 1 }}>🎥</div>
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "center", padding: "0 8px" }}>
-              {["Cena 1", "Cena 2", "Cena 3", "Cena 4"].map((c, i) => (
-                <div key={i} style={{
-                  fontSize: 9, fontWeight: 700, color: "#a855f7",
-                  border: "1px solid rgba(168,85,247,0.4)", borderRadius: 4,
-                  padding: "2px 5px",
-                }}>{c}</div>
-              ))}
-            </div>
-          </div>
-        }
+        icon="🎙️"
+        label="Vídeo narrado que"
+        highlightWord="vende"
+        desc="Foto profissional do produto + sua narração em áudio — pronto para Reels e TikTok"
+        onClick={() => onChange("video_narrado")}
+        media={<AudioWaveMedia />}
       />
-
-      {/* Live Shop — em desenvolvimento, temporariamente oculto */}
-      {/* <CreationCard icon="🛍️" label="Mini live que" highlightWord="vende" desc="Vídeo 10–12s estilo live shop com sua voz e imagem" badge="Mais usado" onClick={() => onChange("video_narrado")} media={<AudioWaveMedia />} /> */}
     </div>
   );
 }

@@ -2597,7 +2597,7 @@ export default function HomePage() {
                   personalizado: "Personalizado",
                   video: "Criar vídeo",
                   promo: "Criar promoção",
-                  video_narrado: "🛍️ Mini Live Shop",
+                  video_narrado: "🎙️ Vídeo narrado",
                   video_longo: "🎬 Vídeo longo (~32s)",
                   produto_exposto: "🏪 Expositor premium",
                 }[creationMode]}
@@ -2750,7 +2750,7 @@ export default function HomePage() {
                           onClick={() => handleAssinarDireto("monthly", "resultado_narrado")}
                           style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "16px", width: "100%", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginTop: 4 }}
                         >
-                          🚀 Assinar Pro — vídeos ilimitados por R$79/mês
+                          🚀 Assinar Pro — vídeos ilimitados por R$29/mês
                         </button>
                       )}
                     </div>
