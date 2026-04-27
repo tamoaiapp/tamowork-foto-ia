@@ -3808,7 +3808,7 @@ export default function HomePage() {
       )}
 
       {promoOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 45, background: "#07080b", overflowY: "auto", paddingBottom: 68 }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 45, background: "#07080b", overflowY: "auto", paddingBottom: 0 }}>
           <PromoCreator
             onBack={() => setPromoOpen(false)}
             initialPhoto={editedImageUrl ?? job?.output_image_url}
@@ -3820,7 +3820,7 @@ export default function HomePage() {
       {editFreePopup && (
         <div
           onClick={() => setEditFreePopup(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 90px" }}
+          style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 24px" }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
