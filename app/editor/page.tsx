@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import nextDynamic from "next/dynamic";
-import BottomNav from "@/app/components/BottomNav";
 import AppHeader from "@/app/components/AppHeader";
 import { useI18n } from "@/lib/i18n";
 import { downloadDataUrl } from "@/lib/downloadBlob";
@@ -400,7 +399,6 @@ export default function EditorPage() {
             </button>
           ))}
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -413,7 +411,6 @@ export default function EditorPage() {
         <div style={{ flex: 1, overflowY: "auto", paddingBottom: 8 }}>
           <PromoCreator onBack={() => setAction(null)} initialPhoto={photo ?? undefined} />
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -472,7 +469,6 @@ export default function EditorPage() {
             )}
           </div>
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -722,13 +718,12 @@ export default function EditorPage() {
         onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = ev => handleAddImg(ev.target?.result as string); r.readAsDataURL(f); e.target.value = ""; } }} />
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
-      <BottomNav />
     </div>
   );
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", display: "flex", flexDirection: "column", background: "#07080b", paddingBottom: 68 },
+  page: { minHeight: "100vh", display: "flex", flexDirection: "column", background: "#07080b", paddingBottom: 0 },
   dlBtn: { background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", color: "#fff", borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer" },
   uploadWrap: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 },
   uploadBox: { background: "#111820", border: "2px dashed rgba(255,255,255,0.12)", borderRadius: 20, padding: "48px 32px", textAlign: "center", cursor: "pointer", width: "100%", maxWidth: 340 },

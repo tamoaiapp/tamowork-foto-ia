@@ -1411,7 +1411,7 @@ export default function HomePage() {
           setPhotoRating(null);
           setFeedbackText("");
           setRatingHover(0);
-          router.push("/tamo");
+          setJob({ id: jobId, status: "queued" });
           return;
         }
       }
@@ -1839,15 +1839,14 @@ export default function HomePage() {
       }
       const { jobId } = await jobRes.json();
 
-      // Persiste o ID do job no sessionStorage para restaurar na página /tamo
       try {
         sessionStorage.setItem("pending_job_id", jobId);
         sessionStorage.setItem("tamo_active_job", JSON.stringify({ id: jobId, input_image_url: imageUrl }));
       } catch { /* ignora */ }
 
       setIsBonusRetry(false);
-      setModeSelected(false);
-      router.push("/tamo");
+      setModeSelected(true);
+      setJob({ id: jobId, status: "queued" });
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : "Erro ao processar");
     } finally {
