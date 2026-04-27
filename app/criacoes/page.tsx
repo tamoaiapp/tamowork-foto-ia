@@ -139,6 +139,10 @@ export default function CriacoesPage() {
       {selected && (
         <div style={s.overlay} onClick={() => setSelected(null)}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+            {/* X fechar */}
+            <button onClick={() => setSelected(null)} style={s.closeBtn}>✕</button>
+
+            {/* Mídia */}
             {selected.type === "video" && selected.output_video_url ? (
               <video
                 src={selected.output_video_url}
@@ -152,46 +156,43 @@ export default function CriacoesPage() {
             ) : (
               <img src={selected.output_image_url!} alt="foto" style={s.modalImg} />
             )}
-            <div style={{ display: "flex", gap: 8, padding: "14px 16px 0" }}>
-              {selected.type !== "video" && (
-              <button onClick={() => {
-                sessionStorage.setItem("editor_image", selected.output_image_url!);
-                router.push("/editor");
-              }} style={s.editBtn}>{t("criacoes_edit")}</button>
-              )}
-              {selected.type !== "video" && (
-              <button onClick={async () => {
-                // Verificar se há foto ou vídeo ativo antes de permitir criar novo vídeo
-                const [imgRes, vidRes] = await Promise.all([
-                  fetch("/api/image-jobs", { headers: { Authorization: `Bearer ${token}` } }),
-                  fetch("/api/video-jobs", { headers: { Authorization: `Bearer ${token}` } }),
-                ]);
-                if (imgRes.ok) {
-                  const data = await imgRes.json();
-                  const allJobs: AccountJob[] = Array.isArray(data) ? data : (data.jobs ?? []);
-                  const hasActivePhoto = allJobs.some((j: AccountJob) => j.status !== "done" && j.status !== "failed" && j.status !== "canceled");
-                  if (hasActivePhoto) {
-                    setVideoBlocked("photo");
-                    setTimeout(() => setVideoBlocked(null), 3500);
-                    return;
-                  }
-                }
-                if (vidRes.ok) {
-                  const vdata = await vidRes.json();
-                  const allVideos: AccountJob[] = Array.isArray(vdata) ? vdata : [];
-                  const hasActiveVideo = allVideos.some((j: AccountJob) => j.status !== "done" && j.status !== "failed" && j.status !== "canceled");
-                  if (hasActiveVideo) {
-                    setVideoBlocked("video");
-                    setTimeout(() => setVideoBlocked(null), 3500);
-                    return;
-                  }
-                }
-                sessionStorage.setItem("video_from_job", selected.id);
-                router.push("/");
-              }} style={s.videoBtn}>{t("criacoes_video")}</button>
-              )}
-            </div>
+
+            {/* Ações */}
             <div style={s.modalActions}>
+              {selected.type !== "video" && (
+                <button onClick={() => {
+                  sessionStorage.setItem("editor_image", selected.output_image_url!);
+                  router.push("/editor");
+                }} style={s.actionBtn}>
+                  <span style={s.actionIcon}>✏️</span>
+                  <span>Editar promoção</span>
+                </button>
+              )}
+              {selected.type !== "video" && (
+                <button onClick={async () => {
+                  const [imgRes, vidRes] = await Promise.all([
+                    fetch("/api/image-jobs", { headers: { Authorization: `Bearer ${token}` } }),
+                    fetch("/api/video-jobs", { headers: { Authorization: `Bearer ${token}` } }),
+                  ]);
+                  if (imgRes.ok) {
+                    const data = await imgRes.json();
+                    const allJobs: AccountJob[] = Array.isArray(data) ? data : (data.jobs ?? []);
+                    const hasActivePhoto = allJobs.some((j: AccountJob) => j.status !== "done" && j.status !== "failed" && j.status !== "canceled");
+                    if (hasActivePhoto) { setVideoBlocked("photo"); setTimeout(() => setVideoBlocked(null), 3500); return; }
+                  }
+                  if (vidRes.ok) {
+                    const vdata = await vidRes.json();
+                    const allVideos: AccountJob[] = Array.isArray(vdata) ? vdata : [];
+                    const hasActiveVideo = allVideos.some((j: AccountJob) => j.status !== "done" && j.status !== "failed" && j.status !== "canceled");
+                    if (hasActiveVideo) { setVideoBlocked("video"); setTimeout(() => setVideoBlocked(null), 3500); return; }
+                  }
+                  sessionStorage.setItem("video_from_job", selected.id);
+                  router.push("/");
+                }} style={s.actionBtn}>
+                  <span style={s.actionIcon}>🎬</span>
+                  <span>Criar vídeo</span>
+                </button>
+              )}
               <button onClick={async () => {
                 const url = selected.type === "video" ? selected.output_video_url! : selected.output_image_url!;
                 const ext = selected.type === "video" ? "mp4" : "jpg";
@@ -203,12 +204,11 @@ export default function CriacoesPage() {
                   a.download = `criacao-ia.${ext}`;
                   a.click();
                 } catch { window.open(url, "_blank"); }
-              }} style={s.dlBtn}>{t("criacoes_download")}</button>
-              <button onClick={() => handleDelete(selected.id)} disabled={deletingId === selected.id} style={s.delBtn}>
-                {deletingId === selected.id ? "..." : t("criacoes_delete")}
+              }} style={s.downloadBtn}>
+                <span style={s.actionIcon}>⬇</span>
+                <span>Baixar</span>
               </button>
             </div>
-            <button onClick={() => setSelected(null)} style={s.closeBtn}>✕</button>
           </div>
         </div>
       )}
@@ -265,43 +265,40 @@ const s: Record<string, React.CSSProperties> = {
   },
   // Modal
   overlay: {
-    position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    zIndex: 100, padding: 20,
+    zIndex: 100, padding: "16px",
   },
   modal: {
     background: "#111820", borderRadius: 20, overflow: "hidden",
-    maxWidth: 440, width: "100%", position: "relative",
+    maxWidth: 420, width: "100%", position: "relative",
+    boxShadow: "0 24px 60px rgba(0,0,0,0.6)",
   },
-  modalImg: { width: "100%", display: "block", maxHeight: "70vh", objectFit: "contain" },
+  modalImg: { width: "100%", display: "block", maxHeight: "65vh", objectFit: "contain", background: "#0c1018" },
   modalActions: {
-    display: "flex", gap: 10, padding: "16px 16px 20px",
+    display: "flex", flexDirection: "column", gap: 10, padding: "16px 16px 20px",
   },
-  editBtn: {
-    flex: 1, background: "#1a2235", border: "1px solid rgba(168,85,247,0.3)",
-    borderRadius: 12, padding: "11px 0",
-    color: "#a855f7", fontSize: 14, fontWeight: 700, cursor: "pointer",
+  actionBtn: {
+    width: "100%", background: "#1a2235", border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 14, padding: "14px 20px",
+    color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer",
+    display: "flex", alignItems: "center", gap: 10,
+    fontFamily: "Outfit, sans-serif",
   },
-  videoBtn: {
-    flex: 1, background: "#1a2235", border: "1px solid rgba(99,102,241,0.3)",
-    borderRadius: 12, padding: "11px 0",
-    color: "#818cf8", fontSize: 14, fontWeight: 700, cursor: "pointer",
-  },
-  dlBtn: {
-    flex: 1, background: "linear-gradient(135deg, #6366f1, #a855f7)",
-    border: "none", borderRadius: 12, padding: "16px 0",
+  downloadBtn: {
+    width: "100%", background: "linear-gradient(135deg, #6366f1, #a855f7)",
+    border: "none", borderRadius: 14, padding: "14px 20px",
     color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer",
-    boxShadow: "0 4px 16px rgba(139,92,246,0.4)",
+    display: "flex", alignItems: "center", gap: 10,
+    fontFamily: "Outfit, sans-serif",
+    boxShadow: "0 4px 16px rgba(139,92,246,0.35)",
   },
-  delBtn: {
-    flex: 1, background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.25)",
-    borderRadius: 12, padding: "13px 0",
-    color: "#f87171", fontSize: 14, fontWeight: 600, cursor: "pointer",
-  },
+  actionIcon: { fontSize: 18, flexShrink: 0 },
   closeBtn: {
     position: "absolute", top: 12, right: 12,
-    background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%",
-    width: 32, height: 32, color: "#fff", fontSize: 14, cursor: "pointer",
+    background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%",
+    width: 34, height: 34, color: "#fff", fontSize: 15, cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center",
+    zIndex: 10, fontWeight: 700,
   },
 };
