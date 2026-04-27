@@ -14,7 +14,6 @@ import { useNarratedVideo } from "@/app/hooks/useNarratedVideo";
 import { useLongVideo } from "@/app/hooks/useLongVideo";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import BottomNav from "@/app/components/BottomNav";
 import ModeSelector, { type CreationMode } from "@/app/components/ModeSelector";
 import PushConversionAgent from "@/app/components/PushConversionAgent";
 import nextDynamic from "next/dynamic";
@@ -1924,7 +1923,7 @@ export default function HomePage() {
     setPreview(null);
     setModelFile(null);
     setModelPreview(null);
-    setModeSelected(false); // volta para o menu
+    setModeSelected(true);
     setEditExpanded(false);
     setEditedImageUrl(null); // limpa imagem editada para não vazar na próxima criação
     // Reseta rating
@@ -2280,14 +2279,6 @@ export default function HomePage() {
           ))}
         </div>
       </main>
-      <div style={skl.bottomNav}>
-        {[0,1,2].map(i => (
-          <div key={i} style={skl.navItem}>
-            <div style={skl.navIcon} />
-            <div style={skl.navLabel} />
-          </div>
-        ))}
-      </div>
     </div>
   );
 
@@ -2315,6 +2306,18 @@ export default function HomePage() {
           0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.55); transform: scale(1); }
           60% { box-shadow: 0 0 0 14px rgba(168,85,247,0); transform: scale(1.03); }
           100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); transform: scale(1); }
+        }
+        @keyframes tamoBob {
+          0%, 100% { transform: translateX(-50%) translateY(0px); }
+          50% { transform: translateX(-50%) translateY(-16px); }
+        }
+        @keyframes tamoShadowPulse {
+          0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.22; }
+          50% { transform: translateX(-50%) scaleX(0.6); opacity: 0.08; }
+        }
+        @keyframes tamoBlink {
+          0%, 85%, 100% { opacity: 0; }
+          91% { opacity: 1; }
         }
         /* Desktop: header simplificado */
         @media (min-width: 900px) {
@@ -2617,11 +2620,6 @@ export default function HomePage() {
         {/* PASSO 2: Formulário — esconde quando resultado de foto está visível (exceto modos de vídeo ativos) */}
         {modeSelected && !videoMode && !longVideoMode && workState !== "trabalhando" && (workState !== "terminado" || narratedMode) && (
           <div style={styles.card}>
-            {/* Botão voltar */}
-            <button onClick={() => setModeSelected(false)} style={styles.backToMenuBtn}>
-              {t("back")}
-            </button>
-
             <div style={styles.modeHeader}>
               <div style={styles.modeName}>
                 {{
@@ -3322,33 +3320,73 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Foto gerando — progresso em tempo real */}
+        {/* Foto gerando — mascote animado */}
         {workState === "trabalhando" && !videoMode && (
-          <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
-            <div style={{ fontSize: 40, marginBottom: 12, lineHeight: 1 }}>📸</div>
-            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 700, marginBottom: 4 }}>Sua foto está sendo criada</div>
-            <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 14, lineHeight: 1.5 }}>
+          <div style={{
+            width: "100%", maxWidth: 520, margin: "0 auto",
+            display: "flex", flexDirection: "column" as const, alignItems: "center",
+            padding: "52px 24px 40px",
+            textAlign: "center" as const,
+            animation: "fadeIn 0.4s ease",
+          }}>
+            {/* Mascote com animação */}
+            <div style={{ position: "relative", width: 160, height: 190, marginBottom: 32 }}>
+              {/* Mascote bobbing */}
+              <div style={{
+                position: "absolute",
+                left: "50%",
+                top: 0,
+                animation: "tamoBob 2.2s ease-in-out infinite",
+              }}>
+                <img src="/tamo/idle.png" alt="Tamo" style={{ width: 148, height: 148, objectFit: "contain" }} />
+                {/* Eye blink overlay — ajustado para posição dos olhos do mascote */}
+                <div style={{
+                  position: "absolute",
+                  left: "50%", top: "40%",
+                  transform: "translateX(-50%)",
+                  width: 48, height: 10,
+                  background: "#0c1018",
+                  borderRadius: 5,
+                  animation: "tamoBlink 4s ease-in-out infinite",
+                  opacity: 0,
+                  pointerEvents: "none",
+                }} />
+              </div>
+              {/* Sombra pulsando */}
+              <div style={{
+                position: "absolute",
+                bottom: 0, left: "50%",
+                width: 90, height: 14,
+                background: "rgba(168,85,247,0.3)",
+                borderRadius: "50%",
+                filter: "blur(8px)",
+                animation: "tamoShadowPulse 2.2s ease-in-out infinite",
+              }} />
+            </div>
+
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#eef2f9", marginBottom: 10, letterSpacing: "-0.02em" }}>
+              Criando sua foto...
+            </div>
+            <div style={{ fontSize: 14, color: "#8394b0", marginBottom: 36, lineHeight: 1.6, minHeight: 44 }}>
               {statusLabel(job?.status ?? null, elapsedSec, job?.created_at, lang)}
             </div>
-            {/* Barra de progresso real (ComfyUI polling) */}
-            <div style={{ width: "100%", height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden", marginBottom: 20 }}>
+
+            {/* Barra de progresso */}
+            <div style={{ width: "100%", height: 8, background: "rgba(255,255,255,0.06)", borderRadius: 8, overflow: "hidden", marginBottom: 10 }}>
               <div style={{
                 height: "100%",
                 width: `${displayProgress}%`,
-                borderRadius: 3,
+                borderRadius: 8,
                 background: displayProgress > 80
                   ? "linear-gradient(90deg, #6366f1, #22c55e)"
                   : "linear-gradient(90deg, #6366f1, #a855f7)",
-                transition: "width 0.4s ease",
+                transition: "width 0.6s ease",
+                boxShadow: "0 0 10px rgba(168,85,247,0.5)",
               }} />
             </div>
-            <button
-              type="button"
-              onClick={() => router.push("/tamo")}
-              style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", border: "none", borderRadius: 12, padding: "13px 32px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", width: "100%" }}
-            >
-              Ver andamento no Tamo →
-            </button>
+            <div style={{ fontSize: 12, color: "#4e5c72", fontWeight: 700, letterSpacing: "0.04em" }}>
+              {Math.round(displayProgress)}%
+            </div>
           </div>
         )}
 
@@ -3382,6 +3420,28 @@ export default function HomePage() {
 
             {/* Ações — coluna direita no desktop / abaixo no mobile */}
             <div className="result-actions-col">
+              {/* 3 ações principais */}
+              <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginBottom: 20 }}>
+                <button
+                  onClick={() => { setNarratedMode(true); setCreationMode("video_narrado"); }}
+                  style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 14, padding: "14px 0", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}
+                >
+                  🎬 Criar vídeo
+                </button>
+                <button
+                  onClick={() => setPromoOpen(true)}
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "14px 0", color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%" }}
+                >
+                  ✏️ Editar / Criar promoção
+                </button>
+                <button
+                  onClick={resetJob}
+                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 0", color: "#8394b0", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%" }}
+                >
+                  ✨ Criar nova foto
+                </button>
+              </div>
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: 16 }} />
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
                 <TamoMascot state="done" size={64} />
                 <div>
@@ -3528,6 +3588,28 @@ export default function HomePage() {
 
             {/* Mobile: mesmo layout, só muda padding */}
             <div className="result-mobile-actions" style={{ display: "block", padding: "16px 16px 28px" }}>
+              {/* 3 ações principais — mobile */}
+              <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginBottom: 20 }}>
+                <button
+                  onClick={() => { setNarratedMode(true); setCreationMode("video_narrado"); }}
+                  style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 14, padding: "15px 0", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}
+                >
+                  🎬 Criar vídeo
+                </button>
+                <button
+                  onClick={() => setPromoOpen(true)}
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "14px 0", color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%" }}
+                >
+                  ✏️ Editar / Criar promoção
+                </button>
+                <button
+                  onClick={resetJob}
+                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 0", color: "#8394b0", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%" }}
+                >
+                  ✨ Criar nova foto
+                </button>
+              </div>
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: 16 }} />
               {/* Contador de uso free — mobile */}
               {plan === "free" && (
                 <div style={{ marginBottom: 10 }}>
@@ -3812,12 +3894,6 @@ export default function HomePage() {
           </div>
         )}
       </main>
-      <BottomNav
-        hasActiveJob={isGenerating}
-        hasDoneJob={hasDoneJob}
-        botActive={botActive}
-        onCriarWhileBusy={() => router.push("/tamo")}
-      />
 
       {/* Mini editor */}
       {editorOpen && job?.output_image_url && (
@@ -4034,7 +4110,7 @@ function statusLabel(status: JobStatus, elapsedSec: number, createdAt?: string, 
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", display: "flex", flexDirection: "column", paddingBottom: 68 },
+  page: { minHeight: "100vh", display: "flex", flexDirection: "column", paddingBottom: 0 },
   centered: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#8394b0" },
   header: {
     display: "flex", alignItems: "center", justifyContent: "space-between",
