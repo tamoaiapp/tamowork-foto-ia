@@ -204,6 +204,9 @@ export function classifyUsageMode({
     "luva", "meias", "colete", "blazer", "blusa", "regata",
     "cropped", "saia", "legging", "pochete", "crossbody", "bone", "chapeu",
     "tiara", "headband", "munhequeira", "alianca", "bermuda",
+    "pijama", "pijamas", "camisola", "bata", "roupao", "robe", "body", "collant",
+    "macacao", "maiô", "maio", "biquini", "sutiã", "sutia", "calcinha", "cueca",
+    "agasalho", "corta-vento", "impermeavel", "fantasia", "traje", "farda",
     // EN (traduções automáticas via MyMemory caem aqui)
     "shirt", "t-shirt", "tshirt", "dress", "pants", "trousers", "jacket",
     "coat", "sweater", "sweatshirt", "hoodie", "tracksuit", "blouse", "skirt",
@@ -214,6 +217,9 @@ export function classifyUsageMode({
     "watch", "smartwatch", "glasses", "sunglasses", "hat", "cap", "beanie",
     "necklace", "bracelet", "ring", "earring", "earrings", "jewelry",
     "set", "suit", "uniform", "polo", "cardigan", "vest", "romper", "jumpsuit",
+    "pajama", "pajamas", "pyjama", "pyjamas", "robe", "bathrobe", "nightgown",
+    "bodysuit", "leotard", "bikini", "swimwear", "swimsuit", "bra", "lingerie",
+    "tracksuit", "overalls", "costume",
   ])) return "wearable_use";
 
   if (containsAny(text, [
