@@ -738,7 +738,8 @@ export default function HomePage() {
 
   // Creation mode
   const [creationMode, setCreationMode] = useState<CreationMode>("simulacao");
-  const [modeSelected, setModeSelected] = useState(false); // true = mostra form, false = mostra menu
+  const [modeSelected, setModeSelected] = useState(true); // true = mostra form, false = mostra menu
+  const [recentPhotos, setRecentPhotos] = useState<{ id: string; url: string }[]>([]);
 
   // Photo editor
   const [editorOpen, setEditorOpen] = useState(false);
@@ -1094,6 +1095,12 @@ export default function HomePage() {
         // Fonte de verdade: jobs no banco (inclui failed/done). O flag localStorage pode
         // pertencer a outro usuário no mesmo browser — não confiar como única fonte.
         console.log("[tamo] jobs:", jobs.length, "| hasActivePhotoJob:", hasActivePhotoJob);
+        setRecentPhotos(
+          jobs
+            .filter((j) => j.status === "done" && j.output_image_url)
+            .slice(0, 16)
+            .map((j) => ({ id: j.id, url: j.output_image_url! }))
+        );
 
         // Gatilho return_visit: já criou fotos antes mas não tem push ativo
         // Não mostrar enquanto há job ativo para não interromper o fluxo
@@ -2429,6 +2436,33 @@ export default function HomePage() {
       </header>
 
       <main style={styles.main} className="app-main">
+
+        {/* Strip de criações recentes */}
+        {recentPhotos.length > 0 && !videoMode && !longVideoMode && workState !== "trabalhando" && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#4e5c72", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+              Suas criações
+            </div>
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
+              {recentPhotos.map((p) => (
+                <img
+                  key={p.id}
+                  src={p.url}
+                  alt=""
+                  onClick={() => window.open(p.url, "_blank")}
+                  style={{
+                    width: 56, height: 56, borderRadius: 10, objectFit: "cover",
+                    flexShrink: 0, cursor: "pointer",
+                    border: "2px solid rgba(255,255,255,0.07)",
+                    transition: "border-color 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(168,85,247,0.6)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Banner de app — Android (Play Store) / iOS (tela inicial) */}
         {appBannerPlatform && !appBannerDismissed && (
