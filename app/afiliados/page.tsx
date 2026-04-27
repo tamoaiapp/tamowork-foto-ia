@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import BottomNav from "@/app/components/BottomNav";
+
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase/client";
 
@@ -429,7 +429,7 @@ export default function AfiliadosPage() {
         ) : null}
       </main>
 
-      <BottomNav />
+      
     </div>
   );
 }
@@ -466,7 +466,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", background: "#07080b", paddingBottom: 68 },
+  page: { minHeight: "100vh", background: "#07080b", paddingBottom: 0 },
   centered: {
     minHeight: "100vh",
     display: "flex",

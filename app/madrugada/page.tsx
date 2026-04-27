@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import BottomNav from "@/app/components/BottomNav";
+
 
 // Modo → label amigável
 const MODE_LABELS: Record<string, string> = {
@@ -190,7 +190,7 @@ export default function MadrugadaPage() {
       <button onClick={() => router.push("/planos")} style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", color: "#fff", border: "none", borderRadius: 14, padding: "14px 28px", fontWeight: 700, fontSize: 16, cursor: "pointer", marginTop: 8 }}>
         Ver planos PRO
       </button>
-      <BottomNav />
+      
     </div>
   );
 
@@ -336,7 +336,7 @@ export default function MadrugadaPage() {
         </div>
       )}
 
-      <BottomNav />
+      
     </div>
   );
 }

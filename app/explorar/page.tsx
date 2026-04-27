@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase/client";
-import BottomNav from "@/app/components/BottomNav";
+
 
 interface ExploreItem {
   id: string;
@@ -88,7 +88,7 @@ export default function FeedPage() {
   if (loading) return (
     <div style={sk.page}>
       {[0,1,2].map(i => <div key={i} style={sk.card} />)}
-      <BottomNav />
+      
       <style>{`@keyframes skP{0%,100%{opacity:.6}50%{opacity:.2}}`}</style>
     </div>
   );
@@ -159,7 +159,7 @@ export default function FeedPage() {
         </div>
       )}
 
-      <BottomNav />
+      
     </div>
   );
 }

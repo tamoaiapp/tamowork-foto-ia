@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import BottomNav from "@/app/components/BottomNav";
+
 import AppHeader from "@/app/components/AppHeader";
 import { useI18n } from "@/lib/i18n";
 
@@ -222,13 +222,13 @@ export default function CriacoesPage() {
         </div>
       )}
 
-      <BottomNav />
+      
     </div>
   );
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", background: "#07080b", paddingBottom: 68 },
+  page: { minHeight: "100vh", background: "#07080b", paddingBottom: 0 },
   centered: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#8394b0" },
   main: { padding: "8px 12px" },
   empty: {

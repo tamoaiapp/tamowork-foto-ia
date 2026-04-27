@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import dynamic_next from "next/dynamic";
-import BottomNav from "@/app/components/BottomNav";
+
 import AppHeader from "@/app/components/AppHeader";
 import TamoMascot from "@/app/components/TamoMascot";
 import PushConversionAgent from "@/app/components/PushConversionAgent";
@@ -694,7 +694,7 @@ export default function TamoPage() {
 
       </div>
 
-      <BottomNav hasActiveJob={!!(isActive || isVideoActive)} hasDoneJob={!!(isDone || isVideoDone)} />
+      
 
       <PushConversionAgent
         trigger={pushTrigger}

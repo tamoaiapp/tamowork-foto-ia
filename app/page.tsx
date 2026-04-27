@@ -3422,7 +3422,7 @@ export default function HomePage() {
               {/* 3 ações principais */}
               <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginBottom: 20 }}>
                 <button
-                  onClick={() => { setNarratedMode(true); setCreationMode("video_narrado"); }}
+                  onClick={() => setVideoMode(true)}
                   style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 14, padding: "14px 0", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}
                 >
                   🎬 Criar vídeo
@@ -3486,103 +3486,6 @@ export default function HomePage() {
               <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
                 {t("result_download")}
               </button>
-
-              {/* Botão único de edição → expande opções */}
-              {!editExpanded ? (
-                <button onClick={() => {
-                  setEditExpanded(true);
-                  if (plan === "free") {
-                    try {
-                      if (!localStorage.getItem("edit_free_seen")) {
-                        localStorage.setItem("edit_free_seen", "1");
-                        setEditFreePopup(true);
-                      }
-                    } catch { /* ignora */ }
-                  }
-                }} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
-                  ✏️ {lang === "en" ? "Edit photo" : "Editar foto"}
-                </button>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-                  <button onClick={() => {
-                    const url = editedImageUrl ?? job.output_image_url;
-                    if (url) { sessionStorage.setItem("editor_image", url); setEditExpanded(false); router.push("/editor"); }
-                  }} style={styles.editActionBtn}>
-                    ✏️ {lang === "en" ? "Customize" : "Personalizar foto"}
-                  </button>
-                  <button onClick={() => { setEditExpanded(false); setPromoOpen(true); }} style={styles.editActionBtn}>
-                    🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
-                  </button>
-                  <button onClick={() => { setEditExpanded(false); handleRemoveResultBg(); }} disabled={removingResultBg} style={styles.editActionBtn}>
-                    {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
-                  </button>
-                  <button onClick={() => setEditExpanded(false)} style={{ ...styles.editActionBtn, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#4e5c72" }}>
-                    ✕ {lang === "en" ? "Cancel" : "Cancelar"}
-                  </button>
-                </div>
-              )}
-
-              {/* Gerar novamente */}
-              <div style={{ marginBottom: 8 }}>
-                {plan === "free" && freePhotosUsed >= 3 ? (
-                  <button onClick={() => handleAssinarDireto("annual", "resultado_foto_limite")} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0, background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
-                    🔓 Assinar PRO para criar mais fotos
-                  </button>
-                ) : plan === "free" && rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
-                    🔒 Nova foto em {formatMs(countdown)}
-                  </button>
-                ) : plan === "free" && photosToday === 1 ? (
-                  <button onClick={resetJob} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0 }}>
-                    {CONVERSION.cta1Label}
-                  </button>
-                ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
-                )}
-              </div>
-
-              {/* Criar vídeo — 100% largura */}
-              {plan === "pro" ? (() => {
-                const videoInProgress =
-                  (videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
-                  (narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status));
-                return videoInProgress ? (
-                  <button
-                    disabled
-                    style={{ ...styles.videoBtn, width: "100%", marginBottom: 8, opacity: 0.45, cursor: "not-allowed" }}
-                    title="Ainda tem um vídeo sendo criado"
-                  >
-                    🎬 Ainda tem vídeo sendo criado...
-                  </button>
-                ) : (
-                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>
-                    {t("result_create_video")}
-                  </button>
-                );
-              })() : (
-                <button onClick={() => handleAssinarDireto("annual", "resultado_foto_video_btn")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc" }}>
-                  🎬 Vídeo animado — exclusivo PRO ✨
-                </button>
-              )}
-
-              {/* Upsell PRO — só para free */}
-              {plan === "free" && (
-                <>
-                  {rateLimitedUntil && countdown > 0 ? (
-                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual", "resultado_foto_ratelimit")} />
-                  ) : (
-                    <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 14, padding: "14px", marginTop: 6 }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: "#eef2f9", marginBottom: 4 }}>Quer mais do que isso? 🚀</div>
-                      <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.6, marginBottom: 10 }}>
-                        Com o PRO: fundo personalizado, vídeo animado para Reels, downloads ilimitados e sem fila de espera.
-                      </div>
-                      <button onClick={() => handleAssinarDireto("annual", "resultado_foto_hook")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
-                        Assinar PRO — R$79/mês
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
             </div>
 
             {/* Mobile: mesmo layout, só muda padding */}
@@ -3590,7 +3493,7 @@ export default function HomePage() {
               {/* 3 ações principais — mobile */}
               <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginBottom: 20 }}>
                 <button
-                  onClick={() => { setNarratedMode(true); setCreationMode("video_narrado"); }}
+                  onClick={() => setVideoMode(true)}
                   style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 14, padding: "15px 0", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}
                 >
                   🎬 Criar vídeo
@@ -3646,100 +3549,6 @@ export default function HomePage() {
               <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
                 {t("result_download")}
               </button>
-
-              {/* Botão único de edição → expande opções */}
-              {!editExpanded ? (
-                <button onClick={() => {
-                  setEditExpanded(true);
-                  if (plan === "free") {
-                    try {
-                      if (!localStorage.getItem("edit_free_seen")) {
-                        localStorage.setItem("edit_free_seen", "1");
-                        setEditFreePopup(true);
-                      }
-                    } catch { /* ignora */ }
-                  }
-                }} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
-                  ✏️ {lang === "en" ? "Edit photo" : "Editar foto"}
-                </button>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-                  <button onClick={() => {
-                    const url = editedImageUrl ?? job.output_image_url;
-                    if (url) { sessionStorage.setItem("editor_image", url); setEditExpanded(false); router.push("/editor"); }
-                  }} style={styles.editActionBtn}>
-                    ✏️ {lang === "en" ? "Customize" : "Personalizar foto"}
-                  </button>
-                  <button onClick={() => { setEditExpanded(false); setPromoOpen(true); }} style={styles.editActionBtn}>
-                    🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
-                  </button>
-                  <button onClick={() => { setEditExpanded(false); handleRemoveResultBg(); }} disabled={removingResultBg} style={styles.editActionBtn}>
-                    {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
-                  </button>
-                  <button onClick={() => setEditExpanded(false)} style={{ ...styles.editActionBtn, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#4e5c72" }}>
-                    ✕ {lang === "en" ? "Cancel" : "Cancelar"}
-                  </button>
-                </div>
-              )}
-
-              {/* Gerar novamente */}
-              <div style={{ marginBottom: 8 }}>
-                {plan === "free" && freePhotosUsed >= 3 ? (
-                  <button onClick={() => handleAssinarDireto("annual", "resultado_foto_limite")} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0, background: "linear-gradient(135deg,#6366f1,#a855f7)" }}>
-                    🔓 Assinar PRO para criar mais fotos
-                  </button>
-                ) : plan === "free" && rateLimitedUntil && countdown > 0 ? (
-                  <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
-                    🔒 Nova foto em {formatMs(countdown)}
-                  </button>
-                ) : plan === "free" && photosToday === 1 ? (
-                  <button onClick={resetJob} style={{ ...styles.submitBtn, width: "100%", marginBottom: 0 }}>
-                    📷 Criar minha 2ª foto grátis
-                  </button>
-                ) : (
-                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
-                )}
-              </div>
-
-              {/* Criar vídeo — 100% largura */}
-              {plan === "pro" ? (() => {
-                const videoInProgress =
-                  (videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
-                  (narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status));
-                return videoInProgress ? (
-                  <button
-                    disabled
-                    style={{ ...styles.videoBtn, width: "100%", marginBottom: 8, opacity: 0.45, cursor: "not-allowed" }}
-                  >
-                    🎬 Ainda tem vídeo sendo criado...
-                  </button>
-                ) : (
-                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>{t("result_create_video")}</button>
-                );
-              })() : (
-                <button onClick={() => handleAssinarDireto("annual")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc", fontSize: 12 }}>
-                  🎬 Vídeo animado — exclusivo PRO ✨
-                </button>
-              )}
-
-              {/* Upsell PRO — só para free */}
-              {plan === "free" && (
-                <>
-                  {rateLimitedUntil && countdown > 0 ? (
-                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("annual", "resultado_foto_ratelimit")} />
-                  ) : (
-                    <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 14, padding: "14px", marginTop: 6 }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: "#eef2f9", marginBottom: 4 }}>Quer mais do que isso? 🚀</div>
-                      <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.6, marginBottom: 10 }}>
-                        Com o PRO: fundo personalizado, vídeo animado para Reels, downloads ilimitados e sem fila de espera.
-                      </div>
-                      <button onClick={() => handleAssinarDireto("annual", "resultado_foto_hook")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
-                        Assinar PRO — R$79/mês
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
             </div>
           </div>
         )}
