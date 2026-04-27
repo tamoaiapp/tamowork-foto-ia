@@ -139,11 +139,9 @@ export async function submitImageJob(jobId: string) {
   // Visão enriquece o prompt como âncora de fidelidade do produto
   // Passamos produto e vision separados — buildPromptResult usa vision como descrição primária
   const produtoBase = produto_frase.trim();
-  // Para catálogo, mantém merge tradicional (prompt imperativo próprio não usa vision da mesma forma)
-  // Se usuário não enviou texto (produtoBase vazio), usa visionDesc como produto — evita 400 no criarPrompt
-  const enrichedProduto = isCatalog
-    ? mergeProductTexts(produtoBase, visionDesc)
-    : (produtoBase || visionDesc || "");
+  // Sempre combina texto do usuário + descrição visual da imagem
+  // mergeProductTexts: vision como âncora + texto do usuário como contexto adicional
+  const enrichedProduto = mergeProductTexts(produtoBase, visionDesc);
   if (visionDesc) {
     console.log(`[submit] job ${jobId} — vision desc: "${visionDesc}"`);
   }
