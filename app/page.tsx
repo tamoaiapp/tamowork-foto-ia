@@ -3386,6 +3386,46 @@ export default function HomePage() {
             <div style={{ fontSize: 12, color: "#4e5c72", fontWeight: 700, letterSpacing: "0.04em" }}>
               {Math.round(displayProgress)}%
             </div>
+
+            {/* Card: pode fechar o app */}
+            <div style={{ width: "100%", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 14, padding: "14px 16px", marginTop: 24, display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 22, flexShrink: 0 }}>🔔</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#eef2f9", marginBottom: 2 }}>Pode fechar o app</div>
+                <div style={{ fontSize: 12, color: "#8394b0" }}>Te aviso quando ficar pronto</div>
+              </div>
+              {typeof Notification !== "undefined" && Notification.permission === "granted" ? (
+                <div style={{ fontSize: 11, color: "#16c784", fontWeight: 700, flexShrink: 0 }}>✅ Ativo</div>
+              ) : (
+                <button
+                  onClick={() => requestAndRegisterPush()}
+                  style={{ background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 10, padding: "8px 14px", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif", flexShrink: 0, whiteSpace: "nowrap" as const }}
+                >
+                  Ativar aviso
+                </button>
+              )}
+            </div>
+
+            {/* Upsell free — foto exemplo + R$29 */}
+            {plan === "free" && (
+              <div style={{ width: "100%", background: "#111820", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 14, overflow: "hidden", marginTop: 12 }}>
+                <img
+                  src="https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/input-images/examples/simulacao.jpg"
+                  alt="Exemplo PRO"
+                  style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block" }}
+                />
+                <div style={{ padding: "12px 14px 14px" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#eef2f9", marginBottom: 4 }}>Fotos ilimitadas por R$29/mês</div>
+                  <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 12 }}>Sem fila, sem limite, sem marca d&apos;água</div>
+                  <button
+                    onClick={() => handleAssinarDireto("monthly", "gerando_upsell")}
+                    style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "13px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif" }}
+                  >
+                    Assinar por R$29
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -3449,39 +3489,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Contador de uso free */}
-              {plan === "free" && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "#8394b0" }}>📸 Fotos grátis usadas</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: freePhotosUsed >= 3 ? "#f87171" : "#a5b4fc" }}>{Math.min(freePhotosUsed, 3)} / 3</span>
-                  </div>
-                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 4, height: 5, overflow: "hidden" }}>
-                    <div style={{ background: freePhotosUsed >= 3 ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 4, height: "100%", width: `${Math.min(100, (freePhotosUsed / 3) * 100)}%`, transition: "width 0.4s ease" }} />
-                  </div>
-                  {freePhotosUsed >= 3 && <p style={{ fontSize: 11, color: "#f87171", margin: "4px 0 0", textAlign: "center" as const }}>Limite gratuito atingido — assine o PRO para continuar criando</p>}
-                </div>
-              )}
-
-              {/* Rating de qualidade */}
-              <PhotoRating
-                rating={photoRating}
-                hover={ratingHover}
-                feedbackText={feedbackText}
-                sent={feedbackSent}
-                loading={feedbackLoading}
-                onHover={setRatingHover}
-                onRate={(r) => {
-                  setPhotoRating(r);
-                  if (r >= 4) sendPhotoFeedback(r, "");
-                }}
-                onFeedbackChange={setFeedbackText}
-                onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
-                onRetry={plan === "free" ? handleBonusRetry : undefined}
-                onRateApp={showRateApp ? handleRateApp : undefined}
-                bonusLeft={bonusLeft}
-              />
-
               {/* Baixar */}
               <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
                 {t("result_download")}
@@ -3511,42 +3518,8 @@ export default function HomePage() {
                   ✨ Criar nova foto
                 </button>
               </div>
-              <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: 16 }} />
-              {/* Contador de uso free — mobile */}
-              {plan === "free" && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <span style={{ fontSize: 11, color: "#8394b0" }}>📸 Fotos grátis usadas</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: freePhotosUsed >= 3 ? "#f87171" : "#a5b4fc" }}>{Math.min(freePhotosUsed, 3)} / 3</span>
-                  </div>
-                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 4, height: 5, overflow: "hidden" }}>
-                    <div style={{ background: freePhotosUsed >= 3 ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 4, height: "100%", width: `${Math.min(100, (freePhotosUsed / 3) * 100)}%`, transition: "width 0.4s ease" }} />
-                  </div>
-                  {freePhotosUsed >= 3 && <p style={{ fontSize: 11, color: "#f87171", margin: "4px 0 0", textAlign: "center" as const }}>Limite gratuito atingido — assine o PRO para continuar criando</p>}
-                </div>
-              )}
-
-              {/* Rating de qualidade — mobile */}
-              <PhotoRating
-                rating={photoRating}
-                hover={ratingHover}
-                feedbackText={feedbackText}
-                sent={feedbackSent}
-                loading={feedbackLoading}
-                onHover={setRatingHover}
-                onRate={(r) => {
-                  setPhotoRating(r);
-                  if (r >= 4) sendPhotoFeedback(r, "");
-                }}
-                onFeedbackChange={setFeedbackText}
-                onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
-                onRetry={plan === "free" ? handleBonusRetry : undefined}
-                onRateApp={showRateApp ? handleRateApp : undefined}
-                bonusLeft={bonusLeft}
-              />
-
-              {/* Baixar */}
-              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
+              {/* Baixar — abaixo de "Criar nova foto" */}
+              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginTop: 4 }}>
                 {t("result_download")}
               </button>
             </div>
