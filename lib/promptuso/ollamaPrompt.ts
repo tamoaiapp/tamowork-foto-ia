@@ -315,7 +315,7 @@ Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${acce
       body: JSON.stringify({
         model: PROMPT_MODEL,
         stream: false,
-        options: { temperature: 0.3, num_predict: 600 },
+        options: { temperature: 0.3, num_predict: 600, num_ctx: 2048 },
         messages: [
           { role: "system", content: systemPromptWithContext },
           { role: "user", content: userMessage },

@@ -198,7 +198,7 @@ Regras:
 
 Roteiro: ${original}`,
         stream: false,
-        options: { num_predict: 280, temperature: 0.75, top_p: 0.9 },
+        options: { num_predict: 280, temperature: 0.75, top_p: 0.9, num_ctx: 2048 },
       }),
       signal: AbortSignal.timeout(25_000),
     });

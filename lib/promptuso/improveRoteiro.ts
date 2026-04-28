@@ -29,7 +29,7 @@ export async function improveRoteiro(roteiro: string): Promise<string> {
       body: JSON.stringify({
         model: PROMPT_MODEL,
         stream: false,
-        options: { temperature: 0.7, num_predict: 200 },
+        options: { temperature: 0.7, num_predict: 200, num_ctx: 2048 },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: roteiro },

@@ -82,7 +82,8 @@ export async function getProductVisionDescription(
         stream: false,
         options: {
           num_predict: 120,
-          temperature: 0.1, // Determinístico — queremos descrição factual
+          temperature: 0.1,
+          num_ctx: 1024, // KV cache pequeno — cabe todo na GPU (A5000 com ~4.7GB livre)
         },
       }),
       signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
