@@ -22,11 +22,11 @@ export const CONVERSION = {
   // ── A/B test — variante promovida ───────────────────────────────────────
   // null = sorteia pelo user_id (comportamento padrão)
   // "A" | "B" | "C" = força todos para a variante vencedora
-  abPromotedVariant: "B" as "A" | "B" | "C" | null,
+  abPromotedVariant: "C" as "A" | "B" | "C" | null,
 
   // ── Metadados da última decisão do agente ───────────────────────────────
   _agentDecision: {
-    updatedAt: "2026-04-21T12:00:01.301Z",
-    reason: "Variante B vencedora com 0.0% de conversão (33 usuários)",
+    updatedAt: "2026-04-28T11:18:30.570Z",
+    reason: "Variante C vencedora com 0.0% de conversão (50 usuários)",
   },
 };
