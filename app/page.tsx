@@ -915,7 +915,7 @@ export default function HomePage() {
   const [hasDoneJob, setHasDoneJob] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultModalUrl, setResultModalUrl] = useState<string | null>(null);
   const [botTriggerMessage, setBotTriggerMessage] = useState<string | undefined>(undefined);
 
   function activateBot() {
@@ -1926,7 +1926,7 @@ export default function HomePage() {
     setModeSelected(true);
     setEditExpanded(false);
     setEditedImageUrl(null); // limpa imagem editada para não vazar na próxima criação
-    setShowResultModal(false);
+    setResultModalUrl(null);
     // Reseta rating
     setPhotoRating(null);
     setRatingHover(0);
@@ -2453,7 +2453,7 @@ export default function HomePage() {
                   key={p.id}
                   src={p.url}
                   alt=""
-                  onClick={() => window.open(p.url, "_blank")}
+                  onClick={() => setResultModalUrl(p.url)}
                   style={{
                     width: 56, height: 56, borderRadius: 10, objectFit: "cover",
                     flexShrink: 0, cursor: "pointer",
@@ -3451,7 +3451,7 @@ export default function HomePage() {
         {workState === "terminado" && job && !videoMode && !narratedMode && !longVideoMode && !botNavOpen && (
           <div style={styles.card} className="result-wrap">
             {/* Imagem — coluna esquerda no desktop */}
-            <div className="result-image-col" onClick={() => setShowResultModal(true)} style={{ cursor: "pointer" }}>
+            <div className="result-image-col" onClick={() => setResultModalUrl(editedImageUrl ?? job.output_image_url ?? null)} style={{ cursor: "pointer" }}>
               <img
                 src={editedImageUrl ?? job.output_image_url}
                 alt="Foto gerada"
@@ -3772,10 +3772,10 @@ export default function HomePage() {
       )}
 
 
-      {/* Modal popup — clique na foto resultado */}
-      {showResultModal && job?.output_image_url && (
+      {/* Modal popup — clique em qualquer foto (resultado atual ou criações recentes) */}
+      {resultModalUrl && (
         <div
-          onClick={() => setShowResultModal(false)}
+          onClick={() => setResultModalUrl(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 16 }}
         >
           <div
@@ -3784,13 +3784,13 @@ export default function HomePage() {
           >
             {/* X fechar */}
             <button
-              onClick={() => setShowResultModal(false)}
+              onClick={() => setResultModalUrl(null)}
               style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 34, height: 34, color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10, fontWeight: 700, fontFamily: "Outfit, sans-serif" }}
             >✕</button>
 
             {/* Foto */}
             <img
-              src={editedImageUrl ?? job.output_image_url}
+              src={resultModalUrl}
               alt="Foto gerada"
               style={{ width: "100%", display: "block", maxHeight: "60vh", objectFit: "contain", background: "#0c1018", flexShrink: 0 }}
             />
@@ -3798,26 +3798,31 @@ export default function HomePage() {
             {/* Ações */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "16px 16px 20px" }}>
               <button
-                onClick={() => { setShowResultModal(false); handleDownload(editedImageUrl ?? job!.output_image_url!); }}
+                onClick={() => { setResultModalUrl(null); handleDownload(resultModalUrl); }}
                 style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px 20px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}
               >
                 <span style={{ fontSize: 18 }}>⬇</span>
                 <span>{t("result_download")}</span>
               </button>
-              <button
-                onClick={() => { setShowResultModal(false); setVideoMode(true); }}
-                style={{ width: "100%", background: "#1a2235", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 20px", color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontFamily: "Outfit, sans-serif" }}
-              >
-                <span style={{ fontSize: 18 }}>🎬</span>
-                <span>Criar vídeo</span>
-              </button>
-              <button
-                onClick={() => { setShowResultModal(false); setPromoOpen(true); }}
-                style={{ width: "100%", background: "#1a2235", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 20px", color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontFamily: "Outfit, sans-serif" }}
-              >
-                <span style={{ fontSize: 18 }}>✏️</span>
-                <span>Editar / Criar promoção</span>
-              </button>
+              {/* Criar vídeo e Editar só aparecem para a foto atual (não para criações antigas) */}
+              {job?.status === "done" && resultModalUrl === (editedImageUrl ?? job.output_image_url) && (
+                <>
+                  <button
+                    onClick={() => { setResultModalUrl(null); setVideoMode(true); }}
+                    style={{ width: "100%", background: "#1a2235", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 20px", color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontFamily: "Outfit, sans-serif" }}
+                  >
+                    <span style={{ fontSize: 18 }}>🎬</span>
+                    <span>Criar vídeo</span>
+                  </button>
+                  <button
+                    onClick={() => { setResultModalUrl(null); setPromoOpen(true); }}
+                    style={{ width: "100%", background: "#1a2235", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 20px", color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontFamily: "Outfit, sans-serif" }}
+                  >
+                    <span style={{ fontSize: 18 }}>✏️</span>
+                    <span>Editar / Criar promoção</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
