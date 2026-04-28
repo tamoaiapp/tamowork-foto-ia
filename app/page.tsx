@@ -915,6 +915,7 @@ export default function HomePage() {
   const [hasDoneJob, setHasDoneJob] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [showResultModal, setShowResultModal] = useState(false);
   const [botTriggerMessage, setBotTriggerMessage] = useState<string | undefined>(undefined);
 
   function activateBot() {
@@ -1925,6 +1926,7 @@ export default function HomePage() {
     setModeSelected(true);
     setEditExpanded(false);
     setEditedImageUrl(null); // limpa imagem editada para não vazar na próxima criação
+    setShowResultModal(false);
     // Reseta rating
     setPhotoRating(null);
     setRatingHover(0);
@@ -3449,7 +3451,7 @@ export default function HomePage() {
         {workState === "terminado" && job && !videoMode && !narratedMode && !longVideoMode && !botNavOpen && (
           <div style={styles.card} className="result-wrap">
             {/* Imagem — coluna esquerda no desktop */}
-            <div className="result-image-col">
+            <div className="result-image-col" onClick={() => setShowResultModal(true)} style={{ cursor: "pointer" }}>
               <img
                 src={editedImageUrl ?? job.output_image_url}
                 alt="Foto gerada"
@@ -3769,6 +3771,57 @@ export default function HomePage() {
         />
       )}
 
+
+      {/* Modal popup — clique na foto resultado */}
+      {showResultModal && job?.output_image_url && (
+        <div
+          onClick={() => setShowResultModal(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 16 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#111820", borderRadius: 20, overflow: "hidden", maxWidth: 420, width: "100%", position: "relative", boxShadow: "0 24px 60px rgba(0,0,0,0.6)", maxHeight: "90vh", display: "flex", flexDirection: "column" }}
+          >
+            {/* X fechar */}
+            <button
+              onClick={() => setShowResultModal(false)}
+              style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 34, height: 34, color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10, fontWeight: 700, fontFamily: "Outfit, sans-serif" }}
+            >✕</button>
+
+            {/* Foto */}
+            <img
+              src={editedImageUrl ?? job.output_image_url}
+              alt="Foto gerada"
+              style={{ width: "100%", display: "block", maxHeight: "60vh", objectFit: "contain", background: "#0c1018", flexShrink: 0 }}
+            />
+
+            {/* Ações */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "16px 16px 20px" }}>
+              <button
+                onClick={() => { setShowResultModal(false); handleDownload(editedImageUrl ?? job!.output_image_url!); }}
+                style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#a855f7)", border: "none", borderRadius: 14, padding: "14px 20px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}
+              >
+                <span style={{ fontSize: 18 }}>⬇</span>
+                <span>{t("result_download")}</span>
+              </button>
+              <button
+                onClick={() => { setShowResultModal(false); setVideoMode(true); }}
+                style={{ width: "100%", background: "#1a2235", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 20px", color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontFamily: "Outfit, sans-serif" }}
+              >
+                <span style={{ fontSize: 18 }}>🎬</span>
+                <span>Criar vídeo</span>
+              </button>
+              <button
+                onClick={() => { setShowResultModal(false); setPromoOpen(true); }}
+                style={{ width: "100%", background: "#1a2235", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 20px", color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontFamily: "Outfit, sans-serif" }}
+              >
+                <span style={{ fontSize: 18 }}>✏️</span>
+                <span>Editar / Criar promoção</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mini toast — foto/vídeo pronto */}
       {showToast && (
