@@ -7,6 +7,7 @@ import {
   DEFAULT_AFFILIATE_HOLD_DAYS,
   isAffiliateSchemaMissingError,
 } from "@/lib/affiliates/server";
+import { PRO_BR_MONTHLY_PRICE } from "@/lib/pricing";
 import { setUserPro } from "@/lib/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { metaEvents, queueMetaEvent } from "@/lib/meta/capi";
@@ -252,7 +253,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const amountPaid = session.amount_total ? session.amount_total / 100 : 79;
+      const amountPaid = session.amount_total ? session.amount_total / 100 : PRO_BR_MONTHLY_PRICE;
       const currency = (session.currency ?? "brl").toUpperCase();
       const email = session.customer_details?.email ?? undefined;
       queueMetaEvent(metaEvents.subscribe({ userId, email }, amountPaid, currency));

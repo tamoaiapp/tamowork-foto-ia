@@ -7,6 +7,7 @@
  */
 
 import { useEffect } from "react";
+import { PRO_BR_MONTHLY_PRICE_LABEL } from "@/lib/pricing";
 
 interface Props {
   photoUrl: string;
@@ -65,7 +66,7 @@ export default function VideoHookScreen({ photoUrl, onAssinar, onCriar2aFoto, on
         </div>
 
         <div style={s.priceHighlight}>
-          <span style={s.priceHighlightText}>{isBR ? "Tudo por R$79/mês" : "Everything for $100/year"}</span>
+          <span style={s.priceHighlightText}>{isBR ? `Tudo por ${PRO_BR_MONTHLY_PRICE_LABEL}/mês` : "Everything for $100/year"}</span>
           <span style={s.priceHighlightSub}>{isBR ? "Fotos ilimitadas + vídeos + editor" : "Unlimited photos + videos + editor"}</span>
         </div>
 
@@ -74,7 +75,7 @@ export default function VideoHookScreen({ photoUrl, onAssinar, onCriar2aFoto, on
         </button>
 
         <button onClick={onCriar2aFoto} style={s.skipBtn}>
-          {isBR ? "Criar mais uma foto grátis antes" : "Create another free photo first"}
+          {isBR ? "Ver meu resultado primeiro" : "View my result first"}
         </button>
       </div>
     </div>

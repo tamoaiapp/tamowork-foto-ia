@@ -4,6 +4,10 @@ export const dynamic = "force-dynamic";
 import { Suspense, useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  PRO_BR_MONTHLY_PRICE_LABEL,
+  PRO_BR_MONTHLY_PRICE_PER_DAY_LABEL,
+} from "@/lib/pricing";
 
 type Variant = "A" | "B" | "C";
 type Phase = "processing" | "done";
@@ -242,11 +246,11 @@ function ExperienciaPageInner() {
                 PRO
               </div>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
-                <span style={{ color: "#eef2f9", fontSize: 48, fontWeight: 900, lineHeight: 1, letterSpacing: -2 }}>R$79</span>
+                <span style={{ color: "#eef2f9", fontSize: 48, fontWeight: 900, lineHeight: 1, letterSpacing: -2 }}>{PRO_BR_MONTHLY_PRICE_LABEL}</span>
                 <span style={{ color: "#8394b0", fontSize: 16 }}>/mês</span>
               </div>
               <div style={{ color: "#4e5c72", fontSize: 13, marginTop: 6 }}>
-                Menos de R$2,63 por dia • Cancele quando quiser
+                Menos de {PRO_BR_MONTHLY_PRICE_PER_DAY_LABEL} por dia • Cancele quando quiser
               </div>
             </div>
 
@@ -269,7 +273,7 @@ function ExperienciaPageInner() {
 
             {/* CTA */}
             <button className="cta-pro" onClick={goToPro} disabled={navigating}>
-              {navigating ? "Aguarde..." : "🔥 Assinar agora — R$79/mês"}
+              {navigating ? "Aguarde..." : `🔥 Assinar agora — ${PRO_BR_MONTHLY_PRICE_LABEL}/mês`}
             </button>
             <p style={{ color: "#4e5c72", fontSize: 12, textAlign: "center", margin: "12px 0 0", lineHeight: 1.5 }}>
               Pagamento seguro via Stripe • Cancele a qualquer momento

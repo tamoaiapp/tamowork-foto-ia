@@ -20,6 +20,14 @@ import nextDynamic from "next/dynamic";
 import { useI18n, LangSelector } from "@/lib/i18n";
 import { useProductVision } from "@/lib/vision/useProductVision";
 import { CONVERSION } from "@/app/config/conversion";
+import {
+  FREE_PHOTO_DAILY_LIMIT,
+  FREE_PHOTO_WINDOW_MS,
+  PRO_BR_MONTHLY_PRICE_LABEL,
+  PRO_BR_MONTHLY_PRICE_PER_DAY_LABEL,
+  PRO_USD_ANNUAL_PRICE_LABEL,
+  PRO_USD_ANNUAL_PRICE_PER_DAY_LABEL,
+} from "@/lib/pricing";
 import type { ActiveJobInfo } from "@/app/components/BotChat";
 const PhotoEditor = nextDynamic(() => import("@/app/components/PhotoEditor"), { ssr: false });
 const PromoCreator = nextDynamic(() => import("@/app/components/PromoCreator"), { ssr: false });
@@ -111,7 +119,7 @@ function RateLimitUpsell({ countdown, onAssinar }: { countdown: number; onAssina
           {formatMs(countdown)}
         </div>
         <div style={{ fontSize: 11, color: "#4e5c72", marginTop: 6 }}>
-          Plano grátis: 1 foto + 1 vídeo por dia
+          Plano grátis: 1 foto a cada 24 horas
         </div>
       </div>
 
@@ -122,10 +130,10 @@ function RateLimitUpsell({ countdown, onAssinar }: { countdown: number; onAssina
       <div style={{ textAlign: "center" as const }}>
         <div style={{ display: "inline-block", background: "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 20, padding: "3px 12px", fontSize: 10, fontWeight: 800, color: "#fff", letterSpacing: 1, marginBottom: 10 }}>PRO</div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4, marginBottom: 4 }}>
-          <span style={{ color: "#eef2f9", fontSize: 36, fontWeight: 900, letterSpacing: -1 }}>{isBR ? "R$79" : "$100"}</span>
+          <span style={{ color: "#eef2f9", fontSize: 36, fontWeight: 900, letterSpacing: -1 }}>{isBR ? PRO_BR_MONTHLY_PRICE_LABEL : PRO_USD_ANNUAL_PRICE_LABEL}</span>
           <span style={{ color: "#8394b0", fontSize: 14 }}>{isBR ? "/mês" : "/year"}</span>
         </div>
-        <div style={{ fontSize: 12, color: "#4e5c72" }}>Menos de {isBR ? "R$2,63" : "$0.28"} por dia • Cancele quando quiser</div>
+        <div style={{ fontSize: 12, color: "#4e5c72" }}>Menos de {isBR ? PRO_BR_MONTHLY_PRICE_PER_DAY_LABEL : PRO_USD_ANNUAL_PRICE_PER_DAY_LABEL} por dia • Cancele quando quiser</div>
       </div>
 
       {/* Feature list */}
@@ -152,7 +160,7 @@ function RateLimitUpsell({ countdown, onAssinar }: { countdown: number; onAssina
         fontFamily: "Outfit, sans-serif",
         boxShadow: "0 4px 20px rgba(139,92,246,0.4)",
       }}>
-        🔥 Assinar agora — {isBR ? "R$79/mês" : "$100/ano"}
+        🔥 Liberar acesso — {isBR ? `${PRO_BR_MONTHLY_PRICE_LABEL}/mês` : "$100/ano"}
       </button>
       <div style={{ fontSize: 11, color: "#4e5c72", textAlign: "center" as const }}>
         Pagamento seguro via {isBR ? "Stripe" : "Stripe"} • Cancele a qualquer momento
@@ -268,7 +276,7 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
           {formatMs(countdown)}
         </div>
         <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 8 }}>
-          Plano grátis: 1 foto + 1 vídeo por dia
+          Plano grátis: 1 foto a cada 24 horas
         </div>
       </div>
 
@@ -278,11 +286,11 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
         <div style={{ textAlign: "center" as const, marginBottom: 16 }}>
           <div style={{ display: "inline-block", background: "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 20, padding: "3px 12px", fontSize: 10, fontWeight: 800, color: "#fff", letterSpacing: 1, marginBottom: 10 }}>PRO</div>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
-            <span style={{ color: "#eef2f9", fontSize: 40, fontWeight: 900, letterSpacing: -1 }}>{isBR ? "R$79" : "$100"}</span>
+            <span style={{ color: "#eef2f9", fontSize: 40, fontWeight: 900, letterSpacing: -1 }}>{isBR ? PRO_BR_MONTHLY_PRICE_LABEL : PRO_USD_ANNUAL_PRICE_LABEL}</span>
             <span style={{ color: "#8394b0", fontSize: 14 }}>{isBR ? "/mês" : "/year"}</span>
           </div>
           <div style={{ fontSize: 12, color: "#4e5c72", marginTop: 4 }}>
-            Menos de {isBR ? "R$2,63" : "$0.28"} por dia • Cancele quando quiser
+            Menos de {isBR ? PRO_BR_MONTHLY_PRICE_PER_DAY_LABEL : PRO_USD_ANNUAL_PRICE_PER_DAY_LABEL} por dia • Cancele quando quiser
           </div>
         </div>
 
@@ -304,7 +312,7 @@ function DailyLimitScreen({ countdown, onAssinar }: { countdown: number; onAssin
         </div>
 
         <button onClick={onAssinar} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 14, padding: "16px", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 20px rgba(139,92,246,0.4)" }}>
-          🔥 Assinar agora — {isBR ? "R$79/mês" : "$100/ano"}
+          🔥 Liberar acesso — {isBR ? `${PRO_BR_MONTHLY_PRICE_LABEL}/mês` : "$100/ano"}
         </button>
         <div style={{ fontSize: 11, color: "#4e5c72", textAlign: "center" as const, marginTop: 10 }}>
           Pagamento seguro via Stripe • Cancele a qualquer momento
@@ -510,7 +518,7 @@ function ProUpsell({ onAssinar }: { onAssinar: (plan: "annual" | "monthly") => v
       <div style={{ ...pu.planCard, ...pu.planCardActive, width: "100%", boxSizing: "border-box" }}>
         <div style={pu.planName}>{isBR ? "Plano Mensal" : "Annual Plan"}</div>
         <div style={pu.planPrice}>
-          <span style={pu.planAmount}>{isBR ? "R$79" : "$100"}</span>
+          <span style={pu.planAmount}>{isBR ? PRO_BR_MONTHLY_PRICE_LABEL : PRO_USD_ANNUAL_PRICE_LABEL}</span>
           <span style={pu.planPer}>{isBR ? "/mês" : "/year"}</span>
         </div>
         <div style={pu.planBilled}>
@@ -520,7 +528,7 @@ function ProUpsell({ onAssinar }: { onAssinar: (plan: "annual" | "monthly") => v
 
       {/* CTA */}
       <button onClick={() => onAssinar(isBR ? "monthly" : "annual")} style={pu.btn}>
-        {isBR ? "Assinar por R$79/mês" : "Subscribe — $100/year"}
+        {isBR ? `Assinar por ${PRO_BR_MONTHLY_PRICE_LABEL}/mês` : "Subscribe — $100/year"}
       </button>
       <div style={pu.guarantee}>Cancela quando quiser · Sem fidelidade</div>
     </div>
@@ -1069,18 +1077,20 @@ export default function HomePage() {
           }
         }
 
-        // Detecta rate limit no carregamento: free user com 2+ jobs COMPLETOS recentes (<24h)
+        // Detecta rate limit no carregamento: free user com 1+ job completo recente (<24h)
         if (userPlan === "free") {
-          const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-          const FREE_DAILY_LIMIT = 1;
-          const since = Date.now() - FREE_COOLDOWN_MS;
+          const since = Date.now() - FREE_PHOTO_WINDOW_MS;
           const recentDoneJobs = jobs
             .filter((j) => j.status === "done" && new Date(j.created_at ?? 0).getTime() > since)
             .sort((a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime());
           setPhotosToday(recentDoneJobs.length);
-          if (recentDoneJobs.length >= FREE_DAILY_LIMIT) {
+          setFreePhotosUsed(Math.min(recentDoneJobs.length, FREE_PHOTO_DAILY_LIMIT));
+          try {
+            localStorage.setItem("free_photos_used", String(Math.min(recentDoneJobs.length, FREE_PHOTO_DAILY_LIMIT)));
+          } catch { /* ignora */ }
+          if (recentDoneJobs.length >= FREE_PHOTO_DAILY_LIMIT) {
             const oldest = recentDoneJobs[0];
-            const nextAvailable = new Date(new Date(oldest.created_at ?? 0).getTime() + FREE_COOLDOWN_MS);
+            const nextAvailable = new Date(new Date(oldest.created_at ?? 0).getTime() + FREE_PHOTO_WINDOW_MS);
             if (nextAvailable > new Date()) {
               setRateLimitedUntil(nextAvailable);
               // Gatilho de push — limite atingido é bom momento para engajar
@@ -1559,11 +1569,11 @@ export default function HomePage() {
             setTimeout(() => setShowVideoHook(true), 800);
           }
         }
-        return Math.max(prev, prev + 1 <= 2 ? prev + 1 : prev);
+        return Math.max(prev, Math.min(FREE_PHOTO_DAILY_LIMIT, prev + 1));
       });
       if (plan === "free") {
         setFreePhotosUsed((prev) => {
-          const next = prev + 1;
+          const next = Math.min(FREE_PHOTO_DAILY_LIMIT, prev + 1);
           try { localStorage.setItem("free_photos_used", String(next)); } catch { /* ignora */ }
           return next;
         });
@@ -1861,7 +1871,7 @@ export default function HomePage() {
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token ?? "";
-      // BR → mensal R$79 | não-BR → anual $100 (como na página de planos)
+      // BR → mensal R$29 | não-BR → anual $100 (como na página de planos)
       const isBR = (typeof navigator !== "undefined" ? navigator.language : "pt-BR").startsWith("pt");
       const plan = isBR ? "monthly" : "annual";
       const res = await fetch("/api/checkout/stripe", {
@@ -2601,7 +2611,7 @@ export default function HomePage() {
         {!modeSelected && !videoMode && !longVideoMode && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
-              <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("annual", "limite_diario")} />
+              <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("monthly", "limite_diario")} />
             ) : (
               <ModeSelector
                 selected={creationMode}
@@ -3491,39 +3501,258 @@ export default function HomePage() {
                 </div>
               </div>
 
+              {/* Contador de uso free */}
+              {plan === "free" && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "#8394b0" }}>📸 Fotos grátis usadas</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: freePhotosUsed >= FREE_PHOTO_DAILY_LIMIT ? "#f87171" : "#a5b4fc" }}>{Math.min(freePhotosUsed, FREE_PHOTO_DAILY_LIMIT)} / {FREE_PHOTO_DAILY_LIMIT}</span>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 4, height: 5, overflow: "hidden" }}>
+                    <div style={{ background: freePhotosUsed >= FREE_PHOTO_DAILY_LIMIT ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 4, height: "100%", width: `${Math.min(100, (freePhotosUsed / FREE_PHOTO_DAILY_LIMIT) * 100)}%`, transition: "width 0.4s ease" }} />
+                  </div>
+                  {freePhotosUsed >= FREE_PHOTO_DAILY_LIMIT && <p style={{ fontSize: 11, color: "#f87171", margin: "4px 0 0", textAlign: "center" as const }}>Sua foto grátis do dia já foi usada — libere acesso para continuar criando</p>}
+                </div>
+              )}
+
+              {/* Rating de qualidade */}
+              <PhotoRating
+                rating={photoRating}
+                hover={ratingHover}
+                feedbackText={feedbackText}
+                sent={feedbackSent}
+                loading={feedbackLoading}
+                onHover={setRatingHover}
+                onRate={(r) => {
+                  setPhotoRating(r);
+                  if (r >= 4) sendPhotoFeedback(r, "");
+                }}
+                onFeedbackChange={setFeedbackText}
+                onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
+                onRetry={plan === "free" ? handleBonusRetry : undefined}
+                onRateApp={showRateApp ? handleRateApp : undefined}
+                bonusLeft={bonusLeft}
+              />
               {/* Baixar */}
               <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
                 {t("result_download")}
               </button>
+
+              {/* Botão único de edição → expande opções */}
+              {!editExpanded ? (
+                <button onClick={() => {
+                  setEditExpanded(true);
+                  if (plan === "free") {
+                    try {
+                      if (!localStorage.getItem("edit_free_seen")) {
+                        localStorage.setItem("edit_free_seen", "1");
+                        setEditFreePopup(true);
+                      }
+                    } catch { /* ignora */ }
+                  }
+                }} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
+                  ✏️ {lang === "en" ? "Edit photo" : "Editar foto"}
+                </button>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+                  <button onClick={() => {
+                    const url = editedImageUrl ?? job.output_image_url;
+                    if (url) { sessionStorage.setItem("editor_image", url); setEditExpanded(false); router.push("/editor"); }
+                  }} style={styles.editActionBtn}>
+                    ✏️ {lang === "en" ? "Customize" : "Personalizar foto"}
+                  </button>
+                  <button onClick={() => { setEditExpanded(false); setPromoOpen(true); }} style={styles.editActionBtn}>
+                    🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
+                  </button>
+                  <button onClick={() => { setEditExpanded(false); handleRemoveResultBg(); }} disabled={removingResultBg} style={styles.editActionBtn}>
+                    {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
+                  </button>
+                  <button onClick={() => setEditExpanded(false)} style={{ ...styles.editActionBtn, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#4e5c72" }}>
+                    ✕ {lang === "en" ? "Cancel" : "Cancelar"}
+                  </button>
+                </div>
+              )}
+
+              {/* Gerar novamente */}
+              <div style={{ marginBottom: 8 }}>
+                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
+                  <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
+                    🔒 Nova foto em {formatMs(countdown)}
+                  </button>
+                ) : (
+                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
+                )}
+              </div>
+
+              {/* Criar vídeo — 100% largura */}
+              {plan === "pro" ? (() => {
+                const videoInProgress =
+                  (videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
+                  (narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status));
+                return videoInProgress ? (
+                  <button
+                    disabled
+                    style={{ ...styles.videoBtn, width: "100%", marginBottom: 8, opacity: 0.45, cursor: "not-allowed" }}
+                    title="Ainda tem um vídeo sendo criado"
+                  >
+                    🎬 Ainda tem vídeo sendo criado...
+                  </button>
+                ) : (
+                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>
+                    {t("result_create_video")}
+                  </button>
+                );
+              })() : (
+                <button onClick={() => handleAssinarDireto("monthly", "resultado_foto_video_btn")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc" }}>
+                  🎬 Vídeo animado — exclusivo PRO ✨
+                </button>
+              )}
+
+              {/* Upsell PRO — só para free */}
+              {plan === "free" && (
+                <>
+                  {rateLimitedUntil && countdown > 0 ? (
+                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("monthly", "resultado_foto_ratelimit")} />
+                  ) : (
+                    <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 14, padding: "14px", marginTop: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#eef2f9", marginBottom: 4 }}>Quer mais do que isso? 🚀</div>
+                      <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.6, marginBottom: 10 }}>
+                        Com o PRO: fundo personalizado, vídeo animado para Reels, downloads ilimitados e sem fila de espera.
+                      </div>
+                      <button onClick={() => handleAssinarDireto("monthly", "resultado_foto_hook")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
+                        Assinar PRO — R$29/mês
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Mobile: mesmo layout, só muda padding */}
             <div className="result-mobile-actions" style={{ display: "block", padding: "16px 16px 28px" }}>
-              {/* 3 ações principais — mobile */}
-              <div style={{ display: "flex", flexDirection: "column" as const, gap: 10, marginBottom: 20 }}>
-                <button
-                  onClick={() => setVideoMode(true)}
-                  style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 14, padding: "15px 0", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}
-                >
-                  🎬 Criar vídeo
-                </button>
-                <button
-                  onClick={() => setPromoOpen(true)}
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "14px 0", color: "#eef2f9", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%" }}
-                >
-                  ✏️ Editar / Criar promoção
-                </button>
-                <button
-                  onClick={resetJob}
-                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 0", color: "#8394b0", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%" }}
-                >
-                  ✨ Criar nova foto
-                </button>
-              </div>
-              {/* Baixar — abaixo de "Criar nova foto" */}
-              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginTop: 4 }}>
+              {/* Contador de uso free — mobile */}
+              {plan === "free" && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: "#8394b0" }}>📸 Fotos grátis usadas</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: freePhotosUsed >= FREE_PHOTO_DAILY_LIMIT ? "#f87171" : "#a5b4fc" }}>{Math.min(freePhotosUsed, FREE_PHOTO_DAILY_LIMIT)} / {FREE_PHOTO_DAILY_LIMIT}</span>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 4, height: 5, overflow: "hidden" }}>
+                    <div style={{ background: freePhotosUsed >= FREE_PHOTO_DAILY_LIMIT ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#6366f1,#a855f7)", borderRadius: 4, height: "100%", width: `${Math.min(100, (freePhotosUsed / FREE_PHOTO_DAILY_LIMIT) * 100)}%`, transition: "width 0.4s ease" }} />
+                  </div>
+                  {freePhotosUsed >= FREE_PHOTO_DAILY_LIMIT && <p style={{ fontSize: 11, color: "#f87171", margin: "4px 0 0", textAlign: "center" as const }}>Sua foto grátis do dia já foi usada — libere acesso para continuar criando</p>}
+                </div>
+              )}
+
+              {/* Rating de qualidade — mobile */}
+              <PhotoRating
+                rating={photoRating}
+                hover={ratingHover}
+                feedbackText={feedbackText}
+                sent={feedbackSent}
+                loading={feedbackLoading}
+                onHover={setRatingHover}
+                onRate={(r) => {
+                  setPhotoRating(r);
+                  if (r >= 4) sendPhotoFeedback(r, "");
+                }}
+                onFeedbackChange={setFeedbackText}
+                onSubmit={() => sendPhotoFeedback(photoRating!, feedbackText)}
+                onRetry={plan === "free" ? handleBonusRetry : undefined}
+                onRateApp={showRateApp ? handleRateApp : undefined}
+                bonusLeft={bonusLeft}
+              />
+
+              {/* Baixar */}
+              <button onClick={() => handleDownload(editedImageUrl ?? job.output_image_url!)} style={{ ...styles.downloadBtn, width: "100%", marginBottom: 8 }}>
                 {t("result_download")}
               </button>
+
+              {/* Botão único de edição → expande opções */}
+              {!editExpanded ? (
+                <button onClick={() => {
+                  setEditExpanded(true);
+                  if (plan === "free") {
+                    try {
+                      if (!localStorage.getItem("edit_free_seen")) {
+                        localStorage.setItem("edit_free_seen", "1");
+                        setEditFreePopup(true);
+                      }
+                    } catch { /* ignora */ }
+                  }
+                }} style={{ ...styles.editActionBtn, marginBottom: 8, width: "100%" }}>
+                  ✏️ {lang === "en" ? "Edit photo" : "Editar foto"}
+                </button>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+                  <button onClick={() => {
+                    const url = editedImageUrl ?? job.output_image_url;
+                    if (url) { sessionStorage.setItem("editor_image", url); setEditExpanded(false); router.push("/editor"); }
+                  }} style={styles.editActionBtn}>
+                    ✏️ {lang === "en" ? "Customize" : "Personalizar foto"}
+                  </button>
+                  <button onClick={() => { setEditExpanded(false); setPromoOpen(true); }} style={styles.editActionBtn}>
+                    🏷️ {lang === "en" ? "Create promo" : "Criar promoção"}
+                  </button>
+                  <button onClick={() => { setEditExpanded(false); handleRemoveResultBg(); }} disabled={removingResultBg} style={styles.editActionBtn}>
+                    {removingResultBg ? "⏳ " : "✂️ "}{lang === "en" ? "Remove background" : "Remover fundo"}
+                  </button>
+                  <button onClick={() => setEditExpanded(false)} style={{ ...styles.editActionBtn, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#4e5c72" }}>
+                    ✕ {lang === "en" ? "Cancel" : "Cancelar"}
+                  </button>
+                </div>
+              )}
+
+              {/* Gerar novamente */}
+              <div style={{ marginBottom: 8 }}>
+                {plan === "free" && rateLimitedUntil && countdown > 0 ? (
+                  <button disabled style={{ ...styles.newBtn, width: "100%", opacity: 0.4, cursor: "not-allowed", fontSize: 12 }}>
+                    🔒 Nova foto em {formatMs(countdown)}
+                  </button>
+                ) : (
+                  <button onClick={resetJob} style={{ ...styles.newBtn, width: "100%" }}>{t("result_new")}</button>
+                )}
+              </div>
+
+              {/* Criar vídeo — 100% largura */}
+              {plan === "pro" ? (() => {
+                const videoInProgress =
+                  (videoJob && !["done", "failed", "canceled"].includes(videoJob.status ?? "")) ||
+                  (narratedJob && !["done", "failed", "canceled"].includes(narratedJob.status));
+                return videoInProgress ? (
+                  <button
+                    disabled
+                    style={{ ...styles.videoBtn, width: "100%", marginBottom: 8, opacity: 0.45, cursor: "not-allowed" }}
+                  >
+                    🎬 Ainda tem vídeo sendo criado...
+                  </button>
+                ) : (
+                  <button onClick={() => setVideoMode(true)} style={{ ...styles.videoBtn, width: "100%", marginBottom: 8 }}>{t("result_create_video")}</button>
+                );
+              })() : (
+                <button onClick={() => handleAssinarDireto("monthly")} style={{ ...styles.videoBtnLocked, width: "100%", marginBottom: 8, cursor: "pointer", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", color: "#c084fc", fontSize: 12 }}>
+                  🎬 Vídeo animado — exclusivo PRO ✨
+                </button>
+              )}
+
+              {/* Upsell PRO — só para free */}
+              {plan === "free" && (
+                <>
+                  {rateLimitedUntil && countdown > 0 ? (
+                    <RateLimitUpsell countdown={countdown} onAssinar={() => handleAssinarDireto("monthly", "resultado_foto_ratelimit")} />
+                  ) : (
+                    <div style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 14, padding: "14px", marginTop: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#eef2f9", marginBottom: 4 }}>Quer mais do que isso? 🚀</div>
+                      <div style={{ fontSize: 12, color: "#8394b0", lineHeight: 1.6, marginBottom: 10 }}>
+                        Com o PRO: fundo personalizado, vídeo animado para Reels, downloads ilimitados e sem fila de espera.
+                      </div>
+                      <button onClick={() => handleAssinarDireto("monthly", "resultado_foto_hook")} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", border: "none", borderRadius: 12, padding: "12px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "Outfit, sans-serif", boxShadow: "0 4px 16px rgba(139,92,246,0.35)" }}>
+                        Assinar PRO — R$29/mês
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}
@@ -3744,7 +3973,7 @@ export default function HomePage() {
           onAssinar={() => {
             setShowConversion(false);
             setOnboardingMode(false);
-            handleAssinarDireto("annual", "tela_conversao");
+            handleAssinarDireto("monthly", "tela_conversao");
           }}
           onContinuar={() => {
             setShowConversion(false);
@@ -3761,12 +3990,10 @@ export default function HomePage() {
           onAssinar={() => {
             setShowVideoHook(false);
             if (abVariant) trackABEvent("cta_clicked", abVariant);
-            handleAssinarDireto("annual", "video_hook");
+            handleAssinarDireto("monthly", "video_hook");
           }}
           onCriar2aFoto={() => {
             setShowVideoHook(false);
-            if (abVariant) trackABEvent("photo2_started", abVariant);
-            resetJob();
           }}
         />
       )}

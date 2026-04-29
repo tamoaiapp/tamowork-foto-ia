@@ -1,0 +1,11 @@
+export const FREE_PHOTO_WINDOW_MS = 24 * 60 * 60 * 1000;
+export const FREE_PHOTO_DAILY_LIMIT = 1;
+
+export const PRO_BR_MONTHLY_PRICE_CENTS = 2900;
+export const PRO_BR_MONTHLY_PRICE = PRO_BR_MONTHLY_PRICE_CENTS / 100;
+export const PRO_BR_MONTHLY_PRICE_LABEL = "R$29";
+export const PRO_BR_MONTHLY_PRICE_PER_DAY_LABEL = "R$0,97";
+
+export const PRO_USD_ANNUAL_PRICE = 100;
+export const PRO_USD_ANNUAL_PRICE_LABEL = "$100";
+export const PRO_USD_ANNUAL_PRICE_PER_DAY_LABEL = "$0.28";

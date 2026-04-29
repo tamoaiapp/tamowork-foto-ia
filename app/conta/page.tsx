@@ -6,6 +6,11 @@ import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import JobProgress from "./JobProgress";
 import { useI18n } from "@/lib/i18n";
+import {
+  PRO_BR_MONTHLY_PRICE_LABEL,
+  PRO_BR_MONTHLY_PRICE_PER_DAY_LABEL,
+  PRO_USD_ANNUAL_PRICE_LABEL,
+} from "@/lib/pricing";
 
 const VAPID_PUBLIC_KEY = "BOFpGK6deSOtMczLOppZ8RXLb8XbAP0cs4hDHOZtJrDsnLhvzdPQXeojc5CohPhnj0PvNkPd7B7HKLtUva03cGk";
 
@@ -282,7 +287,7 @@ export default function ContaPage() {
                       </div>
                     </div>
                     <div style={styles.subDesc}>
-                      {lang === "en" ? "1 photo and 1 video per day." : lang === "es" ? "1 foto y 1 video por día." : "1 foto e 1 vídeo por dia."}
+                      {lang === "en" ? "1 photo every 24 hours." : lang === "es" ? "1 foto cada 24 horas." : "1 foto a cada 24 horas."}
                     </div>
                     <div style={{
                       background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.12))",
@@ -290,7 +295,7 @@ export default function ContaPage() {
                       borderRadius: 14, padding: "16px", marginBottom: 14,
                     }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#eef2f9", marginBottom: 4 }}>
-                        {lang === "en" ? "Unlimited photos for less than $0.28/day" : lang === "es" ? "Fotos ilimitadas por menos de $0.28/día" : "Fotos ilimitadas por R$2,63/dia"}
+                        {lang === "en" ? "Unlimited photos for less than $0.28/day" : lang === "es" ? "Fotos ilimitadas por menos de $0.28/día" : `Fotos ilimitadas por ${PRO_BR_MONTHLY_PRICE_PER_DAY_LABEL}/dia`}
                       </div>
                       <div style={{ fontSize: 13, color: "#8394b0", lineHeight: 1.5 }}>
                         {lang === "en" ? "No usage limit, no queue, no photographer." : lang === "es" ? "Sin límite de uso, sin cola de espera, sin fotógrafo." : "Sem limite de uso, sem fila de espera, sem fotógrafo."}
@@ -341,7 +346,7 @@ export default function ContaPage() {
                     <div style={styles.subInfoGrid}>
                       <div style={styles.subInfoItem}>
                         <div style={styles.subInfoLabel}>{lang === "en" ? "Price" : lang === "es" ? "Precio" : "Valor"}</div>
-                        <div style={styles.subInfoValue}>{isBR ? "R$79/mês" : "$100/ano"}</div>
+                        <div style={styles.subInfoValue}>{isBR ? `${PRO_BR_MONTHLY_PRICE_LABEL}/mês` : `${PRO_USD_ANNUAL_PRICE_LABEL}/ano`}</div>
                       </div>
                       <div style={styles.subInfoItem}>
                         <div style={styles.subInfoLabel}>

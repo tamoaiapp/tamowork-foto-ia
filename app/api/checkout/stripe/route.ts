@@ -4,6 +4,10 @@ import {
   getAffiliateReferralForUser,
   markAffiliateCheckoutStarted,
 } from "@/lib/affiliates/server";
+import {
+  PRO_BR_MONTHLY_PRICE_CENTS,
+  PRO_USD_ANNUAL_PRICE,
+} from "@/lib/pricing";
 import { createServerClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
@@ -22,10 +26,23 @@ export async function POST(req: NextRequest) {
   const isMonthly = body.plan === "monthly";
   const source = typeof body.source === "string" ? body.source : "app";
 
-  // BR → mensal (STRIPE_PRICE_ID_MONTHLY) | Não-BR → anual $100 USD (STRIPE_PRICE_ID_USD)
-  const priceId = isMonthly
-    ? (process.env.STRIPE_PRICE_ID_MONTHLY ?? "price_1TMnqQDn6tNmbP0NqnSZeVmE")
-    : (process.env.STRIPE_PRICE_ID_USD ?? "price_1TMndeDn6tNmbP0NJ45SlEOp");
+  const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = isMonthly
+    ? {
+        price_data: {
+          currency: "brl",
+          unit_amount: PRO_BR_MONTHLY_PRICE_CENTS,
+          recurring: { interval: "month" },
+          product_data: {
+            name: "TamoWork Pro",
+            description: "Acesso mensal com fotos ilimitadas, fila prioritária e recursos PRO",
+          },
+        },
+        quantity: 1,
+      }
+    : {
+        price: process.env.STRIPE_PRICE_ID_USD ?? "price_1TMndeDn6tNmbP0NJ45SlEOp",
+        quantity: 1,
+      };
 
   try {
     const referral = await getAffiliateReferralForUser(user.id);
@@ -41,7 +58,7 @@ export async function POST(req: NextRequest) {
       mode: "subscription",
       payment_method_types: ["card"],
       customer_email: user.email,
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [lineItem],
       metadata,
       subscription_data: { metadata },
       success_url: `${process.env.APP_URL ?? "https://tamowork.com"}/obrigado?source=stripe`,
@@ -57,7 +74,8 @@ export async function POST(req: NextRequest) {
     const msg = err instanceof Error ? err.message : String(err);
     const code = (err as Record<string,unknown>)?.code ?? "";
     const type = (err as Record<string,unknown>)?.type ?? "";
-    console.error(`[stripe-ERR] type=${type} code=${code} msg=${msg} priceId=${priceId}`);
+    const selectedPrice = isMonthly ? `BRL_${PRO_BR_MONTHLY_PRICE_CENTS}` : `USD_${PRO_USD_ANNUAL_PRICE}`;
+    console.error(`[stripe-ERR] type=${type} code=${code} msg=${msg} price=${selectedPrice}`);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

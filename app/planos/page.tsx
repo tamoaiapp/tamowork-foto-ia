@@ -653,7 +653,7 @@ export default function PlanosPage() {
           {isBR && (
             <div style={styles.urgencyBanner}>
               <span style={styles.urgencyPulse} />
-              ⏰ Oferta especial &mdash; R$29/mês válido até domingo (27/04)
+              ⏰ Oferta especial &mdash; R$29/mês por tempo limitado
             </div>
           )}
 
@@ -740,7 +740,7 @@ export default function PlanosPage() {
                   <span style={styles.comparisonHeaderPro}>✨ PRO</span>
                 </div>
                 {[
-                  ["3 fotos por dia", "Fotos ilimitadas"],
+                  ["1 foto a cada 24 horas", "Fotos ilimitadas"],
                   ["1 vídeo por dia", "Vídeos ilimitados"],
                   ["Sem editor de foto", "Editor completo"],
                   ["Com marca d'água", "Sem marca d'água"],
@@ -766,7 +766,7 @@ export default function PlanosPage() {
                   <span style={{ fontSize: 12, background: "rgba(239,68,68,0.15)", color: "#f87171", borderRadius: 8, padding: "2px 8px", fontWeight: 700 }}>-63%</span>
                 </div>
                 <div style={styles.price}>R$29<span style={styles.pricePeriod}> /mês</span></div>
-                <div style={styles.priceSub}>Menos de R$0,97/dia • Cancele quando quiser • Válido até domingo</div>
+                <div style={styles.priceSub}>Menos de R$0,97/dia • Cancele quando quiser</div>
 </>
             ) : (
               <>

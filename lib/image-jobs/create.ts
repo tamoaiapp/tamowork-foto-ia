@@ -1,11 +1,9 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { submitImageJob } from "@/lib/image-jobs/submit";
 import { getUserPlan } from "@/lib/plans";
+import { FREE_PHOTO_DAILY_LIMIT, FREE_PHOTO_WINDOW_MS } from "@/lib/pricing";
 
 const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
-
-const FREE_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 horas
-const FREE_DAILY_LIMIT = 1; // fotos grátis por período de 24h
 
 export class RateLimitError extends Error {
   nextAvailableAt: Date;
@@ -47,7 +45,7 @@ export async function createImageJob(
   }
 
   if (plan === "free") {
-    const since = new Date(Date.now() - FREE_COOLDOWN_MS).toISOString();
+    const since = new Date(Date.now() - FREE_PHOTO_WINDOW_MS).toISOString();
 
     if (bonusRetry) {
       // Bonus retry: verifica quantos bonus já usados hoje (máximo MAX_BONUS_RETRIES_PER_DAY)
@@ -59,26 +57,25 @@ export async function createImageJob(
         .gte("created_at", since);
 
       if ((count ?? 0) >= MAX_BONUS_RETRIES_PER_DAY) {
-        throw new RateLimitError(new Date(Date.now() + FREE_COOLDOWN_MS));
+        throw new RateLimitError(new Date(Date.now() + FREE_PHOTO_WINDOW_MS));
       }
       // Bonus aprovado — pula o rate limit normal
     } else {
-      // Só desconta se a foto ficou pronta (status "done") — falhas não consomem o crédito
-      // Jobs de onboarding (source = onboarding_A/B/C) não contam no limite diário
+      // Só desconta se a foto ficou pronta (status "done") — falhas não consomem o crédito.
+      // A única foto grátis vale para qualquer origem, inclusive onboarding.
       const { data: recentJobs } = await supabase
         .from("image_jobs")
         .select("created_at")
         .eq("user_id", userId)
         .eq("status", "done")
-        .not("source", "like", "onboarding%")
         .gte("created_at", since)
         .order("created_at", { ascending: false })
-        .limit(FREE_DAILY_LIMIT);
+        .limit(FREE_PHOTO_DAILY_LIMIT);
 
-      if (recentJobs && recentJobs.length >= FREE_DAILY_LIMIT) {
+      if (recentJobs && recentJobs.length >= FREE_PHOTO_DAILY_LIMIT) {
         const oldest = recentJobs[recentJobs.length - 1];
         const nextAvailableAt = new Date(
-          new Date(oldest.created_at).getTime() + FREE_COOLDOWN_MS
+          new Date(oldest.created_at).getTime() + FREE_PHOTO_WINDOW_MS
         );
         throw new RateLimitError(nextAvailableAt);
       }

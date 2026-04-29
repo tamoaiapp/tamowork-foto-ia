@@ -48,7 +48,7 @@ export default function ConversionScreen({ photoUrl, onAssinar, onContinuar, onM
 
         <div style={s.priceRow}>
           <div>
-            <div style={s.priceLabel}>{isBR ? "Oferta até domingo (27/04)" : "Annual plan"}</div>
+            <div style={s.priceLabel}>{isBR ? "Oferta especial" : "Annual plan"}</div>
             {isBR && (
               <div style={{ fontSize: 11, color: "#4e5c72", textDecoration: "line-through", marginBottom: 2 }}>R$79/mês</div>
             )}

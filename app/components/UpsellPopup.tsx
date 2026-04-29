@@ -15,9 +15,9 @@ const VARIANTS = [
     emoji: "⚡",
     headline: "Fotos profissionais ilimitadas",
     subheadline: "Venda mais com imagens que vendem. Fotos e vídeos animados sem limite.",
-    cta_br: "Assinar por R$29/mês — até domingo",
+    cta_br: "Assinar por R$29/mês",
     cta_en: "Subscribe — $100/year",
-    badge: "🔥 Promoção até 27/04",
+    badge: "🔥 Oferta especial",
     accent: "#a855f7",
   },
   {
@@ -25,7 +25,7 @@ const VARIANTS = [
     emoji: "💰",
     headline: "Menos de R$0,97 por dia",
     subheadline: "Fotos de catálogo profissionais por menos do que um cafezinho. Cancele quando quiser.",
-    cta_br: "Assinar por R$29/mês — até domingo",
+    cta_br: "Assinar por R$29/mês",
     cta_en: "Subscribe — $100/year",
     badge: "💸 Melhor custo-benefício",
     accent: "#16c784",
@@ -44,7 +44,7 @@ const VARIANTS = [
     id: "v4_urgencia",
     emoji: "🚀",
     headline: "Desbloqueie tudo agora",
-    subheadline: "Você está limitado a 1 foto e 1 vídeo/dia. Com o Pro, são criações ilimitadas todo dia.",
+    subheadline: "Você está limitado a 1 foto a cada 24 horas. Com o Pro, são criações ilimitadas todo dia.",
     cta_br: "Desbloquear Pro — R$29/mês",
     cta_en: "Unlock Pro — $100/year",
     badge: "🔓 Sem limites",
@@ -254,7 +254,7 @@ export default function UpsellPopup({ onAssinar, onClose }: Props) {
         }}>
           <div>
             <div style={{ fontSize: 12, color: "#8394b0", marginBottom: 4 }}>
-              {isBR ? "Plano mensal — oferta até domingo" : (lang === "en" ? "Annual plan" : "Plan anual")}
+              {isBR ? "Plano mensal" : (lang === "en" ? "Annual plan" : "Plan anual")}
             </div>
             {isBR && (
               <div style={{ fontSize: 12, color: "#4e5c72", textDecoration: "line-through", marginBottom: 2 }}>
