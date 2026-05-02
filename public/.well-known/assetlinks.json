@@ -7,4 +7,13 @@
       "3A:4A:02:0A:51:D5:DF:72:A1:A4:3B:9F:55:F3:EF:4D:DD:D6:8E:52:8C:8B:61:D8:B1:BC:21:94:5C:1F:9A:9C"
     ]
   }
+},{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "br.com.mobilizei.tamoai",
+    "sha256_cert_fingerprints": [
+      "F6:96:48:05:DB:64:A0:E9:29:3F:5F:87:C8:44:18:65:14:58:5C:30:66:C6:91:E1:7B:CD:D0:F3:CF:68:10:65"
+    ]
+  }
 }]
