@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/internal/affiliates/migrate",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/internal/affiliates/payouts",
@@ -15,8 +15,7 @@
   ],
   "functions": {
     "app/api/white-bg/route.ts": {
-      "maxDuration": 60,
-      "memory": 3008
+      "maxDuration": 15
     },
     "app/api/prompt/route.ts": {
       "maxDuration": 60
