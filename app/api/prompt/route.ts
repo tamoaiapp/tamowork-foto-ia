@@ -112,6 +112,19 @@ export async function POST(req: NextRequest) {
       console.log("[prompt] estilo do usuário aplicado:", JSON.stringify(userContext.style).slice(0, 80));
     }
 
+    // Testa conectividade com Ollama antes de chamar generatePromptWithOllama
+    const ollamaBase = process.env.OLLAMA_BASE ?? "";
+    let ollamaConnError: string | null = null;
+    if (ollamaBase) {
+      try {
+        const pingRes = await fetch(`${ollamaBase}/api/tags`, { signal: AbortSignal.timeout(5000) });
+        console.log("[prompt] ollama ping:", pingRes.status);
+      } catch (pe) {
+        ollamaConnError = String((pe as Error).message);
+        console.warn("[prompt] ollama ping falhou:", ollamaConnError);
+      }
+    }
+
     // Tenta gerar via Ollama (qwen2.5:7b local no A40) — se falhar usa regras
     let ollamaError: string | null = null;
     let ollamaResult = null;
@@ -148,6 +161,7 @@ export async function POST(req: NextRequest) {
       meta: v2.meta,
       source: "multiagent_v2",
       _debug_ollama: ollamaError ?? "returned_null",
+      _debug_conn: ollamaConnError ?? "ping_ok",
     });
   } catch (e) {
     return NextResponse.json(
