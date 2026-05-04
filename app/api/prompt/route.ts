@@ -113,7 +113,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Tenta gerar via Ollama (qwen2.5:7b local no A40) — se falhar usa regras
-    const ollamaResult = await generatePromptWithOllama(produtoEN, cenarioEN, visionDesc, userContext);
+    let ollamaError: string | null = null;
+    let ollamaResult = null;
+    try {
+      ollamaResult = await generatePromptWithOllama(produtoEN, cenarioEN, visionDesc, userContext);
+    } catch (err) {
+      ollamaError = String((err as Error)?.message ?? err);
+      console.warn("[prompt] ollama exception:", ollamaError);
+    }
 
     if (ollamaResult) {
       console.log("[prompt] gerado via Ollama qwen2.5:7b");
@@ -126,7 +133,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Fallback: motor multiagente V2 (Ollama offline)
-    console.log("[prompt] fallback para motor multiagente V2 (Ollama offline)");
+    console.log("[prompt] fallback para motor multiagente V2 (Ollama offline). ollama_error:", ollamaError ?? "null returned");
     const v2 = generatePromptV2({
       product_name: produtoEN,
       scene_request: cenarioEN || undefined,
@@ -140,6 +147,7 @@ export async function POST(req: NextRequest) {
       negative: v2.negative_prompt,
       meta: v2.meta,
       source: "multiagent_v2",
+      _debug_ollama: ollamaError ?? "returned_null",
     });
   } catch (e) {
     return NextResponse.json(
