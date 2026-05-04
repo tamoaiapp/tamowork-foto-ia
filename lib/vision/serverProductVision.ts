@@ -13,7 +13,6 @@
  * e o submit usa o texto do usuário sem enriquecimento.
  */
 
-const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const VISION_MODEL = process.env.OLLAMA_VISION_MODEL ?? "moondream";
 const VISION_TIMEOUT_MS = 15_000;
 
@@ -52,6 +51,7 @@ export async function getProductVisionDescription(
   imageUrl: string,
   userText?: string
 ): Promise<string | null> {
+  const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
   if (!OLLAMA_BASE) return null;
 
   try {

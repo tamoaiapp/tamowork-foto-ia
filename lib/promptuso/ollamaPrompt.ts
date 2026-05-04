@@ -7,7 +7,6 @@
  * Fallback: se Ollama offline → retorna null → rota usa buildPromptResult (regras)
  */
 
-const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const PROMPT_MODEL = process.env.OLLAMA_PROMPT_MODEL ?? "qwen2.5:7b";
 const TIMEOUT_MS = 90_000;
 
@@ -272,6 +271,7 @@ export async function generatePromptWithOllama(
   visionDesc?: string,
   userContext?: UserContext
 ): Promise<OllamaPromptResult | null> {
+  const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
   if (!OLLAMA_BASE) return null;
 
   const contextBlock = buildUserContextBlock(userContext);
