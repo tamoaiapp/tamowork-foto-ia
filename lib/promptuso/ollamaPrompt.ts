@@ -325,8 +325,7 @@ Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${acce
     });
 
     if (!res.ok) {
-      console.warn(`[ollamaPrompt] Ollama retornou ${res.status}`);
-      return null;
+      throw new Error(`OLLAMA_STATUS_${res.status}`);
     }
 
     const data = await res.json();
@@ -335,14 +334,12 @@ Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${acce
     // Extrair JSON da resposta (remove markdown se tiver)
     const jsonMatch = raw.match(/\{[\s\S]*"positive_prompt"[\s\S]*"negative_prompt"[\s\S]*\}/);
     if (!jsonMatch) {
-      console.warn("[ollamaPrompt] JSON não encontrado na resposta:", raw.slice(0, 200));
-      return null;
+      throw new Error(`OLLAMA_BAD_JSON:${raw.slice(0, 120)}`);
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
     if (!parsed.positive_prompt || !parsed.negative_prompt) {
-      console.warn("[ollamaPrompt] JSON incompleto:", parsed);
-      return null;
+      throw new Error(`OLLAMA_INCOMPLETE_JSON:${JSON.stringify(parsed).slice(0, 80)}`);
     }
 
     return {
