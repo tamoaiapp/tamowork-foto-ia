@@ -7,7 +7,7 @@
  * Fallback: se Ollama offline → retorna null → rota usa buildPromptResult (regras)
  */
 
-const PROMPT_MODEL = process.env.OLLAMA_PROMPT_MODEL ?? "qwen2.5:7b";
+const PROMPT_MODEL = (process.env.OLLAMA_PROMPT_MODEL ?? "qwen2.5:7b").trim();
 const TIMEOUT_MS = 90_000;
 
 const SYSTEM_PROMPT = `You are a professional photographer and prompt engineer. You create vivid, detailed image generation prompts in English for Qwen Image/Video models (Flux Kontext).
@@ -272,7 +272,7 @@ export async function generatePromptWithOllama(
   userContext?: UserContext
 ): Promise<OllamaPromptResult | null> {
   const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
-  if (!OLLAMA_BASE) throw new Error("OLLAMA_BASE_EMPTY");
+  if (!OLLAMA_BASE) return null;
 
   const contextBlock = buildUserContextBlock(userContext);
   const systemPromptWithContext = contextBlock
@@ -325,8 +325,8 @@ Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${acce
     });
 
     if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
-      throw new Error(`OLLAMA_STATUS_${res.status}:${errBody.slice(0, 100)}`);
+      console.warn(`[ollamaPrompt] Ollama retornou ${res.status}`);
+      return null;
     }
 
     const data = await res.json();
@@ -335,12 +335,14 @@ Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${acce
     // Extrair JSON da resposta (remove markdown se tiver)
     const jsonMatch = raw.match(/\{[\s\S]*"positive_prompt"[\s\S]*"negative_prompt"[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error(`OLLAMA_BAD_JSON:${raw.slice(0, 120)}`);
+      console.warn("[ollamaPrompt] JSON não encontrado na resposta:", raw.slice(0, 200));
+      return null;
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
     if (!parsed.positive_prompt || !parsed.negative_prompt) {
-      throw new Error(`OLLAMA_INCOMPLETE_JSON:${JSON.stringify(parsed).slice(0, 80)}`);
+      console.warn("[ollamaPrompt] JSON incompleto:", parsed);
+      return null;
     }
 
     return {
@@ -348,7 +350,10 @@ Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${acce
       negative_prompt: String(parsed.negative_prompt).trim(),
     };
   } catch (e) {
-    // Re-throw para o _debug_ollama no route.ts capturar o erro real
-    throw e;
+    const msg = (e as Error).message ?? String(e);
+    if (!msg.includes("timeout") && !msg.includes("abort")) {
+      console.warn("[ollamaPrompt] Erro:", msg);
+    }
+    return null;
   }
 }
