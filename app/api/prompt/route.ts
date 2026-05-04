@@ -150,9 +150,12 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const ollamaBase = process.env.OLLAMA_BASE ?? "";
   return NextResponse.json({
     ok: true,
     service: "tamo-ai-brain-v7-product-scenario",
     info: "POST /api/prompt com { produto_frase, cenario }",
+    ollama_configured: !!ollamaBase,
+    ollama_host: ollamaBase ? ollamaBase.replace(/^https?:\/\//, "").split("/")[0] : null,
   });
 }
