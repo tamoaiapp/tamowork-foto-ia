@@ -1,7 +1,7 @@
 /**
  * serverProductVision.ts
  *
- * Visão de produto server-side via Ollama (A40 GPU — sem custo de API).
+ * Visão de produto server-side via Ollama (A5000 GPU — sem custo de API).
  *
  * Usa moondream (1.9 GB, ~1s no A40) para identificar o produto com precisão,
  * independente do que o usuário digitou.
