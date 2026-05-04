@@ -325,7 +325,8 @@ Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${acce
     });
 
     if (!res.ok) {
-      throw new Error(`OLLAMA_STATUS_${res.status}`);
+      const errBody = await res.text().catch(() => "");
+      throw new Error(`OLLAMA_STATUS_${res.status}:${errBody.slice(0, 100)}`);
     }
 
     const data = await res.json();
