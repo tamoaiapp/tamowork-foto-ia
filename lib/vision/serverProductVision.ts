@@ -1,132 +1,78 @@
 /**
  * serverProductVision.ts
  *
- * Analisa a imagem do produto e retorna descrição em inglês.
+ * Visão de produto server-side via Ollama (A40 GPU — sem custo de API).
  *
- * Ordem de tentativa:
- *   1. Claude Haiku (Anthropic API) — sempre disponível se ANTHROPIC_API_KEY set
- *   2. Ollama moondream (pod local) — fallback se OLLAMA_BASE set
- *   3. null — usa texto digitado pelo usuário
+ * Usa moondream (1.9 GB, ~1s no A40) para identificar o produto com precisão,
+ * independente do que o usuário digitou.
+ *
+ * Fluxo:
+ *   input_image_url + user_text → Ollama moondream → product_description (EN)
+ *
+ * Fallback silencioso: se Ollama estiver offline, retorna null
+ * e o submit usa o texto do usuário sem enriquecimento.
  */
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const VISION_MODEL = process.env.OLLAMA_VISION_MODEL ?? "moondream";
-const VISION_TIMEOUT_MS = 20_000;
+const VISION_TIMEOUT_MS = 15_000;
 
 /**
- * Remove frases genéricas de intro do modelo, markdown, etc.
+ * Extrai a descrição do produto da resposta do modelo.
+ * Remove frases genéricas, intro do modelo, markdown, etc.
  */
 function cleanVisionResponse(raw: string): string {
   let s = raw.trim();
 
+  // Remove markdown básico
   s = s.replace(/\*\*/g, "").replace(/^#+\s*/gm, "").replace(/`/g, "");
 
+  // Remove frases de intro comuns do moondream
   s = s
     .replace(/^(The image (shows|depicts|contains|features|presents)|This is|In (the|this) image,?|I can see|Looking at|The product (is|shown|displayed))[,:]?\s*/i, "")
     .replace(/^(Sure[,!]?|Of course[,!]?|Certainly[,!]?)\s+/i, "");
 
+  // Pega só a primeira frase se for muito longa
   const firstSentence = s.match(/^[^.!?]+[.!?]/);
   if (firstSentence && firstSentence[0].length > 20) {
     s = firstSentence[0].trim();
   }
 
+  // Remove trailing punctuation excess
   s = s.replace(/[.!?]+$/, "").trim();
 
   return s.length >= 5 ? s : raw.trim();
 }
 
 /**
- * Visão via Claude Haiku (Anthropic API).
- * Envia a imagem em base64 e retorna descrição do produto em inglês.
+ * Analisa a imagem do produto via Ollama vision e retorna descrição em inglês.
+ * Retorna null se Ollama estiver indisponível ou falhar.
  */
-async function getVisionViaClaude(
-  imageUrl: string,
-  userText?: string
-): Promise<string | null> {
-  if (!ANTHROPIC_API_KEY) return null;
-
-  try {
-    const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(15_000) });
-    if (!imgRes.ok) return null;
-
-    const imgBuf = await imgRes.arrayBuffer();
-    const base64 = Buffer.from(imgBuf).toString("base64");
-
-    const contentType = imgRes.headers.get("content-type") ?? "image/jpeg";
-    const mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" =
-      contentType.includes("png") ? "image/png"
-      : contentType.includes("webp") ? "image/webp"
-      : contentType.includes("gif") ? "image/gif"
-      : "image/jpeg";
-
-    const hasUserText = userText && userText.trim().length > 2;
-    const prompt = hasUserText
-      ? `The user says this product is "${userText.trim()}". Confirm or correct this and describe the product accurately in one sentence: what type of product, color, material or texture, and style. Focus only on the product, ignore background and people.`
-      : `Describe this product in one sentence for e-commerce: what type of product, color, material or texture, and style. Focus only on the product, ignore background, people, and props.`;
-
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 150,
-        messages: [{
-          role: "user",
-          content: [
-            { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-            { type: "text", text: prompt },
-          ],
-        }],
-      }),
-      signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
-    });
-
-    if (!res.ok) {
-      console.warn(`[vision:claude] status ${res.status}`);
-      return null;
-    }
-
-    const data = await res.json() as { content?: { type: string; text?: string }[] };
-    const description = cleanVisionResponse(data.content?.[0]?.text ?? "");
-    if (!description || description.length < 4) return null;
-
-    console.log(`[vision:claude] "${userText ?? "(sem texto)"}" → "${description}"`);
-    return description;
-  } catch (e) {
-    const msg = (e as Error).message ?? String(e);
-    if (!msg.includes("timeout") && !msg.includes("abort")) {
-      console.warn("[vision:claude] erro:", msg);
-    }
-    return null;
-  }
-}
-
-/**
- * Visão via Ollama moondream (pod local).
- */
-async function getVisionViaOllama(
+export async function getProductVisionDescription(
   imageUrl: string,
   userText?: string
 ): Promise<string | null> {
   if (!OLLAMA_BASE) return null;
 
   try {
-    const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(15_000) });
+    // Download da imagem
+    const imgRes = await fetch(imageUrl, {
+      signal: AbortSignal.timeout(15_000),
+    });
     if (!imgRes.ok) return null;
 
     const imgBuf = await imgRes.arrayBuffer();
     const base64 = Buffer.from(imgBuf).toString("base64");
 
+    // Prompt focado em produto para e-commerce
+    // moondream responde melhor com perguntas diretas
     const hasUserText = userText && userText.trim().length > 2;
+
     const prompt = hasUserText
       ? `The user says this product is "${userText.trim()}". Confirm or correct this and describe the product accurately in one sentence: what type of product, color, material or texture, and style. Focus only on the product, ignore background and people.`
       : `Describe this product in one sentence for e-commerce: what type of product, color, material or texture, and style. Focus only on the product, ignore background, people, and props.`;
 
+    // moondream no Ollama requer o formato /api/chat com images no message
     const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -134,52 +80,40 @@ async function getVisionViaOllama(
         model: VISION_MODEL,
         messages: [{ role: "user", content: prompt, images: [base64] }],
         stream: false,
-        options: { num_predict: 120, temperature: 0.1, num_ctx: 1024 },
+        options: {
+          num_predict: 120,
+          temperature: 0.1,
+          num_ctx: 1024, // KV cache pequeno — cabe todo na GPU (A5000 com ~4.7GB livre)
+        },
       }),
       signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
     });
 
     if (!res.ok) {
-      console.warn(`[vision:ollama] status ${res.status}`);
+      console.warn(`[vision] Ollama respondeu ${res.status}`);
       return null;
     }
 
     const data = (await res.json()) as { message?: { content?: string } };
     const description = cleanVisionResponse(data.message?.content ?? "");
+
     if (!description || description.length < 4) return null;
 
-    console.log(`[vision:ollama] "${userText ?? "(sem texto)"}" → "${description}"`);
+    console.log(`[vision] "${userText ?? "(sem texto)"}" → "${description}"`);
     return description;
   } catch (e) {
     const msg = (e as Error).message ?? String(e);
+    // Não loga timeout como erro — é esperado quando pod estiver carregando
     if (!msg.includes("timeout") && !msg.includes("abort")) {
-      console.warn("[vision:ollama] erro:", msg);
+      console.warn("[vision] erro:", msg);
     }
     return null;
   }
 }
 
 /**
- * Analisa a imagem do produto via IA e retorna descrição em inglês.
- * Tenta Claude primeiro, depois Ollama, retorna null se ambos falharem.
- */
-export async function getProductVisionDescription(
-  imageUrl: string,
-  userText?: string
-): Promise<string | null> {
-  // 1. Claude (Anthropic API) — primário
-  const claudeResult = await getVisionViaClaude(imageUrl, userText);
-  if (claudeResult) return claudeResult;
-
-  // 2. Ollama moondream — fallback local
-  const ollamaResult = await getVisionViaOllama(imageUrl, userText);
-  if (ollamaResult) return ollamaResult;
-
-  return null;
-}
-
-/**
  * Mescla o texto do usuário com a descrição da visão.
+ * Resultado: prompt mais rico para o buildPromptResult.
  *
  * Exemplos:
  *   user: "vestdo" + vision: "blue floral midi dress" → "blue floral midi dress"
@@ -191,12 +125,15 @@ export function mergeProductTexts(userText: string, visionDescription: string | 
   const u = (userText ?? "").trim();
   const v = (visionDescription ?? "").trim();
 
-  if (!v) return u || "product";
-  if (!u) return v;
+  if (!v) return u || "product"; // sem visão → usa o do usuário ou fallback
+  if (!u) return v;              // sem texto do usuário → usa visão pura
 
+  // Se o texto do usuário está contido na visão (confirmado), usa visão
   const uLower = u.toLowerCase();
   const vLower = v.toLowerCase();
   if (vLower.includes(uLower) || uLower.length <= 3) return v;
 
+  // Se são bem diferentes, anota o texto original como hint de contexto
+  // para o buildPromptResult não perder inferências de categoria PT/ES
   return `${v} (${u})`;
 }
