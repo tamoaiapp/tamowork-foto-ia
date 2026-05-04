@@ -162,6 +162,7 @@ export async function POST(req: NextRequest) {
       source: "multiagent_v2",
       _debug_ollama: ollamaError ?? "returned_null",
       _debug_conn: ollamaConnError ?? "ping_ok",
+      _debug_base: (process.env.OLLAMA_BASE ?? "").slice(0, 40) || "EMPTY",
     });
   } catch (e) {
     return NextResponse.json(
