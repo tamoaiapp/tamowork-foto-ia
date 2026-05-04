@@ -128,8 +128,10 @@ export async function POST(req: NextRequest) {
     // Tenta gerar via Ollama (qwen2.5:7b local no A40) — se falhar usa regras
     let ollamaError: string | null = null;
     let ollamaResult = null;
+    console.log("[prompt] chamando generatePromptWithOllama, tipo:", typeof generatePromptWithOllama);
     try {
       ollamaResult = await generatePromptWithOllama(produtoEN, cenarioEN, visionDesc, userContext);
+      console.log("[prompt] resultado ollama:", ollamaResult ? "OK" : "null");
     } catch (err) {
       ollamaError = String((err as Error)?.message ?? err);
       console.warn("[prompt] ollama exception:", ollamaError);
