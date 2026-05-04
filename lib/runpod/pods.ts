@@ -5,7 +5,7 @@ const GRAPHQL = "https://api.runpod.io/graphql";
 
 // Pod IDs (em ordem de prioridade para foto)
 export const FOTO_POD_IDS = (process.env.FOTO_POD_IDS ?? "bplqvtp059e2dc,64u9u09pqlya53").split(",").map(s => s.trim()).filter(Boolean);
-export const VIDEO_POD_ID = process.env.VIDEO_POD_ID ?? "edl3f6a18ofxey";
+export const VIDEO_POD_ID = process.env.VIDEO_POD_ID ?? "h0by4qrq3g2p7s";
 
 async function gql(query: string) {
   const res = await fetch(GRAPHQL, {
