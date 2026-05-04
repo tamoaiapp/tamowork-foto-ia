@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { generatePromptWithOllama } from "@/lib/promptuso/ollamaPrompt";
+import { generatePromptWithClaude, generatePromptWithOllama } from "@/lib/promptuso/ollamaPrompt";
 import { getUserContext } from "@/lib/promptuso/userContext";
 import { generatePromptV2 } from "@/lib/promptuso/multiagent";
 
@@ -112,9 +112,20 @@ export async function POST(req: NextRequest) {
       console.log("[prompt] estilo do usuário aplicado:", JSON.stringify(userContext.style).slice(0, 80));
     }
 
-    // Tenta gerar via Ollama (qwen2.5:7b local no A40) — se falhar usa regras
-    const ollamaResult = await generatePromptWithOllama(produtoEN, cenarioEN, visionDesc, userContext);
+    // 1. Claude Haiku (Anthropic API) — primário, sempre disponível
+    const claudeResult = await generatePromptWithClaude(produtoEN, cenarioEN, visionDesc, userContext);
+    if (claudeResult) {
+      console.log("[prompt] gerado via Claude Haiku");
+      return NextResponse.json({
+        ok: true,
+        positive: claudeResult.positive_prompt,
+        negative: claudeResult.negative_prompt,
+        source: "claude",
+      });
+    }
 
+    // 2. Ollama local (qwen2.5:7b) — fallback se Claude indisponível
+    const ollamaResult = await generatePromptWithOllama(produtoEN, cenarioEN, visionDesc, userContext);
     if (ollamaResult) {
       console.log("[prompt] gerado via Ollama qwen2.5:7b");
       return NextResponse.json({
@@ -125,8 +136,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Fallback: motor multiagente V2 (Ollama offline)
-    console.log("[prompt] fallback para motor multiagente V2 (Ollama offline)");
+    // 3. Motor multiagente V2 (regras) — fallback final
+    console.log("[prompt] fallback para motor multiagente V2 (regras)");
     const v2 = generatePromptV2({
       product_name: produtoEN,
       scene_request: cenarioEN || undefined,

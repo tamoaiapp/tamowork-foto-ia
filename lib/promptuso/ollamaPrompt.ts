@@ -1,12 +1,11 @@
 /**
  * ollamaPrompt.ts
  *
- * Gera positive_prompt + negative_prompt via LLM local (Ollama no A40).
- * Usa qwen2.5:7b — rápido, confiável em JSON, mesma família do modelo de imagem.
- *
- * Fallback: se Ollama offline → retorna null → rota usa buildPromptResult (regras)
+ * Gera positive_prompt + negative_prompt via LLM.
+ * Ordem: Claude Haiku (Anthropic API) → Ollama local → null (fallback para multiagent)
  */
 
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
 const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
 const PROMPT_MODEL = process.env.OLLAMA_PROMPT_MODEL ?? "qwen2.5:7b";
 const TIMEOUT_MS = 90_000;
@@ -265,6 +264,94 @@ const ACCESSORY_SHOT_PREFIX: Record<string, string> = {
   bracelet: "⚠️ BRACELET DETECTED. Your positive_prompt MUST begin with: \"Close-up of wrist and forearm, bracelet prominently shown, wrist elegantly posed, bracelet is the hero.\"",
   hat:      "⚠️ HAT/CAP DETECTED. Your positive_prompt MUST begin with: \"Half-body or close-up shot, hat prominently worn on head, face and hat fill the frame, shoulders-up framing.\"",
 };
+
+/**
+ * Gera prompt via Claude Haiku (Anthropic API).
+ * Usa o mesmo SYSTEM_PROMPT detalhado — Claude entende melhor do que modelos menores.
+ * Retorna null se ANTHROPIC_API_KEY não estiver configurado ou falhar.
+ */
+export async function generatePromptWithClaude(
+  produto: string,
+  cenario: string,
+  visionDesc?: string,
+  userContext?: UserContext
+): Promise<OllamaPromptResult | null> {
+  if (!ANTHROPIC_API_KEY) return null;
+
+  const contextBlock = buildUserContextBlock(userContext);
+  const systemPromptWithContext = contextBlock ? contextBlock + SYSTEM_PROMPT : SYSTEM_PROMPT;
+
+  const isSurface = detectSurfacePlacement(cenario);
+  const accessoryType = isSurface ? null : detectAccessoryType(produto, visionDesc);
+
+  const surfaceInstruction = isSurface
+    ? `\n\n⚠️ USER SCENE REQUEST (MANDATORY): "${cenario}"
+This is a FLAT LAY / PRODUCT DISPLAY photo — NO person, NO hands, NO model.
+Your job is to IMAGINE and DESCRIBE this photo in rich visual English:
+- Use the Vision Description as the source of truth for the product's appearance (colors, texture, material, design details)
+- Describe the product resting on the exact surface the user mentioned
+- Include any props/objects the user mentioned placed naturally near the product
+- Describe the lighting, angle, composition (e.g. "overhead flat lay", "45-degree side angle", "soft side lighting")
+- Use vivid, professional photography language — do NOT copy the user's words literally
+- Write as if you are a photographer describing the exact photo to be taken
+CRITICAL: Add these keywords to negative_prompt: person, hand, hands, fingers, holding, touching, model, human, people`
+    : "";
+
+  let accessoryInstruction = accessoryType ? `\n\n${ACCESSORY_SHOT_PREFIX[accessoryType]}` : "";
+  if (accessoryType && cenario) {
+    accessoryInstruction += `\n⚠️ SCENE BACKGROUND MANDATORY: The person must be placed in this specific environment: "${cenario}". Describe this location/background in detail in the positive_prompt — do NOT use a neutral studio background. The background IS part of the photo.`;
+  }
+
+  const userMessage = `Product Name: ${produto || "(not provided)"}
+Scene: ${cenario || "(not provided)"}
+Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${accessoryInstruction}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1200,
+        system: systemPromptWithContext,
+        messages: [{ role: "user", content: userMessage }],
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+
+    if (!res.ok) {
+      console.warn(`[claudePrompt] status ${res.status}`);
+      return null;
+    }
+
+    const data = await res.json() as { content?: { type: string; text?: string }[] };
+    const raw: string = data.content?.[0]?.text ?? "";
+
+    const jsonMatch = raw.match(/\{[\s\S]*"positive_prompt"[\s\S]*"negative_prompt"[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.warn("[claudePrompt] JSON não encontrado:", raw.slice(0, 200));
+      return null;
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!parsed.positive_prompt || !parsed.negative_prompt) {
+      console.warn("[claudePrompt] JSON incompleto:", parsed);
+      return null;
+    }
+
+    return {
+      positive_prompt: String(parsed.positive_prompt).trim(),
+      negative_prompt: String(parsed.negative_prompt).trim(),
+    };
+  } catch (e) {
+    console.warn("[claudePrompt] erro:", (e as Error).message);
+    return null;
+  }
+}
 
 export async function generatePromptWithOllama(
   produto: string,
