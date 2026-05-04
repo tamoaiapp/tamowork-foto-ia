@@ -272,6 +272,7 @@ export async function generatePromptWithOllama(
   userContext?: UserContext
 ): Promise<OllamaPromptResult | null> {
   const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
+  console.log("[ollamaPrompt] OLLAMA_BASE=", OLLAMA_BASE ? OLLAMA_BASE.slice(0, 40) : "VAZIO");
   if (!OLLAMA_BASE) return null;
 
   const contextBlock = buildUserContextBlock(userContext);
@@ -350,7 +351,7 @@ Vision Description: ${visionDesc || "(not provided)"}${surfaceInstruction}${acce
       negative_prompt: String(parsed.negative_prompt).trim(),
     };
   } catch (e) {
-    console.warn("[ollamaPrompt] Erro:", (e as Error).message);
-    return null;
+    // Re-throw para o _debug_ollama no route.ts capturar o erro real
+    throw e;
   }
 }
