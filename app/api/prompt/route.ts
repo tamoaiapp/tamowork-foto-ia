@@ -115,13 +115,26 @@ export async function POST(req: NextRequest) {
     // Testa conectividade com Ollama antes de chamar generatePromptWithOllama
     const ollamaBase = process.env.OLLAMA_BASE ?? "";
     let ollamaConnError: string | null = null;
+    let pingPostStatus: number | null = null;
     if (ollamaBase) {
       try {
         const pingRes = await fetch(`${ollamaBase}/api/tags`, { signal: AbortSignal.timeout(5000) });
-        console.log("[prompt] ollama ping:", pingRes.status);
+        console.log("[prompt] ollama GET ping:", pingRes.status);
       } catch (pe) {
         ollamaConnError = String((pe as Error).message);
-        console.warn("[prompt] ollama ping falhou:", ollamaConnError);
+        console.warn("[prompt] ollama GET ping falhou:", ollamaConnError);
+      }
+      // Testa se POST funciona do Vercel para o proxy
+      try {
+        const postPingRes = await fetch(`${ollamaBase}/ping`, {
+          method: "POST", body: "test",
+          headers: { "content-type": "text/plain" },
+          signal: AbortSignal.timeout(5000)
+        });
+        pingPostStatus = postPingRes.status;
+        console.log("[prompt] ollama POST ping:", postPingRes.status);
+      } catch (pe2) {
+        console.warn("[prompt] ollama POST ping falhou:", (pe2 as Error).message);
       }
     }
 
@@ -163,7 +176,8 @@ export async function POST(req: NextRequest) {
       meta: v2.meta,
       source: "multiagent_v2",
       _debug_ollama: ollamaError ?? "returned_null",
-      _debug_conn: ollamaConnError ?? "ping_ok",
+      _debug_conn: ollamaConnError ?? "get_ok",
+      _debug_post_ping: pingPostStatus ?? "not_tested",
       _debug_base: (process.env.OLLAMA_BASE ?? "").slice(0, 40) || "EMPTY",
     });
   } catch (e) {
