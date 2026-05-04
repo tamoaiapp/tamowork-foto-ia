@@ -272,8 +272,7 @@ export async function generatePromptWithOllama(
   userContext?: UserContext
 ): Promise<OllamaPromptResult | null> {
   const OLLAMA_BASE = process.env.OLLAMA_BASE ?? "";
-  console.log("[ollamaPrompt] OLLAMA_BASE=", OLLAMA_BASE ? OLLAMA_BASE.slice(0, 40) : "VAZIO");
-  if (!OLLAMA_BASE) return null;
+  if (!OLLAMA_BASE) throw new Error("OLLAMA_BASE_EMPTY");
 
   const contextBlock = buildUserContextBlock(userContext);
   const systemPromptWithContext = contextBlock
