@@ -40,9 +40,10 @@ export default function CriacoesPage() {
     const res = await fetch("/api/account", { headers: { Authorization: `Bearer ${tok}` } });
     if (res.ok) {
       const data = await res.json();
-      setJobs((data.jobs ?? []).filter((j: AccountJob) =>
+      const done = (data.jobs ?? []).filter((j: AccountJob) =>
         j.status === "done" && (j.output_image_url || j.output_video_url)
-      ));
+      );
+      setJobs(done.slice(0, 6));
     }
   }
 
