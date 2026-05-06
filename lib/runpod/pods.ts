@@ -153,6 +153,22 @@ export async function ensureFotoPodRunning(comfyBase: string): Promise<boolean> 
   return false;
 }
 
+// Para o pod de vídeo se ocioso há mais de 20 min sem jobs ativos
+export async function autoStopVideoPodIfIdle(hasActiveJobs: boolean): Promise<boolean> {
+  if (hasActiveJobs) return false;
+  try {
+    const status = await getPodStatus(VIDEO_POD_ID);
+    if (status !== "RUNNING") return false;
+    const uptimeMs = await getPodUptimeMs(VIDEO_POD_ID);
+    if (uptimeMs < 20 * 60 * 1000) return false;
+    await stopPod(VIDEO_POD_ID);
+    console.log(`[pods] Video pod parado por ociosidade (uptime ${Math.round(uptimeMs / 60000)}min)`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function ensureVideoPodRunning(comfyBase: string): Promise<boolean> {
   const healthy = await isComfyHealthy(comfyBase);
   if (healthy) return true;

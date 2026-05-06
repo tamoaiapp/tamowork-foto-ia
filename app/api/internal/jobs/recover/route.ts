@@ -7,7 +7,7 @@ import { checkVideoJob } from "@/lib/video-jobs/check";
 import { submitNarratedVideoJob } from "@/lib/narrated-video/submit";
 import { checkNarratedVideoJob } from "@/lib/narrated-video/check";
 import { COMFY_BASES } from "@/lib/comfyui/client";
-import { ensureFotoPodRunning, ensureVideoPodRunning } from "@/lib/runpod/pods";
+import { ensureFotoPodRunning, ensureVideoPodRunning, autoStopVideoPodIfIdle } from "@/lib/runpod/pods";
 import { VIDEO_COMFY_BASES } from "@/lib/comfyui/video-client";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
@@ -298,6 +298,16 @@ export async function GET(req: NextRequest) {
           .eq("id", job.id);
       }
     }
+  }
+
+  // Auto-stop pod de vídeo se ocioso há mais de 20 min
+  if (videoBase) {
+    const hasActiveVideo = (
+      (queuedVideoJobs ?? []).length > 0 ||
+      (processingVideoJobs ?? []).length > 0
+    );
+    const stopped = await autoStopVideoPodIfIdle(hasActiveVideo);
+    if (stopped) results.push({ id: "pod-video", action: "vid-auto-stop", ok: true });
   }
 
   // Verifica narrated video em andamento
