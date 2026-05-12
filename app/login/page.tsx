@@ -179,7 +179,29 @@ function AuthCard() {
     setLoading(true); setError(""); setMsg("");
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError(translateError(error.message, lang));
+      if (error) {
+        const isInvalidCreds = /invalid login credentials|invalid credentials/i.test(error.message);
+        if (isInvalidCreds) {
+          try {
+            const res = await fetch("/api/auth/migrate-legacy", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            });
+            if (res.ok) {
+              const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
+              if (!e2) { router.push(nextUrl || "/"); setLoading(false); return; }
+              setError(translateError(e2.message, lang));
+            } else {
+              setError(translateError(error.message, lang));
+            }
+          } catch {
+            setError(translateError(error.message, lang));
+          }
+        } else {
+          setError(translateError(error.message, lang));
+        }
+      }
       else router.push(nextUrl || "/");
     } else {
       const { data, error } = await supabase.auth.signUp({ email, password });
