@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resumePod } from "@/lib/runpod/pods";
+import { resumePod, FOTO_POD_IDS } from "@/lib/runpod/pods";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 
-// Cron: liga pod 2 às 8h (BRT) = 11h UTC
-// Também aceita x-internal-secret para uso manual
+// Liga pods de foto (uso manual via x-internal-secret ou cron com Bearer CRON_SECRET)
+// Query opcional: ?pod=<id> liga só esse; sem query liga todos os FOTO_POD_IDS
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization") ?? "";
   const internal = req.headers.get("x-internal-secret") ?? "";
@@ -12,11 +12,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const pod = req.nextUrl.searchParams.get("pod");
-  const pod1 = process.env.POD1_ID ?? "bplqvtp059e2dc";
-  const pod2 = process.env.POD2_ID ?? "64u9u09pqlya53";
-
-  const toStart = pod === "1" ? [pod1] : pod === "2" ? [pod2] : [pod1, pod2];
+  const specific = req.nextUrl.searchParams.get("pod");
+  const toStart = specific ? [specific] : FOTO_POD_IDS;
   await Promise.all(toStart.map(id => resumePod(id).catch(() => {})));
 
   return NextResponse.json({ ok: true, started: toStart });

@@ -5,6 +5,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/internal/pods",
+      "schedule": "*/30 * * * *"
+    },
+    {
       "path": "/api/internal/affiliates/migrate",
       "schedule": "0 * * * *"
     },

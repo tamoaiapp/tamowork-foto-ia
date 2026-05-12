@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stopPod } from "@/lib/runpod/pods";
+import { stopPod, FOTO_POD_IDS } from "@/lib/runpod/pods";
 
-// Cron: desliga pod 2 às 20h (BRT) = 23h UTC
+// Desliga pod especifico via ?pod=<id> ou todos FOTO_POD_IDS sem query
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const internal = req.headers.get("x-internal-secret") ?? "";
+  const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
+  if (auth !== `Bearer ${process.env.CRON_SECRET}` && (!INTERNAL_SECRET || internal !== INTERNAL_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const pod2 = process.env.POD2_ID ?? "64u9u09pqlya53";
-  await stopPod(pod2);
+  const specific = req.nextUrl.searchParams.get("pod");
+  const toStop = specific ? [specific] : FOTO_POD_IDS;
+  await Promise.all(toStop.map(id => stopPod(id).catch(() => {})));
 
-  return NextResponse.json({ ok: true, stopped: pod2 });
+  return NextResponse.json({ ok: true, stopped: toStop });
 }

@@ -35,13 +35,11 @@ export async function GET(req: NextRequest) {
   const stopped: string[] = [];
   const errors: string[] = [];
 
-  // Parar pods de foto se ociosos — pod1 e pod3 nunca são desligados
-  const pod1 = process.env.POD1_ID ?? "bplqvtp059e2dc";
-  const pod3 = process.env.POD3_ID ?? "mct7zo9ymeysy7";
+  // Pods em ALWAYS_ON_POD_IDS (CSV no env) nunca são desligados
+  const alwaysOn = (process.env.ALWAYS_ON_POD_IDS ?? "").split(",").map(s => s.trim()).filter(Boolean);
   if (!fotoCount) {
     for (const podId of FOTO_POD_IDS) {
-      if (podId === pod1) continue; // pod1 sempre fica ligado
-      if (podId === pod3) continue; // pod3 sempre fica ligado
+      if (alwaysOn.includes(podId)) continue;
       try {
         const status = await getPodStatus(podId);
         if (status === "RUNNING") {
