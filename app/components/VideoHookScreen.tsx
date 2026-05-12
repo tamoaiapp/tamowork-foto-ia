@@ -22,8 +22,8 @@ export default function VideoHookScreen({ photoUrl, onAssinar, onCriar2aFoto, on
 
   return (
     <div style={s.overlay}>
-      <div style={{ ...s.bgPhoto, backgroundImage: `url(${photoUrl})` }} />
-      <div style={s.bgDim} />
+      {/* sem blur fullscreen — deixa a foto real visivel atras do sheet */}
+      <div style={s.backdropDim} onClick={onCriar2aFoto} />
 
       <div style={s.sheet}>
         {/* Before / After visual */}
@@ -87,27 +87,24 @@ const s: Record<string, React.CSSProperties> = {
     position: "fixed", inset: 0, zIndex: 450,
     display: "flex", alignItems: "flex-end", justifyContent: "center",
     animation: "slideUp .35s cubic-bezier(.22,1,.36,1)",
+    pointerEvents: "none" as const,
   },
-  bgPhoto: {
+  backdropDim: {
     position: "absolute", inset: 0,
-    backgroundSize: "cover", backgroundPosition: "center",
-    filter: "blur(20px) brightness(0.25)",
-    transform: "scale(1.1)",
-  },
-  bgDim: {
-    position: "absolute", inset: 0,
-    background: "linear-gradient(to top, rgba(7,8,11,0.98) 60%, rgba(7,8,11,0.7))",
+    background: "linear-gradient(to top, rgba(7,8,11,0.85) 35%, rgba(7,8,11,0) 70%)",
+    pointerEvents: "auto" as const,
   },
   sheet: {
     position: "relative", zIndex: 1,
     width: "100%", maxWidth: 520,
     background: "#0c1018",
     borderRadius: "24px 24px 0 0",
-    padding: "24px 20px 36px",
-    paddingBottom: "calc(36px + env(safe-area-inset-bottom, 0px))",
-    display: "flex", flexDirection: "column", gap: 14,
+    padding: "20px 20px 32px",
+    paddingBottom: "calc(32px + env(safe-area-inset-bottom, 0px))",
+    display: "flex", flexDirection: "column", gap: 12,
     boxShadow: "0 -4px 40px rgba(0,0,0,.8)",
-    overflowY: "auto", maxHeight: "90vh",
+    overflowY: "auto", maxHeight: "65vh",
+    pointerEvents: "auto" as const,
   },
   videoDemo: {
     display: "flex", alignItems: "center", justifyContent: "center",

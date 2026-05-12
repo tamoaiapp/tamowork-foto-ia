@@ -1566,7 +1566,8 @@ export default function HomePage() {
           if (variant === "B") {
             setTimeout(() => setShowConversion(true), 800);
           } else if (variant === "C") {
-            setTimeout(() => setShowVideoHook(true), 800);
+            // Atrasa upsell pra dar tempo do usuario ver a foto pronta antes
+            setTimeout(() => setShowVideoHook(true), 6000);
           }
         }
         return Math.max(prev, Math.min(FREE_PHOTO_DAILY_LIMIT, prev + 1));
