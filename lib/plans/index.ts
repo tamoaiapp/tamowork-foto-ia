@@ -19,6 +19,14 @@ const PENDING_BONUSES: Record<string, number> = {
   "valleriasoares1@hotmail.com": 30,
   "celsoafonso@uol.com.br": 30,
   "consultorminas@hotmail.com": 30,
+  "sportsmorelli@gmail.com": 30,
+  "martabarbosa2012@hotmail.com": 30,
+  "facachurrascoegolo@gmail.com": 30,
+  "karleelira@hotmail.com": 30,
+  "rubens.pbmc@gmail.com": 30,
+  "123netofertas@gmail.com": 30,
+  "leidiadf@gmail.com": 30,
+  "contatoflorenzabrasil@gmail.com": 30,
 };
 
 export async function getUserPlan(userId: string): Promise<Plan> {
