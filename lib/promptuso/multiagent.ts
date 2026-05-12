@@ -74,6 +74,7 @@ export interface ProductContext {
   wants_handheld: boolean;
   product_family: string;
   product_subtype: string;
+  age_years?: number;
 }
 
 export interface PromptV2Result {
@@ -115,11 +116,13 @@ export interface FeedbackResult {
 export function parseProductContext({
   product_name,
   vision_description,
+  scene_request,
 }: {
   product_name?: string;
   vision_description?: string;
+  scene_request?: string;
 }): ProductContext {
-  const raw = joinText(product_name, vision_description);
+  const raw = joinText(product_name, vision_description, scene_request);
   const text = normalizeText(raw);
 
   const context: ProductContext = {
@@ -135,7 +138,20 @@ export function parseProductContext({
     product_subtype: "generic",
   };
 
-  if (containsAny(text, ["infantil", "kids", "kid", "baby", "bebe", "bebe", "toddler", "juvenil"])) {
+  // Detecta idade explicita: "menina de 6 anos", "boy of 4 years", "5-year-old"
+  const ageMatch = text.match(/\b(\d{1,2})\s*(?:-?\s*)(?:anos?|years?|year[- ]old)\b/);
+  if (ageMatch) {
+    const age = parseInt(ageMatch[1], 10);
+    if (age >= 0 && age <= 17) context.age_years = age;
+  }
+
+  const childWords = [
+    "infantil", "kids", "kid", "baby", "bebe", "toddler", "juvenil",
+    "children", "child", "children's", "childs",
+    "menina", "menino", "garota", "garoto", "crianca", "criancas",
+    "girl", "boy", "girls", "boys",
+  ];
+  if (containsAny(text, childWords) || (context.age_years !== undefined && context.age_years <= 17)) {
     context.target_user = "child";
   } else if (containsAny(text, ["plus size", "curvy"])) {
     context.target_user = "adult";
@@ -144,9 +160,9 @@ export function parseProductContext({
     context.target_user = "adult";
   }
 
-  if (containsAny(text, ["feminina", "feminino", "female", "woman", "mulher", "noiva", "bride"])) {
+  if (containsAny(text, ["feminina", "feminino", "female", "woman", "mulher", "noiva", "bride", "menina", "garota", "girl", "girls"])) {
     context.gender_presentation = "female";
-  } else if (containsAny(text, ["masculina", "masculino", "male", "man", "homem", "noivo", "groom"])) {
+  } else if (containsAny(text, ["masculina", "masculino", "male", "man", "homem", "noivo", "groom", "menino", "garoto", "boy", "boys"])) {
     context.gender_presentation = "male";
   } else if (containsAny(text, ["unissex", "unisex"])) {
     context.gender_presentation = "unisex";
@@ -546,7 +562,16 @@ export function buildPromptV2({
     const genderStr = parsed.gender_presentation === "female" ? "female"
       : parsed.gender_presentation === "male" ? "male" : "";
     const sizeStr = parsed.usage_context === "plus_size_fashion" ? "plus-size " : "";
-    const ageStr = parsed.target_user === "child" ? "child" : `${genderStr} ${sizeStr}person`.trim();
+    let ageStr: string;
+    if (parsed.target_user === "child") {
+      const childNoun = parsed.gender_presentation === "female" ? "girl"
+        : parsed.gender_presentation === "male" ? "boy" : "child";
+      ageStr = parsed.age_years !== undefined
+        ? `${parsed.age_years}-year-old ${childNoun}`
+        : childNoun;
+    } else {
+      ageStr = `${genderStr} ${sizeStr}person`.trim();
+    }
     humanBlock = `A real ${ageStr} is wearing the product naturally with correct body proportions.`;
   } else if (mode === "handheld_use") {
     humanBlock = "A person may be present only as needed to hold the product naturally in realistic use.";
@@ -856,7 +881,7 @@ export function generatePromptV2({
   vision_description?: string;
   user_feedback?: string;
 }): PromptV2Result & { review?: ReviewResult } {
-  const parsed = parseProductContext({ product_name, vision_description });
+  const parsed = parseProductContext({ product_name, vision_description, scene_request });
   const mode = classifyUsageMode({ product_name, vision_description });
   const agent = resolveUsageAgent(mode, parsed);
 

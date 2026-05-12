@@ -177,7 +177,7 @@ export async function submitImageJob(jobId: string) {
     // Anti-manequim garantido: injetado diretamente para produtos wearable,
     // independente do que o LLM (Ollama ou multiagent) gerou.
     const wearableMode = classifyUsageMode({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
-    const parsedCtx = parseProductContext({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
+    const parsedCtx = parseProductContext({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined, scene_request: cenario.trim() });
     const usageAgent = wearableMode === "wearable_use" ? resolveUsageAgent(wearableMode, parsedCtx) : null;
     // Produtos de close-up: brinco, colar, anel/relógio, óculos, calçado (joelho-ao-chão)
     // Estes NÃO recebem "Full-body shot" no antiMannequinGuard
