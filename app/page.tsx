@@ -2183,8 +2183,8 @@ export default function HomePage() {
     ? "trabalhando"
     : deriveWorkState(job);
 
-  // Bloqueio por tipo: foto ativa impede nova foto, vídeo ativo impede novo vídeo
-  // Mas foto + vídeo podem rodar juntos (servidores distintos)
+  // Bloqueio por tipo: foto ativa impede nova foto, vídeo ativo impede novo vídeo.
+  // Enquanto qualquer video roda, tambem nao deixa criar foto nova (UX: 1 trabalho por vez).
   const isPhotoJobActive = isGenerating;
 
   // Cards de status para o BotChat (Tamo como hub de processamento)
@@ -2607,8 +2607,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* PASSO 1: Menu de escolha de modo */}
-        {!modeSelected && !videoMode && !longVideoMode && (
+        {/* PASSO 1: Menu de escolha de modo — esconde tambem se ha video em andamento */}
+        {!modeSelected && !videoMode && !longVideoMode && !isVideoJobActive && (
           <div style={styles.menuWrap}>
             {rateLimitedUntil && countdown > 0 ? (
               <DailyLimitScreen countdown={countdown} onAssinar={() => handleAssinarDireto("monthly", "limite_diario")} />
@@ -2628,8 +2628,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* PASSO 2: Formulário — esconde quando resultado de foto está visível (exceto modos de vídeo ativos) */}
-        {modeSelected && !videoMode && !longVideoMode && workState !== "trabalhando" && (workState !== "terminado" || narratedMode) && (
+        {/* PASSO 2: Formulário — esconde quando resultado de foto está visível ou enquanto ha video em andamento */}
+        {modeSelected && !videoMode && !longVideoMode && !isVideoJobActive && workState !== "trabalhando" && (workState !== "terminado" || narratedMode) && (
           <div style={styles.card}>
             <div style={styles.modeHeader}>
               <div style={styles.modeName}>
@@ -3485,12 +3485,14 @@ export default function HomePage() {
                 >
                   ✏️ Editar / Criar promoção
                 </button>
-                <button
-                  onClick={resetJob}
-                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 0", color: "#8394b0", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%" }}
-                >
-                  ✨ Criar nova foto
-                </button>
+                {!isVideoJobActive && (
+                  <button
+                    onClick={resetJob}
+                    style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 0", color: "#8394b0", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "Outfit, sans-serif", width: "100%" }}
+                  >
+                    ✨ Criar nova foto
+                  </button>
+                )}
               </div>
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: 16 }} />
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
