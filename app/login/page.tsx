@@ -208,6 +208,16 @@ function AuthCard() {
       if (error) setError(translateError(error.message, lang));
       else {
         trackEvent("CompleteRegistration");
+        // Se for assinante legado, ativa PRO antes de redirecionar
+        // Endpoint e idempotente: 404 se nao tem Stripe ativo, 200 se ativou
+        try {
+          await fetch("/api/auth/migrate-legacy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+            signal: AbortSignal.timeout(8000),
+          });
+        } catch { /* falha silenciosa - segue fluxo normal */ }
         if (data.session) {
           // Se veio de /planos, vai direto para o Stripe
           if (nextUrl === "/planos") {

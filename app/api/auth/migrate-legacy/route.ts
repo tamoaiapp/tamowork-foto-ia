@@ -25,10 +25,10 @@ async function findActiveSubByEmail(stripeKey: string, email: string, source: "m
 
 export async function POST(req: NextRequest) {
   const { email, password } = (await req.json().catch(() => ({}))) as { email?: string; password?: string };
-  if (!email || !password) {
-    return NextResponse.json({ error: "E-mail e senha obrigatórios" }, { status: 400 });
+  if (!email) {
+    return NextResponse.json({ error: "E-mail obrigatório" }, { status: 400 });
   }
-  if (password.length < 6) {
+  if (password !== undefined && password.length > 0 && password.length < 6) {
     return NextResponse.json({ error: "Senha precisa ter pelo menos 6 caracteres" }, { status: 400 });
   }
 
@@ -41,9 +41,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
   const existing = list.users.find((u) => u.email?.toLowerCase() === emailLower);
-  if (existing) {
-    return NextResponse.json({ error: "Conta já existe — use sua senha cadastrada ou recupere via 'Esqueci minha senha'" }, { status: 409 });
-  }
 
   const keys: Array<{ key?: string; source: "main" | "legacy" }> = [
     { key: process.env.STRIPE_SECRET_KEY, source: "main" },
@@ -63,14 +60,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nenhuma assinatura ativa encontrada para este e-mail" }, { status: 404 });
   }
 
-  const { data: created, error: createErr } = await admin.auth.admin.createUser({
-    email: emailLower,
-    password,
-    email_confirm: true,
-  });
-  if (createErr || !created?.user) {
-    console.error("[migrate-legacy] createUser erro:", createErr?.message);
-    return NextResponse.json({ error: createErr?.message ?? "Falha ao criar usuário" }, { status: 500 });
+  // User ja existe — apenas garante PRO ativo (idempotente, sem precisar de senha)
+  let userId: string;
+  if (existing) {
+    userId = existing.id;
+  } else {
+    if (!password || password.length < 6) {
+      return NextResponse.json({ error: "Senha obrigatória para criar conta nova (mín. 6 caracteres)" }, { status: 400 });
+    }
+    const { data: created, error: createErr } = await admin.auth.admin.createUser({
+      email: emailLower,
+      password,
+      email_confirm: true,
+    });
+    if (createErr || !created?.user) {
+      console.error("[migrate-legacy] createUser erro:", createErr?.message);
+      return NextResponse.json({ error: createErr?.message ?? "Falha ao criar usuário" }, { status: 500 });
+    }
+    userId = created.user.id;
   }
 
   const periodEnd = sub.current_period_end && sub.current_period_end > 0
@@ -78,16 +85,16 @@ export async function POST(req: NextRequest) {
     : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
   try {
-    await setUserPro(created.user.id, {
+    await setUserPro(userId, {
       periodEnd,
       stripeCustomerId: sub.customerId,
       stripeSubscriptionId: sub.id,
     });
   } catch (err) {
-    console.error(`[migrate-legacy] setUserPro falhou para ${created.user.id}:`, err);
-    return NextResponse.json({ error: "Conta criada mas falha ao ativar PRO. Contate o suporte." }, { status: 500 });
+    console.error(`[migrate-legacy] setUserPro falhou para ${userId}:`, err);
+    return NextResponse.json({ error: "Falha ao ativar PRO. Contate o suporte." }, { status: 500 });
   }
 
-  console.log(`[migrate-legacy] ${emailLower} migrado de Stripe(${sub.source}) — sub=${sub.id} até ${periodEnd.toISOString()}`);
-  return NextResponse.json({ ok: true, source: sub.source });
+  console.log(`[migrate-legacy] ${emailLower} ${existing ? "ja existia" : "criado"} — PRO via Stripe(${sub.source}) sub=${sub.id} até ${periodEnd.toISOString()}`);
+  return NextResponse.json({ ok: true, source: sub.source, existing: !!existing });
 }
