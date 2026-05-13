@@ -14,13 +14,15 @@ export const maxDuration = 60;
 async function translateToEnglish(text: string): Promise<string> {
   if (!text || text.trim().length < 3) return text;
 
-  // Heurística rápida: se não tem letras fora do ASCII básico e não tem
-  // palavras claramente PT/ES, provavelmente já é inglês — pula a chamada
-  const looksLikeEnglish =
-    !/[àáâãäåæçèéêëìíîïðñòóôõöùúûüýþÿ]/i.test(text) &&
-    !/\b(vestido|camiseta|calça|camisa|blusa|sapato|bolsa|rua|cidade|cenário|fundo|branco|preto|vermelho|azul|verde|amarelo|estilo|elegante|simples|moderno|feminino|masculino|conjunto|roupa|moda|loja|mercado|produto|vestir|usar|foto|imagem|cenario|ropa|vestido|camisa|zapato|bolso|calle|ciudad|fondo|blanco|negro|rojo|azul|verde|amarillo|estilo|elegante|simple|moderno|tienda|producto|usar|foto|imagen)\b/i.test(text);
+  // Detecta PT/ES explicitamente — se achar qualquer marcador, traduz.
+  // Inverte a logica antiga (era "se parece ingles, pula") que dava falso
+  // positivo em frases curtas tipo "menina de 6 anos usando na praia".
+  const hasAccents = /[àáâãäåæçèéêëìíîïðñòóôõöùúûüýþÿ]/i.test(text);
+  const hasAgeExpression = /\b\d{1,2}\s*anos?\b/i.test(text); // "6 anos", "10 anos"
+  const ptEsWords = /\b(o|a|os|as|um|uma|uns|umas|de|do|da|dos|das|no|na|nos|nas|em|com|sem|para|por|pelo|pela|que|seu|sua|este|esse|esta|essa|isso|isto|ele|ela|eles|elas|menino|menina|garoto|garota|crianca|criancas|bebe|jovem|moco|moca|adulto|adulta|idoso|idosa|homem|mulher|pessoa|gente|ano|anos|dia|dias|noite|tarde|manha|usando|vestindo|carregando|segurando|fazendo|sentado|sentada|em\s+pe|deitado|deitada|andando|correndo|pulando|sorrindo|olhando|posando|brincando|estilo|elegante|simples|moderno|feminino|masculino|infantil|juvenil|conjunto|roupa|moda|loja|mercado|produto|vestir|foto|imagem|cenario|cenário|fundo|frente|atras|lado|cima|baixo|branco|preto|cinza|vermelho|laranja|amarelo|verde|azul|roxo|rosa|marrom|bege|dourado|prata|prateado|claro|escuro|brilhante|fosco|liso|listrado|estampado|florido|xadrez|vestido|camiseta|camisa|blusa|calca|short|saia|jaqueta|casaco|sapato|tenis|sandalia|bota|bolsa|mochila|chapeu|bone|oculos|relogio|colar|brinco|pulseira|anel|rua|cidade|praca|parque|praia|piscina|jardim|montanha|floresta|campo|fazenda|sitio|casa|sala|cozinha|quarto|banheiro|escritorio|loja|cafe|restaurante|shopping|escola|igreja|hospital|estudio|fotografico)\b/i.test(text);
+  const looksPT = hasAccents || hasAgeExpression || ptEsWords;
 
-  if (looksLikeEnglish) return text;
+  if (!looksPT) return text;
 
   try {
     const encoded = encodeURIComponent(text.slice(0, 400));
