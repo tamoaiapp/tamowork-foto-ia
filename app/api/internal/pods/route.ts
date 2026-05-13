@@ -18,6 +18,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Protecao de horario de pico: nao desliga pod de foto em horario comercial.
+  // Padrao: 11h-02h UTC (= 8h-23h BRT). Override via POD_PEAK_START_UTC / POD_PEAK_END_UTC.
+  // Use ?force=1 pra ignorar (uso manual via x-internal-secret).
+  const force = req.nextUrl.searchParams.get("force") === "1";
+  const peakStart = parseInt(process.env.POD_PEAK_START_UTC ?? "11", 10);
+  const peakEnd = parseInt(process.env.POD_PEAK_END_UTC ?? "2", 10);
+  const hourUTC = new Date().getUTCHours();
+  const inPeak = peakStart < peakEnd
+    ? (hourUTC >= peakStart && hourUTC < peakEnd)
+    : (hourUTC >= peakStart || hourUTC < peakEnd);
+  if (inPeak && !force) {
+    return NextResponse.json({ ok: true, skipped: "peak_hours", hourUTC, peakStart, peakEnd });
+  }
+
   const supabase = createServerClient();
   const idleCutoff = new Date(Date.now() - IDLE_MINUTES * 60 * 1000).toISOString();
 
