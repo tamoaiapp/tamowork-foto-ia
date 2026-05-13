@@ -1,9 +1,10 @@
-// Cron job: para pods de foto/vídeo quando ociosos há mais de 20 minutos
-// Vercel Cron chama este endpoint a cada 30 minutos
+// Cron job (Vercel a cada 5 minutos):
+// - Em horario comercial (peak): WATCHDOG — religa pods de foto que estejam EXITED.
+// - Fora do horario: desliga pods ociosos > IDLE_MINUTES.
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { FOTO_POD_IDS, VIDEO_POD_ID, getPodStatus, stopPod } from "@/lib/runpod/pods";
+import { FOTO_POD_IDS, VIDEO_POD_ID, getPodStatus, stopPod, resumePod } from "@/lib/runpod/pods";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 const IDLE_MINUTES = parseInt(process.env.POD_IDLE_MINUTES ?? "20");
@@ -28,8 +29,27 @@ export async function GET(req: NextRequest) {
   const inPeak = peakStart < peakEnd
     ? (hourUTC >= peakStart && hourUTC < peakEnd)
     : (hourUTC >= peakStart || hourUTC < peakEnd);
+  // WATCHDOG em horario comercial: religa pods EXITED.
+  // (Pod pode cair por crash, manutencao RunPod, ou stop programatico do proprio
+  // codigo ao detectar ComfyUI travado. Em peak, sempre voltamos a religar.)
   if (inPeak && !force) {
-    return NextResponse.json({ ok: true, skipped: "peak_hours", hourUTC, peakStart, peakEnd });
+    const resumed: string[] = [];
+    const watchdogErrors: string[] = [];
+    for (const podId of FOTO_POD_IDS) {
+      try {
+        const status = await getPodStatus(podId);
+        if (status === "EXITED") {
+          await resumePod(podId);
+          resumed.push(podId);
+        }
+      } catch (e) {
+        watchdogErrors.push(`${podId}: ${(e as Error)?.message ?? e}`);
+      }
+    }
+    return NextResponse.json({
+      ok: true, mode: "peak_watchdog", hourUTC, peakStart, peakEnd,
+      resumed, errors: watchdogErrors,
+    });
   }
 
   const supabase = createServerClient();
