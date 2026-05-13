@@ -32,9 +32,10 @@ function isTransientError(msg: string): boolean {
   );
 }
 
-// Jobs queued há mais de 90 minutos sem submeter → falha (pod não subiu)
-// 90 min dá tempo para 30+ jobs processarem em fila (2-3 min/job)
-const QUEUED_TIMEOUT_MS = 90 * 60 * 1000;
+// Jobs queued há mais de 15 minutos sem submeter → falha (pod não subiu).
+// 15 min cobre o cold-start mais longo (Qwen ~10-12 min) sem deixar cliente
+// esperando demais. Se travar, libera espaco e cliente refaz.
+const QUEUED_TIMEOUT_MS = 15 * 60 * 1000;
 // Jobs em submitted/processing há mais de 5 min → reinicia automaticamente
 // Reduzido de 10 para 5 min para desbloquear fila mais rápido após OOM
 const RESTART_AFTER_MS = 5 * 60 * 1000;
