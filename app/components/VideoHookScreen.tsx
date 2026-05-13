@@ -201,7 +201,9 @@ const s: Record<string, React.CSSProperties> = {
   photoCard: {
     position: "relative" as const,
     width: "100%",
-    aspectRatio: "1 / 1",
+    paddingBottom: "100%", // forca 1:1 universal (nao depende de aspect-ratio em flex)
+    height: 0,
+    flexShrink: 0,
     borderRadius: 18,
     overflow: "hidden",
     background: "#1a1f2e",
