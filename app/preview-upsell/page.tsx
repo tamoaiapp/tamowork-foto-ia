@@ -9,8 +9,8 @@
 import { useState } from "react";
 import VideoHookScreen from "@/app/components/VideoHookScreen";
 
-// Foto mock — uma das fotos de demo do login
-const MOCK_PHOTO = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/sign/image-jobs/d7b2fe90-4383-4f6d-92bb-672b210de218.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9lMGI4YzlhZi01NDQ5LTRmMzctYWYxNC1jNmExZjc1MjQ5ZjgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZS1qb2JzL2Q3YjJmZTkwLTQzODMtNGY2ZC05MmJiLTY3MmIyMTBkZTIxOC5qcGciLCJpYXQiOjE3NzQ5NTgwMDUsImV4cCI6MjA5MDMxODAwNX0.4DG7PNfy--I0dO76hrsxIQvYnKgZ9YkaYicebKzR98w";
+// Foto mock — output public real de um job done (bucket publico, sem signed url)
+const MOCK_PHOTO = "https://ddpyvdtgxemyxltgtxsh.supabase.co/storage/v1/object/public/image-jobs/6ac2cd5b-47a2-4861-9f17-b8767458798c.jpg";
 
 export default function PreviewUpsell() {
   const [open, setOpen] = useState(true);
