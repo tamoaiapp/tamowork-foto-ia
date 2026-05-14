@@ -43,14 +43,15 @@ export interface VisionResult {
   items_count: number;        // 1 = produto unico; 2+ = kit/conjunto
   target_user: TargetUser;    // quem usa
   age_years?: number;         // se for crianca, idade aproximada
+  scene_en?: string;          // cena enriquecida em ingles (do user)
 }
 
 /**
- * Pede pro moondream descrever a imagem em JSON. Tem fallback simples
- * caso o modelo nao consiga gerar JSON valido (acontece com modelos
- * pequenos).
+ * UMA chamada moondream que retorna classificacao + descricao + cena
+ * em ingles enriquecida (se user passou cena). Evita 2 chamadas Ollama
+ * (que forcariam swap de modelo na VRAM).
  */
-export async function classifyVision(imageUrl: string, userText: string): Promise<VisionResult | null> {
+export async function classifyVision(imageUrl: string, userText: string, userScene?: string): Promise<VisionResult | null> {
   if (!OLLAMA_BASE) return null;
   try {
     const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(15_000) });
@@ -58,21 +59,22 @@ export async function classifyVision(imageUrl: string, userText: string): Promis
     const imgBuf = await imgRes.arrayBuffer();
     const base64 = Buffer.from(imgBuf).toString("base64");
 
-    const userHint = userText && userText.trim().length > 1 ? `User says: "${userText.trim()}". ` : "";
-    const prompt = `${userHint}Analyze the product image and answer in this EXACT format (one line per field):
+    const userHint = userText && userText.trim().length > 1 ? `User text: "${userText.trim()}". ` : "";
+    const sceneHint = userScene && userScene.trim().length > 1 ? `User scene: "${userScene.trim()}". ` : "";
+    const prompt = `${userHint}${sceneHint}Analyze the product image and answer in this EXACT format (one line per field):
 
 TYPE: <one of: clothing_torso, clothing_full, clothing_lower, footwear, jewelry_ring, jewelry_neck, jewelry_ear, jewelry_wrist, eyewear, hat, bag, accessory_held, product_display, food, furniture, toy>
 DESCRIPTION: <one short sentence in English describing the product - color, print, material, style>
 COUNT: <number of distinct product items visible (1 for single, 2+ for kit/set)>
 USER: <one of: adult_female, adult_male, child_girl, child_boy, unisex, no_human>
 AGE: <number if it's a child product, otherwise blank>
+SCENE: <one short cinematic sentence in English describing the scene/environment based on user scene request - lighting, mood, place. If user scene is empty, write a default professional studio. DO NOT describe the product or the person here.>
 
 Rules:
-- TYPE clothing_torso = upper-body garments (t-shirt, crop top, blouse, jacket).
-- TYPE bag = single backpack/handbag worn by a person.
-- TYPE product_display = multiple items together (kit, set), or single backpack/lunchbox/pencil-case meant to be photographed as product hero (not worn).
+- clothing_torso = upper-body garment (t-shirt, crop top, blouse, jacket).
+- bag = single backpack/handbag.
+- product_display = multiple items together (kit, set), or backpack/lunchbox/pencil-case to photograph as hero (not worn).
 - If unsure between bag and product_display, pick product_display.
-- TYPE accessory_held = perfume, cosmetics, bouquet (held in hand).
 `;
 
     const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
@@ -82,9 +84,9 @@ Rules:
         model: VISION_MODEL,
         messages: [{ role: "user", content: prompt, images: [base64] }],
         stream: false,
-        options: { num_predict: 220, temperature: 0.1, num_ctx: 2048 },
+        options: { num_predict: 320, temperature: 0.2, num_ctx: 2048 },
       }),
-      signal: AbortSignal.timeout(VISION_TIMEOUT_MS),
+      signal: AbortSignal.timeout(35_000),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { message?: { content?: string } };
@@ -180,6 +182,9 @@ export function parseVisionResult(raw: string): VisionResult | null {
   const ageStr = get("AGE").match(/\d+/)?.[0];
   const age_years = ageStr ? parseInt(ageStr, 10) : undefined;
 
+  const sceneRaw = get("SCENE");
+  const scene_en = sceneRaw && sceneRaw.length > 4 ? sceneRaw.replace(/^["'`]+|["'`]+$/g, "").trim() : undefined;
+
   if (product_type === "unknown" && description === "product") return null;
-  return { product_type, description, items_count, target_user, age_years };
+  return { product_type, description, items_count, target_user, age_years, scene_en };
 }

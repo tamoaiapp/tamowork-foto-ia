@@ -135,8 +135,8 @@ export async function submitImageJob(jobId: string) {
     ensureFotoPodRunning(comfyBase),
     // Caminhos legados: catalogo + produto_exposto ainda usam vision antiga
     useNewPipeline ? Promise.resolve(null) : getProductVisionDescription(job.input_image_url, produto_frase_trim),
-    // Caminho novo: classifyVision estruturado
-    useNewPipeline ? classifyVision(job.input_image_url, produto_frase_trim) : Promise.resolve(null),
+    // Caminho novo: classifyVision retorna classificacao + scene_en em UMA chamada
+    useNewPipeline ? classifyVision(job.input_image_url, produto_frase_trim, cenarioRaw ?? undefined) : Promise.resolve(null),
   ]);
 
   if (!podReady) {
@@ -171,12 +171,10 @@ export async function submitImageJob(jobId: string) {
     console.log(`[submit] job ${jobId} — produto_exposto categoria="${category}" produto="${enrichedProduto}"`);
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
   } else {
-    // Pipeline NOVO (fase 1): visionNew ja foi calculado em paralelo no inicio.
-    // Aqui so enriquecemos a cena via LLM (chamada de texto, rapida).
+    // Pipeline NOVO (fase 1): visionNew ja trouxe classificacao + scene_en em
+    // UMA chamada Ollama (evita swap de modelo na VRAM).
     const vision = visionNew;
-    const sceneEnriched = vision
-      ? await enrichScene(cenario.trim(), { product_type: vision.product_type, description: vision.description, target_user: vision.target_user })
-      : cenario.trim();
+    const sceneEnriched = vision?.scene_en?.trim() || cenario.trim();
 
     if (vision) {
       // Caminho novo: template por tipo
