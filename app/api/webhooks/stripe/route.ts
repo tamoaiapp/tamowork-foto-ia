@@ -17,6 +17,15 @@ type SubscriptionLike = Stripe.Subscription & {
   metadata: Record<string, string>;
 };
 
+// Extrai current_period_end seja do top-level (formato antigo) seja
+// dos items.data[0] (formato novo do Stripe). Devolve unix seconds ou 0.
+function extractPeriodEnd(sub: Stripe.Subscription): number {
+  const top = (sub as unknown as { current_period_end?: number }).current_period_end;
+  if (top && top > 0) return top;
+  const item = sub.items?.data?.[0] as unknown as { current_period_end?: number } | undefined;
+  return item?.current_period_end ?? 0;
+}
+
 type InvoiceLike = Stripe.Invoice & {
   amount_paid?: number;
   currency?: string | null;
@@ -224,8 +233,8 @@ export async function POST(req: NextRequest) {
 
     const sub = await stripe.subscriptions.retrieve(session.subscription as string);
     const subData = sub as SubscriptionLike;
-    const rawEnd = subData.current_period_end;
-    const periodEnd = rawEnd && rawEnd > 0
+    const rawEnd = extractPeriodEnd(sub);
+    const periodEnd = rawEnd > 0
       ? new Date(rawEnd * 1000)
       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
@@ -278,8 +287,8 @@ export async function POST(req: NextRequest) {
     const userId = subData.metadata?.userId;
     if (!userId) return NextResponse.json({ ok: true });
 
-    const rawEnd2 = subData.current_period_end;
-    const periodEnd = rawEnd2 && rawEnd2 > 0
+    const rawEnd2 = extractPeriodEnd(sub);
+    const periodEnd = rawEnd2 > 0
       ? new Date(rawEnd2 * 1000)
       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const referralId = subData.metadata?.referralId ?? null;
