@@ -170,17 +170,10 @@ export async function submitImageJob(jobId: string) {
   } else {
     const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined, userFeedback);
 
-    // Cláusula de fidelidade: ancora SEMPRE ao produto da imagem de referência.
-    // Impede que o Flux Kontext invente outro produto quando o prompt descreve genericamente.
-    const fidelityClause = "Use ONLY the exact product shown in the reference image provided — preserve every detail of its design, colors, text, shape, and materials exactly as shown. Do not replace, reinvent, or modify the product.";
-
-    // Anti-manequim garantido: injetado diretamente para produtos wearable,
-    // independente do que o LLM (Ollama ou multiagent) gerou.
+    // Mode e agent ainda usados para detectar close-up e barefoot guard
     const wearableMode = classifyUsageMode({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
     const parsedCtx = parseProductContext({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined, scene_request: cenario.trim() });
     const usageAgent = wearableMode === "wearable_use" ? resolveUsageAgent(wearableMode, parsedCtx) : null;
-    // Produtos de close-up: brinco, colar, anel/relógio, óculos, calçado (joelho-ao-chão)
-    // Estes NÃO recebem "Full-body shot" no antiMannequinGuard
     const isCloseUpProduct =
       usageAgent === "jewelry_ear_agent" ||
       usageAgent === "jewelry_neck_agent" ||
@@ -188,16 +181,14 @@ export async function submitImageJob(jobId: string) {
       usageAgent === "eyewear_agent" ||
       usageAgent === "hat_agent" ||
       usageAgent === "footwear_agent";
-    const antiMannequinGuard = wearableMode === "wearable_use"
-      ? isCloseUpProduct
-        ? "The product MUST be worn by a real human person — never on a mannequin, bust form, or display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom, no packaging. Show the product in real-life use, worn naturally on a real person."
-        : "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hangers, no showroom, no packaging. Show the product in real-life use, worn naturally on a real person. Full-body shot showing the complete product from head to feet. The person MUST wear simple neutral shoes (sneakers or flats) — never barefoot when wearing clothing."
-      : "";
 
-    // Injeta qualidade profissional (sombra + iluminação + K4 cinematic)
-    const positiveEnhanced = `${fidelityClause} ${antiMannequinGuard} ${promptResult.positive} ${PROFESSIONAL_QUALITY_SUFFIX}`.trim();
-    // bareFootGuard só se aplica a roupas (não a joias/óculos/calçados que têm close-up próprio)
-    const bareFootGuard = (wearableMode === "wearable_use" && !isCloseUpProduct) ? "barefoot, bare feet, no shoes, feet without shoes, socks without shoes," : "";
+    // Qwen Image Edit + Lightning (CFG 1, 8 steps) responde mal a prompts longos.
+    // O buildPromptV2 ja inclui fidelidade no inicio e anti-display. Aqui so adicionamos
+    // qualidade tecnica curta no fim.
+    const qualitySuffix = "Professional commercial photography, 8K detail, natural studio lighting, sharp focus on the product.";
+    const positiveEnhanced = `${promptResult.positive} ${qualitySuffix}`.trim();
+
+    const bareFootGuard = (wearableMode === "wearable_use" && !isCloseUpProduct) ? "barefoot, bare feet, no shoes," : "";
     const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${bareFootGuard} ${promptResult.negative}`.trim();
 
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);

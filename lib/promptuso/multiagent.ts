@@ -582,26 +582,25 @@ export function buildPromptV2({
   }
 
   // Bloco anti-expositor — OBRIGATÓRIO para todo modo wearable/fashion
-  // O produto deve sempre sair em uso real, jamais em manequim ou expositor de loja
   const antiDisplayBlock = (mode === "wearable_use" && !parsed.has_human_block)
-    ? "The product MUST be worn by a real human person — never on a mannequin, bust form, headless display, clothing rack, or any store display stand. Remove all retail context: no store shelves, no price tags, no hang tags, no clothing labels, no hangers, no showroom, no packaging, no box, no plastic bag. Show the product in real-life use, worn naturally."
+    ? "Never show mannequins, dummies, hangers, store racks, price tags, or store backgrounds. The garment must be worn by a real human."
     : "";
 
-  const qualityBlock = [
-    "High-quality realistic commercial photo.",
-    "Realistic lighting, natural shadows, correct scale, authentic textures, and natural integration.",
-    "The product appears only once and only in its intended usage form.",
-  ].join(" ");
-
+  // Versao otimizada para Qwen Image Edit Lightning (CFG 1, 8 steps):
+  // - Imperativo direto, fidelidade ao produto PRIMEIRO (Qwen presta mais
+  //   atencao no comeco do prompt).
+  // - Frases curtas e nao redundantes (CFG baixo perde foco em prompt longo).
+  // - Caixa-alta na instrucao chave de fidelidade.
+  const productDesc = vision_description || product_name || "product";
   const pos = [
-    qualityBlock,
-    `Product: ${vision_description || product_name || "product"}.`,
-    buildIdentityBlock(),
+    `USE THE EXACT product shown in the reference image: ${productDesc}.`,
+    `Preserve every detail identical to the reference — same color, same print, same fabric, same shape, same size, same logos and text. Do not invent, modify, or replace any part of the product.`,
+    humanBlock,
+    `The product is ${physicalAnchor}.`,
     antiDisplayBlock,
-    `Physical placement: the product is ${physicalAnchor}.`,
     `Scene: ${scene}.`,
     `Framing: ${shotType}.`,
-    humanBlock,
+    `Professional commercial photo, realistic lighting, natural shadows, authentic textures.`,
     ...extra_positive_notes,
   ].filter(Boolean).join(" ");
 
