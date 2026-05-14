@@ -59,23 +59,16 @@ export async function classifyVision(imageUrl: string, userText: string, userSce
     const imgBuf = await imgRes.arrayBuffer();
     const base64 = Buffer.from(imgBuf).toString("base64");
 
-    const userHint = userText && userText.trim().length > 1 ? `User text: "${userText.trim()}". ` : "";
-    const sceneHint = userScene && userScene.trim().length > 1 ? `User scene: "${userScene.trim()}". ` : "";
-    const prompt = `${userHint}${sceneHint}Analyze the product image and answer in this EXACT format (one line per field):
-
-TYPE: <one of: clothing_torso, clothing_full, clothing_lower, footwear, jewelry_ring, jewelry_neck, jewelry_ear, jewelry_wrist, eyewear, hat, bag, accessory_held, product_display, food, furniture, toy>
-DESCRIPTION: <one short sentence in English describing the product - color, print, material, style>
-COUNT: <number of distinct product items visible (1 for single, 2+ for kit/set)>
-USER: <one of: adult_female, adult_male, child_girl, child_boy, unisex, no_human>
-AGE: <number if it's a child product, otherwise blank>
-SCENE: <one short cinematic sentence in English describing the scene/environment based on user scene request - lighting, mood, place. If user scene is empty, write a default professional studio. DO NOT describe the product or the person here.>
-
-Rules:
-- clothing_torso = upper-body garment (t-shirt, crop top, blouse, jacket).
-- bag = single backpack/handbag.
-- product_display = multiple items together (kit, set), or backpack/lunchbox/pencil-case to photograph as hero (not worn).
-- If unsure between bag and product_display, pick product_display.
-`;
+    const userHint = userText && userText.trim().length > 1 ? `User: ${userText.trim()}. ` : "";
+    const sceneHint = userScene && userScene.trim().length > 1 ? `Scene wanted: ${userScene.trim()}. ` : "";
+    // Prompt CURTO pra caber no Ollama do pod (VRAM apertada com ComfyUI).
+    const prompt = `${userHint}${sceneHint}Output exactly these 6 lines:
+TYPE: <clothing_torso|clothing_full|clothing_lower|footwear|jewelry_ring|jewelry_neck|jewelry_ear|jewelry_wrist|eyewear|hat|bag|accessory_held|product_display|food|furniture|toy>
+DESCRIPTION: <product in English, one line>
+COUNT: <number>
+USER: <adult_female|adult_male|child_girl|child_boy|unisex|no_human>
+AGE: <number or empty>
+SCENE: <scene in English, one line>`;
 
     const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
       method: "POST",
@@ -84,9 +77,10 @@ Rules:
         model: VISION_MODEL,
         messages: [{ role: "user", content: prompt, images: [base64] }],
         stream: false,
-        options: { num_predict: 320, temperature: 0.2, num_ctx: 2048 },
+        options: { num_predict: 180, temperature: 0.2, num_ctx: 1024 },
+        keep_alive: "10m",
       }),
-      signal: AbortSignal.timeout(35_000),
+      signal: AbortSignal.timeout(45_000),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { message?: { content?: string } };
