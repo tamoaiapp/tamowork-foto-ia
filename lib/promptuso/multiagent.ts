@@ -414,8 +414,23 @@ export function resolvePhysicalAnchor(mode: UsageMode, agent: UsageAgent, parsed
       if (containsAny(text, ["pochete", "crossbody", "tiracolo"])) return "worn crossbody in a natural lifestyle pose";
       return "carried naturally on the shoulder or in a realistic fashion pose";
     }
-    if (agent === "fashion_kids_wearable_agent") return "worn correctly on a child's body with realistic proportions and natural pose";
-    return "worn naturally on the body with correct position and realistic proportions";
+    if (agent === "fashion_kids_wearable_agent") return "worn correctly on the child's torso/lower body — the ENTIRE garment fully visible from neck to hem, NOT cropped to a small fragment, NOT worn as a wristband, headband, or accessory";
+
+    // fashion_wearable_agent (fallback) — diferencia por tipo de peca pra evitar
+    // que o modelo coloque a peca em local errado (ex: camiseta virar bracelete).
+    const torsoUpper = containsAny(text, [
+      "camiseta","camisa","blusa","cropped","top","regata","colete","blazer","jaqueta","casaco","moletom","sweater","sweatshirt","hoodie","cardigan","t-shirt","tshirt","tank","crop","shirt","blouse","vest","jacket","coat",
+    ]);
+    const torsoFull = containsAny(text, [
+      "vestido","dress","macacao","jumpsuit","romper","robe","roupao","bata","camisola","tunic","pijama","pajama",
+    ]);
+    const lowerOnly = containsAny(text, [
+      "calca","calça","bermuda","short","shorts","saia","skirt","legging","jeans","pants","trousers",
+    ]);
+    if (torsoUpper) return "worn ON THE TORSO covering the upper body — the ENTIRE garment fully visible from shoulders to waist, NOT cropped to a small fragment, NOT worn as a wristband or bracelet, NOT placed on the wrist, head, or as an accessory";
+    if (torsoFull) return "worn as a full garment covering the body — the ENTIRE garment fully visible from shoulders to hem, draped naturally on a real person, NOT folded, NOT fragmented, NOT worn as a piece";
+    if (lowerOnly) return "worn on the lower body — the ENTIRE garment fully visible from waist to ankle, NOT cropped to a small fragment, NOT worn as a sash, headband, or accessory";
+    return "worn naturally on the body — the ENTIRE garment fully visible, NOT worn as a fragment, accessory, wristband, or headband";
   }
 
   if (mode === "handheld_use") {
@@ -515,6 +530,12 @@ function agentNegativeTerms(agent: UsageAgent): string[] {
     case "fashion_wearable_agent":
       return [
         "flat clothing", "floating clothing", "clothing not worn", "wrong body proportions",
+        // Anti-fragmentacao: impede o modelo de transformar a peca em acessorio.
+        "wristband", "headband", "armband", "sweatband", "fabric bracelet",
+        "garment fragment", "partial garment", "only print visible", "cropped fabric piece",
+        "garment as accessory", "garment as bracelet", "garment as wristband",
+        "garment on wrist", "garment on head", "garment on hand only",
+        "tiny garment", "miniaturized clothing",
         ...antiDisplayNegatives(),
       ];
     case "handheld_use_agent":
