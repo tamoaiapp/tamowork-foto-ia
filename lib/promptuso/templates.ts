@@ -300,26 +300,36 @@ function accessoryHeld({ vision, scene_text_en }: PromptInput): PromptOutput {
   };
 }
 
-function productDisplay({ vision, scene_text_en }: PromptInput): PromptOutput {
-  const scene = scene_text_en || "clean premium surface with soft natural light";
+function productDisplay({ vision, scene_text_en, user_product_text }: PromptInput): PromptOutput {
+  // Detecta se eh material escolar (mochila/lancheira/estojo) pra usar cena
+  // escolar como default em vez de "premium surface".
+  const text = `${user_product_text} ${vision.description}`.toLowerCase();
+  const isSchoolKit = /\b(mochila|lancheira|estojo|backpack|lunchbox|pencil[- ]case|school|escolar)\b/.test(text);
+  const defaultScene = isSchoolKit
+    ? "wooden school desk or wooden floor with colorful classroom backdrop, soft daylight from a window, child-friendly composition"
+    : "clean premium surface with soft natural daylight, minimalist commercial setup";
+  const scene = scene_text_en || defaultScene;
+
   const countPhrase = vision.items_count > 1
-    ? `The reference image shows a set of ${vision.items_count} items. ALL ${vision.items_count} items must appear in the final scene, each as its original product type, arranged together as a beautiful product set.`
+    ? `The reference image shows a set of ${vision.items_count} items. ALL ${vision.items_count} items must appear together in the final scene, side by side or arranged naturally, each as its ORIGINAL product type — do not merge them and do not skip any item.`
     : "";
+
   return {
     positive: [
       `Photograph the EXACT product(s) from the reference image as the hero of a commercial product shot.`,
       countPhrase,
-      `Preserve every detail of each item — same color, same print, same shape, same materials.`,
-      `Each item appears as its original product type — DO NOT convert any item into a t-shirt, into a print on clothing, or merge prints across items.`,
+      `Preserve every detail of each item — same color, same print, same shape, same materials, same logos and text.`,
+      `Each item appears as its ORIGINAL product type — a backpack stays a backpack, a lunchbox stays a lunchbox, a pencil case stays a pencil case. DO NOT convert any item into a t-shirt, do not copy prints onto clothing, do not merge items.`,
       `${scene}.`,
-      `No person in the scene — product photography only.`,
-      `Top-down or 45-degree angle, clean composition, realistic shadow.`,
+      `No person wearing or using the products. Product photography only — items arranged as a beautiful product display.`,
+      `Slight 45-degree top-down angle, soft realistic shadows, clean composition.`,
       quality(),
     ].filter(Boolean).join(" "),
     negative: [
-      "person, model, human, body parts, hands, arms",
-      "product converted to t-shirt, print copied onto clothing, derived item, missing items from set",
-      "cluttered background, distracting props, low resolution",
+      "person wearing the product, model wearing the bag, child wearing kit, human wearing items",
+      "product converted to t-shirt, t-shirt with product print, clothing with backpack print, derived item",
+      "missing items from set, only one of multiple products visible, items merged into one",
+      "cluttered background, distracting props",
       baseNeg(),
     ].join(", "),
     shot_type: "product display",

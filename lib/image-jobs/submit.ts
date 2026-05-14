@@ -177,6 +177,19 @@ export async function submitImageJob(jobId: string) {
     const sceneEnriched = vision?.scene_en?.trim() || cenario.trim();
 
     if (vision) {
+      // OVERRIDE: se usuario escreveu "kit"/"conjunto"/"set"/"trio"/"combo"
+      // OU se vision detectou COUNT >= 2, forca product_display
+      // (vision LLM pequeno tende a classificar tudo como bag/clothing).
+      const userTextLower = `${produtoBase} ${cenario}`.toLowerCase();
+      const looksLikeKit =
+        /\b(kit|conjunto|set|trio|combo|duo|par(?: de)?|2 itens|3 itens|4 itens|jogo de|colecao|coleção)\b/.test(userTextLower) ||
+        (vision.items_count ?? 1) >= 2;
+      if (looksLikeKit && vision.product_type !== "product_display") {
+        console.log(`[submit] job ${jobId} — OVERRIDE classify ${vision.product_type} -> product_display (kit detectado)`);
+        vision.product_type = "product_display";
+        if ((vision.items_count ?? 1) < 2) vision.items_count = 2;
+      }
+
       // Caminho novo: template por tipo
       const built = buildPromptByType({
         vision,
