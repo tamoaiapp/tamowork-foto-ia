@@ -3,6 +3,8 @@ import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCat
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
 import { getProductVisionDescription, mergeProductTexts, parseVisionStructured } from "@/lib/vision/serverProductVision";
+import { classifyVision, enrichScene } from "@/lib/promptuso/visionRouter";
+import { buildPromptByType } from "@/lib/promptuso/templates";
 import { detectDisplayCategory, buildDisplayPrompt } from "@/lib/promptuso/displayPrompt";
 import { classifyUsageMode, resolveUsageAgent, parseProductContext } from "@/lib/promptuso/multiagent";
 
@@ -168,43 +170,60 @@ export async function submitImageJob(jobId: string) {
     console.log(`[submit] job ${jobId} — produto_exposto categoria="${category}" produto="${enrichedProduto}"`);
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
   } else {
-    const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined, userFeedback);
+    // Pipeline NOVO (fase 1): visao LLM estruturada -> template por tipo +
+    // cena enriquecida por LLM. Substitui o multiagent V2 (keywords/regex).
+    // Roda em paralelo: classificacao visual + enriquecimento de cena.
+    const [vision, sceneEnriched] = await Promise.all([
+      classifyVision(job.input_image_url, produtoBase),
+      enrichScene(cenario.trim(), {
+        product_type: "unknown",
+        description: produtoBase || (visionDesc ?? ""),
+        target_user: "unisex",
+      }),
+    ]);
 
-    // Mode e agent ainda usados para detectar close-up e barefoot guard
-    const wearableMode = classifyUsageMode({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
-    const parsedCtx = parseProductContext({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined, scene_request: cenario.trim() });
-    const usageAgent = wearableMode === "wearable_use" ? resolveUsageAgent(wearableMode, parsedCtx) : null;
-    const isCloseUpProduct =
-      usageAgent === "jewelry_ear_agent" ||
-      usageAgent === "jewelry_neck_agent" ||
-      usageAgent === "jewelry_hand_agent" ||
-      usageAgent === "eyewear_agent" ||
-      usageAgent === "hat_agent" ||
-      usageAgent === "footwear_agent";
+    if (vision) {
+      // Caminho novo: template por tipo
+      const built = buildPromptByType({
+        vision,
+        user_product_text: produtoBase,
+        scene_text_en: sceneEnriched || cenario.trim(),
+        user_feedback: userFeedback,
+      });
+      const qualitySuffix = "Professional commercial photography, 8K detail, natural studio lighting, sharp focus on the product.";
+      const positiveFinal = `${built.positive} ${qualitySuffix}`.trim();
+      const negativeFinal = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${built.negative}`.trim();
 
-    // Anti-conversao: forca o Qwen Image Edit a manter o produto como o
-    // mesmo TIPO de item da imagem de referencia (ex: mochila NAO virar
-    // camiseta com estampa da mochila; vestido NAO virar bolsa).
-    // Se vision retornou ITEM_TYPE/ITEMS_COUNT estruturado, usa essa info.
-    const visionParsed = parseVisionStructured(visionDesc ?? null);
-    const typeGuard = visionParsed.itemType
-      ? `The product is a ${visionParsed.itemType}. Keep it AS A ${visionParsed.itemType} — do not convert it into a t-shirt, print, sticker, accessory, bracelet, or any other type of item.`
-      : "";
-    const kitGuard = (visionParsed.itemsCount && visionParsed.itemsCount > 1)
-      ? `The reference image contains a set of ${visionParsed.itemsCount} items — ALL ${visionParsed.itemsCount} items must appear in the final scene, each preserved as its original product type.`
-      : "";
+      console.log(`[submit] job ${jobId} — visionRouter type=${vision.product_type} count=${vision.items_count} user=${vision.target_user}`);
+      promptId = await submitWorkflow(jobId, productImageName, positiveFinal, negativeFinal, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
+    } else {
+      // Fallback: visao LLM falhou -> usa pipeline antigo do multiagent
+      const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined, userFeedback);
+      const wearableMode = classifyUsageMode({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
+      const parsedCtx = parseProductContext({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined, scene_request: cenario.trim() });
+      const usageAgent = wearableMode === "wearable_use" ? resolveUsageAgent(wearableMode, parsedCtx) : null;
+      const isCloseUpProduct =
+        usageAgent === "jewelry_ear_agent" || usageAgent === "jewelry_neck_agent" ||
+        usageAgent === "jewelry_hand_agent" || usageAgent === "eyewear_agent" ||
+        usageAgent === "hat_agent" || usageAgent === "footwear_agent";
 
-    const qualitySuffix = "Professional commercial photography, 8K detail, natural studio lighting, sharp focus on the product.";
-    const positiveEnhanced = [typeGuard, kitGuard, promptResult.positive, qualitySuffix].filter(Boolean).join(" ").trim();
+      const visionParsed = parseVisionStructured(visionDesc ?? null);
+      const typeGuard = visionParsed.itemType
+        ? `The product is a ${visionParsed.itemType}. Keep it AS A ${visionParsed.itemType} — do not convert it into a t-shirt, print, sticker, accessory, bracelet, or any other type of item.`
+        : "";
+      const kitGuard = (visionParsed.itemsCount && visionParsed.itemsCount > 1)
+        ? `The reference image contains a set of ${visionParsed.itemsCount} items — ALL ${visionParsed.itemsCount} items must appear in the final scene, each preserved as its original product type.`
+        : "";
 
-    const bareFootGuard = (wearableMode === "wearable_use" && !isCloseUpProduct) ? "barefoot, bare feet, no shoes," : "";
-    // Negativo extra contra conversao do produto pra outro tipo
-    const conversionNeg = "product converted to t-shirt, original product replaced, print copied onto different item, derived item, missing items from set, only one of multiple products visible,";
-    const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${conversionNeg} ${bareFootGuard} ${promptResult.negative}`.trim();
+      const qualitySuffix = "Professional commercial photography, 8K detail, natural studio lighting, sharp focus on the product.";
+      const positiveEnhanced = [typeGuard, kitGuard, promptResult.positive, qualitySuffix].filter(Boolean).join(" ").trim();
+      const bareFootGuard = (wearableMode === "wearable_use" && !isCloseUpProduct) ? "barefoot, bare feet, no shoes," : "";
+      const conversionNeg = "product converted to t-shirt, original product replaced, print copied onto different item, derived item, missing items from set, only one of multiple products visible,";
+      const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${conversionNeg} ${bareFootGuard} ${promptResult.negative}`.trim();
 
-    if (visionParsed.itemType) console.log(`[submit] job ${jobId} — type guard "${visionParsed.itemType}", items=${visionParsed.itemsCount ?? "?"}`);
-
-    promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
+      console.log(`[submit] job ${jobId} — FALLBACK multiagent (visionRouter retornou null)`);
+      promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
+    }
   }
 
   const externalJobId = `${comfyIndex}:${promptId}`;
