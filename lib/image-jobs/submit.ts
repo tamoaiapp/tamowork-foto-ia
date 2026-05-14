@@ -2,7 +2,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
-import { getProductVisionDescription, mergeProductTexts } from "@/lib/vision/serverProductVision";
+import { getProductVisionDescription, mergeProductTexts, parseVisionStructured } from "@/lib/vision/serverProductVision";
 import { detectDisplayCategory, buildDisplayPrompt } from "@/lib/promptuso/displayPrompt";
 import { classifyUsageMode, resolveUsageAgent, parseProductContext } from "@/lib/promptuso/multiagent";
 
@@ -182,14 +182,27 @@ export async function submitImageJob(jobId: string) {
       usageAgent === "hat_agent" ||
       usageAgent === "footwear_agent";
 
-    // Qwen Image Edit + Lightning (CFG 1, 8 steps) responde mal a prompts longos.
-    // O buildPromptV2 ja inclui fidelidade no inicio e anti-display. Aqui so adicionamos
-    // qualidade tecnica curta no fim.
+    // Anti-conversao: forca o Qwen Image Edit a manter o produto como o
+    // mesmo TIPO de item da imagem de referencia (ex: mochila NAO virar
+    // camiseta com estampa da mochila; vestido NAO virar bolsa).
+    // Se vision retornou ITEM_TYPE/ITEMS_COUNT estruturado, usa essa info.
+    const visionParsed = parseVisionStructured(visionDesc ?? null);
+    const typeGuard = visionParsed.itemType
+      ? `The product is a ${visionParsed.itemType}. Keep it AS A ${visionParsed.itemType} — do not convert it into a t-shirt, print, sticker, accessory, bracelet, or any other type of item.`
+      : "";
+    const kitGuard = (visionParsed.itemsCount && visionParsed.itemsCount > 1)
+      ? `The reference image contains a set of ${visionParsed.itemsCount} items — ALL ${visionParsed.itemsCount} items must appear in the final scene, each preserved as its original product type.`
+      : "";
+
     const qualitySuffix = "Professional commercial photography, 8K detail, natural studio lighting, sharp focus on the product.";
-    const positiveEnhanced = `${promptResult.positive} ${qualitySuffix}`.trim();
+    const positiveEnhanced = [typeGuard, kitGuard, promptResult.positive, qualitySuffix].filter(Boolean).join(" ").trim();
 
     const bareFootGuard = (wearableMode === "wearable_use" && !isCloseUpProduct) ? "barefoot, bare feet, no shoes," : "";
-    const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${bareFootGuard} ${promptResult.negative}`.trim();
+    // Negativo extra contra conversao do produto pra outro tipo
+    const conversionNeg = "product converted to t-shirt, original product replaced, print copied onto different item, derived item, missing items from set, only one of multiple products visible,";
+    const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${conversionNeg} ${bareFootGuard} ${promptResult.negative}`.trim();
+
+    if (visionParsed.itemType) console.log(`[submit] job ${jobId} — type guard "${visionParsed.itemType}", items=${visionParsed.itemsCount ?? "?"}`);
 
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
   }

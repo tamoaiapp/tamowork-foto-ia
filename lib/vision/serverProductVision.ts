@@ -68,9 +68,13 @@ export async function getProductVisionDescription(
     // moondream responde melhor com perguntas diretas
     const hasUserText = userText && userText.trim().length > 2;
 
+    // Pede SEMPRE o tipo do produto explicito no inicio da resposta — isso
+    // ajuda o Qwen Image Edit depois a manter a peca como o item certo (ex:
+    // mochila NAO virar camiseta, vestido NAO virar bolsa, etc).
+    // Tambem pede pra LISTAR todos os itens se forem multiplos (kit/conjunto).
     const prompt = hasUserText
-      ? `The user says this product is "${userText.trim()}". Confirm or correct this and describe the product accurately in one sentence: what type of product, color, material or texture, and style. Focus only on the product, ignore background and people.`
-      : `Describe this product in one sentence for e-commerce: what type of product, color, material or texture, and style. Focus only on the product, ignore background, people, and props.`;
+      ? `The user says this product is "${userText.trim()}". Look carefully at the image and answer in this exact format: "ITEM_TYPE: <noun, eg. backpack, t-shirt, dress, sneakers, bracelet>. DESCRIPTION: <one sentence describing the product — color, print/pattern, material, style>. ITEMS_COUNT: <number of distinct products visible, eg. 1 or 3 for a set/kit>." Focus on the product, ignore background and people.`
+      : `Look at this image and answer in this exact format: "ITEM_TYPE: <noun, eg. backpack, t-shirt, dress, sneakers, bracelet>. DESCRIPTION: <one sentence describing the product — color, print/pattern, material, style>. ITEMS_COUNT: <number of distinct products visible, eg. 1 or 3 for a set/kit>." Focus on the product, ignore background and people.`;
 
     // moondream no Ollama requer o formato /api/chat com images no message
     const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
@@ -113,27 +117,40 @@ export async function getProductVisionDescription(
 
 /**
  * Mescla o texto do usuário com a descrição da visão.
- * Resultado: prompt mais rico para o buildPromptResult.
- *
- * Exemplos:
- *   user: "vestdo" + vision: "blue floral midi dress" → "blue floral midi dress"
- *   user: "calça jeans" + vision: "dark blue slim fit jeans" → "dark blue slim fit jeans (calça jeans)"
- *   user: "" + vision: "white leather sneakers" → "white leather sneakers"
- *   user: "tênis" + vision: null → "tênis" (fallback para texto do usuário)
  */
 export function mergeProductTexts(userText: string, visionDescription: string | null): string {
   const u = (userText ?? "").trim();
   const v = (visionDescription ?? "").trim();
 
-  if (!v) return u || "product"; // sem visão → usa o do usuário ou fallback
-  if (!u) return v;              // sem texto do usuário → usa visão pura
+  if (!v) return u || "product";
+  if (!u) return v;
 
-  // Se o texto do usuário está contido na visão (confirmado), usa visão
   const uLower = u.toLowerCase();
   const vLower = v.toLowerCase();
   if (vLower.includes(uLower) || uLower.length <= 3) return v;
 
-  // Se são bem diferentes, anota o texto original como hint de contexto
-  // para o buildPromptResult não perder inferências de categoria PT/ES
   return `${v} (${u})`;
+}
+
+/**
+ * Extrai o tipo declarado (ITEM_TYPE) e a contagem de itens (ITEMS_COUNT)
+ * da resposta estruturada do moondream. Aceita variacoes de formato.
+ */
+export function parseVisionStructured(visionDesc: string | null): {
+  itemType: string | null;
+  itemsCount: number | null;
+  description: string;
+} {
+  const v = (visionDesc ?? "").trim();
+  if (!v) return { itemType: null, itemsCount: null, description: "" };
+
+  const typeMatch = v.match(/ITEM_TYPE\s*:\s*([^.\n]+?)(?:\.|$|DESCRIPTION)/i);
+  const descMatch = v.match(/DESCRIPTION\s*:\s*([^.\n]+(?:\.[^.\n]+)*?)(?:\.\s*ITEMS_COUNT|\.\s*$|$)/i);
+  const countMatch = v.match(/ITEMS_COUNT\s*:\s*(\d+)/i);
+
+  const itemType = typeMatch ? typeMatch[1].trim().replace(/\.+$/, "") : null;
+  const itemsCount = countMatch ? parseInt(countMatch[1], 10) : null;
+  const description = descMatch ? descMatch[1].trim() : v;
+
+  return { itemType, itemsCount, description };
 }
