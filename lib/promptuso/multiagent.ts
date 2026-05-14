@@ -24,7 +24,16 @@ function joinText(...parts: (string | undefined | null)[]): string {
 }
 
 function containsAny(text: string, terms: string[]): boolean {
-  return terms.some((term) => text.includes(term));
+  // Usa word boundary para evitar substring match (ex: "weaRING" nao deve
+  // casar com "ring", "boTa" nao deve casar com "bota", etc).
+  // Terms compostos (com espaco) continuam como includes.
+  return terms.some((term) => {
+    if (term.includes(" ")) return text.includes(term);
+    // Escapa caracteres especiais de regex (- e .)
+    const escaped = term.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
+    const re = new RegExp(`\\b${escaped}\\b`, "i");
+    return re.test(text);
+  });
 }
 
 function uniq(arr: string[]): string[] {
