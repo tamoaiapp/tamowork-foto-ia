@@ -123,14 +123,20 @@ export async function submitImageJob(jobId: string) {
   const comfyBase = COMFY_BASES[0];
   if (!comfyBase) throw new Error("Nenhum pod de foto configurado (COMFY_BASES vazio)");
 
-  // ── Visão de produto (A40 Ollama) ─────────────────────────────────────────
-  // Roda em paralelo com a verificação do pod para não adicionar latência.
-  // Se o Ollama estiver offline, visionDesc é null e usamos o texto do usuário.
+  // Pipeline unificado: ensureFotoPod + classifyVision (visao nova) em
+  // paralelo. NAO chama mais getProductVisionDescription antigo no modo
+  // default — visao nova ja retorna descricao estruturada.
+  // Apenas catalogo/produto_exposto usam visao antiga (legado).
   const isCatalog = !!modelImageUrl;
-  const [podReady, visionDesc] = await Promise.all([
+  const useNewPipeline = !isCatalog && jobMode !== "produto_exposto";
+  const produto_frase_trim = produto_frase.trim();
+
+  const [podReady, visionDesc, visionNew] = await Promise.all([
     ensureFotoPodRunning(comfyBase),
-    // Catálogo tem prompt imperativo próprio — não enriquece com visão
-    isCatalog ? Promise.resolve(null) : getProductVisionDescription(job.input_image_url, produto_frase.trim()),
+    // Caminhos legados: catalogo + produto_exposto ainda usam vision antiga
+    useNewPipeline ? Promise.resolve(null) : getProductVisionDescription(job.input_image_url, produto_frase_trim),
+    // Caminho novo: classifyVision estruturado
+    useNewPipeline ? classifyVision(job.input_image_url, produto_frase_trim) : Promise.resolve(null),
   ]);
 
   if (!podReady) {
@@ -138,15 +144,10 @@ export async function submitImageJob(jobId: string) {
     return;
   }
 
-  // Visão enriquece o prompt como âncora de fidelidade do produto
-  // Passamos produto e vision separados — buildPromptResult usa vision como descrição primária
-  const produtoBase = produto_frase.trim();
-  // Sempre combina texto do usuário + descrição visual da imagem
-  // mergeProductTexts: vision como âncora + texto do usuário como contexto adicional
+  const produtoBase = produto_frase_trim;
   const enrichedProduto = mergeProductTexts(produtoBase, visionDesc);
-  if (visionDesc) {
-    console.log(`[submit] job ${jobId} — vision desc: "${visionDesc}"`);
-  }
+  if (visionDesc) console.log(`[submit] job ${jobId} — vision desc legado: "${visionDesc}"`);
+  if (visionNew) console.log(`[submit] job ${jobId} — visionNew type=${visionNew.product_type} count=${visionNew.items_count}`);
 
   const productImageName = await uploadImageToComfy(job.input_image_url, comfyBase, `prod_${jobId}`);
 
@@ -170,17 +171,12 @@ export async function submitImageJob(jobId: string) {
     console.log(`[submit] job ${jobId} — produto_exposto categoria="${category}" produto="${enrichedProduto}"`);
     promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
   } else {
-    // Pipeline NOVO (fase 1): visao LLM estruturada -> template por tipo +
-    // cena enriquecida por LLM. Substitui o multiagent V2 (keywords/regex).
-    // Roda em paralelo: classificacao visual + enriquecimento de cena.
-    const [vision, sceneEnriched] = await Promise.all([
-      classifyVision(job.input_image_url, produtoBase),
-      enrichScene(cenario.trim(), {
-        product_type: "unknown",
-        description: produtoBase || (visionDesc ?? ""),
-        target_user: "unisex",
-      }),
-    ]);
+    // Pipeline NOVO (fase 1): visionNew ja foi calculado em paralelo no inicio.
+    // Aqui so enriquecemos a cena via LLM (chamada de texto, rapida).
+    const vision = visionNew;
+    const sceneEnriched = vision
+      ? await enrichScene(cenario.trim(), { product_type: vision.product_type, description: vision.description, target_user: vision.target_user })
+      : cenario.trim();
 
     if (vision) {
       // Caminho novo: template por tipo
