@@ -4,7 +4,10 @@ import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
 import { submitRunpodJob, RUNPOD_VIDEO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { ensureVideoPodRunning } from "@/lib/runpod/pods";
 
-const USE_SERVERLESS = process.env.RUNPOD_SERVERLESS_ENABLED === "true";
+// Serverless eh o default agora (endpoint tamowork-video, AMPERE_24).
+// Pra reverter pra pod direto temporariamente, setar
+// RUNPOD_SERVERLESS_ENABLED=false no Vercel.
+const USE_SERVERLESS = (process.env.RUNPOD_SERVERLESS_ENABLED ?? "true") !== "false";
 
 export async function submitVideoJob(jobId: string) {
   const supabase = createServerClient();
