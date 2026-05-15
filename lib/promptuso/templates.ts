@@ -25,14 +25,22 @@ export interface PromptOutput {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+// Default eh aparencia ocidental (americana/europeia/brasileira) — Qwen Image
+// Edit foi treinado com viés asiatico e tende a gerar rostos orientais sem
+// instrucao explicita. ETHNIC_BASE eh aplicado a TODA descricao humana.
+const ETHNIC_BASE = "Western Caucasian or Brazilian features, fair to medium skin tone, brown or blonde hair, non-Asian appearance";
+
 function humanPhrase(user: TargetUser, age?: number): string {
   if (user === "no_human") return "no person, product only";
-  if (user === "child_girl") return age ? `${age}-year-old girl` : "young girl";
-  if (user === "child_boy") return age ? `${age}-year-old boy` : "young boy";
-  if (user === "adult_female") return "adult woman";
-  if (user === "adult_male") return "adult man";
-  return "adult person"; // unisex
+  if (user === "child_girl") return age ? `${age}-year-old girl (${ETHNIC_BASE})` : `young girl (${ETHNIC_BASE})`;
+  if (user === "child_boy") return age ? `${age}-year-old boy (${ETHNIC_BASE})` : `young boy (${ETHNIC_BASE})`;
+  if (user === "adult_female") return `adult woman (${ETHNIC_BASE})`;
+  if (user === "adult_male") return `adult man (${ETHNIC_BASE})`;
+  return `adult person (${ETHNIC_BASE})`; // unisex
 }
+
+// Negativos relacionados a etnia (impede default asiatico)
+const ETHNIC_NEG = "Asian features, oriental features, East Asian appearance, Japanese features, Chinese features, Korean features, almond eyes, Asian model";
 
 function quality(): string {
   return "Professional commercial photography, sharp focus, natural lighting, realistic textures, 8K detail.";
@@ -45,6 +53,7 @@ function baseNeg(): string {
     "mannequin, dummy, bust form, clothing hanger, clothing rack, price tag, hang tag, store shelf, store background, retail display, showroom, packaging, plastic bag",
     "deformed hands, bad anatomy, extra fingers, missing fingers, distorted face",
     "cartoon, CGI, illustration, painting, drawing",
+    ETHNIC_NEG,
   ].join(", ");
 }
 
@@ -301,18 +310,29 @@ function accessoryHeld({ vision, scene_text_en }: PromptInput): PromptOutput {
 }
 
 function productDisplay({ vision, scene_text_en, user_product_text }: PromptInput): PromptOutput {
-  // Detecta se eh material escolar (mochila/lancheira/estojo) pra usar cena
-  // escolar como default em vez de "premium surface".
   const text = `${user_product_text} ${vision.description}`.toLowerCase();
+  // Detecta material escolar — usa cena escolar como default
   const isSchoolKit = /\b(mochila|lancheira|estojo|backpack|lunchbox|pencil[- ]case|school|escolar)\b/.test(text);
+  // Detecta tipos especificos no texto do user pra forçar 3 itens
+  const hasMochila = /\b(mochila|backpack)\b/.test(text);
+  const hasLancheira = /\b(lancheira|lunchbox|lunch[- ]box)\b/.test(text);
+  const hasEstojo = /\b(estojo|pencil[- ]case)\b/.test(text);
+  const isKit3 = isSchoolKit && (hasMochila && hasLancheira && hasEstojo);
+
   const defaultScene = isSchoolKit
     ? "wooden school desk or wooden floor with colorful classroom backdrop, soft daylight from a window, child-friendly composition"
     : "clean premium surface with soft natural daylight, minimalist commercial setup";
   const scene = scene_text_en || defaultScene;
 
-  const countPhrase = vision.items_count > 1
-    ? `The reference image shows a set of ${vision.items_count} items. ALL ${vision.items_count} items must appear together in the final scene, side by side or arranged naturally, each as its ORIGINAL product type — do not merge them and do not skip any item.`
-    : "";
+  // Reforco de contagem — se texto do user lista 3 tipos especificos,
+  // sobrescreve o count do moondream (que tende a contar 1-2).
+  const enforcedCount = isKit3 ? 3 : vision.items_count;
+  let countPhrase = "";
+  if (isKit3) {
+    countPhrase = `The reference image contains EXACTLY 3 items: (1) a backpack, (2) a lunchbox, (3) a pencil case — all sharing the same Hot Wheels / character print design. ALL THREE items must appear together in the final scene, side by side or naturally arranged. Each item keeps its ORIGINAL product type — do NOT skip any item, do NOT merge them, do NOT replace any with a different item.`;
+  } else if (enforcedCount > 1) {
+    countPhrase = `The reference image shows a set of ${enforcedCount} items. ALL ${enforcedCount} items must appear together in the final scene, side by side or arranged naturally, each as its ORIGINAL product type — do not merge them and do not skip any item.`;
+  }
 
   return {
     positive: [
@@ -329,9 +349,10 @@ function productDisplay({ vision, scene_text_en, user_product_text }: PromptInpu
       "person wearing the product, model wearing the bag, child wearing kit, human wearing items",
       "product converted to t-shirt, t-shirt with product print, clothing with backpack print, derived item",
       "missing items from set, only one of multiple products visible, items merged into one",
+      isKit3 ? "only 1 item visible, only 2 items visible, missing backpack, missing lunchbox, missing pencil case" : "",
       "cluttered background, distracting props",
       baseNeg(),
-    ].join(", "),
+    ].filter(Boolean).join(", "),
     shot_type: "product display",
     presentation: "displayed",
   };
