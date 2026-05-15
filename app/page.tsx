@@ -2560,8 +2560,16 @@ export default function HomePage() {
           <div style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.18),rgba(168,85,247,0.12))", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 14, padding: "14px 18px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => setVideoMode(true)}>
             <span style={{ fontSize: 22 }}>🎬</span>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>Tô criando seu vídeo...</div>
-              <div style={{ color: "#8394b0", fontSize: 12 }}>Pode continuar usando o app — te aviso quando ficar pronto</div>
+              <div style={{ color: "#eef2f9", fontWeight: 700, fontSize: 14 }}>
+                {videoElapsedSec >= 5 * 60 ? "Aquecendo o servidor de vídeo..." : "Tô criando seu vídeo..."}
+              </div>
+              <div style={{ color: "#8394b0", fontSize: 12 }}>
+                {videoElapsedSec >= 10 * 60
+                  ? "Vídeo demora mais que foto, falta pouco — te aviso quando ficar pronto"
+                  : videoElapsedSec >= 5 * 60
+                  ? "Primeira vez do dia o servidor leva uns minutos pra ligar — te aviso quando ficar pronto"
+                  : "Pode continuar usando o app — te aviso quando ficar pronto"}
+              </div>
             </div>
             <div style={{ width: 80, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${videoDisplayProgress}%`, background: "linear-gradient(90deg,#6366f1,#a855f7)", borderRadius: 99, transition: "width 1s ease" }} />
@@ -3445,9 +3453,19 @@ export default function HomePage() {
         {/* Vídeo ativo — aviso simples (redirecionar para Tamo) */}
         {isVideoJobActive && videoMode && (
           <div style={{ ...styles.card, textAlign: "center" as const, padding: "32px 24px" }}>
-            <div style={{ fontSize: 40, marginBottom: 12, lineHeight: 1 }}>🎬</div>
-            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 700, marginBottom: 6 }}>Seu vídeo está sendo criado</div>
-            <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 20, lineHeight: 1.5 }}>Acompanhe o andamento na aba Tamo</div>
+            <div style={{ fontSize: 40, marginBottom: 12, lineHeight: 1 }}>{videoElapsedSec >= 5 * 60 ? "🔥" : "🎬"}</div>
+            <div style={{ fontSize: 15, color: "#eef2f9", fontWeight: 700, marginBottom: 6 }}>
+              {videoElapsedSec >= 10 * 60
+                ? "Aquecendo o servidor, falta pouco"
+                : videoElapsedSec >= 5 * 60
+                ? "Aquecendo o servidor de vídeo"
+                : "Seu vídeo está sendo criado"}
+            </div>
+            <div style={{ fontSize: 13, color: "#8394b0", marginBottom: 20, lineHeight: 1.5 }}>
+              {videoElapsedSec >= 5 * 60
+                ? "Primeira vez do dia o servidor leva uns minutos pra ligar. Acompanhe no Tamo — te avisamos quando ficar pronto."
+                : "Acompanhe o andamento na aba Tamo"}
+            </div>
             <button
               type="button"
               onClick={() => router.push("/tamo")}
@@ -4166,6 +4184,25 @@ function statusLabel(status: JobStatus, elapsedSec: number, createdAt?: string, 
   const realElapsed = createdAt
     ? Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)
     : elapsedSec;
+
+  // Apos 5min sem terminar, mostra "aquecendo servidor" — provavel cold start
+  // do pod (foi desligado pra economizar e esta ligando sob demanda).
+  // Apos 10min: estima conclusao em ~5min, mantem otimismo.
+  if (realElapsed >= 5 * 60) {
+    if (realElapsed >= 10 * 60) {
+      return lang === "en"
+        ? "Warming up the server, almost there..."
+        : lang === "es"
+        ? "Calentando el servidor, casi listo..."
+        : "Aquecendo o servidor, falta pouco...";
+    }
+    return lang === "en"
+      ? "Warming up the server (first photo takes longer)..."
+      : lang === "es"
+      ? "Calentando el servidor (la primera foto tarda más)..."
+      : "Aquecendo o servidor (a primeira foto demora um pouco mais)...";
+  }
+
   if (status === "processing") return lang === "en" ? "Generating your photo..." : lang === "es" ? "Generando tu foto..." : "Gerando sua foto...";
   if (status === "submitted") return realElapsed < 20
     ? (lang === "en" ? "Sending to AI..." : lang === "es" ? "Enviando a la IA..." : "Enviando para a IA...")
