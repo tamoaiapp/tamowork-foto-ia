@@ -184,16 +184,22 @@ export async function GET(req: NextRequest) {
     results.push(...ids.map(id => ({ id, action: "vid-stale-fail", ok: true })));
   }
 
-  // REGRA 2: Verificar se o pod de foto está online antes de submeter
+  // REGRA 2: Foto serverless (default) nao precisa de pod fixo — submitImageJob
+  // manda direto pro RunPod. Pod fixo so e necessario pra narrated video (nao
+  // migrado) ou pra image jobs quando serverless esta desligado.
+  const FOTO_SERVERLESS = (process.env.RUNPOD_FOTO_SERVERLESS_ENABLED ?? "true") !== "false";
   const fotoBase = COMFY_BASES[0];
   let fotoPodOnline = false;
-  if (fotoBase && ((queuedJobs ?? []).length > 0 || (queuedNarratedJobs ?? []).length > 0)) {
+  const needFotoPod = (queuedNarratedJobs ?? []).length > 0 || (!FOTO_SERVERLESS && (queuedJobs ?? []).length > 0);
+  if (fotoBase && needFotoPod) {
     fotoPodOnline = await ensureFotoPodRunning(fotoBase);
     if (!fotoPodOnline) {
       // Pod estava desligado, enviou sinal de resume — não tenta submeter agora
       results.push({ id: "pod-foto", action: "pod-resuming", ok: false, error: "Pod offline, iniciando..." });
     }
   }
+  // Image jobs podem submeter se serverless (sem pod) OU se o pod fixo está online
+  const canSubmitImage = FOTO_SERVERLESS || fotoPodOnline;
 
   // REGRA 3: Verificar pod de vídeo
   const videoBase = VIDEO_COMFY_BASES?.[0];
@@ -202,8 +208,8 @@ export async function GET(req: NextRequest) {
     videoPodOnline = await ensureVideoPodRunning(videoBase);
   }
 
-  // Submete image jobs queued (só se pod online E sem job em andamento)
-  if (fotoPodOnline) {
+  // Submete image jobs queued (serverless ou pod online, E sem job em andamento)
+  if (canSubmitImage) {
     const { count: activeCount } = await supabase
       .from("image_jobs")
       .select("id", { count: "exact", head: true })
