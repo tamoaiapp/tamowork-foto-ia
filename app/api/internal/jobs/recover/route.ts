@@ -42,7 +42,11 @@ const RESTART_AFTER_MS = 5 * 60 * 1000;
 // Após 15 min total → desiste e falha (era 30 min)
 const TOTAL_FAIL_MS = 15 * 60 * 1000;
 
-// Vercel Cron: roda a cada 1 minuto
+// Vercel Cron: roda a cada 5 minutos (ver vercel.json).
+// Atenção: os timeouts abaixo (RESTART_AFTER_MS=5min, TOTAL_FAIL_MS=15min)
+// foram calibrados originalmente pra cron de 1min — com 5min cada decisão
+// acontece em janelas de 5min, então RESTART_AFTER_MS=5min basicamente dispara
+// no 1º tick que pegar o job. Vale revisar se precisar de mais respiro.
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization") ?? "";
   const internalHeader = req.headers.get("x-internal-secret") ?? "";
@@ -301,13 +305,25 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Auto-stop pod de vídeo se ocioso há mais de 20 min
+  // Auto-stop pod de vídeo se sem atividade nos últimos 20 min.
+  // "Atividade" = job ativo (queued/processing) OU job concluído nos últimos 20min.
+  // Sem o segundo check, pod recém-usado seria parado em seguida e cliente teria cold start.
   if (videoBase) {
     const hasActiveVideo = (
       (queuedVideoJobs ?? []).length > 0 ||
       (processingVideoJobs ?? []).length > 0
     );
-    const stopped = await autoStopVideoPodIfIdle(hasActiveVideo);
+    let hasRecentActivity = hasActiveVideo;
+    if (!hasActiveVideo) {
+      const recentCutoff = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+      const { data: recentVideo } = await supabase
+        .from("video_jobs")
+        .select("id")
+        .gte("updated_at", recentCutoff)
+        .limit(1);
+      hasRecentActivity = (recentVideo ?? []).length > 0;
+    }
+    const stopped = await autoStopVideoPodIfIdle(hasRecentActivity);
     if (stopped) results.push({ id: "pod-video", action: "vid-auto-stop", ok: true });
   }
 

@@ -4,8 +4,12 @@ const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY ?? "";
 const GRAPHQL = "https://api.runpod.io/graphql";
 
 // Pod IDs (em ordem de prioridade para foto)
-export const FOTO_POD_IDS = (process.env.FOTO_POD_IDS ?? "bplqvtp059e2dc,64u9u09pqlya53").split(",").map(s => s.trim()).filter(Boolean);
-export const VIDEO_POD_ID = process.env.VIDEO_POD_ID ?? "h0by4qrq3g2p7s";
+// Defaults refletem a realidade atual em prod (RunPod console):
+//   foto  → nj03vhoszlo878 (RTX A5000)
+//   video → azaxuwht9vknwn (A40, PAUSED — só usado se RUNPOD_SERVERLESS_ENABLED=false)
+// Ambos podem ser sobrescritos via env var na Vercel.
+export const FOTO_POD_IDS = (process.env.FOTO_POD_IDS ?? "nj03vhoszlo878").split(",").map(s => s.trim()).filter(Boolean);
+export const VIDEO_POD_ID = process.env.VIDEO_POD_ID ?? "azaxuwht9vknwn";
 
 async function gql(query: string) {
   const res = await fetch(GRAPHQL, {
@@ -64,7 +68,7 @@ export async function stopIdleVideoPod(): Promise<void> {
 // Se não estiver, dispara o resume e retorna false imediatamente.
 // O caller agenda retry via QStash para daqui ~4 minutos.
 // Verifica se ComfyUI está saudável (retorna JSON com system_stats)
-async function isComfyHealthy(comfyBase: string): Promise<boolean> {
+export async function isComfyHealthy(comfyBase: string): Promise<boolean> {
   try {
     const r = await fetch(`${comfyBase}/system_stats`, { signal: AbortSignal.timeout(8000) });
     if (!r.ok) return false;
@@ -105,9 +109,9 @@ async function tryUnfreezeComfy(comfyBase: string): Promise<boolean> {
 
 // Grace period: só faz restart se pod está rodando há mais de 15 min sem ComfyUI responder
 // Evita matar o pod enquanto o Qwen ainda está carregando (~10-12 min)
-const RESTART_GRACE_MS = 15 * 60 * 1000;
+export const RESTART_GRACE_MS = 15 * 60 * 1000;
 
-async function getPodUptimeMs(podId: string): Promise<number> {
+export async function getPodUptimeMs(podId: string): Promise<number> {
   try {
     const r = await gql(`{ pod(input: { podId: "${podId}" }) { runtime { uptimeInSeconds } } }`);
     const uptime = (r.data?.pod as { runtime?: { uptimeInSeconds?: number } } | null)?.runtime?.uptimeInSeconds ?? 0;
@@ -153,16 +157,22 @@ export async function ensureFotoPodRunning(comfyBase: string): Promise<boolean> 
   return false;
 }
 
-// Para o pod de vídeo se ocioso há mais de 20 min sem jobs ativos
-export async function autoStopVideoPodIfIdle(hasActiveJobs: boolean): Promise<boolean> {
-  if (hasActiveJobs) return false;
+// Para o pod de vídeo se sem atividade recente.
+// `hasRecentActivity` deve refletir: jobs queued/submitting/processing OU
+// jobs concluídos (done/failed) nos últimos ~20min. O caller (recover) é
+// quem sabe — passa o resultado já calculado.
+// Anti-thrashing: 5min mínimo de uptime antes de poder parar.
+// (Hoje vídeo roda em serverless por padrão — esta função só importa se
+// alguém setar RUNPOD_SERVERLESS_ENABLED=false.)
+export async function autoStopVideoPodIfIdle(hasRecentActivity: boolean): Promise<boolean> {
+  if (hasRecentActivity) return false;
   try {
     const status = await getPodStatus(VIDEO_POD_ID);
     if (status !== "RUNNING") return false;
     const uptimeMs = await getPodUptimeMs(VIDEO_POD_ID);
-    if (uptimeMs < 20 * 60 * 1000) return false;
+    if (uptimeMs < 5 * 60 * 1000) return false; // anti-thrashing
     await stopPod(VIDEO_POD_ID);
-    console.log(`[pods] Video pod parado por ociosidade (uptime ${Math.round(uptimeMs / 60000)}min)`);
+    console.log(`[pods] Video pod parado (sem atividade recente, uptime ${Math.round(uptimeMs / 60000)}min)`);
     return true;
   } catch {
     return false;

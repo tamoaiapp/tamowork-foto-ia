@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServerClient();
 
-  // Criar job — o cron de 1 minuto vai processar automaticamente
+  // Criar job — o cron a cada 5 min (jobs/recover) vai processar automaticamente
   const prompt = uso ? `${produto.trim()} | cenário: ${uso.trim()}` : produto.trim();
 
   const { data: job, error: insertError } = await supabase

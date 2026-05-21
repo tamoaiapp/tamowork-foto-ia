@@ -39,7 +39,7 @@ export async function submitVideoJob(jobId: string) {
     const podReady = await ensureVideoPodRunning(comfyBase);
 
     if (!podReady) {
-      // Pod não está pronto — volta para queued, o cron tenta novamente em 1 min
+      // Pod não está pronto — volta para queued, o cron tenta novamente em 5 min
       await supabase.from("video_jobs").update({ status: "queued", updated_at: new Date().toISOString() }).eq("id", jobId);
       return;
     }
@@ -54,5 +54,5 @@ export async function submitVideoJob(jobId: string) {
     .from("video_jobs")
     .update({ status: "submitted", external_job_id: externalJobId, provider })
     .eq("id", jobId);
-  // O cron de 1 minuto vai verificar o resultado automaticamente
+  // O cron de 5 minutos vai verificar o resultado automaticamente
 }

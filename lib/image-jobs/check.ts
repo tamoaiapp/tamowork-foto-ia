@@ -3,7 +3,10 @@ import { COMFY_BASES, getComfyHistory, freeComfyMemory } from "@/lib/comfyui/cli
 import { checkRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { finalizeImageJob } from "@/lib/image-jobs/finalize";
 
-const MAX_ATTEMPTS = 40; // 40 × ~60s ≈ 40 minutos (cron a cada 1 min)
+// Safety net. Com cron a cada 5min, 40 attempts = ~3.3h — mas na prática
+// nunca chega aqui porque recover/route.ts marca como failed em 15min total.
+// Mantido como cinto-e-suspensório.
+const MAX_ATTEMPTS = 40;
 
 export async function checkImageJob(jobId: string) {
   const supabase = createServerClient();

@@ -4,7 +4,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { FOTO_POD_IDS, VIDEO_POD_ID, getPodStatus, stopPod, resumePod } from "@/lib/runpod/pods";
+import { FOTO_POD_IDS, VIDEO_POD_ID, getPodStatus, stopPod, resumePod, isComfyHealthy, getPodUptimeMs, RESTART_GRACE_MS } from "@/lib/runpod/pods";
+import { COMFY_BASES } from "@/lib/comfyui/client";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 const IDLE_MINUTES = parseInt(process.env.POD_IDLE_MINUTES ?? "20");
@@ -29,18 +30,42 @@ export async function GET(req: NextRequest) {
   const inPeak = peakStart < peakEnd
     ? (hourUTC >= peakStart && hourUTC < peakEnd)
     : (hourUTC >= peakStart || hourUTC < peakEnd);
-  // WATCHDOG em horario comercial: religa pods EXITED.
-  // (Pod pode cair por crash, manutencao RunPod, ou stop programatico do proprio
-  // codigo ao detectar ComfyUI travado. Em peak, sempre voltamos a religar.)
+  // WATCHDOG em horario comercial:
+  //   1. Religa pods EXITED (queda, crash, stop programatico).
+  //   2. Detecta pods RUNNING com ComfyUI morto (Qwen OOM, deadlock interno) —
+  //      se passou do grace period (15min) faz stop+resume forcado.
   if (inPeak && !force) {
     const resumed: string[] = [];
+    const restarted: string[] = [];
     const watchdogErrors: string[] = [];
+    // Mapeia podId -> comfyBase usando regex no host de cada COMFY_BASES.
+    // Permite checar healthcheck do pod RUNNING.
+    const podToBase = new Map<string, string>();
+    for (const base of COMFY_BASES) {
+      const m = base.match(/https?:\/\/([a-z0-9]+)-\d+\.proxy\.runpod\.net/);
+      if (m) podToBase.set(m[1], base);
+    }
     for (const podId of FOTO_POD_IDS) {
       try {
         const status = await getPodStatus(podId);
         if (status === "EXITED") {
           await resumePod(podId);
           resumed.push(podId);
+          continue;
+        }
+        if (status === "RUNNING") {
+          const comfyBase = podToBase.get(podId);
+          if (!comfyBase) continue; // sem URL pra checar — skip
+          const healthy = await isComfyHealthy(comfyBase);
+          if (healthy) continue;
+          // ComfyUI morto. Se passou do grace period, forca restart.
+          // (Grace period evita matar pod ainda carregando Qwen.)
+          const uptimeMs = await getPodUptimeMs(podId);
+          if (uptimeMs < RESTART_GRACE_MS) continue;
+          await stopPod(podId).catch(() => {});
+          await new Promise(r => setTimeout(r, 2000));
+          await resumePod(podId).catch(() => {});
+          restarted.push(podId);
         }
       } catch (e) {
         watchdogErrors.push(`${podId}: ${(e as Error)?.message ?? e}`);
@@ -48,7 +73,7 @@ export async function GET(req: NextRequest) {
     }
     return NextResponse.json({
       ok: true, mode: "peak_watchdog", hourUTC, peakStart, peakEnd,
-      resumed, errors: watchdogErrors,
+      resumed, restarted, errors: watchdogErrors,
     });
   }
 

@@ -73,7 +73,7 @@ export async function createVideoJob(
 
   if (error) throw error;
 
-  // Em localhost dispara imediatamente; em prod o cron de 1 min pega o job
+  // Em localhost dispara imediatamente; em prod o cron a cada 5 min pega o job
   if (isLocalhost) {
     submitVideoJob(job.id).catch((err) =>
       console.error("[video-submit-local] erro:", err)
