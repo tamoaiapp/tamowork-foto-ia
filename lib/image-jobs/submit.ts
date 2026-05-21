@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow } from "@/lib/comfyui/client";
+import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow, buildFotoWorkflow, buildCatalogWorkflow } from "@/lib/comfyui/client";
+import { submitRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
 import { getProductVisionDescription, mergeProductTexts, parseVisionStructured } from "@/lib/vision/serverProductVision";
@@ -7,6 +8,11 @@ import { classifyVision, enrichScene } from "@/lib/promptuso/visionRouter";
 import { buildPromptByType } from "@/lib/promptuso/templates";
 import { detectDisplayCategory, buildDisplayPrompt } from "@/lib/promptuso/displayPrompt";
 import { classifyUsageMode, resolveUsageAgent, parseProductContext } from "@/lib/promptuso/multiagent";
+
+// Serverless de foto: default agora (endpoint comfyui-serverless, RTX 5090/A40).
+// O pod fixo virou fallback — pra reverter, setar RUNPOD_FOTO_SERVERLESS_ENABLED=false
+// no Vercel (reverte na hora, sem redeploy de código).
+const USE_SERVERLESS = (process.env.RUNPOD_FOTO_SERVERLESS_ENABLED ?? "true") !== "false";
 
 // ── Qualificadores de qualidade profissional ───────────────────────────────────
 // Injetados no positive prompt depois do buildPromptResult para elevar o padrão
@@ -121,7 +127,7 @@ export async function submitImageJob(jobId: string) {
 
   const comfyIndex = 0;
   const comfyBase = COMFY_BASES[0];
-  if (!comfyBase) throw new Error("Nenhum pod de foto configurado (COMFY_BASES vazio)");
+  if (!USE_SERVERLESS && !comfyBase) throw new Error("Nenhum pod de foto configurado (COMFY_BASES vazio)");
 
   // Pipeline unificado: ensureFotoPod + classifyVision (visao nova) em
   // paralelo. NAO chama mais getProductVisionDescription antigo no modo
@@ -132,14 +138,15 @@ export async function submitImageJob(jobId: string) {
   const produto_frase_trim = produto_frase.trim();
 
   const [podReady, visionDesc, visionNew] = await Promise.all([
-    ensureFotoPodRunning(comfyBase),
+    // Serverless nao usa pod fixo — pula o ensureFotoPodRunning
+    USE_SERVERLESS ? Promise.resolve(true) : ensureFotoPodRunning(comfyBase),
     // Caminhos legados: catalogo + produto_exposto ainda usam vision antiga
     useNewPipeline ? Promise.resolve(null) : getProductVisionDescription(job.input_image_url, produto_frase_trim),
     // Caminho novo: classifyVision retorna classificacao + scene_en em UMA chamada
     useNewPipeline ? classifyVision(job.input_image_url, produto_frase_trim, cenarioRaw ?? undefined) : Promise.resolve(null),
   ]);
 
-  if (!podReady) {
+  if (!USE_SERVERLESS && !podReady) {
     await supabase.from("image_jobs").update({ status: "queued", updated_at: new Date().toISOString() }).eq("id", jobId);
     return;
   }
@@ -149,27 +156,36 @@ export async function submitImageJob(jobId: string) {
   if (visionDesc) console.log(`[submit] job ${jobId} — vision desc legado: "${visionDesc}"`);
   if (visionNew) console.log(`[submit] job ${jobId} — visionNew type=${visionNew.product_type} count=${visionNew.items_count}`);
 
-  const productImageName = await uploadImageToComfy(job.input_image_url, comfyBase, `prod_${jobId}`);
+  const fmt = (job.format as PhotoFormat) ?? DEFAULT_FORMAT;
 
-  let promptId: string;
+  // Nomes das imagens: serverless usa nomes computados (a imagem vai no payload do RunPod);
+  // pod fixo sobe a imagem pro ComfyUI e usa o nome retornado.
+  let productImageName: string;
+  let modelImageName = "";
+  if (USE_SERVERLESS) {
+    const shortId = jobId.replace(/-/g, "").slice(0, 12);
+    productImageName = `product_${shortId}.jpg`;
+    if (isCatalog) modelImageName = `model_${shortId}.jpg`;
+  } else {
+    productImageName = await uploadImageToComfy(job.input_image_url, comfyBase, `prod_${jobId}`);
+    if (isCatalog) modelImageName = await uploadImageToComfy(modelImageUrl!, comfyBase, `model_${jobId}`);
+  }
+
+  // Cada branch monta pos/neg final. A submissao (pod x serverless) e unificada no fim.
+  let submitPos = "";
+  let submitNeg = "";
+
   if (isCatalog) {
-    // Modo catálogo: usa Qwen Image Edit — mantém prompt imperativo sem alterações
-    const modelImageName = await uploadImageToComfy(modelImageUrl!, comfyBase, `model_${jobId}`);
-    const catalogPos = buildCatalogPrompt(enrichedProduto, cenario.trim());
-    const catalogNeg = buildCatalogNegative();
-    promptId = await submitCatalogWorkflow(jobId, productImageName, modelImageName, catalogPos, catalogNeg, comfyBase);
+    // Modo catálogo: Qwen Image Edit — prompt imperativo
+    submitPos = buildCatalogPrompt(enrichedProduto, cenario.trim());
+    submitNeg = buildCatalogNegative();
   } else if (jobMode === "produto_exposto") {
     // Modo expositor: prompt gerado do zero com regras literais por categoria
-    // Visão detectou o produto → detectamos a categoria → prompt específico
     const category = detectDisplayCategory(enrichedProduto);
     const { positive, negative } = buildDisplayPrompt(enrichedProduto, category);
-
-    // Adiciona K4 + qualidade técnica (não conflita com display prompts)
-    const positiveEnhanced = `${positive} Cinematic Kodak Portra 400 color grade, 8K ultra-sharp commercial photography.`.trim();
-    const negativeEnhanced = `${negative} ${PROFESSIONAL_NEGATIVE_SUFFIX}`.trim();
-
+    submitPos = `${positive} Cinematic Kodak Portra 400 color grade, 8K ultra-sharp commercial photography.`.trim();
+    submitNeg = `${negative} ${PROFESSIONAL_NEGATIVE_SUFFIX}`.trim();
     console.log(`[submit] job ${jobId} — produto_exposto categoria="${category}" produto="${enrichedProduto}"`);
-    promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
   } else {
     // Pipeline NOVO (fase 1): visionNew ja trouxe classificacao + scene_en em
     // UMA chamada Ollama (evita swap de modelo na VRAM).
@@ -198,11 +214,9 @@ export async function submitImageJob(jobId: string) {
         user_feedback: userFeedback,
       });
       const qualitySuffix = "Professional commercial photography, 8K detail, natural studio lighting, sharp focus on the product.";
-      const positiveFinal = `${built.positive} ${qualitySuffix}`.trim();
-      const negativeFinal = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${built.negative}`.trim();
-
+      submitPos = `${built.positive} ${qualitySuffix}`.trim();
+      submitNeg = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${built.negative}`.trim();
       console.log(`[submit] job ${jobId} — visionRouter type=${vision.product_type} count=${vision.items_count} user=${vision.target_user}`);
-      promptId = await submitWorkflow(jobId, productImageName, positiveFinal, negativeFinal, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
     } else {
       // Fallback: visao LLM falhou -> usa pipeline antigo do multiagent
       const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined, userFeedback);
@@ -223,18 +237,38 @@ export async function submitImageJob(jobId: string) {
         : "";
 
       const qualitySuffix = "Professional commercial photography, 8K detail, natural studio lighting, sharp focus on the product.";
-      const positiveEnhanced = [typeGuard, kitGuard, promptResult.positive, qualitySuffix].filter(Boolean).join(" ").trim();
+      submitPos = [typeGuard, kitGuard, promptResult.positive, qualitySuffix].filter(Boolean).join(" ").trim();
       const bareFootGuard = (wearableMode === "wearable_use" && !isCloseUpProduct) ? "barefoot, bare feet, no shoes," : "";
       const conversionNeg = "product converted to t-shirt, original product replaced, print copied onto different item, derived item, missing items from set, only one of multiple products visible,";
-      const negativeEnhanced = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${conversionNeg} ${bareFootGuard} ${promptResult.negative}`.trim();
-
+      submitNeg = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${conversionNeg} ${bareFootGuard} ${promptResult.negative}`.trim();
       console.log(`[submit] job ${jobId} — FALLBACK multiagent (visionRouter retornou null)`);
-      promptId = await submitWorkflow(jobId, productImageName, positiveEnhanced, negativeEnhanced, comfyBase, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
     }
   }
 
-  const externalJobId = `${comfyIndex}:${promptId}`;
-  const provider = "comfyui-direct";
+  // Submissao unificada: serverless (RunPod comfyui-serverless) ou pod fixo (ComfyUI direto)
+  let externalJobId: string;
+  let provider: string;
+  if (USE_SERVERLESS) {
+    let runpodJobId: string;
+    if (isCatalog) {
+      const wf = buildCatalogWorkflow(jobId, productImageName, modelImageName, submitPos, submitNeg);
+      runpodJobId = await submitRunpodJob(RUNPOD_FOTO_ENDPOINT, wf, job.input_image_url, productImageName, [{ url: modelImageUrl!, name: modelImageName }]);
+    } else {
+      const wf = buildFotoWorkflow(jobId, productImageName, submitPos, submitNeg, fmt);
+      runpodJobId = await submitRunpodJob(RUNPOD_FOTO_ENDPOINT, wf, job.input_image_url, productImageName);
+    }
+    externalJobId = `runpod:${runpodJobId}`;
+    provider = "runpod-serverless";
+  } else {
+    let promptId: string;
+    if (isCatalog) {
+      promptId = await submitCatalogWorkflow(jobId, productImageName, modelImageName, submitPos, submitNeg, comfyBase);
+    } else {
+      promptId = await submitWorkflow(jobId, productImageName, submitPos, submitNeg, comfyBase, fmt);
+    }
+    externalJobId = `${comfyIndex}:${promptId}`;
+    provider = "comfyui-direct";
+  }
 
   await supabase
     .from("image_jobs")

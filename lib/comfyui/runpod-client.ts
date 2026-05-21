@@ -4,7 +4,9 @@
 const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY ?? "";
 const BASE_URL = "https://api.runpod.ai/v2";
 
-export const RUNPOD_FOTO_ENDPOINT = process.env.RUNPOD_FOTO_ENDPOINT_ID ?? "eeqi251ru6qxf9";
+// Endpoint serverless de foto: comfyui-serverless (RTX 5090 + A40). Trocou o endpoint
+// antigo eeqi251ru6qxf9 (abandonado). Sobrescreva via RUNPOD_FOTO_ENDPOINT_ID no Vercel.
+export const RUNPOD_FOTO_ENDPOINT = process.env.RUNPOD_FOTO_ENDPOINT_ID ?? "6igeofbzrfl3vv";
 export const RUNPOD_VIDEO_ENDPOINT = process.env.RUNPOD_VIDEO_ENDPOINT_ID ?? "ejvkjws79zch5f";
 
 export interface RunpodJobResult {
@@ -12,17 +14,27 @@ export interface RunpodJobResult {
   outputs: string[]; // base64 encoded (images ou vídeos)
 }
 
-// Submete um job ao RunPod Serverless — retorna o runpodJobId
+async function fetchAsBase64(url: string): Promise<string> {
+  const r = await fetch(url, { signal: AbortSignal.timeout(60_000) });
+  if (!r.ok) throw new Error(`Falha ao baixar imagem: ${r.status}`);
+  return Buffer.from(await r.arrayBuffer()).toString("base64");
+}
+
+// Submete um job ao RunPod Serverless — retorna o runpodJobId.
+// Aceita imagem principal + imagens extras (ex: catalogo usa produto + modelo).
 export async function submitRunpodJob(
   endpointId: string,
   workflow: Record<string, unknown>,
   imageUrl: string,
-  imageName = "product.jpg"
+  imageName = "product.jpg",
+  extraImages?: Array<{ url: string; name: string }>
 ): Promise<string> {
-  const imgRes = await fetch(imageUrl);
-  if (!imgRes.ok) throw new Error(`Falha ao baixar imagem: ${imgRes.status}`);
-  const buffer = await imgRes.arrayBuffer();
-  const base64 = Buffer.from(buffer).toString("base64");
+  const images = [{ name: imageName, image: await fetchAsBase64(imageUrl) }];
+  if (extraImages) {
+    for (const extra of extraImages) {
+      images.push({ name: extra.name, image: await fetchAsBase64(extra.url) });
+    }
+  }
 
   const res = await fetch(`${BASE_URL}/${endpointId}/run`, {
     method: "POST",
@@ -30,12 +42,7 @@ export async function submitRunpodJob(
       "Content-Type": "application/json",
       Authorization: `Bearer ${RUNPOD_API_KEY}`,
     },
-    body: JSON.stringify({
-      input: {
-        workflow,
-        images: [{ name: imageName, image: base64 }],
-      },
-    }),
+    body: JSON.stringify({ input: { workflow, images } }),
   });
 
   if (!res.ok) {

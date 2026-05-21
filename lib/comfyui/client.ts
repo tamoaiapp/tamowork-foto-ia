@@ -203,6 +203,24 @@ export async function submitWorkflow(
 // Submete o workflow de catálogo (2 imagens: produto + modelo)
 import catalogTemplateJson from "./catalog_template.json";
 
+// Monta o workflow de catálogo preenchido (sem submeter) — usado pelo RunPod Serverless
+export function buildCatalogWorkflow(
+  jobId: string,
+  productImageName: string,
+  modelImageName: string,
+  promptPos: string,
+  promptNeg: string,
+): Record<string, unknown> {
+  const workflow = JSON.parse(JSON.stringify(catalogTemplateJson)) as Record<string, unknown>;
+  (workflow["11"] as { inputs: { image: string } }).inputs.image = productImageName;
+  (workflow["200"] as { inputs: { image: string } }).inputs.image = modelImageName;
+  (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt = `${promptPos}\n#job:${jobId}\n`;
+  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = mergeNegative(promptNeg);
+  (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
+  (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
+  return workflow;
+}
+
 export async function submitCatalogWorkflow(
   jobId: string,
   productImageName: string,
