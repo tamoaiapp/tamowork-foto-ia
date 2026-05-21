@@ -201,12 +201,16 @@ export async function GET(req: NextRequest) {
   // Image jobs podem submeter se serverless (sem pod) OU se o pod fixo está online
   const canSubmitImage = FOTO_SERVERLESS || fotoPodOnline;
 
-  // REGRA 3: Verificar pod de vídeo
+  // REGRA 3: Verificar pod de vídeo. Vídeo serverless (default) não usa pod —
+  // submitVideoJob manda direto pro RunPod. Pod só é necessário quando serverless off.
+  const VIDEO_SERVERLESS = (process.env.RUNPOD_SERVERLESS_ENABLED ?? "true") !== "false";
   const videoBase = VIDEO_COMFY_BASES?.[0];
   let videoPodOnline = false;
-  if (videoBase && (queuedVideoJobs ?? []).length > 0) {
+  if (!VIDEO_SERVERLESS && videoBase && (queuedVideoJobs ?? []).length > 0) {
     videoPodOnline = await ensureVideoPodRunning(videoBase);
   }
+  // Video jobs podem submeter se serverless (sem pod), pod online, ou sem videoBase
+  const canSubmitVideo = VIDEO_SERVERLESS || videoPodOnline || !videoBase;
 
   // Submete image jobs queued (serverless ou pod online, E sem job em andamento)
   if (canSubmitImage) {
@@ -259,8 +263,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Submete video jobs queued (1 por vez, só se pod online E sem vídeo em andamento)
-  if (videoPodOnline || !videoBase) {
+  // Submete video jobs queued (serverless, pod online ou sem videoBase; 1 por vez)
+  if (canSubmitVideo) {
     const { count: activeVideoCount } = await supabase
       .from("video_jobs")
       .select("id", { count: "exact", head: true })
