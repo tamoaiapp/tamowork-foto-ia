@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow, buildFotoWorkflow, buildCatalogWorkflow } from "@/lib/comfyui/client";
+import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow, buildFotoWorkflow, buildCatalogWorkflow, type CustomLora } from "@/lib/comfyui/client";
 import { submitRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
+import { selectLora } from "@/lib/promptuso/lora-rules";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
 import { getProductVisionDescription, mergeProductTexts, parseVisionStructured } from "@/lib/vision/serverProductVision";
@@ -174,6 +175,9 @@ export async function submitImageJob(jobId: string) {
   // Cada branch monta pos/neg final. A submissao (pod x serverless) e unificada no fim.
   let submitPos = "";
   let submitNeg = "";
+  // LoRA custom por tipo de produto (roupa/acessorio). So no pipeline default
+  // (produto com pessoa usando) — nao em catalogo nem produto_exposto (display sem pessoa).
+  let customLora: CustomLora | null = null;
 
   if (isCatalog) {
     // Modo catálogo: Qwen Image Edit — prompt imperativo
@@ -216,6 +220,9 @@ export async function submitImageJob(jobId: string) {
       const qualitySuffix = "Professional commercial photography, 8K detail, natural studio lighting, sharp focus on the product.";
       submitPos = `${built.positive} ${qualitySuffix}`.trim();
       submitNeg = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${built.negative}`.trim();
+      // Regra de LoRA: usa o product_type da visao (apos override de kit) + texto do produto
+      customLora = selectLora(vision.product_type, `${produtoBase} ${vision.description ?? ""}`);
+      if (customLora) console.log(`[submit] job ${jobId} — LoRA custom: ${customLora.name} (str ${customLora.strength})`);
       console.log(`[submit] job ${jobId} — visionRouter type=${vision.product_type} count=${vision.items_count} user=${vision.target_user}`);
     } else {
       // Fallback: visao LLM falhou -> usa pipeline antigo do multiagent
@@ -241,6 +248,9 @@ export async function submitImageJob(jobId: string) {
       const bareFootGuard = (wearableMode === "wearable_use" && !isCloseUpProduct) ? "barefoot, bare feet, no shoes," : "";
       const conversionNeg = "product converted to t-shirt, original product replaced, print copied onto different item, derived item, missing items from set, only one of multiple products visible,";
       submitNeg = `${PROFESSIONAL_NEGATIVE_SUFFIX} ${conversionNeg} ${bareFootGuard} ${promptResult.negative}`.trim();
+      // Regra de LoRA por keyword no texto do produto (fallback sem visao)
+      customLora = selectLora(null, enrichedProduto);
+      if (customLora) console.log(`[submit] job ${jobId} — LoRA custom (fallback): ${customLora.name}`);
       console.log(`[submit] job ${jobId} — FALLBACK multiagent (visionRouter retornou null)`);
     }
   }
@@ -254,7 +264,7 @@ export async function submitImageJob(jobId: string) {
       const wf = buildCatalogWorkflow(jobId, productImageName, modelImageName, submitPos, submitNeg);
       runpodJobId = await submitRunpodJob(RUNPOD_FOTO_ENDPOINT, wf, job.input_image_url, productImageName, [{ url: modelImageUrl!, name: modelImageName }]);
     } else {
-      const wf = buildFotoWorkflow(jobId, productImageName, submitPos, submitNeg, fmt);
+      const wf = buildFotoWorkflow(jobId, productImageName, submitPos, submitNeg, fmt, customLora);
       runpodJobId = await submitRunpodJob(RUNPOD_FOTO_ENDPOINT, wf, job.input_image_url, productImageName);
     }
     externalJobId = `runpod:${runpodJobId}`;

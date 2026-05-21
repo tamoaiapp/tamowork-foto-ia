@@ -150,6 +150,20 @@ function mergeNegative(promptNeg: string): string {
   return promptNeg ? `${promptNeg}, ${BASE_NEGATIVE}` : BASE_NEGATIVE;
 }
 
+// LoRA custom opcional (roupa/acessorio) — injetada entre o node 24 (Lightning) e 30 (ModelSampling)
+export interface CustomLora { name: string; strength: number; }
+
+// Insere um LoraLoaderModelOnly (node 25) na cadeia do modelo: 24 -> 25 -> 30.
+// Sem custom lora, a cadeia fica 24 -> 30 (base, como antes).
+function applyCustomLora(workflow: Record<string, unknown>, lora: CustomLora) {
+  workflow["25"] = {
+    inputs: { lora_name: lora.name, strength_model: lora.strength, model: ["24", 0] },
+    class_type: "LoraLoaderModelOnly",
+    _meta: { title: "Custom LoRA (produto)" },
+  };
+  (workflow["30"] as { inputs: { model: unknown } }).inputs.model = ["25", 0];
+}
+
 // Monta o workflow preenchido (sem submeter) — usado pelo RunPod Serverless
 export function buildFotoWorkflow(
   jobId: string,
@@ -157,6 +171,7 @@ export function buildFotoWorkflow(
   promptPos: string,
   promptNeg: string,
   format: PhotoFormat = DEFAULT_FORMAT,
+  customLora: CustomLora | null = null,
 ): Record<string, unknown> {
   const workflow = JSON.parse(JSON.stringify(templateJson)) as Record<string, unknown>;
   // Remove o node 51 "Image Comparer (rgthree)" — e um preview de UI sem output,
@@ -167,6 +182,7 @@ export function buildFotoWorkflow(
   (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = mergeNegative(promptNeg);
   (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
   (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
+  if (customLora) applyCustomLora(workflow, customLora);
   applyFormatToFotoWorkflow(workflow, format);
   return workflow;
 }
