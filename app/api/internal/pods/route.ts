@@ -9,6 +9,9 @@ import { COMFY_BASES } from "@/lib/comfyui/client";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 const IDLE_MINUTES = parseInt(process.env.POD_IDLE_MINUTES ?? "20");
+// Foto migrou pro serverless (default). Quando ativo, o watchdog NAO religa o pod
+// fixo — pelo contrario, garante que ele fique DESLIGADO (economia de GPU).
+const FOTO_SERVERLESS = (process.env.RUNPOD_FOTO_SERVERLESS_ENABLED ?? "true") !== "false";
 
 export async function GET(req: NextRequest) {
   // Vercel Cron envia Authorization: Bearer <CRON_SECRET>
@@ -30,6 +33,24 @@ export async function GET(req: NextRequest) {
   const inPeak = peakStart < peakEnd
     ? (hourUTC >= peakStart && hourUTC < peakEnd)
     : (hourUTC >= peakStart || hourUTC < peakEnd);
+  // Foto em serverless: watchdog NAO religa pod fixo. Garante que fique desligado.
+  if (FOTO_SERVERLESS && !force) {
+    const stopped: string[] = [];
+    const errs: string[] = [];
+    for (const podId of FOTO_POD_IDS) {
+      try {
+        const status = await getPodStatus(podId);
+        if (status === "RUNNING") {
+          await stopPod(podId);
+          stopped.push(podId);
+        }
+      } catch (e) {
+        errs.push(`${podId}: ${(e as Error)?.message ?? e}`);
+      }
+    }
+    return NextResponse.json({ ok: true, mode: "foto_serverless_keep_off", stopped, errors: errs });
+  }
+
   // WATCHDOG em horario comercial:
   //   1. Religa pods EXITED (queda, crash, stop programatico).
   //   2. Detecta pods RUNNING com ComfyUI morto (Qwen OOM, deadlock interno) —
