@@ -168,6 +168,30 @@ export function buildFotoWorkflow(
   return workflow;
 }
 
+// LoRA treinada (produto→pessoa vestindo). Nome = arquivo baked no worker serverless.
+const ROUPA_LORA = process.env.PHOTO_ROUPA_LORA ?? "tamowork_qwen_edit_2511_lora_v1.safetensors";
+const ROUPA_LORA_STRENGTH = Number(process.env.PHOTO_ROUPA_LORA_STRENGTH ?? "1.0");
+
+// Igual ao buildFotoWorkflow, mas insere a LoRA TamoWork entre o Lightning (24)
+// e o sampling (30): 32 → 24 (Lightning) → 24b (LoRA) → 30. Remove o nó rgthree (51).
+export function buildFotoWorkflowWithLora(
+  jobId: string,
+  imageName: string,
+  promptPos: string,
+  promptNeg: string,
+  format: PhotoFormat = DEFAULT_FORMAT,
+): Record<string, unknown> {
+  const workflow = buildFotoWorkflow(jobId, imageName, promptPos, promptNeg, format);
+  workflow["24b"] = {
+    class_type: "LoraLoaderModelOnly",
+    inputs: { lora_name: ROUPA_LORA, strength_model: ROUPA_LORA_STRENGTH, model: ["24", 0] },
+    _meta: { title: "LoRA TamoWork" },
+  };
+  (workflow["30"] as { inputs: { model: unknown } }).inputs.model = ["24b", 0];
+  delete workflow["51"]; // Image Comparer (rgthree) — debug, não existe no worker serverless
+  return workflow;
+}
+
 // Preenche o template e submete o workflow ao ComfyUI
 export async function submitWorkflow(
   jobId: string,
@@ -202,6 +226,24 @@ export async function submitWorkflow(
 
 // Submete o workflow de catálogo (2 imagens: produto + modelo)
 import catalogTemplateJson from "./catalog_template.json";
+
+// Monta o workflow de catálogo preenchido (sem submeter) — usado pelo RunPod Serverless
+export function buildCatalogWorkflow(
+  jobId: string,
+  productImageName: string,
+  modelImageName: string,
+  promptPos: string,
+  promptNeg: string,
+): Record<string, unknown> {
+  const workflow = JSON.parse(JSON.stringify(catalogTemplateJson)) as Record<string, unknown>;
+  (workflow["11"] as { inputs: { image: string } }).inputs.image = productImageName;
+  (workflow["200"] as { inputs: { image: string } }).inputs.image = modelImageName;
+  (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt = `${promptPos}\n#job:${jobId}\n`;
+  (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = mergeNegative(promptNeg);
+  (workflow["166"] as { inputs: { filename_prefix: string } }).inputs.filename_prefix = `job_${jobId}`;
+  (workflow["167"] as { inputs: { seed: number } }).inputs.seed = Math.floor(Math.random() * 999_999_999);
+  return workflow;
+}
 
 export async function submitCatalogWorkflow(
   jobId: string,

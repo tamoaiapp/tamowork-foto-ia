@@ -4,7 +4,8 @@
 const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY ?? "";
 const BASE_URL = "https://api.runpod.ai/v2";
 
-export const RUNPOD_FOTO_ENDPOINT = process.env.RUNPOD_FOTO_ENDPOINT_ID ?? "eeqi251ru6qxf9";
+// Default = endpoint comfyui-serverless validado (worker-comfyui 5.8.5 + Qwen-2511 + LoRA).
+export const RUNPOD_FOTO_ENDPOINT = process.env.RUNPOD_FOTO_ENDPOINT_ID ?? "6igeofbzrfl3vv";
 export const RUNPOD_VIDEO_ENDPOINT = process.env.RUNPOD_VIDEO_ENDPOINT_ID ?? "ejvkjws79zch5f";
 
 export interface RunpodJobResult {
@@ -12,7 +13,8 @@ export interface RunpodJobResult {
   outputs: string[]; // base64 encoded (images ou vídeos)
 }
 
-// Submete um job ao RunPod Serverless — retorna o runpodJobId
+// Submete um job ao RunPod Serverless — retorna o runpodJobId.
+// Assinatura ORIGINAL (1 imagem) — mantida pra não quebrar o video-jobs que já a usa.
 export async function submitRunpodJob(
   endpointId: string,
   workflow: Record<string, unknown>,
@@ -21,8 +23,7 @@ export async function submitRunpodJob(
 ): Promise<string> {
   const imgRes = await fetch(imageUrl);
   if (!imgRes.ok) throw new Error(`Falha ao baixar imagem: ${imgRes.status}`);
-  const buffer = await imgRes.arrayBuffer();
-  const base64 = Buffer.from(buffer).toString("base64");
+  const base64 = Buffer.from(await imgRes.arrayBuffer()).toString("base64");
 
   const res = await fetch(`${BASE_URL}/${endpointId}/run`, {
     method: "POST",
@@ -30,12 +31,7 @@ export async function submitRunpodJob(
       "Content-Type": "application/json",
       Authorization: `Bearer ${RUNPOD_API_KEY}`,
     },
-    body: JSON.stringify({
-      input: {
-        workflow,
-        images: [{ name: imageName, image: base64 }],
-      },
-    }),
+    body: JSON.stringify({ input: { workflow, images: [{ name: imageName, image: base64 }] } }),
   });
 
   if (!res.ok) {
@@ -60,15 +56,27 @@ export async function checkRunpodJob(
 
   const data = (await res.json()) as {
     status: string;
-    output?: { message?: string | string[]; status?: string } | null;
+    output?: {
+      // worker-comfyui (atual): images[].data (base64)
+      images?: { data?: string; type?: string }[];
+      // handler custom antigo: message[] + status
+      message?: string | string[];
+      status?: string;
+    } | null;
     error?: string;
   };
 
   // Status possíveis: IN_QUEUE, IN_PROGRESS, COMPLETED, FAILED, CANCELLED, TIMED_OUT
-  if (data.status === "COMPLETED" && data.output?.status === "success") {
-    const msg = data.output.message;
-    const outputs = Array.isArray(msg) ? msg : msg ? [msg] : [];
-    return { status: "done", outputs };
+  if (data.status === "COMPLETED") {
+    const o = data.output ?? {};
+    // formato worker-comfyui
+    const fromImages = (o.images ?? []).map((im) => im.data).filter((d): d is string => !!d);
+    if (fromImages.length > 0) return { status: "done", outputs: fromImages };
+    // formato antigo (message)
+    const msg = o.message;
+    const fromMessage = Array.isArray(msg) ? msg : msg ? [msg] : [];
+    if (fromMessage.length > 0) return { status: "done", outputs: fromMessage };
+    return { status: "failed", outputs: [] }; // COMPLETED sem imagem = trata como falha
   }
 
   if (["FAILED", "CANCELLED", "TIMED_OUT"].includes(data.status)) {

@@ -1,6 +1,12 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow } from "@/lib/comfyui/client";
+import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow, buildFotoWorkflowWithLora } from "@/lib/comfyui/client";
+import { submitRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
+
+// Opt-in SÓ pra imagem (separado do RUNPOD_SERVERLESS_ENABLED do vídeo).
+// Default = pod (comportamento atual). Quando "true": gera no serverless aplicando
+// a LoRA. Mantido off por padrão porque o caminho aplica a LoRA de roupa em tudo.
+const USE_SERVERLESS = process.env.IMAGE_SERVERLESS_LORA === "true";
 import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
 import { getProductVisionDescription, mergeProductTexts, parseVisionStructured } from "@/lib/vision/serverProductVision";
 import { classifyVision, enrichScene } from "@/lib/promptuso/visionRouter";
@@ -118,6 +124,23 @@ export async function submitImageJob(jobId: string) {
   const [cenarioRaw, correcaoPart] = (cenarioPart ?? "").split(" | correcao: ");
   const cenario = cenarioRaw ?? "";
   const userFeedback = correcaoPart?.trim() ?? undefined;
+
+  // ── PRODUÇÃO SERVERLESS — caminho simplificado: SÓ a LoRA ───────────────────
+  // Sem visão (Ollama), sem categorias, sem catálogo. A LoRA (produto→pessoa)
+  // faz o trabalho; o prompt é leve (descrição do usuário, se houver). Objetivo:
+  // ver o comportamento puro da LoRA em produção. Ativado por IMAGE_SERVERLESS_LORA.
+  if (USE_SERVERLESS) {
+    const pos = produto_frase.trim();
+    const neg = "mannequin, headless mannequin, plastic body, store rack, hangers, distorted face, deformed hands, extra fingers, different color, watermark, text";
+    const wf = buildFotoWorkflowWithLora(jobId, "product.jpg", pos, neg, (job.format as PhotoFormat) ?? DEFAULT_FORMAT);
+    const runpodId = await submitRunpodJob(RUNPOD_FOTO_ENDPOINT, wf, job.input_image_url, "product.jpg");
+    await supabase
+      .from("image_jobs")
+      .update({ status: "submitted", external_job_id: `runpod:${runpodId}`, provider: "runpod-serverless-lora" })
+      .eq("id", jobId);
+    console.log(`[submit] job ${jobId} — SERVERLESS (só LoRA)`);
+    return;
+  }
 
   const comfyIndex = 0;
   const comfyBase = COMFY_BASES[0];
