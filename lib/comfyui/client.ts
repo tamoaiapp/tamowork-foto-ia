@@ -159,6 +159,9 @@ export function buildFotoWorkflow(
   format: PhotoFormat = DEFAULT_FORMAT,
 ): Record<string, unknown> {
   const workflow = JSON.parse(JSON.stringify(templateJson)) as Record<string, unknown>;
+  // Remove o node 51 "Image Comparer (rgthree)" — e um preview de UI sem output,
+  // nada depende dele, e o ComfyUI do serverless nao tem o custom node rgthree.
+  delete workflow["51"];
   (workflow["11"] as { inputs: { image: string } }).inputs.image = imageName;
   (workflow["1"] as { inputs: { prompt: string } }).inputs.prompt = `${promptPos}\n#job:${jobId}\n`;
   (workflow["39"] as { inputs: { prompt: string } }).inputs.prompt = mergeNegative(promptNeg);
