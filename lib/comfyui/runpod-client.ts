@@ -67,15 +67,29 @@ export async function checkRunpodJob(
 
   const data = (await res.json()) as {
     status: string;
-    output?: { message?: string | string[]; status?: string } | null;
+    output?: {
+      message?: string | string[];
+      status?: string;
+      images?: Array<{ data?: string; image?: string }>;
+    } | null;
     error?: string;
   };
 
   // Status possíveis: IN_QUEUE, IN_PROGRESS, COMPLETED, FAILED, CANCELLED, TIMED_OUT
-  if (data.status === "COMPLETED" && data.output?.status === "success") {
-    const msg = data.output.message;
-    const outputs = Array.isArray(msg) ? msg : msg ? [msg] : [];
-    return { status: "done", outputs };
+  if (data.status === "COMPLETED" && data.output) {
+    // Formato comfyui-serverless: output.images[].data (base64)
+    if (Array.isArray(data.output.images) && data.output.images.length > 0) {
+      const outputs = data.output.images
+        .map((im) => im.data ?? im.image)
+        .filter((x): x is string => typeof x === "string" && x.length > 0);
+      if (outputs.length > 0) return { status: "done", outputs };
+    }
+    // Formato antigo (tamowork-foto): output.status=success + message
+    if (data.output.status === "success") {
+      const msg = data.output.message;
+      const outputs = Array.isArray(msg) ? msg : msg ? [msg] : [];
+      if (outputs.length > 0) return { status: "done", outputs };
+    }
   }
 
   if (["FAILED", "CANCELLED", "TIMED_OUT"].includes(data.status)) {
