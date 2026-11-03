@@ -36,7 +36,7 @@ export async function checkImageJob(jobId: string) {
   await supabase
     .from("image_jobs")
     .update({
-      status: job.status === "submitted" ? "processing" : job.status,
+      status: !external_job_id.startsWith("runpod:") && job.status === "submitted" ? "processing" : job.status,
       attempts: newAttempts,
       updated_at: new Date().toISOString(),
     })
@@ -49,7 +49,7 @@ export async function checkImageJob(jobId: string) {
     if (external_job_id.startsWith("runpod:")) await cancelRunpodJob(RUNPOD_FOTO_ENDPOINT, external_job_id.slice(7));
     await supabase
       .from("image_jobs")
-      .update({ status: "failed", error_message: "Timeout: máximo de tentativas atingido" })
+      .update({ status: "failed", error_message: "A geração excedeu o tempo limite. Tente novamente." })
       .eq("id", jobId);
     return;
   }
