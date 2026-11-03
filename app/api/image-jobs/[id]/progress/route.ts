@@ -83,17 +83,20 @@ export async function GET(
     progress = Math.round(((maxExpectedQueue - position) / maxExpectedQueue) * 20);
     estimatedSeconds = (position - 1) * AVG_QUEUE_WAIT_PER_JOB + AVG_PROCESSING_TIME;
     phase = "queued";
+  } else if (job.status === "submitting") {
+    progress = 20;
+    estimatedSeconds = AVG_PROCESSING_TIME;
+    phase = "submitting";
   } else if (job.status === "submitted") {
     // Fase 2: enviado para ComfyUI — 20-40%
     progress = 30;
     estimatedSeconds = Math.round(AVG_PROCESSING_TIME * 0.8);
     phase = "submitted";
   } else if (job.status === "processing") {
-    // Fase 3: processando — 40-90% conforme tentativas aumentam
-    const maxAttempts = 40;
-    const attemptRatio = Math.min((job.attempts ?? 0) / maxAttempts, 1);
-    progress = 40 + Math.round(attemptRatio * 50);
-    estimatedSeconds = Math.round(AVG_PROCESSING_TIME * (1 - attemptRatio));
+    // O RunPod não informa percentual da GPU. Consultar mais vezes não
+    // significa que a imagem avançou; só a conclusão pode chegar a 100%.
+    progress = 50;
+    estimatedSeconds = AVG_PROCESSING_TIME;
     phase = "processing";
   }
 

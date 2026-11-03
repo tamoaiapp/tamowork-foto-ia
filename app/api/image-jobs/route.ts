@@ -1,8 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { createImageJob, RateLimitError } from "@/lib/image-jobs/create";
 import { getUserPlan, checkAndApplyPendingBonus } from "@/lib/plans";
 import { metaEvents } from "@/lib/meta/capi";
+import { submitImageJob } from "@/lib/image-jobs/submit";
+
+export const maxDuration = 300;
 
 // GET /api/image-jobs — lista jobs + plano do usuário autenticado
 export async function GET(req: NextRequest) {
@@ -64,6 +67,10 @@ export async function POST(req: NextRequest) {
     const validFormat = ["story","square","portrait","horizontal"].includes(format) ? format : "story";
     const validSource = ["onboarding","onboarding_A","onboarding_B","onboarding_C","app","bubble","editor"].includes(source) ? source : "app";
     const job = await createImageJob(user.id, prompt, input_image_url, validFormat, !!bonus_retry, validSource);
+    after(async () => {
+      try { await submitImageJob(job.id); }
+      catch (error) { console.error("[photo-submit]", job.id, error); }
+    });
 
     // Lead: dispara na primeira foto gerada pelo usuário
     supabase.from("image_jobs").select("id", { count: "exact", head: true })

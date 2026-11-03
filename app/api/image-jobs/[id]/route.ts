@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkImageJob } from "@/lib/image-jobs/check";
 import { submitImageJob } from "@/lib/image-jobs/submit";
+
+export const maxDuration = 300;
 
 // GET /api/image-jobs/:id — consulta status de um job
 export async function GET(
@@ -30,43 +32,37 @@ export async function GET(
     return NextResponse.json({ error: "Job não encontrado" }, { status: 404 });
   }
 
-  // Aciona submit/check inline — cron roda no deploy antigo, não no prod
-  // Timeout de 8s para não estourar limite de função serverless
-  const INLINE_TIMEOUT = 8_000;
-  if (data.status === "queued") {
-    try {
-      await Promise.race([
-        submitImageJob(id),
-        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), INLINE_TIMEOUT)),
-      ]);
-      const { data: updated } = await supabase
-        .from("image_jobs")
-        .select()
-        .eq("id", id)
-        .eq("user_id", user.id)
-        .single();
-      if (updated) return NextResponse.json(updated);
-    } catch {
-      // Pod pode estar iniciando ou timeout — retorna estado atual
-    }
-  } else if (["submitted", "processing"].includes(data.status)) {
-    try {
-      await Promise.race([
-        checkImageJob(id),
-        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), INLINE_TIMEOUT)),
-      ]);
-      const { data: updated } = await supabase
-        .from("image_jobs")
-        .select()
-        .eq("id", id)
-        .eq("user_id", user.id)
-        .single();
-      if (updated) return NextResponse.json(updated);
-    } catch {
-      // Ignora erros no check ou timeout — retorna estado atual
-    }
+  const active = ["queued", "submitting", "submitted", "processing"].includes(data.status);
+  const now = Date.now();
+  if (active && now - new Date(data.created_at).getTime() >= 15 * 60_000) {
+    const { data: expired, error: expireError } = await supabase.from("image_jobs")
+      .update({ status: "failed", error_message: "A geração excedeu o tempo limite. Tente novamente.", updated_at: new Date().toISOString() })
+      .eq("id", id).eq("user_id", user.id).eq("status", data.status)
+      .select().maybeSingle();
+    if (expireError) return NextResponse.json({ error: "Não foi possível atualizar a geração." }, { status: 503 });
+    if (expired) return NextResponse.json(expired);
   }
 
+  // Uma função pode ter sido interrompida no deploy anterior. O prazo de
+  // seis minutos supera maxDuration, evitando retomar um envio ainda vivo.
+  if (data.status === "submitting" && now - new Date(data.updated_at ?? data.created_at).getTime() >= 6 * 60_000) {
+    const { data: recovered } = await supabase.from("image_jobs")
+      .update({ status: "queued", updated_at: new Date().toISOString() })
+      .eq("id", id).eq("user_id", user.id).eq("status", "submitting")
+      .eq("updated_at", data.updated_at).select().maybeSingle();
+    if (recovered) Object.assign(data, recovered);
+  }
+
+  // Promise.race(8s) encerrava a resposta com visão/download ainda em curso.
+  // after() mantém a função viva até terminar, sem bloquear o polling.
+  if (["queued", "submitted", "processing"].includes(data.status)) {
+    after(async () => {
+      try {
+        if (data.status === "queued") await submitImageJob(id);
+        else await checkImageJob(id);
+      } catch (error) { console.error("[photo-poll]", id, error); }
+    });
+  }
   return NextResponse.json(data);
 }
 

@@ -13,18 +13,21 @@ export function useProgressBar(jobId: string | undefined, jobStatus: string | un
   const [displayProgress, setDisplayProgress] = useState(0);
 
   async function fetchProgress(id: string) {
+    try {
     const token = await getToken();
     const res = await fetch(`/api/image-jobs/${id}/progress`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) return;
     const data = await res.json();
     setProgressVal(data.progress ?? 0);
+    } catch { /* Falha transitória: o próximo polling tenta novamente. */ }
   }
 
   // Poll progress enquanto job estiver ativo
   useEffect(() => {
-    const activeStatuses = ["queued", "submitted", "processing"];
+    const activeStatuses = ["queued", "submitting", "submitted", "processing"];
     if (!jobId || !activeStatuses.includes(jobStatus ?? "")) return;
     fetchProgress(jobId);
     const iv = setInterval(() => fetchProgress(jobId), 4000);

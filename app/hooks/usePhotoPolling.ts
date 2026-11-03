@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 interface JobLike {
   id: string;
   status: string | null;
+  error_message?: string | null;
 }
 
 interface Options {
@@ -39,7 +40,7 @@ export function usePhotoPolling({ job, user, fetchJobStatus, resetJob, setTimeou
       if (elapsedRef.current) clearInterval(elapsedRef.current);
       setShowCancel(false);
       if (job.status === "failed") {
-        setTimeoutError("Algo deu errado na geração. Tenta novamente.");
+        setTimeoutError(job.error_message || "Algo deu errado na geração. Tenta novamente.");
         resetJob();
       }
       return;

@@ -100,6 +100,8 @@ export async function submitImageJob(jobId: string) {
   if (lockErr || !locked) return; // Outro processo já pegou — sai silenciosamente
   const job = locked;
 
+  try {
+
   // Detecta catálogo: prompt começa com "model_img:URL | ..."
   let rawPrompt = job.prompt ?? "";
   let modelImageUrl: string | null = null;
@@ -226,7 +228,9 @@ export async function submitImageJob(jobId: string) {
       console.log(`[submit] job ${jobId} — visionRouter type=${vision.product_type} count=${vision.items_count} user=${vision.target_user}`);
     } else {
       // Fallback: visao LLM falhou -> usa pipeline antigo do multiagent
-      const promptResult = await criarPrompt(enrichedProduto, cenario.trim(), visionDesc ?? undefined, userFeedback);
+      // O formulário aceita produto vazio: sem visão disponível, a foto
+      // continua sendo a referência e o fallback usa uma descrição neutra.
+      const promptResult = await criarPrompt(enrichedProduto || "product", cenario.trim(), visionDesc ?? undefined, userFeedback);
       const wearableMode = classifyUsageMode({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined });
       const parsedCtx = parseProductContext({ product_name: enrichedProduto, vision_description: visionDesc ?? undefined, scene_request: cenario.trim() });
       const usageAgent = wearableMode === "wearable_use" ? resolveUsageAgent(wearableMode, parsedCtx) : null;
@@ -280,8 +284,19 @@ export async function submitImageJob(jobId: string) {
     provider = "comfyui-direct";
   }
 
-  await supabase
+  const { error: saveError } = await supabase
     .from("image_jobs")
-    .update({ status: "submitted", external_job_id: externalJobId, provider })
+    .update({ status: "submitted", external_job_id: externalJobId, provider, updated_at: new Date().toISOString(), error_message: null })
     .eq("id", jobId);
+  if (saveError) throw saveError;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Falha ao enviar a foto para geração.";
+    // Sem essa transição, uma falha depois do lock deixa o pedido preso
+    // em submitting e impede novas tentativas do usuário.
+    await supabase.from("image_jobs")
+      .update({ status: "failed", error_message: message.slice(0, 1000), updated_at: new Date().toISOString() })
+      .eq("id", jobId)
+      .eq("status", "submitting");
+    throw error;
+  }
 }

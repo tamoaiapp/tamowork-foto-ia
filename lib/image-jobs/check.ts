@@ -1,6 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { COMFY_BASES, getComfyHistory, freeComfyMemory } from "@/lib/comfyui/client";
-import { checkRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
+import { checkRunpodJob, RUNPOD_FOTO_ENDPOINT, type RunpodJobResult } from "@/lib/comfyui/runpod-client";
 import { finalizeImageJob } from "@/lib/image-jobs/finalize";
 
 // Safety net. Com cron a cada 5min, 40 attempts = ~3.3h — mas na prática
@@ -42,7 +42,10 @@ export async function checkImageJob(jobId: string) {
     })
     .eq("id", jobId);
 
-  if (newAttempts >= MAX_ATTEMPTS) {
+  // RunPod pode levar vários minutos para iniciar uma GPU fria. O limite
+  // deve ser por tempo real, não pela frequência com que o usuário consulta.
+  const expired = Date.now() - new Date(job.created_at).getTime() >= 15 * 60_000;
+  if (expired || (!external_job_id.startsWith("runpod:") && newAttempts >= MAX_ATTEMPTS)) {
     await supabase
       .from("image_jobs")
       .update({ status: "failed", error_message: "Timeout: máximo de tentativas atingido" })
@@ -53,7 +56,7 @@ export async function checkImageJob(jobId: string) {
   // RunPod Serverless (novo formato)
   if (external_job_id.startsWith("runpod:")) {
     const runpodJobId = external_job_id.slice(7);
-    let result;
+    let result: RunpodJobResult;
     try {
       result = await checkRunpodJob(RUNPOD_FOTO_ENDPOINT, runpodJobId);
     } catch {
@@ -64,18 +67,14 @@ export async function checkImageJob(jobId: string) {
       const imageBuffer = Buffer.from(result.outputs[0], "base64");
       await finalizeImageJob(jobId, imageBuffer);
     } else if (result.status === "failed") {
-      if (newAttempts <= 2) {
-        await supabase
-          .from("image_jobs")
-          .update({ status: "queued", external_job_id: null })
-          .eq("id", jobId);
-        // cron vai resubmeter automaticamente no próximo ciclo
-      } else {
-        await supabase
-          .from("image_jobs")
-          .update({ status: "failed", error_message: "Falha no RunPod Serverless" })
-          .eq("id", jobId);
-      }
+      await supabase
+        .from("image_jobs")
+        .update({ status: "failed", error_message: result.error ?? "Falha no RunPod Serverless. Tente novamente." })
+        .eq("id", jobId);
+    } else if (result.providerStatus) {
+      await supabase.from("image_jobs")
+        .update({ status: result.providerStatus === "IN_QUEUE" ? "submitted" : "processing" })
+        .eq("id", jobId);
     }
     // se pending: cron verifica novamente no próximo minuto
     return;

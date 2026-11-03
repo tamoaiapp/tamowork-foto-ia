@@ -64,6 +64,7 @@ export async function GET(req: NextRequest) {
   const totalFailCutoff = new Date(Date.now() - TOTAL_FAIL_MS).toISOString();
   // submitting preso há mais de 2 min → reset para queued (submit falhou no meio)
   const staleSubmittingCutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  const stalePhotoSubmittingCutoff = new Date(Date.now() - 6 * 60 * 1000).toISOString();
 
   const [
     { data: queuedJobs },
@@ -93,13 +94,13 @@ export async function GET(req: NextRequest) {
     supabase.from("video_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", checkCutoff).gte("updated_at", restartCutoff).limit(5),
     supabase.from("video_jobs").select("id").eq("status", "queued").lt("updated_at", staleQueuedCutoff).limit(20),
     // submitted/processing entre 5-15 min → recolocar na fila
-    supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", restartCutoff).gte("updated_at", totalFailCutoff).limit(10),
+    supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).neq("provider", "runpod-serverless").lt("updated_at", restartCutoff).gte("created_at", totalFailCutoff).limit(10),
     supabase.from("video_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", restartCutoff).gte("updated_at", totalFailCutoff).limit(5),
     // submitted/processing há mais de 15 min → falhar definitivamente
-    supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", totalFailCutoff).limit(10),
+    supabase.from("image_jobs").select("id").in("status", ["queued", "submitting", "submitted", "processing"]).lt("created_at", totalFailCutoff).limit(10),
     supabase.from("video_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", totalFailCutoff).limit(5),
     // submitting preso há mais de 2 min → reset para queued
-    supabase.from("image_jobs").select("id").eq("status", "submitting").lt("updated_at", staleSubmittingCutoff).limit(10),
+    supabase.from("image_jobs").select("id").eq("status", "submitting").lt("updated_at", stalePhotoSubmittingCutoff).gte("created_at", totalFailCutoff).limit(10),
     supabase.from("video_jobs").select("id").eq("status", "submitting").lt("updated_at", staleSubmittingCutoff).limit(5),
     // narrated video: queued + ativos + submitting preso
     supabase.from("narrated_video_jobs").select("id").eq("status", "queued").limit(2),

@@ -1,9 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { submitImageJob } from "@/lib/image-jobs/submit";
 import { getUserPlan } from "@/lib/plans";
 import { FREE_PHOTO_DAILY_LIMIT, FREE_PHOTO_WINDOW_MS } from "@/lib/pricing";
-
-const isLocalhost = (process.env.APP_URL ?? "").includes("localhost");
 
 export class RateLimitError extends Error {
   nextAvailableAt: Date;
@@ -31,17 +28,24 @@ export async function createImageJob(
   // Bloqueia para TODOS os planos se já há job ativo — previne jobs simultâneos
   const { data: activeJob } = await supabase
     .from("image_jobs")
-    .select("id, created_at")
+    .select("id, status, created_at")
     .eq("user_id", userId)
-    .in("status", ["queued", "submitted", "processing"])
+    .in("status", ["queued", "submitting", "submitted", "processing"])
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
 
   if (activeJob) {
     const jobCreatedAt = activeJob.created_at ? new Date(activeJob.created_at).getTime() : Date.now();
-    const nextAvailableAt = new Date(Math.max(Date.now() + 60_000, jobCreatedAt + 15 * 60_000));
-    throw new RateLimitError(nextAvailableAt);
+    if (Date.now() - jobCreatedAt >= 15 * 60_000) {
+      const { error: expireError } = await supabase.from("image_jobs")
+        .update({ status: "failed", error_message: "A geração excedeu o tempo limite. Tente novamente.", updated_at: new Date().toISOString() })
+        .eq("id", activeJob.id).eq("status", activeJob.status);
+      if (expireError) throw expireError;
+    } else {
+      const nextAvailableAt = new Date(Math.max(Date.now() + 60_000, jobCreatedAt + 15 * 60_000));
+      throw new RateLimitError(nextAvailableAt);
+    }
   }
 
   if (plan === "free") {
@@ -98,12 +102,6 @@ export async function createImageJob(
 
   if (error) throw error;
 
-  // Em localhost dispara imediatamente; em prod o cron a cada 5 min pega o job
-  if (isLocalhost) {
-    submitImageJob(job.id).catch((err) =>
-      console.error("[submit-local] erro:", err)
-    );
-  }
-
+  // O Route Handler mantém a submissão viva com after(); o cron é backup.
   return job;
 }
