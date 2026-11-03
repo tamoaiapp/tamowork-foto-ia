@@ -55,7 +55,10 @@ export async function submitRunpodJob(
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`RunPod submit ${res.status}: ${body}`);
+    console.error(`[runpod-submit] HTTP ${res.status}: ${body.slice(0, 1000)}`);
+    throw new Error(res.status === 409
+      ? "O serviço de geração está pausado. Tente novamente em alguns minutos."
+      : "O serviço de geração está temporariamente indisponível. Tente novamente em alguns minutos.");
   }
 
   const data = (await res.json()) as { id: string };
@@ -78,7 +81,8 @@ export async function checkRunpodJob(
     // Só falhas transitórias permanecem pendentes. 401/403/404/409 precisam
     // liberar o usuário, em vez de simular processamento indefinidamente.
     if (res.status === 429 || res.status >= 500) return { status: "pending", outputs: [] };
-    return { status: "failed", outputs: [], error: `Não foi possível consultar a geração no RunPod (HTTP ${res.status}). Tente novamente.` };
+    console.error(`[runpod-status] HTTP ${res.status} para ${runpodJobId}`);
+    return { status: "failed", outputs: [], error: "Não foi possível recuperar a geração. Tente novamente." };
   }
 
   const data = (await res.json()) as {
@@ -119,4 +123,17 @@ export async function checkRunpodJob(
     return { status: "failed", outputs: [], error: "O serviço devolveu um estado de geração inválido. Tente novamente.", providerStatus: data.status };
   }
   return { status: "pending", outputs: [], providerStatus: data.status };
+}
+
+// Cancela o processamento real, além do estado exibido no aplicativo.
+export async function cancelRunpodJob(endpointId: string, runpodJobId: string): Promise<boolean> {
+  if (!RUNPOD_API_KEY) return false;
+  try {
+    const res = await fetch(`${BASE_URL}/${endpointId}/cancel/${runpodJobId}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RUNPOD_API_KEY}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    return res.ok || res.status === 404;
+  } catch { return false; }
 }

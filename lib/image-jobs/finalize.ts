@@ -36,11 +36,12 @@ export async function finalizeImageJob(jobId: string, imageData: Buffer | string
     .eq("id", jobId)
     .single();
 
-  const { error: saveError } = await supabase
+  const { data: saved, error: saveError } = await supabase
     .from("image_jobs")
     .update({ status: "done", output_image_url: outputUrl, error_message: null, updated_at: new Date().toISOString() })
-    .eq("id", jobId);
+    .eq("id", jobId).in("status", ["submitted", "processing"]).select("id").maybeSingle();
   if (saveError) throw saveError;
+  if (!saved) return; // Um cancelamento não pode voltar a ser concluído.
 
   // Limpa inputs + histórico do ComfyUI e deleta output do workspace (libera disco)
   cleanupComfyJob(jobId, COMFY_BASES[0]).catch(() => {});

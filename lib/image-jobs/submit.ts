@@ -1,6 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { criarPrompt, COMFY_BASES, uploadImageToComfy, submitWorkflow, submitCatalogWorkflow, buildFotoWorkflow, buildCatalogWorkflow, type CustomLora } from "@/lib/comfyui/client";
-import { submitRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
+import { submitRunpodJob, cancelRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 import { selectLora } from "@/lib/promptuso/lora-rules";
 import { ensureFotoPodRunning } from "@/lib/runpod/pods";
 import { type PhotoFormat, DEFAULT_FORMAT } from "@/lib/formats";
@@ -284,11 +284,16 @@ export async function submitImageJob(jobId: string) {
     provider = "comfyui-direct";
   }
 
-  const { error: saveError } = await supabase
+  const { data: saved, error: saveError } = await supabase
     .from("image_jobs")
     .update({ status: "submitted", external_job_id: externalJobId, provider, updated_at: new Date().toISOString(), error_message: null })
-    .eq("id", jobId);
-  if (saveError) throw saveError;
+    .eq("id", jobId).eq("status", "submitting").select("id").maybeSingle();
+  if (saveError || !saved) {
+    // Não sobrescreve um cancelamento ocorrido enquanto a imagem era enviada.
+    // Se o banco não puder guardar o ID, evita deixar uma GPU órfã cobrando.
+    if (USE_SERVERLESS) await cancelRunpodJob(RUNPOD_FOTO_ENDPOINT, externalJobId.slice(7));
+    if (saveError) throw saveError;
+  }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Falha ao enviar a foto para geração.";
     // Sem essa transição, uma falha depois do lock deixa o pedido preso

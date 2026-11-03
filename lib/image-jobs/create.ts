@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { getUserPlan } from "@/lib/plans";
 import { FREE_PHOTO_DAILY_LIMIT, FREE_PHOTO_WINDOW_MS } from "@/lib/pricing";
+import { cancelRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 
 export class RateLimitError extends Error {
   nextAvailableAt: Date;
@@ -28,7 +29,7 @@ export async function createImageJob(
   // Bloqueia para TODOS os planos se já há job ativo — previne jobs simultâneos
   const { data: activeJob } = await supabase
     .from("image_jobs")
-    .select("id, status, created_at")
+    .select("id, status, created_at, external_job_id")
     .eq("user_id", userId)
     .in("status", ["queued", "submitting", "submitted", "processing"])
     .order("created_at", { ascending: false })
@@ -42,6 +43,9 @@ export async function createImageJob(
         .update({ status: "failed", error_message: "A geração excedeu o tempo limite. Tente novamente.", updated_at: new Date().toISOString() })
         .eq("id", activeJob.id).eq("status", activeJob.status);
       if (expireError) throw expireError;
+      if (activeJob.external_job_id?.startsWith("runpod:")) {
+        await cancelRunpodJob(RUNPOD_FOTO_ENDPOINT, activeJob.external_job_id.slice(7));
+      }
     } else {
       const nextAvailableAt = new Date(Math.max(Date.now() + 60_000, jobCreatedAt + 15 * 60_000));
       throw new RateLimitError(nextAvailableAt);

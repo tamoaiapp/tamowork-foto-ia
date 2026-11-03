@@ -23,7 +23,7 @@ for (const status of [400, 401, 403, 404, 409, 422]) {
     const client = loadClient(async () => new Response('', { status }));
     const result = await client.checkRunpodJob('endpoint', 'job');
     assert.equal(result.status, 'failed');
-    assert.match(result.error, new RegExp(String(status)));
+    assert.ok(result.error);
   });
 }
 
@@ -69,4 +69,12 @@ test('missing API key fails before downloading or submitting an image', async ()
 test('a submit response without a job ID cannot strand a database job', async () => {
   const client = loadClient(async url => url.endsWith('/run') ? Response.json({}) : new Response('image'));
   await assert.rejects(client.submitRunpodJob('endpoint', {}, 'https://example.com/photo.png'), /identificador/);
+});
+
+test('cancellation reaches the provider instead of only changing the UI', async () => {
+  let requested;
+  const client = loadClient(async (url, options) => { requested = { url, method: options.method }; return Response.json({ status: 'CANCELLED' }); });
+  assert.equal(await client.cancelRunpodJob('endpoint', 'job'), true);
+  assert.equal(requested.url, 'https://api.runpod.ai/v2/endpoint/cancel/job');
+  assert.equal(requested.method, 'POST');
 });

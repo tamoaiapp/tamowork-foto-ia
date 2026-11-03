@@ -9,6 +9,7 @@ import { checkNarratedVideoJob } from "@/lib/narrated-video/check";
 import { COMFY_BASES } from "@/lib/comfyui/client";
 import { ensureFotoPodRunning, ensureVideoPodRunning, autoStopVideoPodIfIdle } from "@/lib/runpod/pods";
 import { VIDEO_COMFY_BASES } from "@/lib/comfyui/video-client";
+import { cancelRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? "";
 
@@ -97,7 +98,7 @@ export async function GET(req: NextRequest) {
     supabase.from("image_jobs").select("id").in("status", ["submitted", "processing"]).neq("provider", "runpod-serverless").lt("updated_at", restartCutoff).gte("created_at", totalFailCutoff).limit(10),
     supabase.from("video_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", restartCutoff).gte("updated_at", totalFailCutoff).limit(5),
     // submitted/processing há mais de 15 min → falhar definitivamente
-    supabase.from("image_jobs").select("id").in("status", ["queued", "submitting", "submitted", "processing"]).lt("created_at", totalFailCutoff).limit(10),
+    supabase.from("image_jobs").select("id, external_job_id").in("status", ["queued", "submitting", "submitted", "processing"]).lt("created_at", totalFailCutoff).limit(10),
     supabase.from("video_jobs").select("id").in("status", ["submitted", "processing"]).lt("updated_at", totalFailCutoff).limit(5),
     // submitting preso há mais de 2 min → reset para queued
     supabase.from("image_jobs").select("id").eq("status", "submitting").lt("updated_at", stalePhotoSubmittingCutoff).gte("created_at", totalFailCutoff).limit(10),
@@ -135,6 +136,11 @@ export async function GET(req: NextRequest) {
 
   // REGRA 0: Jobs stuck há mais de 30 min → falha definitiva
   if ((failImageJobs ?? []).length > 0) {
+    await Promise.all((failImageJobs ?? []).map(async (job) => {
+      if (job.external_job_id?.startsWith("runpod:")) {
+        await cancelRunpodJob(RUNPOD_FOTO_ENDPOINT, job.external_job_id.slice(7));
+      }
+    }));
     const ids = (failImageJobs ?? []).map(j => j.id);
     await supabase.from("image_jobs")
       .update({ status: "failed", error_message: "Tempo limite atingido. Tente novamente." })

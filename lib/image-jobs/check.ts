@@ -1,6 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { COMFY_BASES, getComfyHistory, freeComfyMemory } from "@/lib/comfyui/client";
-import { checkRunpodJob, RUNPOD_FOTO_ENDPOINT, type RunpodJobResult } from "@/lib/comfyui/runpod-client";
+import { checkRunpodJob, cancelRunpodJob, RUNPOD_FOTO_ENDPOINT, type RunpodJobResult } from "@/lib/comfyui/runpod-client";
 import { finalizeImageJob } from "@/lib/image-jobs/finalize";
 
 // Safety net. Com cron a cada 5min, 40 attempts = ~3.3h — mas na prática
@@ -40,12 +40,13 @@ export async function checkImageJob(jobId: string) {
       attempts: newAttempts,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", jobId);
+    .eq("id", jobId).in("status", ["submitted", "processing"]);
 
   // RunPod pode levar vários minutos para iniciar uma GPU fria. O limite
   // deve ser por tempo real, não pela frequência com que o usuário consulta.
   const expired = Date.now() - new Date(job.created_at).getTime() >= 15 * 60_000;
   if (expired || (!external_job_id.startsWith("runpod:") && newAttempts >= MAX_ATTEMPTS)) {
+    if (external_job_id.startsWith("runpod:")) await cancelRunpodJob(RUNPOD_FOTO_ENDPOINT, external_job_id.slice(7));
     await supabase
       .from("image_jobs")
       .update({ status: "failed", error_message: "Timeout: máximo de tentativas atingido" })
@@ -70,11 +71,11 @@ export async function checkImageJob(jobId: string) {
       await supabase
         .from("image_jobs")
         .update({ status: "failed", error_message: result.error ?? "Falha no RunPod Serverless. Tente novamente." })
-        .eq("id", jobId);
+        .eq("id", jobId).in("status", ["submitted", "processing"]);
     } else if (result.providerStatus) {
       await supabase.from("image_jobs")
         .update({ status: result.providerStatus === "IN_QUEUE" ? "submitted" : "processing" })
-        .eq("id", jobId);
+        .eq("id", jobId).in("status", ["submitted", "processing"]);
     }
     // se pending: cron verifica novamente no próximo minuto
     return;

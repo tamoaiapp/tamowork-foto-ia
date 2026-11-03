@@ -2,6 +2,7 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkImageJob } from "@/lib/image-jobs/check";
 import { submitImageJob } from "@/lib/image-jobs/submit";
+import { cancelRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
 
 export const maxDuration = 300;
 
@@ -40,7 +41,12 @@ export async function GET(
       .eq("id", id).eq("user_id", user.id).eq("status", data.status)
       .select().maybeSingle();
     if (expireError) return NextResponse.json({ error: "Não foi possível atualizar a geração." }, { status: 503 });
-    if (expired) return NextResponse.json(expired);
+    if (expired) {
+      if (data.external_job_id?.startsWith("runpod:")) {
+        after(async () => { await cancelRunpodJob(RUNPOD_FOTO_ENDPOINT, data.external_job_id.slice(7)); });
+      }
+      return NextResponse.json(expired);
+    }
   }
 
   // Uma função pode ter sido interrompida no deploy anterior. O prazo de

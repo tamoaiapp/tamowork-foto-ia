@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { cancelRunpodJob, RUNPOD_FOTO_ENDPOINT } from "@/lib/comfyui/runpod-client";
+
+export const maxDuration = 30;
 
 // POST /api/image-jobs/:id/cancel
 export async function POST(
@@ -19,7 +22,7 @@ export async function POST(
 
   const { data: job } = await supabase
     .from("image_jobs")
-    .select("status")
+    .select("status, external_job_id")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -32,11 +35,17 @@ export async function POST(
 
   const { error } = await supabase
     .from("image_jobs")
-    .update({ status: "canceled" })
+    .update({ status: "canceled", updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", user.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (job.external_job_id?.startsWith("runpod:")) {
+    after(async () => {
+      await cancelRunpodJob(RUNPOD_FOTO_ENDPOINT, job.external_job_id.slice(7));
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }
